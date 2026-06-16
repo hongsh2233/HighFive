@@ -5,11 +5,11 @@ import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 
 // GET /api/tasks/[id]/timelogs - 타임로그 목록 조회
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await requireAuth(req);
+    const { error } = await requireAuth();
     if (error) return error;
 
     const { id } = await params;

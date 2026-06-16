@@ -1,7 +1,7 @@
 import { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./db";
-import { verifyPassword } from "./utils";
+import bcryptjs from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
   pages: {
@@ -17,7 +17,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Invalid credentials");
+          return null;
         }
 
         const user = await prisma.user.findUnique({
@@ -25,19 +25,18 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user || !user.isActive) {
-          throw new Error("User not found or inactive");
+          return null;
         }
 
-        const isPasswordValid = await verifyPassword(
+        const isPasswordValid = await bcryptjs.compare(
           credentials.password,
           user.passwordHash
         );
 
         if (!isPasswordValid) {
-          throw new Error("Invalid password");
+          return null;
         }
 
-        // Update last login time
         await prisma.user.update({
           where: { id: user.id },
           data: { lastLoginAt: new Date() },
@@ -62,15 +61,15 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
+        (session.user as any).id = token.id as string;
+        (session.user as any).role = token.role as string;
       }
       return session;
     },
   },
   session: {
     strategy: "jwt",
-    maxAge: 24 * 60 * 60, // 24 hours
+    maxAge: 24 * 60 * 60,
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

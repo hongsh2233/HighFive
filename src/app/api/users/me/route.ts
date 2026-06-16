@@ -1,18 +1,16 @@
-import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { successResponse, errorResponse } from '@/lib/utils';
 
-// GET /api/users/me - 내 정보 및 진행 중인 업무
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const { error } = await requireAuth(req);
-    if (error) return error;
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return errorResponse('인증이 필요합니다.', 401, 'AUTH_401');
+    }
 
-    const session2 = await getServerSession(authOptions);
-    const userId = parseInt((session2?.user as any)?.id || '0');
-
+    const userId = parseInt((session.user as any).id || '0');
     if (!userId) {
       return errorResponse('사용자 정보를 찾을 수 없습니다.', 404, 'USER_404');
     }
@@ -20,13 +18,8 @@ export async function GET(req: NextRequest) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-        lastLoginAt: true,
+        id: true, email: true, name: true, role: true,
+        isActive: true, createdAt: true, lastLoginAt: true,
       },
     });
 
@@ -34,12 +27,8 @@ export async function GET(req: NextRequest) {
       return errorResponse('사용자를 찾을 수 없습니다.', 404, 'USER_404');
     }
 
-    // 진행 중인 업무 조회
     const tasks = await prisma.task.findMany({
-      where: {
-        workerId: userId,
-        status: { in: ['ASSIGNED', 'PROGRESS', 'REVIEW', 'QA'] },
-      },
+      where: { workerId: userId, status: { in: ['ASSIGNED', 'PROGRESS', 'REVIEW', 'QA'] } },
       take: 5,
       orderBy: { createdAt: 'desc' },
     });

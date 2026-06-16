@@ -5,7 +5,7 @@ import { requireAuth, successResponse, errorResponse, parseRmsNo } from '@/lib/u
 // GET /api/tasks - 업무 목록 조회
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireAuth(req);
+    const { error } = await requireAuth();
     if (error) return error;
 
     // 쿼리 파라미터 가져오기
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
 // POST /api/tasks - 업무 생성
 export async function POST(req: NextRequest) {
   try {
-    const { error, session } = await requireAuth(req);
+    const { error, session } = await requireAuth();
     if (error) return error;
 
     const userRole = (session?.user as any)?.role;

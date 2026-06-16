@@ -5,7 +5,7 @@ import { requireRole, successResponse, errorResponse } from '@/lib/utils';
 // GET /api/stats/summary - 월간 요약 통계
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireRole(req, ['ADMIN', 'PLANNER']);
+    const { error } = await requireRole(['ADMIN', 'PLANNER']);
     if (error) return error;
 
     const { searchParams } = new URL(req.url);

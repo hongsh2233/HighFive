@@ -5,7 +5,7 @@ import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 // GET /api/tasks/calendar - 캘린더용 업무 데이터
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireAuth(req);
+    const { error } = await requireAuth();
     if (error) return error;
 
     const { searchParams } = new URL(req.url);

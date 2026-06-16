@@ -4,11 +4,11 @@ import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 
 // PATCH /api/tasks/[id]/timelogs/[logId]/stop - 타이머 종료
 export async function PATCH(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string; logId: string }> }
 ) {
   try {
-    const { error } = await requireAuth(req);
+    const { error } = await requireAuth();
     if (error) return error;
 
     const { id, logId: rawLogId } = await params;

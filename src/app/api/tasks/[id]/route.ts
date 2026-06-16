@@ -4,11 +4,11 @@ import { requireAuth, successResponse, errorResponse, parseRmsNo } from '@/lib/u
 
 // GET /api/tasks/[id] - 업무 상세 조회
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await requireAuth(req);
+    const { error } = await requireAuth();
     if (error) return error;
 
     const { id } = await params;
@@ -43,7 +43,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error, session } = await requireAuth(req);
+    const { error, session } = await requireAuth();
     if (error) return error;
 
     const userRole = (session?.user as any)?.role;
@@ -90,11 +90,11 @@ export async function PATCH(
 
 // DELETE /api/tasks/[id] - 업무 삭제
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error, session } = await requireAuth(req);
+    const { error, session } = await requireAuth();
     if (error) return error;
 
     const userRole = (session?.user as any)?.role;

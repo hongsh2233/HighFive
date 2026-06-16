@@ -5,7 +5,7 @@ import { requireRole, successResponse, errorResponse, hashPassword, generateTemp
 // GET /api/users - 전체 사용자 목록 (ADMIN만)
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireRole(req, ['ADMIN']);
+    const { error } = await requireRole(['ADMIN']);
     if (error) return error;
 
     const { searchParams } = new URL(req.url);
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
 // POST /api/users - 사용자 초대 (ADMIN만)
 export async function POST(req: NextRequest) {
   try {
-    const { error } = await requireRole(req, ['ADMIN']);
+    const { error } = await requireRole(['ADMIN']);
     if (error) return error;
 
     const body = await req.json();
