@@ -1,16 +1,28 @@
-import { withAuth } from 'next-auth/middleware';
-import { NextResponse } from 'next/server';
-import type { NextRequestWithAuth } from 'next-auth/middleware';
+import { NextRequest, NextResponse } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
 // 보호가 필요한 라우트
-const protectedRoutes = ['/dashboard', '/tasks', '/calendar', '/stats'];
-const adminRoutes = ['/stats', '/admin'];
+const protectedRoutes = ['/dashboard', '/tasks', '/calendar', '/stats', '/users'];
+const adminRoutes = ['/users'];
 const plannerRoutes = ['/stats'];
 
-export default withAuth(
-  function middleware(req: NextRequestWithAuth) {
-    const { pathname } = req.nextUrl;
-    const userRole = (req.nextauth.token?.role as string) || 'WORKER';
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  // 로그인 페이지는 항상 접근 가능
+  if (pathname === '/login') {
+    return NextResponse.next();
+  }
+
+  // 토큰 가져오기
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  const userRole = (token?.role as string) || 'WORKER';
+
+  // 보호된 라우트 확인
+  if (protectedRoutes.some((route) => pathname.startsWith(route))) {
+    if (!token) {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
 
     // Admin 전용 라우트
     if (adminRoutes.some((route) => pathname.startsWith(route))) {
@@ -25,33 +37,13 @@ export default withAuth(
         return NextResponse.redirect(new URL('/dashboard', req.url));
       }
     }
-
-    return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => {
-        // 로그인 페이지는 항상 접근 가능
-        if (req.nextUrl.pathname === '/login') {
-          return true;
-        }
-
-        // 보호된 라우트는 토큰 필요
-        if (protectedRoutes.some((route) => req.nextUrl.pathname.startsWith(route))) {
-          return !!token;
-        }
-
-        return true;
-      },
-    },
-    pages: {
-      signIn: '/login',
-    },
   }
-);
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|login).*)',
   ],
 };
