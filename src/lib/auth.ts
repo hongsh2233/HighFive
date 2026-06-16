@@ -1,7 +1,7 @@
 import { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./db";
-import bcryptjs from "bcryptjs";
+import { verifyPassword } from "./utils";
 
 export const authOptions: NextAuthOptions = {
   pages: {
@@ -21,14 +21,14 @@ export const authOptions: NextAuthOptions = {
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: credentials.email.toLowerCase() },
         });
 
         if (!user || !user.isActive) {
           throw new Error("User not found or inactive");
         }
 
-        const isPasswordValid = await bcryptjs.compare(
+        const isPasswordValid = await verifyPassword(
           credentials.password,
           user.passwordHash
         );
@@ -36,6 +36,12 @@ export const authOptions: NextAuthOptions = {
         if (!isPasswordValid) {
           throw new Error("Invalid password");
         }
+
+        // Update last login time
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { lastLoginAt: new Date() },
+        });
 
         return {
           id: user.id.toString(),

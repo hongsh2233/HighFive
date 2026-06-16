@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function DashboardPage() {
@@ -61,6 +62,18 @@ export default function DashboardPage() {
     marginBottom: 'var(--space-4)',
   };
 
+  const adminLinkStyle: React.CSSProperties = {
+    display: 'inline-block',
+    padding: 'var(--space-3) var(--space-4)',
+    backgroundColor: 'var(--color-primary)',
+    color: 'white',
+    textDecoration: 'none',
+    borderRadius: '6px',
+    fontWeight: '600',
+    fontSize: '14px',
+    marginRight: 'var(--space-2)',
+  };
+
   return (
     <div style={containerStyle}>
       <div style={headerStyle}>
@@ -74,6 +87,19 @@ export default function DashboardPage() {
           {' '}계정입니다.
         </p>
       </div>
+
+      {user?.role === 'ADMIN' && (
+        <div style={{ marginBottom: 'var(--space-8)' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
+            관리 기능
+          </h2>
+          <div>
+            <Link href="/users" style={adminLinkStyle}>
+              👥 팀 사용자 관리
+            </Link>
+          </div>
+        </div>
+      )}
 
       <div style={{ marginBottom: 'var(--space-8)' }}>
         <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>

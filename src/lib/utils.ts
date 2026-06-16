@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
+import bcryptjs from 'bcryptjs';
 
 // API 응답 형식
 export function successResponse<T>(data: T, message = 'OK', status = 200) {
@@ -63,4 +64,20 @@ export function parseRmsNo(title: string): { cleanTitle: string; rmsNo: string |
     };
   }
   return { cleanTitle: title, rmsNo: null };
+}
+
+// 비밀번호 해싱
+export async function hashPassword(password: string): Promise<string> {
+  const salt = await bcryptjs.genSalt(10);
+  return bcryptjs.hash(password, salt);
+}
+
+// 비밀번호 검증
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  return bcryptjs.compare(password, hash);
+}
+
+// 임시 비밀번호 생성
+export function generateTempPassword(): string {
+  return Math.random().toString(36).slice(-12);
 }
