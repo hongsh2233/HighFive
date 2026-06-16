@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTimer } from '@/hooks/useTimer';
 import apiClient from '@/lib/api-client';
-import { Task } from '@/types';
+import { Task, TimeLog } from '@/types';
+import TaskTimerButton from '@/components/task/TaskTimerButton';
 
 export default function TaskDetailPage({ params }: { params: { id: string } }) {
   const { user, isLoading: authLoading } = useAuth();
@@ -12,6 +14,9 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({ notes: '' });
+  const [timeLogs, setTimeLogs] = useState<TimeLog[]>([]);
+  const [totalHours, setTotalHours] = useState(0);
+  const { currentLog } = useTimer(parseInt(params.id));
 
   useEffect(() => {
     const fetchTask = async () => {
@@ -19,6 +24,13 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
         const response = await apiClient.get<{ data: Task }>(`/tasks/${params.id}`);
         setTask(response.data.data);
         setFormData({ notes: response.data.data.notes || '' });
+
+        // 타임로그 조회
+        const logsResponse = await apiClient.get<{ data: { logs: TimeLog[]; totalHours: number } }>(
+          `/tasks/${params.id}/timelogs`
+        );
+        setTimeLogs(logsResponse.data.data.logs);
+        setTotalHours(logsResponse.data.data.totalHours);
       } catch (err: any) {
         setError(err.message || '업무 조회 실패');
       } finally {
@@ -30,6 +42,19 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
       fetchTask();
     }
   }, [params.id, authLoading]);
+
+  const handleTimerUpdated = async (log: TimeLog) => {
+    // 타이머 업데이트 후 로그 다시 로드
+    try {
+      const response = await apiClient.get<{ data: { logs: TimeLog[]; totalHours: number } }>(
+        `/tasks/${params.id}/timelogs`
+      );
+      setTimeLogs(response.data.data.logs);
+      setTotalHours(response.data.data.totalHours);
+    } catch (err) {
+      console.error('Failed to refresh timelogs:', err);
+    }
+  };
 
   const handleSave = async () => {
     if (!task) return;
@@ -244,14 +269,90 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
         )}
       </div>
 
-      {/* 타임로그 (향후 추가) */}
+      {/* 타임로그 */}
       <div style={cardStyle}>
-        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
-          타임로그
-        </h2>
-        <p style={{ color: 'var(--color-gray-600)', fontSize: '14px' }}>
-          타이머 기능은 Phase 2에서 추가됩니다.
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '700', margin: 0 }}>
+            타임로그
+          </h2>
+          <TaskTimerButton taskId={parseInt(params.id)} onTimerUpdated={handleTimerUpdated} />
+        </div>
+
+        {/* 총 소요 시간 */}
+        <div style={{
+          padding: 'var(--space-3)',
+          backgroundColor: 'var(--color-primary-light)',
+          borderRadius: '6px',
+          marginBottom: 'var(--space-4)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <span style={{ fontWeight: '600', color: 'var(--color-primary-dark)' }}>
+            총 소요 시간
+          </span>
+          <span style={{ fontSize: '20px', fontWeight: '700', color: 'var(--color-primary)' }}>
+            {totalHours.toFixed(2)} 시간
+          </span>
+        </div>
+
+        {/* 타임로그 목록 */}
+        {timeLogs.length === 0 ? (
+          <p style={{ color: 'var(--color-gray-600)', fontSize: '14px' }}>
+            아직 타이머 기록이 없습니다.
+          </p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{
+              width: '100%',
+              fontSize: '13px',
+              borderCollapse: 'collapse'
+            }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--color-gray-300)' }}>
+                  <th style={{ textAlign: 'left', padding: 'var(--space-2)', fontWeight: '600' }}>
+                    시작 시간
+                  </th>
+                  <th style={{ textAlign: 'left', padding: 'var(--space-2)', fontWeight: '600' }}>
+                    종료 시간
+                  </th>
+                  <th style={{ textAlign: 'left', padding: 'var(--space-2)', fontWeight: '600' }}>
+                    소요 시간
+                  </th>
+                  <th style={{ textAlign: 'left', padding: 'var(--space-2)', fontWeight: '600' }}>
+                    보정
+                  </th>
+                  <th style={{ textAlign: 'left', padding: 'var(--space-2)', fontWeight: '600' }}>
+                    최종 시간
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {timeLogs.map((log) => (
+                  <tr key={log.id} style={{ borderBottom: '1px solid var(--color-gray-100)' }}>
+                    <td style={{ padding: 'var(--space-2)' }}>
+                      {new Date(log.startTime).toLocaleString('ko-KR')}
+                    </td>
+                    <td style={{ padding: 'var(--space-2)' }}>
+                      {log.endTime
+                        ? new Date(log.endTime).toLocaleString('ko-KR')
+                        : '진행 중'}
+                    </td>
+                    <td style={{ padding: 'var(--space-2)' }}>
+                      {log.durationHours?.toFixed(2) || '-'} h
+                    </td>
+                    <td style={{ padding: 'var(--space-2)' }}>
+                      {log.adjustedHours > 0 ? '+' : ''}{log.adjustedHours.toFixed(2)} h
+                    </td>
+                    <td style={{ padding: 'var(--space-2)', fontWeight: '600' }}>
+                      {log.finalHours?.toFixed(2) || '-'} h
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
