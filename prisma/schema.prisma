@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            Int     @id @default(autoincrement())
+  email         String  @unique
+  name          String
+  role          String  @default("WORKER") // ADMIN, PLANNER, WORKER
+  passwordHash  String
+  isActive      Boolean @default(true)
+  createdAt     DateTime @default(now())
+  lastLoginAt   DateTime?
+
+  // Relations
+  plannedTasks  Task[] @relation("planner")
+  workerTasks   Task[] @relation("worker")
+  timeLogs      TimeLog[]
+
+  @@map("users")
+}
+
+model Task {
+  id            Int     @id @default(autoincrement())
+  rmsNo         String?
+  title         String
+  plannerId     Int
+  workerId      Int
+  status        String  @default("ASSIGNED") // ASSIGNED, PROGRESS, REVIEW, QA, DONE
+  targetDate    DateTime?
+  isFreeze      Boolean @default(false)
+  templateId    Int?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  planner       User    @relation("planner", fields: [plannerId], references: [id])
+  worker        User    @relation("worker", fields: [workerId], references: [id])
+  timeLogs      TimeLog[]
+
+  @@index([workerId, status])
+  @@index([targetDate])
+  @@index([rmsNo])
+  @@map("tasks")
+}
+
+model TimeLog {
+  id            Int     @id @default(autoincrement())
+  taskId        Int
+  workerId      Int
+  startTime     DateTime
+  endTime       DateTime?
+  durationHours Float?
+  adjustedHours Float   @default(0)
+  finalHours    Float?
+  createdAt     DateTime @default(now())
+
+  // Relations
+  task          Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  worker        User    @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([workerId])
+  @@map("timelogs")
+}
+
+model Template {
+  id                Int     @id @default(autoincrement())
+  name              String
+  defaultTitle      String
+  defaultPlannerId  Int?
+  guideText         String?
+  createdAt         DateTime @default(now())
+
+  @@map("templates")
+}
+
+model Notification {
+  id        Int     @id @default(autoincrement())
+  taskId    Int
+  channel   String  // SLACK, JANDI, EMAIL
+  message   String
+  sentAt    DateTime @default(now())
+  isSuccess Boolean @default(false)
+
+  @@index([taskId])
+  @@map("notifications")
+}

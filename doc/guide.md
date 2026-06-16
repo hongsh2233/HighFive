@@ -1,7 +1,7 @@
-# 맞춤형 업무 관리 시스템 (TMS) — 개발 기술 문서 완성본
+# 맞춤형 업무 관리 시스템 (TMS) — 개발 기술 문서
 
-> **버전** v1.0 | **기술 스택** Vue.js 3 · NestJS · PostgreSQL · Tailwind CSS  
-> **대상** 프론트엔드 개발자, 백엔드 개발자, 기획자
+> **버전** v2.0 (Next.js 기반 풀스택) | **기술 스택** Next.js 14 · Prisma · PostgreSQL · Material-UI · CSS Modules  
+> **대상** 풀스택 개발자, 기획자
 
 ---
 
@@ -235,63 +235,121 @@ POST /api/v1/tasks
 
 ---
 
-## 4. 프론트엔드 컴포넌트 구조 (Vue.js 3)
+## 4. 프론트엔드 및 API 구조 (Next.js 14)
 
 ### 4.1 디렉터리 구조
 
 ```
-src/
-├── api/                      # Axios 인스턴스 및 API 호출 함수
-│   ├── index.ts              # Axios 기본 설정 (baseURL, 인터셉터)
-│   ├── auth.ts               # 로그인 / 로그아웃
-│   ├── tasks.ts              # 업무 CRUD + 상태 변경 + 타임로그
-│   └── stats.ts              # 통계 API
-│
-├── components/               # 재사용 가능한 UI 컴포넌트
-│   ├── common/
-│   │   ├── AppHeader.vue         # 상단 GNB (로고 + 유저 메뉴)
-│   │   ├── AppSidebar.vue        # 좌측 네비게이션
-│   │   ├── BaseButton.vue        # 공통 버튼 (variant: primary/ghost/danger)
-│   │   ├── BaseModal.vue         # 공통 모달 래퍼
-│   │   └── BaseBadge.vue         # 상태/역할 뱃지
+tms/
+├── src/
+│   ├── app/                          # Next.js App Router
+│   │   ├── layout.tsx                # 루트 레이아웃 (MUI 테마 포함)
+│   │   ├── page.tsx                  # 홈 페이지
+│   │   ├── login/
+│   │   │   └── page.tsx              # 로그인 페이지
+│   │   ├── dashboard/
+│   │   │   └── page.tsx              # 대시보드 (내 업무 카드)
+│   │   ├── tasks/
+│   │   │   ├── page.tsx              # 업무 목록 (그리드 + 필터)
+│   │   │   ├── [id]/
+│   │   │   │   └── page.tsx          # 업무 상세 조회
+│   │   │   └── kanban/
+│   │   │       └── page.tsx          # 칸반 보드 뷰
+│   │   ├── calendar/
+│   │   │   └── page.tsx              # 배포 캘린더 뷰
+│   │   ├── stats/
+│   │   │   └── page.tsx              # 통계 리포트
+│   │   ├── api/                      # API Routes (백엔드 엔드포인트)
+│   │   │   ├── auth/
+│   │   │   │   ├── [...nextauth]/route.ts   # NextAuth.js 통합
+│   │   │   │   ├── login/route.ts           # POST /api/auth/login
+│   │   │   │   └── logout/route.ts          # POST /api/auth/logout
+│   │   │   ├── users/
+│   │   │   │   ├── route.ts          # GET /api/users (전체 목록)
+│   │   │   │   ├── [id]/route.ts     # GET/PATCH /api/users/:id
+│   │   │   │   ├── invite/route.ts   # POST /api/users/invite
+│   │   │   │   └── me/route.ts       # GET /api/users/me (내 정보)
+│   │   │   ├── tasks/
+│   │   │   │   ├── route.ts          # GET/POST /api/tasks
+│   │   │   │   ├── [id]/
+│   │   │   │   │   ├── route.ts      # GET/PATCH /api/tasks/:id
+│   │   │   │   │   ├── status/route.ts # PATCH /api/tasks/:id/status
+│   │   │   │   │   └── timelogs/
+│   │   │   │   │       ├── route.ts  # GET /api/tasks/:id/timelogs
+│   │   │   │   │       ├── start/route.ts
+│   │   │   │   │       ├── stop/route.ts
+│   │   │   │   │       └── adjust/route.ts
+│   │   │   │   ├── calendar/route.ts # GET /api/tasks/calendar
+│   │   │   │   └── export/route.ts   # GET /api/tasks/export
+│   │   │   ├── stats/
+│   │   │   │   ├── workload/route.ts # GET /api/stats/workload
+│   │   │   │   └── summary/route.ts  # GET /api/stats/summary
+│   │   │   └── webhooks/
+│   │   │       └── slack/route.ts    # POST /api/webhooks/slack
+│   │   ├── globals.css               # 전역 스타일 (CSS Variables)
+│   │   └── _components/              # 레이아웃 구성 컴포넌트
+│   │       ├── AppHeader.tsx
+│   │       └── AppSidebar.tsx
 │   │
-│   ├── task/
-│   │   ├── TaskCard.vue          # 칸반 카드 (드래그 핸들 포함)
-│   │   ├── TaskForm.vue          # 생성/수정 폼 (모달 내부)
-│   │   ├── TaskStatusBadge.vue   # 상태 뱃지 (색상 자동 매핑)
-│   │   ├── TaskTimerButton.vue   # ▶ 시작 / ■ 종료 원클릭 타이머
-│   │   ├── TaskAdjustForm.vue    # 공수 보정 +/− 입력 폼
-│   │   └── TaskFilterBar.vue     # 상태·담당자·날짜 필터
+│   ├── components/                   # 재사용 가능한 React 컴포넌트
+│   │   ├── common/
+│   │   │   ├── Button.tsx            # 공통 버튼 (variant: primary/ghost/danger)
+│   │   │   ├── Modal.tsx             # 모달 래퍼
+│   │   │   ├── Badge.tsx             # 상태/역할 뱃지
+│   │   │   └── Table.tsx             # 데이터 테이블
+│   │   │
+│   │   ├── task/
+│   │   │   ├── TaskCard.tsx          # 칸반 카드
+│   │   │   ├── TaskForm.tsx          # 생성/수정 폼
+│   │   │   ├── TaskStatusBadge.tsx   # 상태 뱃지
+│   │   │   ├── TaskTimerButton.tsx   # 원클릭 타이머 버튼
+│   │   │   ├── TaskAdjustForm.tsx    # 공수 보정 폼
+│   │   │   └── TaskFilterBar.tsx     # 필터 바
+│   │   │
+│   │   ├── kanban/
+│   │   │   ├── KanbanBoard.tsx       # 5열 칸반 보드
+│   │   │   └── KanbanColumn.tsx      # 개별 칸반 열
+│   │   │
+│   │   └── chart/
+│   │       ├── WorkloadChart.tsx     # 작업자별 부하량 차트
+│   │       └── TimeLogChart.tsx      # 일별 공수 차트
 │   │
-│   ├── board/
-│   │   ├── KanbanBoard.vue       # 5열 고정 칸반 전체 보드
-│   │   └── KanbanColumn.vue      # 각 상태 열 (드롭 영역)
+│   ├── lib/                          # 유틸리티 및 설정
+│   │   ├── db.ts                     # Prisma 인스턴스
+│   │   ├── api-client.ts             # Axios 인스턴스 + 인터셉터
+│   │   ├── auth.ts                   # NextAuth.js 설정
+│   │   ├── utils.ts                  # 헬퍼 함수
+│   │   └── constants.ts              # 상수 정의
 │   │
-│   └── chart/
-│       ├── WorkloadChart.vue     # 작업자별 부하 바 차트
-│       └── TimeLogChart.vue      # 일별 공수 라인 차트
+│   ├── hooks/                        # React Custom Hooks
+│   │   ├── useAuth.ts                # 인증 상태 + 로그인/로그아웃
+│   │   ├── useTask.ts                # 업무 CRUD 로직
+│   │   ├── useTimer.ts               # 타이머 상태 관리
+│   │   └── useFreeze.ts              # 배포 프리징 감지
+│   │
+│   ├── store/                        # 전역 상태 (선택사항: Zustand/Context)
+│   │   ├── authStore.ts
+│   │   └── taskStore.ts
+│   │
+│   └── types/
+│       ├── index.ts                  # 전체 타입 정의
+│       ├── api.ts                    # API 응답 타입
+│       ├── task.ts                   # Task 관련 타입
+│       └── user.ts                   # User 관련 타입
 │
-├── composables/              # Vue 3 Composition API 훅
-│   ├── useAuth.ts            # 인증 상태 + 로그인/로그아웃 액션
-│   ├── useTask.ts            # 업무 목록/상세 상태 + CRUD 액션
-│   ├── useTimer.ts           # 타이머 시작/종료/경과시간
-│   └── useFreeze.ts          # 배포 프리징 날짜 충돌 감지
+├── prisma/
+│   ├── schema.prisma                 # Prisma ORM 스키마
+│   └── migrations/                   # DB 마이그레이션 히스토리
 │
-├── pages/
-│   ├── LoginPage.vue
-│   ├── DashboardPage.vue     # My Page — 내 업무 카드 모음
-│   ├── TaskListPage.vue      # 그리드 목록 (필터 + 페이지네이션)
-│   ├── KanbanPage.vue        # 칸반 보드 뷰
-│   ├── CalendarPage.vue      # 배포 캘린더 뷰
-│   ├── TaskDetailPage.vue    # 업무 상세 + 타이머 + 로그
-│   └── StatsPage.vue         # 통계 차트 + CSV 다운로드
-│
-├── stores/                   # Pinia 전역 상태
-│   ├── auth.store.ts         # 유저 정보 + JWT 토큰
-│   └── task.store.ts         # 업무 목록 + 칸반 상태
-│
-└── router/
-    └── index.ts              # Vue Router + 권한 가드
+├── .env.example                      # 환경변수 템플릿
+├── .env.local                        # 개발 환경변수 (Git 제외)
+├── .gitignore                        # Git 제외 파일
+├── package.json                      # 프로젝트 의존성
+├── next.config.ts                    # Next.js 설정
+├── tsconfig.json                     # TypeScript 설정
+├── README.md
+└── doc/
+    └── guide.md                      # 본 문서
 ```
 
 ### 4.2 핵심 컴포넌트 명세
@@ -708,69 +766,34 @@ npm install lucide-vue-next
 
 ---
 
-## 6. 백엔드 모듈 구조 (NestJS)
+## 6. 백엔드 API 구현 (Next.js API Routes + Prisma)
 
-### 6.1 디렉터리 구조
+### 6.1 API 구조
+
+Next.js API Routes는 `/src/app/api` 디렉터리 구조로 자동 라우팅됩니다:
+- `GET /api/tasks` → `src/app/api/tasks/route.ts` 의 `GET 함수`
+- `POST /api/tasks` → `src/app/api/tasks/route.ts` 의 `POST 함수`
+- `GET /api/tasks/[id]` → `src/app/api/tasks/[id]/route.ts`
+
+### 6.2 백엔드 서비스 계층 (lib/services/)
 
 ```
-src/
-├── auth/
-│   ├── auth.module.ts
-│   ├── auth.controller.ts
-│   ├── auth.service.ts
-│   ├── jwt.strategy.ts        # Passport JWT 전략
-│   └── roles.guard.ts         # @Roles() 역할 기반 가드
-│
-├── users/
-│   ├── users.module.ts
-│   ├── users.controller.ts
-│   └── users.service.ts
-│
-├── tasks/
-│   ├── tasks.module.ts
-│   ├── tasks.controller.ts
-│   ├── tasks.service.ts       # 핵심 비즈니스 로직
-│   ├── tasks.repository.ts
-│   ├── dto/
-│   │   ├── create-task.dto.ts
-│   │   └── update-task.dto.ts
-│   └── entities/
-│       └── task.entity.ts
-│
-├── timelogs/
-│   ├── timelogs.module.ts
-│   ├── timelogs.controller.ts
-│   └── timelogs.service.ts
-│
-├── stats/
-│   ├── stats.module.ts
-│   └── stats.service.ts
-│
-├── webhooks/
-│   ├── webhooks.module.ts
-│   ├── slack.service.ts       # Slack Webhook 발송
-│   ├── jandi.service.ts       # 잔디 Webhook 발송
-│   └── webhook.queue.ts       # Bull 큐 기반 비동기 처리
-│
-├── common/
-│   ├── filters/
-│   │   └── global-exception.filter.ts   # 전역 에러 핸들러
-│   ├── interceptors/
-│   │   └── response.interceptor.ts      # 공통 응답 형식 래핑
-│   └── decorators/
-│       └── roles.decorator.ts           # @Roles('ADMIN') 커스텀 데코레이터
-│
-└── config/
-    └── configuration.ts       # 환경변수 타입 안전 설정
+src/lib/services/           # 비즈니스 로직
+├── auth.service.ts         # 인증 로직 (JWT 생성/검증)
+├── user.service.ts         # 사용자 CRUD
+├── task.service.ts         # 업무 CRUD + 비즈니스 로직
+├── timelog.service.ts      # 타이머 로직
+├── stats.service.ts        # 통계 계산
+└── webhook.service.ts      # Slack/Jandi 알림 발송
 ```
 
-### 6.2 핵심 비즈니스 로직
+### 6.3 핵심 비즈니스 로직
 
 #### RMS 번호 자동 파싱
 
 ```typescript
-// tasks.service.ts
-private parseRmsNo(title: string): { cleanTitle: string; rmsNo: string | null } {
+// lib/services/task.service.ts
+export function parseRmsNo(title: string): { cleanTitle: string; rmsNo: string | null } {
   const rmsPattern = /\[([A-Z]+-\d+)\]/;
   const match = title.match(rmsPattern);
   if (match) {
@@ -786,8 +809,8 @@ private parseRmsNo(title: string): { cleanTitle: string; rmsNo: string | null } 
 #### 상태 변경 시 Webhook 트리거
 
 ```typescript
-// tasks.service.ts
-async updateStatus(taskId: number, status: TaskStatus, userId: number) {
+// app/api/tasks/[id]/status/route.ts
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const task = await this.tasksRepo.findOneOrFail(taskId);
   task.status = status;
   await this.tasksRepo.save(task);
@@ -844,39 +867,40 @@ buildReviewMessage(workerName: string, taskTitle: string, taskUrl: string): stri
 
 ---
 
-## 8. 환경변수 설정 (.env)
+## 8. 환경변수 설정 (.env.local)
 
-### 백엔드 (`.env`)
+Next.js 풀스택 애플리케이션이므로 단일 `.env.local` 파일 사용:
 
 ```env
-# 서버 설정
-NODE_ENV=development
-PORT=3000
-
 # 데이터베이스
 DATABASE_URL=postgresql://user:password@localhost:5432/tms_db
 
-# JWT
-JWT_SECRET=your_super_secret_key_here_min_32chars
-JWT_EXPIRES_IN=1h
-JWT_REFRESH_EXPIRES_IN=7d
+# NextAuth (로그인 인증)
+NEXTAUTH_SECRET=your_super_secret_key_here_min_32_characters
+NEXTAUTH_URL=http://localhost:3000
 
-# Slack Webhook
+# API 설정
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3000/api
+
+# JWT 토큰
+JWT_EXPIRES_IN=3600
+JWT_REFRESH_EXPIRES_IN=604800
+
+# Slack Webhook (알림)
 SLACK_WEBHOOK_URL=https://hooks.slack.com/services/xxx/yyy/zzz
 
-# 잔디(JANDI) Webhook
+# 잔디(JANDI) Webhook (선택사항)
 JANDI_WEBHOOK_URL=https://wh.jandi.com/connect-api/webhook/xxx
 
-# Redis (Bull 큐용)
+# Redis (선택사항 - Bull 큐 대체용)
 REDIS_URL=redis://localhost:6379
+
+# 개발 환경
+NODE_ENV=development
 ```
 
-### 프론트엔드 (`.env`)
-
-```env
-VITE_API_BASE_URL=http://localhost:3000/api/v1
-VITE_APP_TITLE=TMS - 업무 관리 시스템
-```
+**주의**: `.env.local` 파일은 `.gitignore`에 추가되어 Git에 커밋되지 않습니다.
+개발 환경 설정은 `.env.example`을 참고하여 복사한 후 개인 값을 입력하세요.
 
 ---
 
@@ -888,33 +912,40 @@ VITE_APP_TITLE=TMS - 업무 관리 시스템
 | **Phase 2** 자동화 | 2~3주 | 원클릭 타이머, 공수 보정 UI, RMS 자동 파싱, 칸반 D&D | 타이머 작동 및 칸반 D&D 정상 동작 |
 | **Phase 3** 고도화 | 2~3주 | Slack/잔디 Webhook, 배포 프리징, 템플릿, 통계+CSV 다운로드 | 알림 발송 및 리포트 다운로드 성공 |
 
-### Phase 1 체크리스트
+### Phase 1 체크리스트 (MVP - Next.js 기본 구조)
 
-- [ ] 프로젝트 초기 세팅 (Vue 3 + Vite, NestJS, PostgreSQL 연결)
-- [ ] Users 테이블 마이그레이션 및 JWT 인증 구현
-- [ ] Tasks 테이블 마이그레이션 및 CRUD API
-- [ ] 로그인 페이지 및 라우터 가드 구현
-- [ ] `TaskListPage` (그리드 + 필터 + 페이지네이션)
-- [ ] `TaskForm` 컴포넌트 (생성/수정 모달)
-- [ ] 단일 클릭 상태 변경 기능
+- [x] Next.js 14 프로젝트 초기 세팅 (TypeScript, CSS Modules, MUI)
+- [x] Prisma 스키마 정의 및 PostgreSQL 연결 설정
+- [ ] Prisma 마이그레이션 생성 및 테이블 생성
+- [ ] NextAuth.js 인증 구현 (로그인/로그아웃)
+- [ ] `/api/auth` 라우트 구현
+- [ ] `/api/users` CRUD API 구현
+- [ ] `/api/tasks` CRUD API 구현
+- [ ] 로그인 페이지 (`/login`) 구현
+- [ ] 대시보드 페이지 (`/dashboard`)
+- [ ] 업무 목록 페이지 (`/tasks`) - 그리드 + 필터 + 페이지네이션
+- [ ] 권한 기반 라우트 가드 (useAuth Hook)
 
-### Phase 2 체크리스트
+### Phase 2 체크리스트 (자동화 기능)
 
 - [ ] TimeLogs 테이블 마이그레이션
-- [ ] 타이머 API (start / stop / adjust) 구현
-- [ ] `TaskTimerButton.vue` + `useTimer.ts` Composable
-- [ ] RMS 번호 자동 파싱 정규식 서비스
-- [ ] `KanbanBoard.vue` (vue-draggable-next 연동)
-- [ ] `DashboardPage` — 내 업무 카드 목록
+- [ ] `/api/tasks/[id]/timelogs` API (start/stop/adjust)
+- [ ] `TaskTimerButton` 컴포넌트 + `useTimer` Hook
+- [ ] RMS 번호 자동 파싱 서비스 (task.service.ts)
+- [ ] 칸반 보드 페이지 (`/tasks/kanban`)
+- [ ] `KanbanBoard` 컴포넌트 (드래그 앤 드롭)
+- [ ] 업무 상세 페이지 (`/tasks/[id]`)
 
-### Phase 3 체크리스트
+### Phase 3 체크리스트 (고도화 기능)
 
-- [ ] Notifications 테이블 및 Webhook 서비스
-- [ ] Bull 큐 + Redis 기반 비동기 알림 처리
-- [ ] `CalendarPage.vue` (배포 프리징 시각화)
-- [ ] 배포 프리징 감지 및 경고 토스트 UI
+- [ ] Notifications 테이블 마이그레이션
+- [ ] Webhook 서비스 (Slack/Jandi 알림 발송)
+- [ ] `/api/webhooks/slack` 엔드포인트
+- [ ] 배포 캘린더 페이지 (`/calendar`)
+- [ ] `CalendarPage` 컴포넌트
 - [ ] Templates 테이블 및 템플릿 선택 UI
-- [ ] `StatsPage` — 차트(Chart.js) + CSV/Excel 다운로드
+- [ ] 통계 페이지 (`/stats`)
+- [ ] `StatsPage` — 차트 렌더링 + CSV/Excel 내보내기
 
 ---
 
@@ -928,16 +959,18 @@ VITE_APP_TITLE=TMS - 업무 관리 시스템
 
 ### 10.2 보안
 
-- 비밀번호: `bcrypt(salt rounds=12)` 해싱 저장
-- JWT: Access Token **1시간**, Refresh Token **7일**
-- API Rate Limiting: IP당 분당 **100 요청** 제한
-- SQL Injection 방지: TypeORM Parameterized Query 사용
+- 비밀번호: `bcryptjs` (salt rounds=12) 해싱 저장
+- JWT/Session: NextAuth.js 기본 토큰 (Access Token **1시간**, Refresh Token **7일**)
+- API Rate Limiting: IP당 분당 **100 요청** 제한 (middleware 구현)
+- SQL Injection 방지: Prisma Parameterized Query 자동 처리
+- CORS: 같은 도메인(Next.js 서버)이므로 보안 강화
 
 ### 10.3 확장성
 
-- Docker Compose로 환경 표준화 (dev / prod 분리)
-- Webhook 발송은 **Bull 큐**로 분리하여 서버 부하 방지
-- DB 인덱스 설계로 **1만 건 이상** 데이터에서도 안정적 조회
+- Docker Compose로 개발/프로덕션 환경 표준화
+- Webhook 발송은 비동기 처리 (Promise.all() 또는 Upstash 활용)
+- Prisma 인덱스 설계로 **1만 건 이상** 데이터에서도 안정적 조회
+- Vercel에 배포시 자동 스케일링
 
 ---
 
