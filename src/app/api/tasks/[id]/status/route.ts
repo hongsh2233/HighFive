@@ -8,13 +8,14 @@ const validStatuses = ['ASSIGNED', 'PROGRESS', 'REVIEW', 'QA', 'DONE'];
 // PATCH /api/tasks/[id]/status - 업무 상태 변경
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error, session } = await requireAuth(req);
+    const { error } = await requireAuth(req);
     if (error) return error;
 
-    const taskId = parseInt(params.id);
+    const { id } = await params;
+    const taskId = parseInt(id);
     if (isNaN(taskId)) {
       return errorResponse('유효하지 않은 업무 ID입니다.', 400, 'VALID_400');
     }

@@ -5,13 +5,14 @@ import { requireAuth, successResponse, errorResponse, parseRmsNo } from '@/lib/u
 // GET /api/tasks/[id] - 업무 상세 조회
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error, session } = await requireAuth(req);
+    const { error } = await requireAuth(req);
     if (error) return error;
 
-    const taskId = parseInt(params.id);
+    const { id } = await params;
+    const taskId = parseInt(id);
     if (isNaN(taskId)) {
       return errorResponse('유효하지 않은 업무 ID입니다.', 400, 'VALID_400');
     }
@@ -39,7 +40,7 @@ export async function GET(
 // PATCH /api/tasks/[id] - 업무 수정
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { error, session } = await requireAuth(req);
@@ -50,7 +51,8 @@ export async function PATCH(
       return errorResponse('업무를 수정할 권한이 없습니다.', 403, 'AUTH_403');
     }
 
-    const taskId = parseInt(params.id);
+    const { id } = await params;
+    const taskId = parseInt(id);
     if (isNaN(taskId)) {
       return errorResponse('유효하지 않은 업무 ID입니다.', 400, 'VALID_400');
     }
@@ -89,7 +91,7 @@ export async function PATCH(
 // DELETE /api/tasks/[id] - 업무 삭제
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { error, session } = await requireAuth(req);
@@ -100,7 +102,8 @@ export async function DELETE(
       return errorResponse('업무를 삭제할 권한이 없습니다.', 403, 'AUTH_403');
     }
 
-    const taskId = parseInt(params.id);
+    const { id } = await params;
+    const taskId = parseInt(id);
     if (isNaN(taskId)) {
       return errorResponse('유효하지 않은 업무 ID입니다.', 400, 'VALID_400');
     }

@@ -1,7 +1,7 @@
 'use client';
 
 import { Task } from '@/types';
-import styles from './KanbanColumn.module.css';
+
 
 interface KanbanColumnProps {
   title: string;

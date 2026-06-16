@@ -5,7 +5,7 @@ import { requireAuth, successResponse, errorResponse, parseRmsNo } from '@/lib/u
 // GET /api/tasks - 업무 목록 조회
 export async function GET(req: NextRequest) {
   try {
-    const { error, session } = await requireAuth(req);
+    const { error } = await requireAuth(req);
     if (error) return error;
 
     // 쿼리 파라미터 가져오기

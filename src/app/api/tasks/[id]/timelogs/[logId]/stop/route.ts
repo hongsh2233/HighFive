@@ -5,14 +5,15 @@ import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 // PATCH /api/tasks/[id]/timelogs/[logId]/stop - 타이머 종료
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string; logId: string } }
+  { params }: { params: Promise<{ id: string; logId: string }> }
 ) {
   try {
     const { error } = await requireAuth(req);
     if (error) return error;
 
-    const taskId = parseInt(params.id);
-    const logId = parseInt(params.logId);
+    const { id, logId: rawLogId } = await params;
+    const taskId = parseInt(id);
+    const logId = parseInt(rawLogId);
 
     if (isNaN(taskId) || isNaN(logId)) {
       return errorResponse('유효하지 않은 ID입니다.', 400, 'VALID_400');

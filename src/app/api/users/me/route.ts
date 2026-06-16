@@ -7,7 +7,7 @@ import { authOptions } from '@/lib/auth';
 // GET /api/users/me - 내 정보 및 진행 중인 업무
 export async function GET(req: NextRequest) {
   try {
-    const { error, session } = await requireAuth(req);
+    const { error } = await requireAuth(req);
     if (error) return error;
 
     const session2 = await getServerSession(authOptions);

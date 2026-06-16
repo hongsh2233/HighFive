@@ -20,7 +20,7 @@ export function useAuth(requiredRole?: string) {
   }, [status, session, requiredRole, router]);
 
   return {
-    user: session?.user,
+    user: session?.user as any,
     isLoading: status === 'loading',
     isAuthenticated: status === 'authenticated',
     logout: () => signOut({ redirect: true, callbackUrl: '/login' }),

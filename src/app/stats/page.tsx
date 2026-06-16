@@ -35,11 +35,11 @@ interface SummaryData {
 }
 
 export default function StatsPage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading } = useAuth();
   const [workload, setWorkload] = useState<WorkloadData[]>([]);
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [selectedMonth] = useState(new Date());
 
   useEffect(() => {
     const fetchStats = async () => {

@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTimer } from '@/hooks/useTimer';
 import apiClient from '@/lib/api-client';
 import { Task, TimeLog } from '@/types';
 import TaskTimerButton from '@/components/task/TaskTimerButton';
 
-export default function TaskDetailPage({ params }: { params: { id: string } }) {
-  const { user, isLoading: authLoading } = useAuth();
+export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const { isLoading: authLoading } = useAuth();
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,18 +17,18 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
   const [formData, setFormData] = useState({ notes: '' });
   const [timeLogs, setTimeLogs] = useState<TimeLog[]>([]);
   const [totalHours, setTotalHours] = useState(0);
-  const { currentLog } = useTimer(parseInt(params.id));
+  useTimer(parseInt(id));
 
   useEffect(() => {
     const fetchTask = async () => {
       try {
-        const response = await apiClient.get<{ data: Task }>(`/tasks/${params.id}`);
+        const response = await apiClient.get<{ data: Task }>(`/tasks/${id}`);
         setTask(response.data.data);
         setFormData({ notes: response.data.data.notes || '' });
 
         // 타임로그 조회
         const logsResponse = await apiClient.get<{ data: { logs: TimeLog[]; totalHours: number } }>(
-          `/tasks/${params.id}/timelogs`
+          `/tasks/${id}/timelogs`
         );
         setTimeLogs(logsResponse.data.data.logs);
         setTotalHours(logsResponse.data.data.totalHours);
@@ -41,13 +42,13 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
     if (!authLoading) {
       fetchTask();
     }
-  }, [params.id, authLoading]);
+  }, [id, authLoading]);
 
-  const handleTimerUpdated = async (log: TimeLog) => {
+  const handleTimerUpdated = async (_log: TimeLog) => {
     // 타이머 업데이트 후 로그 다시 로드
     try {
       const response = await apiClient.get<{ data: { logs: TimeLog[]; totalHours: number } }>(
-        `/tasks/${params.id}/timelogs`
+        `/tasks/${id}/timelogs`
       );
       setTimeLogs(response.data.data.logs);
       setTotalHours(response.data.data.totalHours);
@@ -275,7 +276,7 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
           <h2 style={{ fontSize: '18px', fontWeight: '700', margin: 0 }}>
             타임로그
           </h2>
-          <TaskTimerButton taskId={parseInt(params.id)} onTimerUpdated={handleTimerUpdated} />
+          <TaskTimerButton taskId={parseInt(id)} onTimerUpdated={handleTimerUpdated} />
         </div>
 
         {/* 총 소요 시간 */}

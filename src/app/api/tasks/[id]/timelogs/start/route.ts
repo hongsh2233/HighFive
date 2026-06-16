@@ -7,13 +7,14 @@ import { authOptions } from '@/lib/auth';
 // POST /api/tasks/[id]/timelogs/start - 타이머 시작
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error, session } = await requireAuth(req);
+    const { error } = await requireAuth(req);
     if (error) return error;
 
-    const taskId = parseInt(params.id);
+    const { id } = await params;
+    const taskId = parseInt(id);
     if (isNaN(taskId)) {
       return errorResponse('유효하지 않은 업무 ID입니다.', 400, 'VALID_400');
     }

@@ -1,19 +1,19 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+
 
 // GET /api/tasks/[id]/timelogs - 타임로그 목록 조회
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { error } = await requireAuth(req);
     if (error) return error;
 
-    const taskId = parseInt(params.id);
+    const { id } = await params;
+    const taskId = parseInt(id);
     if (isNaN(taskId)) {
       return errorResponse('유효하지 않은 업무 ID입니다.', 400, 'VALID_400');
     }

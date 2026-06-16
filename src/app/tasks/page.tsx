@@ -21,7 +21,7 @@ const statusLabels: { [key: string]: string } = {
 };
 
 export default function TaskListPage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading } = useAuth();
   const { tasks, total, page, setPage, limit, loading, error, updateStatus } =
     useTasks();
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -181,7 +181,7 @@ export default function TaskListPage() {
             </tr>
           ) : (
             tasks.map((task) => (
-              <tr key={task.id} style={{ ':hover': { backgroundColor: 'var(--color-primary-light)' } }}>
+              <tr key={task.id}>
                 <td style={tdStyle}>#{task.id}</td>
                 <td style={tdStyle}>{task.title}</td>
                 <td style={tdStyle}>{task.worker?.name || '-'}</td>

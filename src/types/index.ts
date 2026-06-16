@@ -33,6 +33,16 @@ export interface Task {
   notes: string | null;
   createdAt: string;
   updatedAt: string;
+  worker?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  planner?: {
+    id: number;
+    name: string;
+    email: string;
+  };
 }
 
 // TimeLog types

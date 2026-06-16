@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Task } from '@/types';
-import { useTasks } from '@/hooks/useTask';
+import { Task, TaskStatus } from '@/types';
+
 import KanbanColumn from './KanbanColumn';
 import apiClient from '@/lib/api-client';
 
@@ -22,7 +22,6 @@ interface KanbanBoardProps {
 export default function KanbanBoard({ onTaskClick }: KanbanBoardProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
 
   // 업무 목록 로드
   useEffect(() => {
@@ -62,7 +61,6 @@ export default function KanbanBoard({ onTaskClick }: KanbanBoardProps) {
 
   const handleDrop = async (e: React.DragEvent, targetStatus: string) => {
     e.preventDefault();
-    setDragOverStatus(null);
 
     const taskId = parseInt(e.dataTransfer.getData('taskId'));
     const task = tasks.find((t) => t.id === taskId);
@@ -72,7 +70,7 @@ export default function KanbanBoard({ onTaskClick }: KanbanBoardProps) {
     // 낙관적 업데이트
     setTasks(
       tasks.map((t) =>
-        t.id === taskId ? { ...t, status: targetStatus } : t
+        t.id === taskId ? { ...t, status: targetStatus as TaskStatus } : t
       )
     );
 

@@ -35,19 +35,7 @@ export default function DashboardPage() {
     fontSize: '14px',
   };
 
-  const gridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-    gap: 'var(--space-6)',
-  };
 
-  const cardStyle: React.CSSProperties = {
-    backgroundColor: 'var(--color-white)',
-    padding: 'var(--space-4)',
-    borderRadius: '8px',
-    border: '1px solid var(--color-gray-300)',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-  };
 
   const emptyStateStyle: React.CSSProperties = {
     textAlign: 'center',

@@ -1,15 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Task } from '@/types';
 import KanbanBoard from '@/components/kanban/KanbanBoard';
 
 export default function KanbanPage() {
-  const { user, isLoading } = useAuth();
+  const { isLoading } = useAuth();
   const router = useRouter();
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
 
   const handleTaskClick = (task: Task) => {
     router.push(`/tasks/${task.id}`);

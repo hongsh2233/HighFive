@@ -20,7 +20,7 @@ interface CalendarData {
 }
 
 export default function CalendarPage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading } = useAuth();
   const [data, setData] = useState<CalendarData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());

@@ -26,8 +26,6 @@ export default function UsersPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editRole, setEditRole] = useState('');
 
   // 사용자 목록 조회
   const fetchUsers = async () => {
@@ -74,16 +72,7 @@ export default function UsersPage() {
     }
   };
 
-  const handleRoleChange = async (userId: number, newRole: string) => {
-    try {
-      // TODO: API 엔드포인트 구현 필요
-      setMessage({ type: 'success', text: '역할이 변경되었습니다.' });
-      setEditingId(null);
-      await fetchUsers();
-    } catch (err) {
-      setMessage({ type: 'error', text: '역할 변경에 실패했습니다.' });
-    }
-  };
+
 
   const containerStyle: React.CSSProperties = {
     padding: 'var(--space-8)',
@@ -219,16 +208,7 @@ export default function UsersPage() {
     };
   };
 
-  const actionButtonStyle: React.CSSProperties = {
-    padding: '4px 8px',
-    marginRight: '4px',
-    backgroundColor: 'transparent',
-    border: '1px solid var(--color-gray-300)',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px',
-    fontWeight: '500',
-  };
+
 
   return (
     <div style={containerStyle}>
