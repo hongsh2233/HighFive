@@ -104,11 +104,58 @@ function buildJandiMessage(payload: WebhookPayload) {
   };
 }
 
+// 카카오톡 알림 발송
+export async function sendKakaoNotification(payload: WebhookPayload) {
+  const webhookUrl = process.env.KAKAO_WEBHOOK_URL;
+  if (!webhookUrl) {
+    console.warn('KAKAO_WEBHOOK_URL not configured');
+    return;
+  }
+
+  try {
+    const message = buildKakaoMessage(payload);
+    await axios.post(webhookUrl, message);
+    console.log(`✅ Kakao notification sent for task ${payload.taskId}`);
+  } catch (err) {
+    console.error('❌ Failed to send Kakao notification:', err);
+  }
+}
+
+// 카카오톡 메시지 포맷
+function buildKakaoMessage(payload: WebhookPayload) {
+  const statusEmoji: { [key: string]: string } = {
+    ASSIGNED: '📋',
+    PROGRESS: '🔄',
+    REVIEW: '👀',
+    QA: '✅',
+    DONE: '✔️',
+  };
+
+  const statusText: { [key: string]: string } = {
+    ASSIGNED: '배정됨',
+    PROGRESS: '진행중',
+    REVIEW: '검수 요청',
+    QA: 'QA 중',
+    DONE: '완료',
+  };
+
+  return {
+    object_type: 'text',
+    text: `${statusEmoji[payload.status] || '📝'} [${statusText[payload.status]}] ${payload.taskTitle}\n\n담당자: ${payload.workerName}\n기획자: ${payload.plannerName}\n\n${payload.taskUrl}`,
+    link: {
+      web_url: payload.taskUrl,
+      mobile_web_url: payload.taskUrl,
+    },
+    button_title: '업무 상세 보기',
+  };
+}
+
 // 상태 변경 시 알림 발송
 export async function notifyStatusChange(payload: WebhookPayload) {
-  // Slack과 Jandi 동시에 발송 (비동기)
+  // Slack, Jandi, 카카오톡 동시에 발송 (비동기)
   Promise.all([
     sendSlackNotification(payload),
     sendJandiNotification(payload),
+    sendKakaoNotification(payload),
   ]).catch((err) => console.error('Webhook notification error:', err));
 }
