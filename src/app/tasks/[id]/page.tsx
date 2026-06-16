@@ -1,0 +1,258 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import apiClient from '@/lib/api-client';
+import { Task } from '@/types';
+
+export default function TaskDetailPage({ params }: { params: { id: string } }) {
+  const { user, isLoading: authLoading } = useAuth();
+  const [task, setTask] = useState<Task | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [formData, setFormData] = useState({ notes: '' });
+
+  useEffect(() => {
+    const fetchTask = async () => {
+      try {
+        const response = await apiClient.get<{ data: Task }>(`/tasks/${params.id}`);
+        setTask(response.data.data);
+        setFormData({ notes: response.data.data.notes || '' });
+      } catch (err: any) {
+        setError(err.message || '업무 조회 실패');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!authLoading) {
+      fetchTask();
+    }
+  }, [params.id, authLoading]);
+
+  const handleSave = async () => {
+    if (!task) return;
+    try {
+      const response = await apiClient.patch<{ data: Task }>(`/tasks/${task.id}`, formData);
+      setTask(response.data.data);
+      setEditing(false);
+    } catch (err) {
+      setError('저장 실패');
+      console.error(err);
+    }
+  };
+
+  if (authLoading || loading) {
+    return <div style={{ padding: 'var(--space-8)' }}>로딩 중...</div>;
+  }
+
+  if (error || !task) {
+    return (
+      <div style={{ padding: 'var(--space-8)' }}>
+        <p style={{ color: 'var(--color-danger)' }}>{error || '업무를 찾을 수 없습니다.'}</p>
+      </div>
+    );
+  }
+
+  const containerStyle: React.CSSProperties = {
+    padding: 'var(--space-8)',
+    maxWidth: '1000px',
+    margin: '0 auto',
+  };
+
+  const cardStyle: React.CSSProperties = {
+    backgroundColor: 'var(--color-white)',
+    padding: 'var(--space-6)',
+    borderRadius: '8px',
+    border: '1px solid var(--color-gray-300)',
+    marginBottom: 'var(--space-6)',
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: '12px',
+    fontWeight: '600',
+    color: 'var(--color-gray-600)',
+    textTransform: 'uppercase',
+    marginBottom: 'var(--space-1)',
+  };
+
+  const valueStyle: React.CSSProperties = {
+    fontSize: '16px',
+    fontWeight: '600',
+    marginBottom: 'var(--space-4)',
+  };
+
+  const gridStyle: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: 'var(--space-4)',
+    marginBottom: 'var(--space-6)',
+  };
+
+  const statusColors: { [key: string]: { bg: string; text: string } } = {
+    ASSIGNED: { bg: '#DBEAFE', text: '#1E40AF' },
+    PROGRESS: { bg: '#FEF3C7', text: '#92400E' },
+    REVIEW: { bg: '#EDE9FE', text: '#5B21B6' },
+    QA: { bg: '#CFFAFE', text: '#155E75' },
+    DONE: { bg: '#D1FAE5', text: '#065F46' },
+  };
+
+  const statusLabels: { [key: string]: string } = {
+    ASSIGNED: '배정됨',
+    PROGRESS: '진행중',
+    REVIEW: '검수',
+    QA: 'QA',
+    DONE: '완료',
+  };
+
+  const badgeStyle = {
+    display: 'inline-block',
+    padding: 'var(--space-1) var(--space-2)',
+    backgroundColor: statusColors[task.status]?.bg || '#E5E7EB',
+    color: statusColors[task.status]?.text || '#374151',
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: '600',
+  };
+
+  const buttonStyle: React.CSSProperties = {
+    padding: 'var(--space-2) var(--space-4)',
+    backgroundColor: 'var(--color-primary)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: '600',
+    marginRight: 'var(--space-2)',
+  };
+
+  const textareaStyle: React.CSSProperties = {
+    width: '100%',
+    padding: 'var(--space-3)',
+    border: '1px solid var(--color-gray-300)',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontFamily: 'inherit',
+    resize: 'vertical',
+    minHeight: '120px',
+    boxSizing: 'border-box',
+  };
+
+  return (
+    <div style={containerStyle}>
+      <div style={{ marginBottom: 'var(--space-8)' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: 'var(--space-2)' }}>
+          {task.title}
+        </h1>
+        <p style={{ color: 'var(--color-gray-600)', fontSize: '14px' }}>
+          업무 #{task.id}
+          {task.rmsNo && ` · ${task.rmsNo}`}
+        </p>
+      </div>
+
+      {error && (
+        <div
+          style={{
+            padding: 'var(--space-3)',
+            backgroundColor: '#FEF2F2',
+            border: '1px solid var(--color-danger)',
+            borderRadius: '6px',
+            color: '#7F1D1D',
+            marginBottom: 'var(--space-4)',
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      {/* 기본 정보 */}
+      <div style={cardStyle}>
+        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
+          기본 정보
+        </h2>
+
+        <div style={gridStyle}>
+          <div>
+            <p style={labelStyle}>상태</p>
+            <div style={badgeStyle}>{statusLabels[task.status]}</div>
+          </div>
+
+          <div>
+            <p style={labelStyle}>담당자</p>
+            <p style={valueStyle}>{task.worker?.name || '-'}</p>
+          </div>
+
+          <div>
+            <p style={labelStyle}>기획자</p>
+            <p style={valueStyle}>{task.planner?.name || '-'}</p>
+          </div>
+
+          <div>
+            <p style={labelStyle}>목표일</p>
+            <p style={valueStyle}>
+              {task.targetDate ? new Date(task.targetDate).toLocaleDateString('ko-KR') : '-'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 메모 */}
+      <div style={cardStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '700' }}>메모</h2>
+          {!editing && (
+            <button
+              onClick={() => setEditing(true)}
+              style={{ ...buttonStyle, backgroundColor: 'var(--color-gray-600)' }}
+            >
+              수정
+            </button>
+          )}
+        </div>
+
+        {editing ? (
+          <div>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              style={textareaStyle}
+              placeholder="메모를 입력하세요..."
+            />
+            <div style={{ marginTop: 'var(--space-4)' }}>
+              <button onClick={handleSave} style={buttonStyle}>
+                저장
+              </button>
+              <button
+                onClick={() => {
+                  setEditing(false);
+                  setFormData({ notes: task.notes || '' });
+                }}
+                style={{
+                  ...buttonStyle,
+                  backgroundColor: 'var(--color-gray-600)',
+                }}
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p style={{ color: 'var(--color-gray-600)', whiteSpace: 'pre-wrap' }}>
+            {task.notes || '메모가 없습니다.'}
+          </p>
+        )}
+      </div>
+
+      {/* 타임로그 (향후 추가) */}
+      <div style={cardStyle}>
+        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
+          타임로그
+        </h2>
+        <p style={{ color: 'var(--color-gray-600)', fontSize: '14px' }}>
+          타이머 기능은 Phase 2에서 추가됩니다.
+        </p>
+      </div>
+    </div>
+  );
+}
