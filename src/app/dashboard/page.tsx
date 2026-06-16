@@ -1,0 +1,105 @@
+'use client';
+
+import { useAuth } from '@/hooks/useAuth';
+
+export default function DashboardPage() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div style={{ padding: 'var(--space-8)', textAlign: 'center' }}>
+        로딩 중...
+      </div>
+    );
+  }
+
+  const containerStyle: React.CSSProperties = {
+    padding: 'var(--space-8)',
+    maxWidth: '1440px',
+    margin: '0 auto',
+  };
+
+  const headerStyle: React.CSSProperties = {
+    marginBottom: 'var(--space-8)',
+  };
+
+  const titleStyle: React.CSSProperties = {
+    fontSize: '28px',
+    fontWeight: '700',
+    marginBottom: 'var(--space-2)',
+  };
+
+  const subtitleStyle: React.CSSProperties = {
+    color: 'var(--color-gray-600)',
+    fontSize: '14px',
+  };
+
+  const gridStyle: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+    gap: 'var(--space-6)',
+  };
+
+  const cardStyle: React.CSSProperties = {
+    backgroundColor: 'var(--color-white)',
+    padding: 'var(--space-4)',
+    borderRadius: '8px',
+    border: '1px solid var(--color-gray-300)',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+  };
+
+  const emptyStateStyle: React.CSSProperties = {
+    textAlign: 'center',
+    padding: 'var(--space-12)',
+    backgroundColor: 'var(--color-white)',
+    borderRadius: '8px',
+    border: '1px solid var(--color-gray-300)',
+  };
+
+  const emptyIconStyle: React.CSSProperties = {
+    fontSize: '48px',
+    marginBottom: 'var(--space-4)',
+  };
+
+  return (
+    <div style={containerStyle}>
+      <div style={headerStyle}>
+        <h1 style={titleStyle}>
+          안녕하세요, {user?.name}님
+        </h1>
+        <p style={subtitleStyle}>
+          {user?.role === 'ADMIN' && '관리자'}
+          {user?.role === 'PLANNER' && '기획자'}
+          {user?.role === 'WORKER' && '작업자'}
+          {' '}계정입니다.
+        </p>
+      </div>
+
+      <div style={{ marginBottom: 'var(--space-8)' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
+          나의 업무
+        </h2>
+        <div style={emptyStateStyle}>
+          <div style={emptyIconStyle}>📋</div>
+          <p style={{ fontSize: '16px', fontWeight: '600', marginBottom: 'var(--space-2)' }}>
+            배정된 업무가 없습니다.
+          </p>
+          <p style={{ fontSize: '13px', color: 'var(--color-gray-600)' }}>
+            기획자에게 업무 배정을 요청하거나 새 업무를 만들어보세요.
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
+          최근 활동
+        </h2>
+        <div style={emptyStateStyle}>
+          <p style={{ fontSize: '13px', color: 'var(--color-gray-600)' }}>
+            최근 활동 기록이 없습니다.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
