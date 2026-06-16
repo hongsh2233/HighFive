@@ -78,7 +78,6 @@ export default function KanbanColumn({
     border: `2px solid ${statusColors[status]}`,
     cursor: 'pointer',
     transition: 'all 0.2s ease',
-    draggable: true,
   };
 
   const cardTitleStyle: React.CSSProperties = {
