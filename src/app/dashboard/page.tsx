@@ -72,6 +72,20 @@ export default function DashboardPage() {
     fontWeight: '600',
     fontSize: '14px',
     marginRight: 'var(--space-2)',
+    marginBottom: 'var(--space-2)',
+  };
+
+  const plannerLinkStyle: React.CSSProperties = {
+    display: 'inline-block',
+    padding: 'var(--space-3) var(--space-4)',
+    backgroundColor: '#F59E0B',
+    color: 'white',
+    textDecoration: 'none',
+    borderRadius: '6px',
+    fontWeight: '600',
+    fontSize: '14px',
+    marginRight: 'var(--space-2)',
+    marginBottom: 'var(--space-2)',
   };
 
   return (
@@ -96,6 +110,28 @@ export default function DashboardPage() {
           <div>
             <Link href="/users" style={adminLinkStyle}>
               👥 팀 사용자 관리
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {user?.role === 'PLANNER' && (
+        <div style={{ marginBottom: 'var(--space-8)' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
+            기획자 기능
+          </h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+            <Link href="/tasks" style={plannerLinkStyle}>
+              📋 업무 배정
+            </Link>
+            <Link href="/stats" style={plannerLinkStyle}>
+              📊 통계 조회
+            </Link>
+            <Link href="/tasks/kanban" style={plannerLinkStyle}>
+              📈 칸반 보드
+            </Link>
+            <Link href="/calendar" style={plannerLinkStyle}>
+              📅 캘린더
             </Link>
           </div>
         </div>
