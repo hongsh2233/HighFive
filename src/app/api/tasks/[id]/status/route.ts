@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
+import { notifyStatusChange } from '@/lib/webhook';
 
 const validStatuses = ['ASSIGNED', 'PROGRESS', 'REVIEW', 'QA', 'DONE'];
 
@@ -44,11 +45,15 @@ export async function PATCH(
       },
     });
 
-    // TODO: Webhook 발송 (Slack 알림 등)
-    if (status === 'REVIEW') {
-      // 기획자에게 검수 요청 알림 발송
-      console.log(`[Webhook] 검수 요청: ${task.id} - ${task.title}`);
-    }
+    // Webhook 발송 (비동기)
+    notifyStatusChange({
+      taskId: updatedTask.id,
+      taskTitle: updatedTask.title,
+      status: status,
+      workerName: updatedTask.worker?.name || '-',
+      plannerName: updatedTask.planner?.name || '-',
+      taskUrl: `${process.env.NEXTAUTH_URL}/tasks/${updatedTask.id}`,
+    });
 
     return successResponse(updatedTask, '업무 상태가 변경되었습니다.');
   } catch (err) {
