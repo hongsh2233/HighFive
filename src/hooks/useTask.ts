@@ -4,11 +4,11 @@ import { useState, useCallback, useEffect } from 'react';
 import apiClient from '@/lib/api-client';
 import { Task, PaginatedResponse } from '@/types';
 
-export function useTasks() {
+export function useTasks(options?: { limit?: number }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(options?.limit ?? 10);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

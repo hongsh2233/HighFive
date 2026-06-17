@@ -6,16 +6,17 @@ import { useAuth } from '@/hooks/useAuth';
 import { signOut } from 'next-auth/react';
 import { useState } from 'react';
 
+type MenuName = 'task' | 'admin' | 'profile' | null;
+
 export default function AppHeader() {
   const router = useRouter();
   const { user } = useAuth();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<MenuName>(null);
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
     router.push('/login');
   };
-
 
   const headerStyle: React.CSSProperties = {
     backgroundColor: 'var(--color-primary)',
@@ -72,7 +73,7 @@ export default function AppHeader() {
     backgroundColor: 'white',
     border: '1px solid var(--color-gray-300)',
     borderRadius: '6px',
-    marginTop: 'var(--space-2)',
+    marginTop: '4px',
     minWidth: '200px',
     boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
     zIndex: 1000,
@@ -85,34 +86,32 @@ export default function AppHeader() {
     textDecoration: 'none',
     fontSize: '14px',
     borderBottom: '1px solid var(--color-gray-100)',
-    transition: 'background-color 0.2s',
+  };
+
+  const submenuItemLastStyle: React.CSSProperties = {
+    ...submenuItemStyle,
+    borderBottom: 'none',
   };
 
   return (
     <header style={headerStyle}>
       <div style={containerStyle}>
-        {/* Logo */}
         <Link href="/dashboard" style={logoStyle}>
           📊 TMS
         </Link>
 
-        {/* Navigation */}
         <nav style={navStyle}>
           {/* 업무 메뉴 */}
-          <div style={menuGroupStyle}>
-            <button
-              style={menuButtonStyle}
-              onMouseEnter={() => setMenuOpen(true)}
-              onMouseLeave={() => setMenuOpen(false)}
-            >
+          <div
+            style={menuGroupStyle}
+            onMouseEnter={() => setOpenMenu('task')}
+            onMouseLeave={() => setOpenMenu(null)}
+          >
+            <button style={menuButtonStyle}>
               📋 업무 ▼
             </button>
-            {menuOpen && (
-              <div
-                style={submenuStyle}
-                onMouseEnter={() => setMenuOpen(true)}
-                onMouseLeave={() => setMenuOpen(false)}
-              >
+            {openMenu === 'task' && (
+              <div style={submenuStyle}>
                 <Link href="/tasks/create" style={submenuItemStyle}>
                   ➕ 업무 등록
                 </Link>
@@ -122,7 +121,7 @@ export default function AppHeader() {
                 <Link href="/tasks/kanban" style={submenuItemStyle}>
                   📈 칸반 보드
                 </Link>
-                <Link href="/calendar" style={submenuItemStyle}>
+                <Link href="/calendar" style={submenuItemLastStyle}>
                   📅 캘린더
                 </Link>
               </div>
@@ -131,26 +130,22 @@ export default function AppHeader() {
 
           {/* 관리 메뉴 */}
           {['ADMIN', 'PLANNER'].includes(user?.role || '') && (
-            <div style={menuGroupStyle}>
-              <button
-                style={menuButtonStyle}
-                onMouseEnter={() => setMenuOpen(true)}
-                onMouseLeave={() => setMenuOpen(false)}
-              >
+            <div
+              style={menuGroupStyle}
+              onMouseEnter={() => setOpenMenu('admin')}
+              onMouseLeave={() => setOpenMenu(null)}
+            >
+              <button style={menuButtonStyle}>
                 ⚙️ 관리 ▼
               </button>
-              {menuOpen && (
-                <div
-                  style={submenuStyle}
-                  onMouseEnter={() => setMenuOpen(true)}
-                  onMouseLeave={() => setMenuOpen(false)}
-                >
+              {openMenu === 'admin' && (
+                <div style={submenuStyle}>
                   {user?.role === 'ADMIN' && (
                     <Link href="/users" style={submenuItemStyle}>
                       👥 사용자 관리
                     </Link>
                   )}
-                  <Link href="/stats" style={submenuItemStyle}>
+                  <Link href="/stats" style={submenuItemLastStyle}>
                     📊 통계
                   </Link>
                 </div>
@@ -159,24 +154,20 @@ export default function AppHeader() {
           )}
 
           {/* 프로필/로그아웃 */}
-          <div style={menuGroupStyle}>
-            <button
-              style={menuButtonStyle}
-              onMouseEnter={() => setMenuOpen(true)}
-              onMouseLeave={() => setMenuOpen(false)}
-            >
+          <div
+            style={menuGroupStyle}
+            onMouseEnter={() => setOpenMenu('profile')}
+            onMouseLeave={() => setOpenMenu(null)}
+          >
+            <button style={menuButtonStyle}>
               👤 {user?.name} ▼
             </button>
-            {menuOpen && (
-              <div
-                style={submenuStyle}
-                onMouseEnter={() => setMenuOpen(true)}
-                onMouseLeave={() => setMenuOpen(false)}
-              >
+            {openMenu === 'profile' && (
+              <div style={submenuStyle}>
                 <button
                   onClick={handleLogout}
                   style={{
-                    ...submenuItemStyle,
+                    ...submenuItemLastStyle,
                     background: 'none',
                     border: 'none',
                     width: '100%',
