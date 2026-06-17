@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { signOut } from 'next-auth/react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 type MenuName = 'task' | 'admin' | 'profile' | null;
 
@@ -12,6 +12,20 @@ export default function AppHeader() {
   const router = useRouter();
   const { user } = useAuth();
   const [openMenu, setOpenMenu] = useState<MenuName>(null);
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMenuEnter = (menu: MenuName) => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+    }
+    setOpenMenu(menu);
+  };
+
+  const handleMenuLeave = () => {
+    closeTimeoutRef.current = setTimeout(() => {
+      setOpenMenu(null);
+    }, 150);
+  };
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
@@ -105,8 +119,8 @@ export default function AppHeader() {
           {/* 업무 메뉴 */}
           <div
             style={menuGroupStyle}
-            onMouseEnter={() => setOpenMenu('task')}
-            onMouseLeave={() => setOpenMenu(null)}
+            onMouseEnter={() => handleMenuEnter('task')}
+            onMouseLeave={handleMenuLeave}
           >
             <button style={menuButtonStyle}>
               📋 업무 ▼
@@ -133,8 +147,8 @@ export default function AppHeader() {
           {['ADMIN', 'PLANNER'].includes(user?.role || '') && (
             <div
               style={menuGroupStyle}
-              onMouseEnter={() => setOpenMenu('admin')}
-              onMouseLeave={() => setOpenMenu(null)}
+              onMouseEnter={() => handleMenuEnter('admin')}
+              onMouseLeave={handleMenuLeave}
             >
               <button style={menuButtonStyle}>
                 ⚙️ 관리 ▼
@@ -157,8 +171,8 @@ export default function AppHeader() {
           {/* 프로필/로그아웃 */}
           <div
             style={menuGroupStyle}
-            onMouseEnter={() => setOpenMenu('profile')}
-            onMouseLeave={() => setOpenMenu(null)}
+            onMouseEnter={() => handleMenuEnter('profile')}
+            onMouseLeave={handleMenuLeave}
           >
             <button style={menuButtonStyle}>
               👤 {user?.name} ▼
