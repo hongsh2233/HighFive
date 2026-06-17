@@ -43,6 +43,7 @@ export interface Task {
     name: string;
     email: string;
   };
+  timeLogs?: TimeLog[];
 }
 
 // TimeLog types

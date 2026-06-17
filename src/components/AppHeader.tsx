@@ -73,10 +73,11 @@ export default function AppHeader() {
     backgroundColor: 'white',
     border: '1px solid var(--color-gray-300)',
     borderRadius: '6px',
-    marginTop: '4px',
+    marginTop: '8px',
     minWidth: '200px',
     boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
     zIndex: 1000,
+    animation: 'fadeIn 0.15s ease-out',
   };
 
   const submenuItemStyle: React.CSSProperties = {
