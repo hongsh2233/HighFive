@@ -129,6 +129,11 @@ export default function DashboardPage() {
         <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
           나의 업무
         </h2>
+        <div style={{ marginBottom: 'var(--space-4)' }}>
+          <Link href="/tasks" style={plannerLinkStyle}>
+            ➕ 업무 등록
+          </Link>
+        </div>
         <div style={emptyStateStyle}>
           <div style={emptyIconStyle}>📋</div>
           <p style={{ fontSize: '16px', fontWeight: '600', marginBottom: 'var(--space-2)' }}>
