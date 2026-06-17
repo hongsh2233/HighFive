@@ -130,7 +130,7 @@ export default function DashboardPage() {
           나의 업무
         </h2>
         <div style={{ marginBottom: 'var(--space-4)' }}>
-          <Link href="/tasks" style={plannerLinkStyle}>
+          <Link href="/tasks/create" style={plannerLinkStyle}>
             ➕ 업무 등록
           </Link>
         </div>
