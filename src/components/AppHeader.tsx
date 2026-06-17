@@ -165,6 +165,9 @@ export default function AppHeader() {
             </button>
             {openMenu === 'profile' && (
               <div style={submenuStyle}>
+                <Link href="/profile/password" style={submenuItemStyle}>
+                  🔐 비밀번호 변경
+                </Link>
                 <button
                   onClick={handleLogout}
                   style={{
