@@ -17,6 +17,7 @@ export default function TaskCreatePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [createdDate] = useState(new Date().toLocaleDateString('ko-KR'));
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -175,6 +176,20 @@ export default function TaskCreatePage() {
       {success && <div style={successStyle}>{success}</div>}
 
       <form onSubmit={handleSubmit}>
+        <div style={formGroupStyle}>
+          <label style={labelStyle}>등록일자</label>
+          <div style={{
+            padding: 'var(--space-3)',
+            backgroundColor: 'var(--color-gray-100)',
+            borderRadius: '6px',
+            fontSize: '14px',
+            color: 'var(--color-gray-900)',
+            fontWeight: '500',
+          }}>
+            📅 {createdDate} (자동)
+          </div>
+        </div>
+
         <div style={formGroupStyle}>
           <label style={labelStyle}>업무 제목 *</label>
           <input
