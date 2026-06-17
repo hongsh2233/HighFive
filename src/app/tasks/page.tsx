@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTasks } from '@/hooks/useTask';
+import axios from 'axios';
 
 const statusColors: { [key: string]: { bg: string; text: string } } = {
   ASSIGNED: { bg: '#DBEAFE', text: '#1E40AF' },
@@ -25,6 +26,21 @@ export default function TaskListPage() {
   const { tasks, total, page, setPage, limit, loading, error, updateStatus } =
     useTasks();
   const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedWorker, setSelectedWorker] = useState('');
+  const [workers, setWorkers] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchWorkers();
+  }, []);
+
+  const fetchWorkers = async () => {
+    try {
+      const res = await axios.get('/api/users?role=WORKER');
+      setWorkers(res.data.data || []);
+    } catch (err) {
+      console.error('Failed to fetch workers:', err);
+    }
+  };
 
   if (authLoading) {
     return <div style={{ padding: 'var(--space-8)' }}>로딩 중...</div>;
@@ -117,6 +133,15 @@ export default function TaskListPage() {
     fontSize: '14px',
   };
 
+  // 필터링 로직
+  let filteredTasks = tasks;
+  if (selectedStatus) {
+    filteredTasks = filteredTasks.filter((task) => task.status === selectedStatus);
+  }
+  if (selectedWorker) {
+    filteredTasks = filteredTasks.filter((task) => task.workerId === parseInt(selectedWorker));
+  }
+
   const totalPages = Math.ceil(total / limit);
 
   return (
@@ -137,6 +162,19 @@ export default function TaskListPage() {
           <option value="REVIEW">검수</option>
           <option value="QA">QA</option>
           <option value="DONE">완료</option>
+        </select>
+
+        <select
+          value={selectedWorker}
+          onChange={(e) => setSelectedWorker(e.target.value)}
+          style={selectStyle}
+        >
+          <option value="">모든 담당자</option>
+          {workers.map((worker) => (
+            <option key={worker.id} value={worker.id}>
+              {worker.name}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -173,14 +211,14 @@ export default function TaskListPage() {
                 로딩 중...
               </td>
             </tr>
-          ) : tasks.length === 0 ? (
+          ) : filteredTasks.length === 0 ? (
             <tr>
               <td colSpan={6} style={{ ...tdStyle, textAlign: 'center' }}>
-                업무가 없습니다.
+                {tasks.length === 0 ? '업무가 없습니다.' : '필터 조건에 맞는 업무가 없습니다.'}
               </td>
             </tr>
           ) : (
-            tasks.map((task) => (
+            filteredTasks.map((task) => (
               <tr key={task.id}>
                 <td style={tdStyle}>#{task.id}</td>
                 <td style={tdStyle}>{task.title}</td>

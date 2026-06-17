@@ -52,7 +52,7 @@ export default function TaskCreatePage() {
         return;
       }
 
-      const res = await axios.post('/api/tasks', {
+      await axios.post('/api/tasks', {
         title: title.trim(),
         workerId: parseInt(workerId),
         plannerId: user?.id,
