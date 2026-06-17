@@ -7,9 +7,9 @@ async function main() {
   console.log('🌱 Seeding database...');
 
   // 샘플 사용자 생성
-  const adminPassword = await bcryptjs.hash('0000', 12);
-  const plannerPassword = await bcryptjs.hash('planner123', 12);
-  const workerPassword = await bcryptjs.hash('worker123', 12);
+  const adminPassword = await bcryptjs.hash('Admin@2024!', 12);
+  const plannerPassword = await bcryptjs.hash('Planner@2024!', 12);
+  const workerPassword = await bcryptjs.hash('Worker@2024!', 12);
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin@admin.co.kr' },
