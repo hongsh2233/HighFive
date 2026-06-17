@@ -6,23 +6,16 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // 이미 데이터가 있으면 스킵
-  const existingUser = await prisma.user.findFirst();
-  if (existingUser) {
-    console.log('✅ Database already seeded. Skipping...');
-    return;
-  }
-
   // 샘플 사용자 생성
-  const adminPassword = await bcryptjs.hash('admin123', 12);
+  const adminPassword = await bcryptjs.hash('0000', 12);
   const plannerPassword = await bcryptjs.hash('planner123', 12);
   const workerPassword = await bcryptjs.hash('worker123', 12);
 
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@example.com' },
-    update: {},
+    where: { email: 'admin@admin.co.kr' },
+    update: { passwordHash: adminPassword },
     create: {
-      email: 'admin@example.com',
+      email: 'admin@admin.co.kr',
       name: '관리자',
       role: 'ADMIN',
       passwordHash: adminPassword,
