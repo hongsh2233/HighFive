@@ -1,14 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { signOut } from 'next-auth/react';
 import { useState } from 'react';
 
 export default function AppHeader() {
   const router = useRouter();
-  const pathname = usePathname();
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -17,7 +16,6 @@ export default function AppHeader() {
     router.push('/login');
   };
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
   const headerStyle: React.CSSProperties = {
     backgroundColor: 'var(--color-primary)',
@@ -88,16 +86,6 @@ export default function AppHeader() {
     fontSize: '14px',
     borderBottom: '1px solid var(--color-gray-100)',
     transition: 'background-color 0.2s',
-  };
-
-  const profileButtonStyle: React.CSSProperties = {
-    background: 'rgba(255,255,255,0.2)',
-    border: 'none',
-    color: 'white',
-    padding: 'var(--space-2) var(--space-3)',
-    borderRadius: '6px',
-    fontSize: '14px',
-    cursor: 'pointer',
   };
 
   return (

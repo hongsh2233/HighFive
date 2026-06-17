@@ -75,7 +75,7 @@ export default function TaskCreatePage() {
     return <div style={{ padding: 'var(--space-8)' }}>로딩 중...</div>;
   }
 
-  if (!user || !['ADMIN', 'PLANNER'].includes(user.role)) {
+  if (!user || !['ADMIN', 'PLANNER'].includes(user.role ?? '')) {
     return (
       <div style={{ padding: 'var(--space-8)' }}>
         <p style={{ color: 'var(--color-danger)' }}>업무를 등록할 권한이 없습니다.</p>
