@@ -18,6 +18,7 @@ export default function TaskCreatePage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [createdDate] = useState(new Date().toLocaleDateString('ko-KR'));
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -61,7 +62,7 @@ export default function TaskCreatePage() {
         notes: notes.trim(),
       });
 
-      setSuccess('업무가 등록되었습니다.');
+      setSuccess('업무가 성공적으로 등록되었습니다.');
       setTimeout(() => {
         router.push('/tasks');
       }, 1000);
@@ -73,43 +74,58 @@ export default function TaskCreatePage() {
   };
 
   if (authLoading) {
-    return <div style={{ padding: 'var(--space-8)' }}>로딩 중...</div>;
+    return (
+      <div style={{ padding: 'var(--space-16)', textAlign: 'center', color: 'var(--color-gray-500)' }}>
+        로딩 중...
+      </div>
+    );
   }
 
   if (!user || !['ADMIN', 'PLANNER'].includes(user.role ?? '')) {
     return (
-      <div style={{ padding: 'var(--space-8)' }}>
-        <p style={{ color: 'var(--color-danger)' }}>업무를 등록할 권한이 없습니다.</p>
+      <div style={{ padding: 'var(--space-8)', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
+        <p style={{ color: 'var(--color-danger)', fontWeight: '600' }}>업무를 등록할 권한이 없습니다.</p>
       </div>
     );
   }
 
   const containerStyle: React.CSSProperties = {
-    padding: 'var(--space-8)',
-    maxWidth: '600px',
+    padding: 'var(--space-8) var(--space-4)',
+    maxWidth: '640px',
     margin: '0 auto',
+    animation: 'fadeIn 0.3s ease-out',
+  };
+
+  const cardStyle: React.CSSProperties = {
+    backgroundColor: 'var(--color-white)',
+    padding: 'var(--space-6) var(--space-8)',
+    borderRadius: '16px',
+    border: '1px solid var(--color-gray-200)',
+    boxShadow: 'var(--shadow-md)',
   };
 
   const formGroupStyle: React.CSSProperties = {
-    marginBottom: 'var(--space-6)',
+    marginBottom: 'var(--space-5)',
   };
 
   const labelStyle: React.CSSProperties = {
     display: 'block',
-    marginBottom: 'var(--space-2)',
-    fontSize: '14px',
-    fontWeight: '600',
-    color: 'var(--color-gray-900)',
+    marginBottom: '8px',
+    fontSize: '13px',
+    fontWeight: '700',
+    color: 'var(--color-gray-700)',
   };
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    padding: 'var(--space-3)',
+    padding: '11px 14px',
     border: '1px solid var(--color-gray-300)',
-    borderRadius: '6px',
+    borderRadius: '8px',
     fontSize: '14px',
     fontFamily: 'inherit',
     boxSizing: 'border-box',
+    outline: 'none',
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
   };
 
   const textareaStyle: React.CSSProperties = {
@@ -121,147 +137,198 @@ export default function TaskCreatePage() {
   const buttonGroupStyle: React.CSSProperties = {
     display: 'flex',
     gap: 'var(--space-3)',
+    marginTop: 'var(--space-6)',
   };
 
   const submitButtonStyle: React.CSSProperties = {
     flex: 1,
-    padding: 'var(--space-3)',
+    padding: '12px 20px',
     backgroundColor: 'var(--color-primary)',
     color: 'white',
     border: 'none',
-    borderRadius: '6px',
+    borderRadius: '8px',
     fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer',
     opacity: loading ? 0.6 : 1,
+    boxShadow: '0 4px 12px rgba(88, 80, 236, 0.2)',
+    transition: 'all 0.2s',
   };
 
   const cancelButtonStyle: React.CSSProperties = {
     flex: 1,
-    padding: 'var(--space-3)',
+    padding: '12px 20px',
     backgroundColor: 'var(--color-gray-200)',
-    color: 'var(--color-gray-900)',
+    color: 'var(--color-gray-800)',
     border: 'none',
-    borderRadius: '6px',
+    borderRadius: '8px',
     fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer',
+    transition: 'all 0.2s',
   };
 
   const errorStyle: React.CSSProperties = {
-    padding: 'var(--space-3)',
-    backgroundColor: '#FEF2F2',
-    border: '1px solid var(--color-danger)',
-    borderRadius: '6px',
-    color: '#7F1D1D',
-    marginBottom: 'var(--space-4)',
+    padding: '12px 16px',
+    backgroundColor: 'var(--color-danger-light)',
+    border: '1px solid rgba(239, 68, 68, 0.2)',
+    borderRadius: '8px',
+    color: 'var(--color-danger-dark)',
+    marginBottom: 'var(--space-5)',
+    fontSize: '13px',
+    fontWeight: 600,
   };
 
   const successStyle: React.CSSProperties = {
-    padding: 'var(--space-3)',
-    backgroundColor: '#D1FAE5',
-    border: '1px solid #10B981',
-    borderRadius: '6px',
-    color: '#065F46',
-    marginBottom: 'var(--space-4)',
+    padding: '12px 16px',
+    backgroundColor: 'var(--color-success-light)',
+    border: '1px solid rgba(16, 185, 129, 0.2)',
+    borderRadius: '8px',
+    color: 'var(--color-success-dark)',
+    marginBottom: 'var(--space-5)',
+    fontSize: '13px',
+    fontWeight: 600,
+  };
+
+  const getCustomInputStyle = (name: string): React.CSSProperties => {
+    const isFocused = focusedInput === name;
+    return {
+      ...inputStyle,
+      borderColor: isFocused ? 'var(--color-primary)' : 'var(--color-gray-300)',
+      boxShadow: isFocused ? '0 0 0 3px var(--color-primary-glow), var(--shadow-sm)' : 'var(--shadow-sm)',
+    };
+  };
+
+  const getCustomTextareaStyle = (name: string): React.CSSProperties => {
+    const isFocused = focusedInput === name;
+    return {
+      ...textareaStyle,
+      borderColor: isFocused ? 'var(--color-primary)' : 'var(--color-gray-300)',
+      boxShadow: isFocused ? '0 0 0 3px var(--color-primary-glow), var(--shadow-sm)' : 'var(--shadow-sm)',
+    };
   };
 
   return (
     <div style={containerStyle}>
-      <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: 'var(--space-8)' }}>
+      <h1 style={{ fontSize: '26px', fontWeight: '800', marginBottom: 'var(--space-6)', letterSpacing: '-0.02em' }}>
         업무 등록
       </h1>
 
-      {error && <div style={errorStyle}>{error}</div>}
-      {success && <div style={successStyle}>{success}</div>}
+      {error && <div style={errorStyle}>⚠️ {error}</div>}
+      {success && <div style={successStyle}>✅ {success}</div>}
 
-      <form onSubmit={handleSubmit}>
-        <div style={formGroupStyle}>
-          <label style={labelStyle}>등록일자</label>
-          <div style={{
-            padding: 'var(--space-3)',
-            backgroundColor: 'var(--color-gray-100)',
-            borderRadius: '6px',
-            fontSize: '14px',
-            color: 'var(--color-gray-900)',
-            fontWeight: '500',
-          }}>
-            📅 {createdDate} (자동)
+      <div style={cardStyle}>
+        <form onSubmit={handleSubmit}>
+          <div style={formGroupStyle}>
+            <label style={labelStyle}>등록일자</label>
+            <div style={{
+              padding: '12px 16px',
+              backgroundColor: 'var(--color-gray-100)',
+              borderRadius: '8px',
+              fontSize: '14px',
+              color: 'var(--color-gray-700)',
+              fontWeight: '600',
+              border: '1px solid var(--color-gray-200)',
+            }}>
+              📅 {createdDate} <span style={{ fontSize: '11px', color: 'var(--color-gray-500)', marginLeft: '6px' }}>(자동 설정)</span>
+            </div>
           </div>
-        </div>
 
-        <div style={formGroupStyle}>
-          <label style={labelStyle}>업무 제목 *</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="예: [DCBGIT-39085] 구글 원 2TB 상품 정보 수정"
-            style={inputStyle}
-            disabled={loading}
-          />
-          <p style={{ fontSize: '12px', color: 'var(--color-gray-600)', marginTop: 'var(--space-2)' }}>
-            선택사항: [RMS-NO] 형식으로 입력하면 자동으로 분류됩니다.
-          </p>
-        </div>
+          <div style={formGroupStyle}>
+            <label style={labelStyle}>업무 제목 *</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onFocus={() => setFocusedInput('title')}
+              onBlur={() => setFocusedInput(null)}
+              placeholder="예: [RMS-39085] 구글 정보 수정"
+              style={getCustomInputStyle('title')}
+              disabled={loading}
+              required
+            />
+            <p style={{ fontSize: '12px', color: 'var(--color-gray-500)', marginTop: '6px', fontWeight: 500 }}>
+              💡 [RMS-NO] 형식으로 작성하면 자동으로 태스크 번호로 분류 처리됩니다.
+            </p>
+          </div>
 
-        <div style={formGroupStyle}>
-          <label style={labelStyle}>담당자 *</label>
-          <select
-            value={workerId}
-            onChange={(e) => setWorkerId(e.target.value)}
-            style={inputStyle}
-            disabled={loading}
-          >
-            <option value="">담당자를 선택해주세요.</option>
-            {workers.map((worker) => (
-              <option key={worker.id} value={worker.id}>
-                {worker.name} ({worker.email})
-              </option>
-            ))}
-          </select>
-        </div>
+          <div style={formGroupStyle}>
+            <label style={labelStyle}>담당자 배정 *</label>
+            <select
+              value={workerId}
+              onChange={(e) => setWorkerId(e.target.value)}
+              onFocus={() => setFocusedInput('workerId')}
+              onBlur={() => setFocusedInput(null)}
+              style={getCustomInputStyle('workerId')}
+              disabled={loading}
+              required
+            >
+              <option value="">담당 팀원을 지정해주세요.</option>
+              {workers.map((worker) => (
+                <option key={worker.id} value={worker.id}>
+                  {worker.name} ({worker.email})
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div style={formGroupStyle}>
-          <label style={labelStyle}>목표일</label>
-          <input
-            type="date"
-            value={targetDate}
-            onChange={(e) => setTargetDate(e.target.value)}
-            style={inputStyle}
-            disabled={loading}
-          />
-        </div>
+          <div style={formGroupStyle}>
+            <label style={labelStyle}>완료 목표일</label>
+            <input
+              type="date"
+              value={targetDate}
+              onChange={(e) => setTargetDate(e.target.value)}
+              onFocus={() => setFocusedInput('targetDate')}
+              onBlur={() => setFocusedInput(null)}
+              style={getCustomInputStyle('targetDate')}
+              disabled={loading}
+            />
+          </div>
 
-        <div style={formGroupStyle}>
-          <label style={labelStyle}>설명 및 노트</label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="업무에 대한 상세 설명을 입력해주세요."
-            style={textareaStyle}
-            disabled={loading}
-          />
-        </div>
+          <div style={formGroupStyle}>
+            <label style={labelStyle}>설명 및 노트</label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              onFocus={() => setFocusedInput('notes')}
+              onBlur={() => setFocusedInput(null)}
+              placeholder="업무 진행 시 참고할 가이드나 세부 노트를 입력하세요."
+              style={getCustomTextareaStyle('notes')}
+              disabled={loading}
+            />
+          </div>
 
-        <div style={buttonGroupStyle}>
-          <button
-            type="submit"
-            style={submitButtonStyle}
-            disabled={loading}
-          >
-            {loading ? '등록 중...' : '등록'}
-          </button>
-          <button
-            type="button"
-            style={cancelButtonStyle}
-            onClick={() => router.push('/tasks')}
-            disabled={loading}
-          >
-            취소
-          </button>
-        </div>
-      </form>
+          <div style={buttonGroupStyle}>
+            <button
+              type="submit"
+              style={submitButtonStyle}
+              disabled={loading}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(88, 80, 236, 0.35)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(88, 80, 236, 0.2)';
+              }}
+            >
+              {loading ? '등록하는 중...' : '업무 등록하기'}
+            </button>
+            <button
+              type="button"
+              style={cancelButtonStyle}
+              onClick={() => router.push('/tasks')}
+              disabled={loading}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-gray-300)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-gray-200)'; }}
+            >
+              취소
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

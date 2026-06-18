@@ -3,9 +3,26 @@
 import { useEffect, useState, use } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTimer } from '@/hooks/useTimer';
+import Link from 'next/link';
 import apiClient from '@/lib/api-client';
 import { Task, TimeLog } from '@/types';
 import TaskTimerButton from '@/components/task/TaskTimerButton';
+
+const statusColors: { [key: string]: { bg: string; text: string; border: string } } = {
+  ASSIGNED: { bg: 'var(--color-primary-light)', text: 'var(--color-primary)', border: 'rgba(88, 80, 236, 0.2)' },
+  PROGRESS: { bg: 'var(--color-warning-light)', text: 'var(--color-warning-dark)', border: 'rgba(245, 158, 11, 0.2)' },
+  REVIEW: { bg: 'var(--color-info-light)', text: 'var(--color-info-dark)', border: 'rgba(6, 182, 212, 0.2)' },
+  QA: { bg: 'var(--color-danger-light)', text: 'var(--color-danger-dark)', border: 'rgba(239, 68, 68, 0.2)' },
+  DONE: { bg: 'var(--color-success-light)', text: 'var(--color-success-dark)', border: 'rgba(16, 185, 129, 0.2)' },
+};
+
+const statusLabels: { [key: string]: string } = {
+  ASSIGNED: '배정됨',
+  PROGRESS: '진행중',
+  REVIEW: '검수',
+  QA: 'QA',
+  DONE: '완료',
+};
 
 export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -17,6 +34,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [formData, setFormData] = useState({ notes: '' });
   const [timeLogs, setTimeLogs] = useState<TimeLog[]>([]);
   const [totalHours, setTotalHours] = useState(0);
+  const [isFocused, setIsFocused] = useState(false);
   useTimer(parseInt(id));
 
   useEffect(() => {
@@ -70,154 +88,165 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   };
 
   if (authLoading || loading) {
-    return <div style={{ padding: 'var(--space-8)' }}>로딩 중...</div>;
+    return (
+      <div style={{ padding: 'var(--space-16)', textAlign: 'center', color: 'var(--color-gray-500)' }}>
+        로딩 중...
+      </div>
+    );
   }
 
   if (error || !task) {
     return (
-      <div style={{ padding: 'var(--space-8)' }}>
-        <p style={{ color: 'var(--color-danger)' }}>{error || '업무를 찾을 수 없습니다.'}</p>
+      <div style={{ padding: 'var(--space-8)', maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
+        <p style={{ color: 'var(--color-danger)', fontWeight: '600' }}>⚠️ {error || '업무를 찾을 수 없습니다.'}</p>
       </div>
     );
   }
 
   const containerStyle: React.CSSProperties = {
-    padding: 'var(--space-8)',
+    padding: 'var(--space-8) var(--space-4)',
     maxWidth: '1000px',
     margin: '0 auto',
+    animation: 'fadeIn 0.3s ease-out',
   };
 
   const cardStyle: React.CSSProperties = {
     backgroundColor: 'var(--color-white)',
-    padding: 'var(--space-6)',
-    borderRadius: '8px',
-    border: '1px solid var(--color-gray-300)',
+    padding: 'var(--space-6) var(--space-8)',
+    borderRadius: '16px',
+    border: '1px solid var(--color-gray-200)',
+    boxShadow: 'var(--shadow-sm)',
     marginBottom: 'var(--space-6)',
   };
 
   const labelStyle: React.CSSProperties = {
     fontSize: '12px',
-    fontWeight: '600',
-    color: 'var(--color-gray-600)',
+    fontWeight: '700',
+    color: 'var(--color-gray-500)',
     textTransform: 'uppercase',
-    marginBottom: 'var(--space-1)',
+    marginBottom: '6px',
+    letterSpacing: '0.05em',
   };
 
   const valueStyle: React.CSSProperties = {
-    fontSize: '16px',
+    fontSize: '15px',
     fontWeight: '600',
-    marginBottom: 'var(--space-4)',
+    color: 'var(--color-gray-900)',
+    margin: 0,
   };
 
   const gridStyle: React.CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 'var(--space-4)',
-    marginBottom: 'var(--space-6)',
-  };
-
-  const statusColors: { [key: string]: { bg: string; text: string } } = {
-    ASSIGNED: { bg: '#DBEAFE', text: '#1E40AF' },
-    PROGRESS: { bg: '#FEF3C7', text: '#92400E' },
-    REVIEW: { bg: '#EDE9FE', text: '#5B21B6' },
-    QA: { bg: '#CFFAFE', text: '#155E75' },
-    DONE: { bg: '#D1FAE5', text: '#065F46' },
-  };
-
-  const statusLabels: { [key: string]: string } = {
-    ASSIGNED: '배정됨',
-    PROGRESS: '진행중',
-    REVIEW: '검수',
-    QA: 'QA',
-    DONE: '완료',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+    gap: 'var(--space-6) var(--space-4)',
   };
 
   const badgeStyle = {
-    display: 'inline-block',
-    padding: 'var(--space-1) var(--space-2)',
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '4px 10px',
     backgroundColor: statusColors[task.status]?.bg || '#E5E7EB',
     color: statusColors[task.status]?.text || '#374151',
-    borderRadius: '4px',
+    border: `1px solid ${statusColors[task.status]?.border || 'transparent'}`,
+    borderRadius: '20px',
     fontSize: '12px',
-    fontWeight: '600',
+    fontWeight: '700',
   };
 
   const buttonStyle: React.CSSProperties = {
-    padding: 'var(--space-2) var(--space-4)',
+    padding: '8px 16px',
     backgroundColor: 'var(--color-primary)',
     color: 'white',
     border: 'none',
-    borderRadius: '6px',
+    borderRadius: '8px',
     cursor: 'pointer',
     fontWeight: '600',
-    marginRight: 'var(--space-2)',
+    fontSize: '13px',
+    transition: 'all 0.15s ease',
   };
 
   const textareaStyle: React.CSSProperties = {
     width: '100%',
-    padding: 'var(--space-3)',
-    border: '1px solid var(--color-gray-300)',
-    borderRadius: '6px',
+    padding: '12px 14px',
+    border: isFocused ? '1px solid var(--color-primary)' : '1px solid var(--color-gray-300)',
+    boxShadow: isFocused ? '0 0 0 3px var(--color-primary-glow), var(--shadow-sm)' : 'var(--shadow-sm)',
+    borderRadius: '8px',
     fontSize: '14px',
     fontFamily: 'inherit',
     resize: 'vertical',
     minHeight: '120px',
     boxSizing: 'border-box',
+    outline: 'none',
+    color: 'var(--color-gray-900)',
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
   };
 
   return (
     <div style={containerStyle}>
-      <div style={{ marginBottom: 'var(--space-8)' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: 'var(--space-2)' }}>
-          {task.title}
-        </h1>
-        <p style={{ color: 'var(--color-gray-600)', fontSize: '14px' }}>
-          업무 #{task.id}
-          {task.rmsNo && ` · ${task.rmsNo}`}
-        </p>
-      </div>
-
-      {error && (
-        <div
-          style={{
-            padding: 'var(--space-3)',
-            backgroundColor: '#FEF2F2',
-            border: '1px solid var(--color-danger)',
-            borderRadius: '6px',
-            color: '#7F1D1D',
-            marginBottom: 'var(--space-4)',
-          }}
-        >
-          {error}
+      {/* 타이틀 및 네비바 */}
+      <div style={{ marginBottom: 'var(--space-6)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1 style={{ fontSize: '26px', fontWeight: '800', marginBottom: 'var(--space-1)', letterSpacing: '-0.02em' }}>
+            {task.title}
+          </h1>
+          <p style={{ color: 'var(--color-gray-500)', fontSize: '13px', margin: 0, fontWeight: 500 }}>
+            💼 업무 ID: <span style={{ fontWeight: '700', color: 'var(--color-gray-700)' }}>#{task.id}</span>
+            {task.rmsNo && (
+              <>
+                <span style={{ margin: '0 8px', color: 'var(--color-gray-300)' }}>|</span>
+                🏷️ RMS 태그: <span style={{ fontWeight: '700', color: 'var(--color-primary)', backgroundColor: 'var(--color-primary-light)', padding: '2px 6px', borderRadius: '4px' }}>{task.rmsNo}</span>
+              </>
+            )}
+          </p>
         </div>
-      )}
+        <Link
+          href="/tasks"
+          style={{
+            fontSize: '13px',
+            fontWeight: '600',
+            color: 'var(--color-gray-600)',
+            textDecoration: 'none',
+            padding: '8px 14px',
+            borderRadius: '8px',
+            backgroundColor: 'var(--color-gray-100)',
+            border: '1px solid var(--color-gray-200)',
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-gray-200)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-gray-100)'; }}
+        >
+          목록으로
+        </Link>
+      </div>
 
       {/* 기본 정보 */}
       <div style={cardStyle}>
-        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
-          기본 정보
+        <h2 style={{ fontSize: '16px', fontWeight: '800', marginBottom: 'var(--space-6)', letterSpacing: '-0.01em', borderBottom: '1px solid var(--color-gray-100)', paddingBottom: '12px' }}>
+          📌 기본 정보
         </h2>
 
         <div style={gridStyle}>
           <div>
-            <p style={labelStyle}>상태</p>
-            <div style={badgeStyle}>{statusLabels[task.status]}</div>
+            <p style={labelStyle}>진행 상태</p>
+            <div style={{ marginTop: '2px' }}>
+              <span style={badgeStyle}>{statusLabels[task.status]}</span>
+            </div>
           </div>
 
           <div>
-            <p style={labelStyle}>담당자</p>
+            <p style={labelStyle}>담당 작업자</p>
             <p style={valueStyle}>{task.worker?.name || '-'}</p>
           </div>
 
           <div>
-            <p style={labelStyle}>기획자</p>
+            <p style={labelStyle}>담당 기획자</p>
             <p style={valueStyle}>{task.planner?.name || '-'}</p>
           </div>
 
           <div>
-            <p style={labelStyle}>목표일</p>
-            <p style={valueStyle}>
-              {task.targetDate ? new Date(task.targetDate).toLocaleDateString('ko-KR') : '-'}
+            <p style={labelStyle}>목표 완료일</p>
+            <p style={{ ...valueStyle, color: 'var(--color-gray-700)' }}>
+              {task.targetDate ? `📅 ${new Date(task.targetDate).toLocaleDateString('ko-KR')}` : '-'}
             </p>
           </div>
         </div>
@@ -225,14 +254,16 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
       {/* 메모 */}
       <div style={cardStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '700' }}>메모</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)', borderBottom: '1px solid var(--color-gray-100)', paddingBottom: '12px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: '800', margin: 0, letterSpacing: '-0.01em' }}>📝 메모 및 진행상황</h2>
           {!editing && (
             <button
               onClick={() => setEditing(true)}
-              style={{ ...buttonStyle, backgroundColor: 'var(--color-gray-600)' }}
+              style={{ ...buttonStyle, backgroundColor: 'var(--color-gray-200)', color: 'var(--color-gray-800)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-gray-300)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-gray-200)'; }}
             >
-              수정
+              수정하기
             </button>
           )}
         </div>
@@ -242,11 +273,18 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
               style={textareaStyle}
-              placeholder="메모를 입력하세요..."
+              placeholder="여기에 진행 내용 및 이슈 노트를 자유롭게 적어두세요..."
             />
-            <div style={{ marginTop: 'var(--space-4)' }}>
-              <button onClick={handleSave} style={buttonStyle}>
+            <div style={{ marginTop: 'var(--space-4)', display: 'flex', gap: '8px' }}>
+              <button
+                onClick={handleSave}
+                style={buttonStyle}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-primary)'; }}
+              >
                 저장
               </button>
               <button
@@ -256,96 +294,118 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                 }}
                 style={{
                   ...buttonStyle,
-                  backgroundColor: 'var(--color-gray-600)',
+                  backgroundColor: 'var(--color-gray-200)',
+                  color: 'var(--color-gray-800)',
                 }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-gray-300)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-gray-200)'; }}
               >
                 취소
               </button>
             </div>
           </div>
         ) : (
-          <p style={{ color: 'var(--color-gray-600)', whiteSpace: 'pre-wrap' }}>
-            {task.notes || '메모가 없습니다.'}
-          </p>
+          <div style={{
+            color: 'var(--color-gray-700)',
+            whiteSpace: 'pre-wrap',
+            fontSize: '14px',
+            backgroundColor: 'var(--color-gray-50)',
+            padding: '14px 18px',
+            borderRadius: '8px',
+            border: '1px solid var(--color-gray-200)',
+            lineHeight: '1.7',
+          }}>
+            {task.notes || '작성된 메모가 없습니다.'}
+          </div>
         )}
       </div>
 
       {/* 타임로그 */}
       <div style={cardStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '700', margin: 0 }}>
-            타임로그
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)', borderBottom: '1px solid var(--color-gray-100)', paddingBottom: '12px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: '800', margin: 0, letterSpacing: '-0.01em' }}>
+            ⏱️ 업무 타임로그
           </h2>
           <TaskTimerButton taskId={parseInt(id)} onTimerUpdated={handleTimerUpdated} />
         </div>
 
-        {/* 총 소요 시간 */}
+        {/* 총 소요 시간 배너 */}
         <div style={{
-          padding: 'var(--space-3)',
+          padding: '16px 20px',
           backgroundColor: 'var(--color-primary-light)',
-          borderRadius: '6px',
-          marginBottom: 'var(--space-4)',
+          borderRadius: '12px',
+          marginBottom: 'var(--space-6)',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          border: '1px solid rgba(88, 80, 236, 0.1)',
         }}>
-          <span style={{ fontWeight: '600', color: 'var(--color-primary-dark)' }}>
-            총 소요 시간
+          <span style={{ fontWeight: '700', color: 'var(--color-primary-dark)', fontSize: '14px' }}>
+            누적 작업 공수
           </span>
-          <span style={{ fontSize: '20px', fontWeight: '700', color: 'var(--color-primary)' }}>
+          <span style={{ fontSize: '22px', fontWeight: '800', color: 'var(--color-primary)', letterSpacing: '-0.02em' }}>
             {totalHours.toFixed(2)} 시간
           </span>
         </div>
 
         {/* 타임로그 목록 */}
         {timeLogs.length === 0 ? (
-          <p style={{ color: 'var(--color-gray-600)', fontSize: '14px' }}>
-            아직 타이머 기록이 없습니다.
-          </p>
+          <div style={{
+            textAlign: 'center',
+            padding: 'var(--space-6)',
+            color: 'var(--color-gray-500)',
+            backgroundColor: 'var(--color-gray-50)',
+            borderRadius: '8px',
+            border: '1px dashed var(--color-gray-300)',
+            fontSize: '13px',
+          }}>
+            등록된 타이머 세션이 없습니다. 우측 상단의 [▶ 시작] 버튼을 눌러 작업을 시작해 보세요.
+          </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid var(--color-gray-200)' }}>
             <table style={{
               width: '100%',
               fontSize: '13px',
-              borderCollapse: 'collapse'
+              borderCollapse: 'collapse',
+              backgroundColor: 'white',
             }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-gray-300)' }}>
-                  <th style={{ textAlign: 'left', padding: 'var(--space-2)', fontWeight: '600' }}>
-                    시작 시간
+                <tr style={{ backgroundColor: 'var(--color-gray-50)', borderBottom: '1px solid var(--color-gray-200)' }}>
+                  <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '600', color: 'var(--color-gray-600)' }}>
+                    시작 시점
                   </th>
-                  <th style={{ textAlign: 'left', padding: 'var(--space-2)', fontWeight: '600' }}>
-                    종료 시간
+                  <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '600', color: 'var(--color-gray-600)' }}>
+                    종료 시점
                   </th>
-                  <th style={{ textAlign: 'left', padding: 'var(--space-2)', fontWeight: '600' }}>
-                    소요 시간
+                  <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '600', color: 'var(--color-gray-600)' }}>
+                    기본 측정
                   </th>
-                  <th style={{ textAlign: 'left', padding: 'var(--space-2)', fontWeight: '600' }}>
-                    보정
+                  <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '600', color: 'var(--color-gray-600)' }}>
+                    보정치
                   </th>
-                  <th style={{ textAlign: 'left', padding: 'var(--space-2)', fontWeight: '600' }}>
-                    최종 시간
+                  <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '600', color: 'var(--color-gray-600)' }}>
+                    최종 공수
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {timeLogs.map((log) => (
                   <tr key={log.id} style={{ borderBottom: '1px solid var(--color-gray-100)' }}>
-                    <td style={{ padding: 'var(--space-2)' }}>
+                    <td style={{ padding: '12px 14px', color: 'var(--color-gray-800)', fontWeight: 500 }}>
                       {new Date(log.startTime).toLocaleString('ko-KR')}
                     </td>
-                    <td style={{ padding: 'var(--space-2)' }}>
+                    <td style={{ padding: '12px 14px', color: log.endTime ? 'var(--color-gray-800)' : 'var(--color-danger)', fontWeight: log.endTime ? 500 : 700 }}>
                       {log.endTime
                         ? new Date(log.endTime).toLocaleString('ko-KR')
-                        : '진행 중'}
+                        : '🔴 측정 중'}
                     </td>
-                    <td style={{ padding: 'var(--space-2)' }}>
+                    <td style={{ padding: '12px 14px', color: 'var(--color-gray-600)' }}>
                       {log.durationHours?.toFixed(2) || '-'} h
                     </td>
-                    <td style={{ padding: 'var(--space-2)' }}>
-                      {log.adjustedHours > 0 ? '+' : ''}{log.adjustedHours.toFixed(2)} h
+                    <td style={{ padding: '12px 14px', color: log.adjustedHours > 0 ? 'var(--color-success)' : log.adjustedHours < 0 ? 'var(--color-danger)' : 'var(--color-gray-500)', fontWeight: '600' }}>
+                      {log.adjustedHours > 0 ? `+${log.adjustedHours.toFixed(2)}` : `${log.adjustedHours.toFixed(2)}`} h
                     </td>
-                    <td style={{ padding: 'var(--space-2)', fontWeight: '600' }}>
+                    <td style={{ padding: '12px 14px', fontWeight: '700', color: 'var(--color-primary)' }}>
                       {log.finalHours?.toFixed(2) || '-'} h
                     </td>
                   </tr>
