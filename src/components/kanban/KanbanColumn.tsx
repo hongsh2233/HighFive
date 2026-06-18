@@ -2,6 +2,7 @@
 
 import { Task } from '@/types';
 
+
 interface KanbanColumnProps {
   title: string;
   status: string;
@@ -13,13 +14,12 @@ interface KanbanColumnProps {
 }
 
 const statusColors: { [key: string]: string } = {
-  ASSIGNED: 'var(--color-primary)',
-  PROGRESS: 'var(--color-warning)',
-  REVIEW: 'var(--color-info)',
-  QA: 'var(--color-danger)',
-  DONE: 'var(--color-success)',
+  ASSIGNED: '#DBEAFE',
+  PROGRESS: '#FEF3C7',
+  REVIEW: '#EDE9FE',
+  QA: '#CFFAFE',
+  DONE: '#D1FAE5',
 };
-
 
 export default function KanbanColumn({
   title,
@@ -31,37 +31,35 @@ export default function KanbanColumn({
   onTaskClick,
 }: KanbanColumnProps) {
   const columnStyle: React.CSSProperties = {
-    minWidth: '290px',
-    maxWidth: '330px',
-    backgroundColor: '#F1F5F9',
-    borderRadius: '14px',
-    padding: '16px 12px',
+    minWidth: '280px',
+    maxWidth: '320px',
+    backgroundColor: '#F3F4F6',
+    borderRadius: '10px',
+    padding: 'var(--space-3)',
     display: 'flex',
     flexDirection: 'column',
-    border: '1px solid var(--color-gray-200)',
-    maxHeight: 'calc(100vh - 180px)',
   };
 
   const headerStyle: React.CSSProperties = {
-    fontSize: '14px',
+    fontSize: '13px',
     fontWeight: '700',
-    color: 'var(--color-gray-900)',
-    marginBottom: '14px',
+    color: '#374151',
+    marginBottom: 'var(--space-3)',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '0 4px',
+    gap: 'var(--space-2)',
   };
 
   const badgeStyle: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '2px 8px',
-    backgroundColor: 'var(--color-gray-300)',
-    color: 'var(--color-gray-800)',
-    borderRadius: '20px',
-    fontSize: '11px',
+    width: '24px',
+    height: '24px',
+    backgroundColor: 'var(--color-primary)',
+    color: 'white',
+    borderRadius: '50%',
+    fontSize: '12px',
     fontWeight: '700',
   };
 
@@ -70,57 +68,36 @@ export default function KanbanColumn({
     minHeight: '200px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '12px',
-    overflowY: 'auto',
-    padding: '2px',
+    gap: 'var(--space-3)',
   };
 
-  const getCardStyle = (taskStatus: string): React.CSSProperties => {
-    return {
-      backgroundColor: 'white',
-      padding: '14px 16px',
-      borderRadius: '10px',
-      border: '1px solid var(--color-gray-200)',
-      borderLeft: `4px solid ${statusColors[taskStatus] || 'var(--color-primary)'}`,
-      cursor: 'pointer',
-      boxShadow: 'var(--shadow-sm)',
-      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-    };
+  const cardStyle: React.CSSProperties = {
+    backgroundColor: 'white',
+    padding: 'var(--space-3)',
+    borderRadius: '8px',
+    border: `2px solid ${statusColors[status]}`,
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
   };
 
   const cardTitleStyle: React.CSSProperties = {
     fontSize: '14px',
-    fontWeight: '700',
-    color: 'var(--color-gray-900)',
-    marginBottom: '8px',
+    fontWeight: '600',
+    marginBottom: 'var(--space-2)',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-    letterSpacing: '-0.01em',
   };
 
   const cardMetaStyle: React.CSSProperties = {
     fontSize: '12px',
-    color: 'var(--color-gray-500)',
-    fontWeight: 500,
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
+    color: 'var(--color-gray-600)',
   };
 
   return (
     <div style={columnStyle}>
       <div style={headerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{
-            display: 'inline-block',
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            backgroundColor: statusColors[status],
-          }}/>
-          <span>{title}</span>
-        </div>
+        <span>{title}</span>
         <div style={badgeStyle}>{tasks.length}</div>
       </div>
 
@@ -136,21 +113,18 @@ export default function KanbanColumn({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              height: '100px',
+              height: '100%',
               color: 'var(--color-gray-400)',
               fontSize: '13px',
-              border: '2px dashed var(--color-gray-200)',
-              borderRadius: '10px',
-              backgroundColor: 'rgba(255,255,255,0.4)',
             }}
           >
-            대기 업무 없음
+            업무가 없습니다
           </div>
         ) : (
           tasks.map((task) => (
             <div
               key={task.id}
-              style={getCardStyle(status)}
+              style={cardStyle}
               draggable
               onDragStart={(e) => {
                 e.dataTransfer.effectAllowed = 'move';
@@ -158,36 +132,20 @@ export default function KanbanColumn({
               }}
               onClick={() => onTaskClick(task)}
               onMouseEnter={(e) => {
-                const target = e.currentTarget as HTMLElement;
-                target.style.transform = 'translateY(-2px)';
-                target.style.boxShadow = 'var(--shadow-md)';
-                target.style.borderColor = 'var(--color-gray-300)';
+                (e.currentTarget as HTMLElement).style.boxShadow =
+                  '0 4px 12px rgba(0,0,0,0.10)';
               }}
               onMouseLeave={(e) => {
-                const target = e.currentTarget as HTMLElement;
-                target.style.transform = 'none';
-                target.style.boxShadow = 'var(--shadow-sm)';
-                target.style.borderColor = 'var(--color-gray-200)';
+                (e.currentTarget as HTMLElement).style.boxShadow = 'none';
               }}
             >
-              <div style={cardTitleStyle} title={task.title}>
-                {task.title}
-              </div>
+              <div style={cardTitleStyle}>{task.title}</div>
               <div style={cardMetaStyle}>
-                👤 담당: <span style={{ color: 'var(--color-gray-700)', fontWeight: 600 }}>{task.worker?.name || '-'}</span>
+                담당: {task.worker?.name || '-'}
               </div>
               {task.targetDate && (
-                <div style={{
-                  ...cardMetaStyle,
-                  marginTop: '6px',
-                  backgroundColor: 'var(--color-gray-100)',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  width: 'fit-content',
-                }}>
-                  📅 {new Date(task.targetDate).toLocaleDateString('ko-KR')} 완료 목표
+                <div style={{ ...cardMetaStyle, marginTop: 'var(--space-2)' }}>
+                  {new Date(task.targetDate).toLocaleDateString('ko-KR')}
                 </div>
               )}
             </div>

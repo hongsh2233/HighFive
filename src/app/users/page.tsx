@@ -72,62 +72,50 @@ export default function UsersPage() {
     }
   };
 
+
+
   const containerStyle: React.CSSProperties = {
     padding: 'var(--space-8)',
     maxWidth: '1400px',
     margin: '0 auto',
-    animation: 'fadeIn 0.3s ease-out',
   };
 
   if (authLoading || loading) {
-    return (
-      <div style={{ padding: 'var(--space-16)', textAlign: 'center', color: 'var(--color-gray-500)' }}>
-        로딩 중...
-      </div>
-    );
+    return <div style={containerStyle}>로딩 중...</div>;
   }
 
   if (currentUser?.role !== 'ADMIN') {
-    return (
-      <div style={{ ...containerStyle, textAlign: 'center', color: 'var(--color-danger)', fontWeight: '600' }}>
-        관리자만 접근 가능합니다.
-      </div>
-    );
+    return <div style={containerStyle}>관리자만 접근 가능합니다.</div>;
   }
 
   const headerStyle: React.CSSProperties = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 'var(--space-6)',
+    marginBottom: 'var(--space-8)',
   };
 
   const titleStyle: React.CSSProperties = {
-    fontSize: '26px',
-    fontWeight: '800',
-    margin: 0,
-    letterSpacing: '-0.02em',
+    fontSize: '28px',
+    fontWeight: '700',
   };
 
   const buttonStyle: React.CSSProperties = {
-    padding: '10px 18px',
+    padding: 'var(--space-2) var(--space-4)',
     backgroundColor: 'var(--color-primary)',
     color: 'white',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '6px',
     cursor: 'pointer',
     fontWeight: '600',
-    fontSize: '13px',
-    boxShadow: 'var(--shadow-sm)',
-    transition: 'all 0.15s ease',
+    fontSize: '14px',
   };
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: 'var(--color-white)',
     padding: 'var(--space-6)',
-    borderRadius: '12px',
-    border: '1px solid var(--color-gray-200)',
-    boxShadow: 'var(--shadow-sm)',
+    borderRadius: '8px',
+    border: '1px solid var(--color-gray-300)',
     marginBottom: 'var(--space-6)',
   };
 
@@ -139,17 +127,15 @@ export default function UsersPage() {
   };
 
   const inputStyle: React.CSSProperties = {
-    padding: '10px 14px',
+    padding: 'var(--space-2) var(--space-3)',
     border: '1px solid var(--color-gray-300)',
-    borderRadius: '8px',
+    borderRadius: '6px',
     fontSize: '14px',
-    outline: 'none',
-    transition: 'border-color 0.2s',
+    fontFamily: 'inherit',
   };
 
   const selectStyle: React.CSSProperties = {
     ...inputStyle,
-    cursor: 'pointer',
   };
 
   const submitButtonStyle: React.CSSProperties = {
@@ -159,33 +145,29 @@ export default function UsersPage() {
 
   const cancelButtonStyle: React.CSSProperties = {
     ...buttonStyle,
-    backgroundColor: 'var(--color-gray-200)',
-    color: 'var(--color-gray-800)',
+    backgroundColor: 'var(--color-gray-400)',
   };
 
   const messageStyle: React.CSSProperties = {
-    padding: '12px var(--space-4)',
-    borderRadius: '8px',
-    marginBottom: 'var(--space-6)',
-    fontSize: '13px',
-    fontWeight: '600',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
+    padding: 'var(--space-3) var(--space-4)',
+    borderRadius: '6px',
+    marginBottom: 'var(--space-4)',
+    fontSize: '14px',
+    fontWeight: '500',
   };
 
   const successMessageStyle: React.CSSProperties = {
     ...messageStyle,
-    backgroundColor: 'var(--color-success-light)',
-    color: 'var(--color-success-dark)',
-    border: '1px solid rgba(16, 185, 129, 0.2)',
+    backgroundColor: '#ECFDF5',
+    color: '#065F46',
+    border: '1px solid #D1FAE5',
   };
 
   const errorMessageStyle: React.CSSProperties = {
     ...messageStyle,
-    backgroundColor: 'var(--color-danger-light)',
-    color: 'var(--color-danger-dark)',
-    border: '1px solid rgba(239, 68, 68, 0.2)',
+    backgroundColor: '#FEF2F2',
+    color: '#7F1D1D',
+    border: '1px solid #FEDEDE',
   };
 
   const tableStyle: React.CSSProperties = {
@@ -195,37 +177,38 @@ export default function UsersPage() {
   };
 
   const thStyle: React.CSSProperties = {
-    backgroundColor: 'var(--color-gray-50)',
-    color: 'var(--color-gray-600)',
-    padding: '12px 16px',
+    backgroundColor: 'var(--color-primary-dark)',
+    color: 'white',
+    padding: 'var(--space-3)',
     textAlign: 'left',
     fontWeight: '600',
     fontSize: '12px',
-    borderBottom: '2px solid var(--color-gray-200)',
   };
 
   const tdStyle: React.CSSProperties = {
-    padding: '14px 16px',
+    padding: 'var(--space-3)',
     borderBottom: '1px solid var(--color-gray-100)',
   };
 
   const roleBadgeStyle = (role: string): React.CSSProperties => {
     const colors: { [key: string]: { bg: string; color: string } } = {
-      ADMIN: { bg: 'var(--color-danger-light)', color: 'var(--color-danger-dark)' },
-      PLANNER: { bg: 'var(--color-warning-light)', color: 'var(--color-warning-dark)' },
-      WORKER: { bg: 'var(--color-primary-light)', color: 'var(--color-primary)' },
+      ADMIN: { bg: '#FEE2E2', color: '#991B1B' },
+      PLANNER: { bg: '#FEF3C7', color: '#92400E' },
+      WORKER: { bg: '#DBEAFE', color: '#0C2D6B' },
     };
     const { bg, color } = colors[role] || colors.WORKER;
     return {
       display: 'inline-block',
-      padding: '4px 10px',
+      padding: '4px 8px',
       backgroundColor: bg,
       color,
-      borderRadius: '20px',
-      fontSize: '11px',
-      fontWeight: '700',
+      borderRadius: '4px',
+      fontSize: '12px',
+      fontWeight: '600',
     };
   };
+
+
 
   return (
     <div style={containerStyle}>
@@ -235,8 +218,6 @@ export default function UsersPage() {
           <button
             onClick={() => setShowForm(true)}
             style={buttonStyle}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-primary)'; }}
           >
             ➕ 사용자 초대
           </button>
@@ -245,21 +226,21 @@ export default function UsersPage() {
 
       {message && (
         <div style={message.type === 'success' ? successMessageStyle : errorMessageStyle}>
-          {message.type === 'success' ? '✅' : '⚠️'} {message.text}
+          {message.text}
         </div>
       )}
 
       {/* 초대 폼 */}
       {showForm && (
-        <div style={{ ...sectionStyle, animation: 'fadeIn 0.25s ease-out' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
+        <div style={sectionStyle}>
+          <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
             새 사용자 초대
           </h2>
           <form onSubmit={handleSubmit}>
             <div style={formStyle}>
               <input
                 type="email"
-                placeholder="초대할 사용자 이메일"
+                placeholder="이메일"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 style={inputStyle}
@@ -267,7 +248,7 @@ export default function UsersPage() {
               />
               <input
                 type="text"
-                placeholder="사용자 이름"
+                placeholder="이름"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 style={inputStyle}
@@ -288,17 +269,13 @@ export default function UsersPage() {
                 type="submit"
                 style={submitButtonStyle}
                 disabled={submitting}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-primary)'; }}
               >
-                {submitting ? '초대 중...' : '초대메일 발송'}
+                {submitting ? '초대 중...' : '초대하기'}
               </button>
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
                 style={cancelButtonStyle}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-gray-300)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-gray-200)'; }}
               >
                 취소
               </button>
@@ -309,10 +286,10 @@ export default function UsersPage() {
 
       {/* 사용자 목록 */}
       <div style={sectionStyle}>
-        <h2 style={{ fontSize: '16px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
           팀 멤버 ({users.length}명)
         </h2>
-        <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid var(--color-gray-200)' }}>
+        <div style={{ overflowX: 'auto' }}>
           <table style={tableStyle}>
             <thead>
               <tr>
@@ -327,31 +304,18 @@ export default function UsersPage() {
             <tbody>
               {users.map((u) => (
                 <tr key={u.id}>
-                  <td style={{ ...tdStyle, fontWeight: '500', color: 'var(--color-gray-900)' }}>{u.email}</td>
-                  <td style={{ ...tdStyle, fontWeight: '500' }}>{u.name}</td>
+                  <td style={tdStyle}>{u.email}</td>
+                  <td style={tdStyle}>{u.name}</td>
                   <td style={tdStyle}>
                     <span style={roleBadgeStyle(u.role)}>{u.role}</span>
                   </td>
                   <td style={tdStyle}>
-                    <span style={{
-                      color: u.isActive ? 'var(--color-success)' : 'var(--color-danger)',
-                      fontWeight: '600',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                    }}>
-                      <span style={{
-                        display: 'inline-block',
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        backgroundColor: u.isActive ? 'var(--color-success)' : 'var(--color-danger)',
-                      }}/>
+                    <span style={{ color: u.isActive ? '#059669' : '#DC2626', fontWeight: '600' }}>
                       {u.isActive ? '활성' : '비활성'}
                     </span>
                   </td>
-                  <td style={{ ...tdStyle, color: 'var(--color-gray-500)' }}>{new Date(u.createdAt).toLocaleDateString('ko-KR')}</td>
-                  <td style={{ ...tdStyle, color: 'var(--color-gray-500)' }}>
+                  <td style={tdStyle}>{new Date(u.createdAt).toLocaleDateString('ko-KR')}</td>
+                  <td style={tdStyle}>
                     {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString('ko-KR') : '-'}
                   </td>
                 </tr>
@@ -360,8 +324,8 @@ export default function UsersPage() {
           </table>
         </div>
         {users.length === 0 && (
-          <div style={{ padding: 'var(--space-8)', textAlign: 'center', color: 'var(--color-gray-500)' }}>
-            가입한 사용자가 없습니다.
+          <div style={{ padding: 'var(--space-6)', textAlign: 'center', color: 'var(--color-gray-500)' }}>
+            초대된 사용자가 없습니다.
           </div>
         )}
       </div>

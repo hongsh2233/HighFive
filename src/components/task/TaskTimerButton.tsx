@@ -93,23 +93,17 @@ export default function TaskTimerButton({ taskId, onTimerUpdated }: TaskTimerBut
   const isRunning = !!currentLog && !currentLog.endTime;
 
   const buttonStyle: React.CSSProperties = {
-    padding: '8px 18px',
+    padding: 'var(--space-2) var(--space-4)',
     backgroundColor: isRunning ? 'var(--color-danger)' : 'var(--color-primary)',
     color: 'white',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '6px',
     cursor: loading ? 'not-allowed' : 'pointer',
-    fontWeight: '700',
-    fontSize: '13px',
+    fontWeight: '600',
+    fontSize: '14px',
     minWidth: '140px',
     opacity: loading ? 0.6 : 1,
-    boxShadow: isRunning ? '0 0 12px rgba(239, 68, 68, 0.4)' : '0 4px 10px rgba(88, 80, 236, 0.2)',
-    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '6px',
-    animation: isRunning ? 'pulseGlow 2s infinite' : 'none',
+    transition: 'background-color 0.2s',
   };
 
   return (
@@ -119,34 +113,24 @@ export default function TaskTimerButton({ taskId, onTimerUpdated }: TaskTimerBut
       style={buttonStyle}
       onMouseEnter={(e) => {
         if (!loading) {
-          e.currentTarget.style.backgroundColor = isRunning
-            ? 'var(--color-danger-dark)'
+          (e.target as HTMLButtonElement).style.backgroundColor = isRunning
+            ? 'var(--color-danger)'
             : 'var(--color-primary-dark)';
-          e.currentTarget.style.transform = 'translateY(-1px)';
         }
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = isRunning
+        (e.target as HTMLButtonElement).style.backgroundColor = isRunning
           ? 'var(--color-danger)'
           : 'var(--color-primary)';
-        e.currentTarget.style.transform = 'none';
       }}
     >
       {isRunning ? (
         <>
-          <span style={{
-            display: 'inline-block',
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            backgroundColor: 'white',
-            marginRight: '2px',
-          }}/>
           ⏹ {formatTime(elapsed)}
         </>
       ) : (
         <>
-          ▶ 작업 시작
+          ▶ 시작
         </>
       )}
     </button>

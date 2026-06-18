@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Task, TaskStatus } from '@/types';
+
 import KanbanColumn from './KanbanColumn';
 import apiClient from '@/lib/api-client';
 
@@ -90,20 +91,18 @@ export default function KanbanBoard({ onTaskClick }: KanbanBoardProps) {
   };
 
   const containerStyle: React.CSSProperties = {
-    padding: 'var(--space-6) var(--space-8)',
+    padding: 'var(--space-8)',
     display: 'flex',
     gap: 'var(--space-4)',
     overflowX: 'auto',
     backgroundColor: 'var(--color-bg-base)',
-    minHeight: 'calc(100vh - 120px)',
-    alignItems: 'flex-start',
-    animation: 'fadeIn 0.3s ease-out',
+    minHeight: 'calc(100vh - 100px)',
   };
 
   if (loading) {
     return (
-      <div style={{ ...containerStyle, justifyContent: 'center', alignItems: 'center', color: 'var(--color-gray-500)', fontSize: '14px', fontWeight: '500' }}>
-        칸반 보드를 구성하고 있습니다...
+      <div style={{ ...containerStyle, justifyContent: 'center', alignItems: 'center' }}>
+        로딩 중...
       </div>
     );
   }

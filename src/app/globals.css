@@ -1,60 +1,33 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
-/* Color palette & Design System */
+/* Color palette */
 :root {
   /* Primary colors */
-  --color-primary: #5850EC;
-  --color-primary-dark: #4338CA;
-  --color-primary-light: #EEF2FF;
-  --color-primary-glow: rgba(88, 80, 236, 0.15);
+  --color-primary: #1A56DB;
+  --color-primary-dark: #1E3A8A;
+  --color-primary-light: #EFF6FF;
 
-  /* System colors (Refined premium tones) */
-  --color-success: #10B981;
-  --color-success-light: #ECFDF5;
-  --color-success-dark: #047857;
+  /* System colors */
+  --color-success: #059669;
+  --color-warning: #D97706;
+  --color-danger: #DC2626;
+  --color-info: #0891B2;
 
-  --color-warning: #F59E0B;
-  --color-warning-light: #FFFBEB;
-  --color-warning-dark: #B45309;
-
-  --color-danger: #EF4444;
-  --color-danger-light: #FEF2F2;
-  --color-danger-dark: #B91C1C;
-
-  --color-info: #06B6D4;
-  --color-info-light: #ECFEFF;
-  --color-info-dark: #0E7490;
-
-  /* Slate Gray palette */
-  --color-gray-900: #0F172A;
-  --color-gray-800: #1E293B;
-  --color-gray-700: #334155;
-  --color-gray-600: #475569;
-  --color-gray-500: #64748B;
-  --color-gray-400: #94A3B8;
-  --color-gray-300: #CBD5E1;
-  --color-gray-200: #E2E8F0;
-  --color-gray-100: #F1F5F9;
-  --color-gray-50: #F8FAFC;
+  /* Gray palette */
+  --color-gray-900: #111827;
+  --color-gray-600: #4B5563;
+  --color-gray-300: #D1D5DB;
+  --color-gray-100: #F3F4F6;
   --color-white: #FFFFFF;
 
   /* Background */
   --color-bg-base: #F8FAFC;
-  --color-bg-sidebar: #0F172A;
-
-  /* Premium Shadows */
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.03), 0 1px 2px rgba(15, 23, 42, 0.02);
-  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.04), 0 2px 4px -2px rgba(15, 23, 42, 0.02);
-  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.05), 0 4px 6px -4px rgba(15, 23, 42, 0.02);
-  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.06), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
-  --shadow-glow: 0 0 15px rgba(88, 80, 236, 0.15);
+  --color-bg-sidebar: #1E3A8A;
 
   /* Typography */
-  --font-display: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Pretendard', 'Noto Sans KR', sans-serif;
+  --font-body: 'Pretendard', 'Noto Sans KR', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-  /* Spacing */
+  /* Spacing (4px base) */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -80,141 +53,83 @@ body {
   font-family: var(--font-body);
   font-size: 14px;
   line-height: 1.6;
-  color: var(--color-gray-800);
+  color: var(--color-gray-900);
   background-color: var(--color-bg-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Typography Overrides */
+/* Typography */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
-  font-weight: 700;
-  color: var(--color-gray-900);
+  font-weight: 600;
   margin-bottom: var(--space-4);
-  letter-spacing: -0.02em;
 }
 
-h1 { font-size: 30px; line-height: 1.25; }
-h2 { font-size: 22px; line-height: 1.35; }
+h1 { font-size: 28px; line-height: 1.2; }
+h2 { font-size: 22px; line-height: 1.3; }
 h3 { font-size: 18px; line-height: 1.4; }
-h4 { font-size: 15px; line-height: 1.5; }
-h5 { font-size: 13px; line-height: 1.6; }
+h4 { font-size: 16px; line-height: 1.5; }
+h5 { font-size: 14px; line-height: 1.6; }
+h6 { font-size: 13px; line-height: 1.5; }
 
 p {
   margin-bottom: var(--space-3);
-  color: var(--color-gray-600);
 }
 
 a {
   color: var(--color-primary);
   text-decoration: none;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color 0.2s ease;
 }
 
 a:hover {
   color: var(--color-primary-dark);
 }
 
-/* Form Elements (Luxury Form Overrides) */
-input, textarea, select {
-  font-family: inherit;
-  font-size: 14px;
-  color: var(--color-gray-900);
-  background-color: var(--color-white);
-  border: 1px solid var(--color-gray-300);
-  border-radius: 8px;
-  padding: 10px 14px;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  outline: none;
-}
-
-input:focus, textarea:focus, select:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-glow), var(--shadow-sm);
-}
-
-input:disabled, textarea:disabled, select:disabled {
-  background-color: var(--color-gray-100);
-  color: var(--color-gray-500);
-  cursor: not-allowed;
-}
-
-label {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-gray-700);
-  margin-bottom: var(--space-2);
-}
-
-/* Buttons (Fallback classes, pages use inline styles but this elevates generic buttons) */
 button {
-  font-family: var(--font-body);
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  font-family: inherit;
   cursor: pointer;
   border: none;
   outline: none;
-  border-radius: 8px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-button:active {
-  transform: scale(0.98);
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
 }
 
-/* Custom Table Styles */
+/* Tables */
 table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  background-color: var(--color-white);
 }
 
 table th {
-  background: var(--color-gray-50);
-  color: var(--color-gray-600);
-  padding: 12px 16px;
+  background: var(--color-primary-dark);
+  color: white;
+  padding: 10px 12px;
   text-align: left;
   font-weight: 600;
   font-size: 12px;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  border-bottom: 2px solid var(--color-gray-200);
 }
 
 table td {
-  padding: 14px 16px;
+  padding: 9px 12px;
   border-bottom: 1px solid var(--color-gray-100);
-  color: var(--color-gray-800);
-  transition: background-color 0.15s ease;
+  color: var(--color-gray-900);
+}
+
+table tr:nth-child(even) td {
+  background: var(--color-bg-base);
 }
 
 table tr:hover td {
-  background: rgba(88, 80, 236, 0.02);
-}
-
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--color-gray-50);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-gray-300);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-gray-400);
+  background: var(--color-primary-light);
 }
 
 /* Utility classes */
@@ -222,7 +137,7 @@ table tr:hover td {
   width: 100%;
   max-width: 1440px;
   margin: 0 auto;
-  padding: 0 var(--space-8);
+  padding: 0 32px;
 }
 
 .grid {
@@ -278,30 +193,10 @@ table tr:hover td {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(-6px);
+    transform: translateY(-4px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pulseGlow {
-  0%, 100% {
-    box-shadow: 0 0 5px rgba(239, 68, 68, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.8);
   }
 }

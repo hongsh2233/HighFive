@@ -91,53 +91,42 @@ export default function StatsPage() {
   };
 
   if (authLoading || loading) {
-    return (
-      <div style={{ padding: 'var(--space-16)', textAlign: 'center', color: 'var(--color-gray-500)' }}>
-        로딩 중...
-      </div>
-    );
+    return <div style={{ padding: 'var(--space-8)' }}>로딩 중...</div>;
   }
 
   const containerStyle: React.CSSProperties = {
-    padding: 'var(--space-8) var(--space-4)',
+    padding: 'var(--space-8)',
     maxWidth: '1400px',
     margin: '0 auto',
-    animation: 'fadeIn 0.3s ease-out',
   };
 
   const headerStyle: React.CSSProperties = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 'var(--space-6)',
+    marginBottom: 'var(--space-8)',
   };
 
   const titleStyle: React.CSSProperties = {
-    fontSize: '26px',
-    fontWeight: '800',
-    margin: 0,
-    letterSpacing: '-0.02em',
+    fontSize: '28px',
+    fontWeight: '700',
   };
 
   const buttonStyle: React.CSSProperties = {
-    padding: '10px 18px',
+    padding: 'var(--space-2) var(--space-4)',
     backgroundColor: 'var(--color-primary)',
     color: 'white',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '6px',
     cursor: 'pointer',
     fontWeight: '600',
-    fontSize: '13px',
-    boxShadow: 'var(--shadow-sm)',
-    transition: 'all 0.15s ease',
   };
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: 'var(--color-white)',
-    padding: 'var(--space-6) var(--space-8)',
-    borderRadius: '16px',
-    border: '1px solid var(--color-gray-200)',
-    boxShadow: 'var(--shadow-sm)',
+    padding: 'var(--space-6)',
+    borderRadius: '8px',
+    border: '1px solid var(--color-gray-300)',
     marginBottom: 'var(--space-6)',
   };
 
@@ -149,29 +138,24 @@ export default function StatsPage() {
   };
 
   const summaryCardStyle: React.CSSProperties = {
-    padding: '16px var(--space-5)',
+    padding: 'var(--space-4)',
     backgroundColor: 'var(--color-primary-light)',
-    borderRadius: '12px',
+    borderRadius: '8px',
     borderLeft: '4px solid var(--color-primary)',
-    boxShadow: 'var(--shadow-sm)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
   };
 
   const cardLabelStyle: React.CSSProperties = {
-    fontSize: '11px',
-    color: 'var(--color-primary-dark)',
-    fontWeight: '700',
+    fontSize: '12px',
+    color: 'var(--color-primary)',
+    fontWeight: '600',
+    marginBottom: 'var(--space-2)',
     textTransform: 'uppercase',
-    letterSpacing: '0.05em',
   };
 
   const cardValueStyle: React.CSSProperties = {
-    fontSize: '26px',
-    fontWeight: '850',
+    fontSize: '28px',
+    fontWeight: '700',
     color: 'var(--color-primary)',
-    lineHeight: '1.2',
   };
 
   const tableStyle: React.CSSProperties = {
@@ -181,17 +165,16 @@ export default function StatsPage() {
   };
 
   const thStyle: React.CSSProperties = {
-    backgroundColor: 'var(--color-gray-50)',
-    color: 'var(--color-gray-600)',
-    padding: '12px 16px',
+    backgroundColor: 'var(--color-primary-dark)',
+    color: 'white',
+    padding: 'var(--space-3)',
     textAlign: 'left',
     fontWeight: '600',
     fontSize: '12px',
-    borderBottom: '2px solid var(--color-gray-200)',
   };
 
   const tdStyle: React.CSSProperties = {
-    padding: '14px 16px',
+    padding: 'var(--space-3)',
     borderBottom: '1px solid var(--color-gray-100)',
   };
 
@@ -199,12 +182,7 @@ export default function StatsPage() {
     <div style={containerStyle}>
       <div style={headerStyle}>
         <h1 style={titleStyle}>통계 & 리포트</h1>
-        <button
-          onClick={handleExportCSV}
-          style={buttonStyle}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-primary)'; }}
-        >
+        <button onClick={handleExportCSV} style={buttonStyle}>
           📥 CSV 다운로드
         </button>
       </div>
@@ -212,46 +190,46 @@ export default function StatsPage() {
       {/* 월간 요약 */}
       {summary && (
         <div style={sectionStyle}>
-          <h2 style={{ fontSize: '16px', fontWeight: '800', marginBottom: 'var(--space-5)', letterSpacing: '-0.01em', borderBottom: '1px solid var(--color-gray-100)', paddingBottom: '12px' }}>
-            📅 {summary.year}년 {String(summary.month + 1).padStart(2, '0')}월 리포트 요약
+          <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
+            {summary.year}년 {String(summary.month).padStart(2, '0')}월 요약
           </h2>
 
           <div style={summaryGridStyle}>
             <div style={summaryCardStyle}>
-              <div style={cardLabelStyle}>총 등록 업무</div>
-              <div style={cardValueStyle}>{summary.tasks.total}건</div>
+              <div style={cardLabelStyle}>총 업무</div>
+              <div style={cardValueStyle}>{summary.tasks.total}</div>
             </div>
             <div style={summaryCardStyle}>
-              <div style={cardLabelStyle}>완료 처리</div>
-              <div style={cardValueStyle}>{summary.tasks.done}건</div>
+              <div style={cardLabelStyle}>완료</div>
+              <div style={cardValueStyle}>{summary.tasks.done}</div>
             </div>
-            <div style={{ ...summaryCardStyle, backgroundColor: 'rgba(16, 185, 129, 0.05)', borderLeftColor: 'var(--color-success)' }}>
-              <div style={{ ...cardLabelStyle, color: 'var(--color-success-dark)' }}>목표 달성률</div>
-              <div style={{ ...cardValueStyle, color: 'var(--color-success-dark)' }}>{summary.tasks.completionRate}%</div>
+            <div style={summaryCardStyle}>
+              <div style={cardLabelStyle}>완료율</div>
+              <div style={cardValueStyle}>{summary.tasks.completionRate}%</div>
             </div>
-            <div style={{ ...summaryCardStyle, backgroundColor: 'rgba(6, 182, 212, 0.05)', borderLeftColor: 'var(--color-info)' }}>
-              <div style={{ ...cardLabelStyle, color: 'var(--color-info-dark)' }}>누적 투입 공수</div>
-              <div style={{ ...cardValueStyle, color: 'var(--color-info-dark)' }}>{summary.timeLogs.totalHours} 시간</div>
+            <div style={summaryCardStyle}>
+              <div style={cardLabelStyle}>총 공수</div>
+              <div style={cardValueStyle}>{summary.timeLogs.totalHours} h</div>
             </div>
           </div>
 
           {/* 상태별 분포 */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
-            <div style={{ padding: '12px 16px', backgroundColor: 'var(--color-primary-light)', borderRadius: '8px', border: '1px solid rgba(88,80,236,0.1)' }}>
-              <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--color-primary-dark)', marginBottom: '4px' }}>배정됨</div>
-              <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--color-primary)' }}>{summary.tasks.assigned}건</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--space-4)' }}>
+            <div style={{ padding: 'var(--space-3)', backgroundColor: '#DBEAFE', borderRadius: '6px' }}>
+              <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '4px' }}>배정됨</div>
+              <div style={{ fontSize: '20px', fontWeight: '700' }}>{summary.tasks.assigned}</div>
             </div>
-            <div style={{ padding: '12px 16px', backgroundColor: 'var(--color-warning-light)', borderRadius: '8px', border: '1px solid rgba(245,158,11,0.1)' }}>
-              <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--color-warning-dark)', marginBottom: '4px' }}>진행중</div>
-              <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--color-warning-dark)' }}>{summary.tasks.progress}건</div>
+            <div style={{ padding: 'var(--space-3)', backgroundColor: '#FEF3C7', borderRadius: '6px' }}>
+              <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '4px' }}>진행중</div>
+              <div style={{ fontSize: '20px', fontWeight: '700' }}>{summary.tasks.progress}</div>
             </div>
-            <div style={{ padding: '12px 16px', backgroundColor: 'var(--color-info-light)', borderRadius: '8px', border: '1px solid rgba(6,182,212,0.1)' }}>
-              <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--color-info-dark)', marginBottom: '4px' }}>검수대기</div>
-              <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--color-info-dark)' }}>{summary.tasks.review}건</div>
+            <div style={{ padding: 'var(--space-3)', backgroundColor: '#EDE9FE', borderRadius: '6px' }}>
+              <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '4px' }}>검수</div>
+              <div style={{ fontSize: '20px', fontWeight: '700' }}>{summary.tasks.review}</div>
             </div>
-            <div style={{ padding: '12px 16px', backgroundColor: 'var(--color-danger-light)', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.1)' }}>
-              <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--color-danger-dark)', marginBottom: '4px' }}>QA 검증</div>
-              <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--color-danger-dark)' }}>{summary.tasks.qa}건</div>
+            <div style={{ padding: 'var(--space-3)', backgroundColor: '#CFFAFE', borderRadius: '6px' }}>
+              <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '4px' }}>QA</div>
+              <div style={{ fontSize: '20px', fontWeight: '700' }}>{summary.tasks.qa}</div>
             </div>
           </div>
         </div>
@@ -259,31 +237,31 @@ export default function StatsPage() {
 
       {/* 작업자별 부하량 */}
       <div style={sectionStyle}>
-        <h2 style={{ fontSize: '16px', fontWeight: '800', marginBottom: 'var(--space-5)', letterSpacing: '-0.01em', borderBottom: '1px solid var(--color-gray-100)', paddingBottom: '12px' }}>
-          💻 작업자별 부하 현황 (Workloads)
+        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
+          작업자별 부하량
         </h2>
 
-        <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid var(--color-gray-200)' }}>
+        <div style={{ overflowX: 'auto' }}>
           <table style={tableStyle}>
             <thead>
               <tr>
-                <th style={thStyle}>담당 팀원</th>
-                <th style={thStyle}>누적 배정 업무</th>
-                <th style={thStyle}>완료 업무</th>
-                <th style={thStyle}>진행 중 업무</th>
-                <th style={thStyle}>총 투입 공수 (시간)</th>
-                <th style={thStyle}>평균 공수 (Task당)</th>
+                <th style={thStyle}>담당자</th>
+                <th style={thStyle}>총 업무</th>
+                <th style={thStyle}>완료</th>
+                <th style={thStyle}>진행중</th>
+                <th style={thStyle}>총 공수 (시간)</th>
+                <th style={thStyle}>평균 공수</th>
               </tr>
             </thead>
             <tbody>
               {workload.map((worker) => (
-                <tr key={worker.id} style={{ transition: 'background-color 0.15s' }}>
-                  <td style={{ ...tdStyle, fontWeight: '700', color: 'var(--color-gray-900)' }}>{worker.name}</td>
-                  <td style={{ ...tdStyle, fontWeight: '600' }}>{worker.totalTasks}건</td>
-                  <td style={{ ...tdStyle, color: 'var(--color-success-dark)', fontWeight: '600' }}>{worker.completedTasks}건</td>
-                  <td style={{ ...tdStyle, color: 'var(--color-warning-dark)', fontWeight: '600' }}>{worker.inProgressTasks}건</td>
-                  <td style={{ ...tdStyle, fontWeight: '700', color: 'var(--color-primary)' }}>{worker.totalHours.toFixed(2)} h</td>
-                  <td style={{ ...tdStyle, color: 'var(--color-gray-600)' }}>{worker.averageHoursPerTask.toFixed(2)} h</td>
+                <tr key={worker.id}>
+                  <td style={tdStyle}>{worker.name}</td>
+                  <td style={tdStyle}>{worker.totalTasks}</td>
+                  <td style={tdStyle}>{worker.completedTasks}</td>
+                  <td style={tdStyle}>{worker.inProgressTasks}</td>
+                  <td style={tdStyle}>{worker.totalHours.toFixed(2)}</td>
+                  <td style={tdStyle}>{worker.averageHoursPerTask.toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
