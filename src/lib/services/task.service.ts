@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db';
 import { parseRmsNo } from '@/lib/utils';
-import { notifyStatusChange as sendWebhookNotification } from '@/lib/webhook';
+import { notifyStatusChange } from '@/lib/webhook';
 
 export interface CreateTaskInput {
   title: string;
@@ -50,7 +50,7 @@ export async function updateTaskStatus(taskId: number, status: string) {
   });
 
   if (status === 'REVIEW') {
-    sendWebhookNotification({
+    notifyStatusChange({
       taskId,
       taskTitle: task.title,
       status,

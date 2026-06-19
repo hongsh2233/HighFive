@@ -41,16 +41,16 @@ export default function LoginPage() {
     minHeight: '100vh',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'var(--color-bg-base)',
+    backgroundColor: 'var(--bg-base)',
   };
 
   const cardStyle: React.CSSProperties = {
     width: '100%',
-    maxWidth: '400px',
-    backgroundColor: 'var(--color-white)',
+    maxWidth: '380px',
+    backgroundColor: 'var(--bg-surface)',
     padding: 'var(--space-8)',
-    borderRadius: '8px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.10)',
+    borderRadius: '10px',
+    border: '1px solid var(--border)',
   };
 
   const formGroupStyle: React.CSSProperties = {
@@ -77,11 +77,11 @@ export default function LoginPage() {
   const buttonStyle: React.CSSProperties = {
     width: '100%',
     padding: 'var(--space-2) var(--space-4)',
-    backgroundColor: 'var(--color-primary)',
+    backgroundColor: 'var(--accent)',
     color: 'white',
     border: 'none',
     borderRadius: '6px',
-    fontSize: '14px',
+    fontSize: '13px',
     fontWeight: '600',
     cursor: 'pointer',
     opacity: loading ? 0.6 : 1,
@@ -146,14 +146,10 @@ export default function LoginPage() {
             style={buttonStyle}
             disabled={loading}
             onMouseEnter={(e) => {
-              if (!loading) {
-                (e.target as HTMLButtonElement).style.backgroundColor =
-                  'var(--color-primary-dark)';
-              }
+              if (!loading) (e.target as HTMLButtonElement).style.backgroundColor = 'var(--accent-hover)';
             }}
             onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                'var(--color-primary)';
+              (e.target as HTMLButtonElement).style.backgroundColor = 'var(--accent)';
             }}
           >
             {loading ? '로그인 중...' : '로그인'}

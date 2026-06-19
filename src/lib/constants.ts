@@ -14,12 +14,12 @@ export const TASK_STATUS_LABEL: Record<string, string> = {
   DONE: '완료',
 };
 
-export const TASK_STATUS_COLOR: Record<string, { bg: string; text: string }> = {
-  ASSIGNED: { bg: '#DBEAFE', text: '#1E40AF' },
-  PROGRESS: { bg: '#FEF3C7', text: '#92400E' },
-  REVIEW:   { bg: '#EDE9FE', text: '#5B21B6' },
-  QA:       { bg: '#CFFAFE', text: '#155E75' },
-  DONE:     { bg: '#D1FAE5', text: '#065F46' },
+export const TASK_STATUS_COLOR: Record<string, { bg: string; text: string; border?: string }> = {
+  ASSIGNED: { bg: 'transparent', text: '#1D4ED8', border: '#93C5FD' },
+  PROGRESS: { bg: 'transparent', text: '#92400E', border: '#FCD34D' },
+  REVIEW:   { bg: 'transparent', text: '#5B21B6', border: '#C4B5FD' },
+  QA:       { bg: 'transparent', text: '#155E75', border: '#67E8F9' },
+  DONE:     { bg: 'transparent', text: '#065F46', border: '#6EE7B7' },
 };
 
 export const USER_ROLE = {

@@ -88,10 +88,10 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   };
 
   const cardStyle: React.CSSProperties = {
-    backgroundColor: 'var(--color-white)',
+    backgroundColor: 'var(--bg-surface)',
     padding: 'var(--space-6)',
     borderRadius: '8px',
-    border: '1px solid var(--color-gray-300)',
+    border: '1px solid var(--border)',
     marginBottom: 'var(--space-6)',
   };
 
@@ -116,12 +116,12 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     marginBottom: 'var(--space-6)',
   };
 
-  const statusColors: { [key: string]: { bg: string; text: string } } = {
-    ASSIGNED: { bg: '#DBEAFE', text: '#1E40AF' },
-    PROGRESS: { bg: '#FEF3C7', text: '#92400E' },
-    REVIEW: { bg: '#EDE9FE', text: '#5B21B6' },
-    QA: { bg: '#CFFAFE', text: '#155E75' },
-    DONE: { bg: '#D1FAE5', text: '#065F46' },
+  const statusColors: { [key: string]: { bg: string; text: string; border: string } } = {
+    ASSIGNED: { bg: 'transparent', text: '#1D4ED8', border: '#93C5FD' },
+    PROGRESS: { bg: 'transparent', text: '#92400E', border: '#FCD34D' },
+    REVIEW:   { bg: 'transparent', text: '#5B21B6', border: '#C4B5FD' },
+    QA:       { bg: 'transparent', text: '#155E75', border: '#67E8F9' },
+    DONE:     { bg: 'transparent', text: '#065F46', border: '#6EE7B7' },
   };
 
   const statusLabels: { [key: string]: string } = {
@@ -134,22 +134,24 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
   const badgeStyle = {
     display: 'inline-block',
-    padding: 'var(--space-1) var(--space-2)',
-    backgroundColor: statusColors[task.status]?.bg || '#E5E7EB',
+    padding: '3px 8px',
+    backgroundColor: statusColors[task.status]?.bg || 'transparent',
     color: statusColors[task.status]?.text || '#374151',
+    border: `1px solid ${statusColors[task.status]?.border || '#D4D4D8'}`,
     borderRadius: '4px',
-    fontSize: '12px',
+    fontSize: '11px',
     fontWeight: '600',
   };
 
   const buttonStyle: React.CSSProperties = {
     padding: 'var(--space-2) var(--space-4)',
-    backgroundColor: 'var(--color-primary)',
+    backgroundColor: 'var(--accent)',
     color: 'white',
     border: 'none',
     borderRadius: '6px',
     cursor: 'pointer',
     fontWeight: '600',
+    fontSize: '13px',
     marginRight: 'var(--space-2)',
   };
 
@@ -282,17 +284,17 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         {/* 총 소요 시간 */}
         <div style={{
           padding: 'var(--space-3)',
-          backgroundColor: 'var(--color-primary-light)',
+          backgroundColor: 'var(--accent-light)',
           borderRadius: '6px',
           marginBottom: 'var(--space-4)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <span style={{ fontWeight: '600', color: 'var(--color-primary-dark)' }}>
+          <span style={{ fontWeight: '600', color: 'var(--accent-hover)' }}>
             총 소요 시간
           </span>
-          <span style={{ fontSize: '20px', fontWeight: '700', color: 'var(--color-primary)' }}>
+          <span style={{ fontSize: '20px', fontWeight: '700', color: 'var(--accent)' }}>
             {totalHours.toFixed(2)} 시간
           </span>
         </div>

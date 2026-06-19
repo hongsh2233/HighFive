@@ -13,12 +13,12 @@ interface KanbanColumnProps {
   onTaskClick: (task: Task) => void;
 }
 
-const statusColors: { [key: string]: string } = {
-  ASSIGNED: '#DBEAFE',
-  PROGRESS: '#FEF3C7',
-  REVIEW: '#EDE9FE',
-  QA: '#CFFAFE',
-  DONE: '#D1FAE5',
+const statusBorderColors: { [key: string]: string } = {
+  ASSIGNED: '#93C5FD',
+  PROGRESS: '#FCD34D',
+  REVIEW:   '#C4B5FD',
+  QA:       '#67E8F9',
+  DONE:     '#6EE7B7',
 };
 
 export default function KanbanColumn({
@@ -31,35 +31,37 @@ export default function KanbanColumn({
   onTaskClick,
 }: KanbanColumnProps) {
   const columnStyle: React.CSSProperties = {
-    minWidth: '280px',
-    maxWidth: '320px',
-    backgroundColor: '#F3F4F6',
-    borderRadius: '10px',
+    minWidth: '260px',
+    maxWidth: '300px',
+    backgroundColor: 'var(--bg-subtle)',
+    borderRadius: '8px',
     padding: 'var(--space-3)',
     display: 'flex',
     flexDirection: 'column',
   };
 
   const headerStyle: React.CSSProperties = {
-    fontSize: '13px',
+    fontSize: '12px',
     fontWeight: '700',
-    color: '#374151',
+    color: 'var(--text-secondary)',
     marginBottom: 'var(--space-3)',
     display: 'flex',
     alignItems: 'center',
     gap: 'var(--space-2)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
   };
 
   const badgeStyle: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '24px',
-    height: '24px',
-    backgroundColor: 'var(--color-primary)',
-    color: 'white',
+    width: '20px',
+    height: '20px',
+    backgroundColor: 'var(--border)',
+    color: 'var(--text-secondary)',
     borderRadius: '50%',
-    fontSize: '12px',
+    fontSize: '11px',
     fontWeight: '700',
   };
 
@@ -72,12 +74,13 @@ export default function KanbanColumn({
   };
 
   const cardStyle: React.CSSProperties = {
-    backgroundColor: 'white',
+    backgroundColor: 'var(--bg-surface)',
     padding: 'var(--space-3)',
-    borderRadius: '8px',
-    border: `2px solid ${statusColors[status]}`,
+    borderRadius: '7px',
+    border: `1px solid var(--border)`,
+    borderLeft: `3px solid ${statusBorderColors[status] ?? '#E4E4E7'}`,
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
+    transition: 'border-color 0.15s',
   };
 
   const cardTitleStyle: React.CSSProperties = {

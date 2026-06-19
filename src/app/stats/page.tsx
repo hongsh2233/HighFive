@@ -114,19 +114,20 @@ export default function StatsPage() {
 
   const buttonStyle: React.CSSProperties = {
     padding: 'var(--space-2) var(--space-4)',
-    backgroundColor: 'var(--color-primary)',
+    backgroundColor: 'var(--accent)',
     color: 'white',
     border: 'none',
     borderRadius: '6px',
     cursor: 'pointer',
     fontWeight: '600',
+    fontSize: '13px',
   };
 
   const sectionStyle: React.CSSProperties = {
-    backgroundColor: 'var(--color-white)',
+    backgroundColor: 'var(--bg-surface)',
     padding: 'var(--space-6)',
     borderRadius: '8px',
-    border: '1px solid var(--color-gray-300)',
+    border: '1px solid var(--border)',
     marginBottom: 'var(--space-6)',
   };
 
@@ -139,23 +140,24 @@ export default function StatsPage() {
 
   const summaryCardStyle: React.CSSProperties = {
     padding: 'var(--space-4)',
-    backgroundColor: 'var(--color-primary-light)',
+    backgroundColor: 'var(--accent-light)',
     borderRadius: '8px',
-    borderLeft: '4px solid var(--color-primary)',
+    borderLeft: '3px solid var(--accent)',
   };
 
   const cardLabelStyle: React.CSSProperties = {
-    fontSize: '12px',
-    color: 'var(--color-primary)',
+    fontSize: '11px',
+    color: 'var(--accent)',
     fontWeight: '600',
     marginBottom: 'var(--space-2)',
     textTransform: 'uppercase',
+    letterSpacing: '0.05em',
   };
 
   const cardValueStyle: React.CSSProperties = {
     fontSize: '28px',
     fontWeight: '700',
-    color: 'var(--color-primary)',
+    color: 'var(--accent)',
   };
 
   const tableStyle: React.CSSProperties = {
@@ -165,12 +167,15 @@ export default function StatsPage() {
   };
 
   const thStyle: React.CSSProperties = {
-    backgroundColor: 'var(--color-primary-dark)',
-    color: 'white',
-    padding: 'var(--space-3)',
+    backgroundColor: 'var(--bg-subtle)',
+    color: 'var(--text-secondary)',
+    padding: 'var(--space-2) var(--space-3)',
     textAlign: 'left',
     fontWeight: '600',
-    fontSize: '12px',
+    fontSize: '11px',
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    borderBottom: '1px solid var(--border)',
   };
 
   const tdStyle: React.CSSProperties = {

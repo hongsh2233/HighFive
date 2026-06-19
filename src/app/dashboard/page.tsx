@@ -40,9 +40,9 @@ export default function DashboardPage() {
   const emptyStateStyle: React.CSSProperties = {
     textAlign: 'center',
     padding: 'var(--space-12)',
-    backgroundColor: 'var(--color-white)',
+    backgroundColor: 'var(--bg-surface)',
     borderRadius: '8px',
-    border: '1px solid var(--color-gray-300)',
+    border: '1px solid var(--border)',
   };
 
   const emptyIconStyle: React.CSSProperties = {
@@ -52,26 +52,26 @@ export default function DashboardPage() {
 
   const adminLinkStyle: React.CSSProperties = {
     display: 'inline-block',
-    padding: 'var(--space-3) var(--space-4)',
-    backgroundColor: 'var(--color-primary)',
+    padding: 'var(--space-2) var(--space-4)',
+    backgroundColor: 'var(--accent)',
     color: 'white',
     textDecoration: 'none',
     borderRadius: '6px',
     fontWeight: '600',
-    fontSize: '14px',
+    fontSize: '13px',
     marginRight: 'var(--space-2)',
     marginBottom: 'var(--space-2)',
   };
 
   const plannerLinkStyle: React.CSSProperties = {
     display: 'inline-block',
-    padding: 'var(--space-3) var(--space-4)',
-    backgroundColor: '#F59E0B',
+    padding: 'var(--space-2) var(--space-4)',
+    backgroundColor: 'var(--accent)',
     color: 'white',
     textDecoration: 'none',
     borderRadius: '6px',
     fontWeight: '600',
-    fontSize: '14px',
+    fontSize: '13px',
     marginRight: 'var(--space-2)',
     marginBottom: 'var(--space-2)',
   };

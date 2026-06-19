@@ -5,12 +5,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTasks } from '@/hooks/useTask';
 import axios from 'axios';
 
-const statusColors: { [key: string]: { bg: string; text: string } } = {
-  ASSIGNED: { bg: '#DBEAFE', text: '#1E40AF' },
-  PROGRESS: { bg: '#FEF3C7', text: '#92400E' },
-  REVIEW: { bg: '#EDE9FE', text: '#5B21B6' },
-  QA: { bg: '#CFFAFE', text: '#155E75' },
-  DONE: { bg: '#D1FAE5', text: '#065F46' },
+const statusColors: { [key: string]: { bg: string; text: string; border: string } } = {
+  ASSIGNED: { bg: 'transparent', text: '#1D4ED8', border: '#93C5FD' },
+  PROGRESS: { bg: 'transparent', text: '#92400E', border: '#FCD34D' },
+  REVIEW:   { bg: 'transparent', text: '#5B21B6', border: '#C4B5FD' },
+  QA:       { bg: 'transparent', text: '#155E75', border: '#67E8F9' },
+  DONE:     { bg: 'transparent', text: '#065F46', border: '#6EE7B7' },
 };
 
 const statusLabels: { [key: string]: string } = {
@@ -125,10 +125,10 @@ export default function TaskListPage() {
     flexWrap: 'wrap',
     gap: 'var(--space-3)',
     marginBottom: 'var(--space-6)',
-    padding: 'var(--space-4)',
-    backgroundColor: 'var(--color-white)',
+    padding: 'var(--space-3) var(--space-4)',
+    backgroundColor: 'var(--bg-surface)',
     borderRadius: '8px',
-    border: '1px solid var(--color-gray-300)',
+    border: '1px solid var(--border)',
     alignItems: 'center',
   };
 
@@ -156,19 +156,22 @@ export default function TaskListPage() {
   const tableStyle: React.CSSProperties = {
     width: '100%',
     borderCollapse: 'collapse',
-    backgroundColor: 'var(--color-white)',
+    backgroundColor: 'var(--bg-surface)',
     borderRadius: '8px',
-    border: '1px solid var(--color-gray-300)',
+    border: '1px solid var(--border)',
     overflow: 'hidden',
   };
 
   const thStyle: React.CSSProperties = {
-    backgroundColor: 'var(--color-primary-dark)',
-    color: 'white',
-    padding: 'var(--space-3)',
+    backgroundColor: 'var(--bg-subtle)',
+    color: 'var(--text-secondary)',
+    padding: 'var(--space-2) var(--space-3)',
     textAlign: 'left',
-    fontSize: '12px',
+    fontSize: '11px',
     fontWeight: '600',
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    borderBottom: '1px solid var(--border)',
   };
 
   const tdStyle: React.CSSProperties = {
@@ -178,14 +181,15 @@ export default function TaskListPage() {
   };
 
   const badgeStyle = (status: string): React.CSSProperties => {
-    const color = statusColors[status] || { bg: '#E5E7EB', text: '#374151' };
+    const color = statusColors[status] || { bg: 'transparent', text: '#374151', border: '#D4D4D8' };
     return {
       display: 'inline-block',
-      padding: '4px 10px',
+      padding: '3px 8px',
       backgroundColor: color.bg,
       color: color.text,
+      border: `1px solid ${color.border}`,
       borderRadius: '4px',
-      fontSize: '12px',
+      fontSize: '11px',
       fontWeight: '600',
     };
   };

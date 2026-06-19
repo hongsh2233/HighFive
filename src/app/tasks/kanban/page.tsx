@@ -20,9 +20,9 @@ export default function KanbanPage() {
   }
 
   const headerStyle: React.CSSProperties = {
-    padding: 'var(--space-6) var(--space-8)',
-    backgroundColor: 'white',
-    borderBottom: '1px solid var(--color-gray-300)',
+    padding: 'var(--space-4) var(--space-8)',
+    backgroundColor: 'var(--bg-surface)',
+    borderBottom: '1px solid var(--border)',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',

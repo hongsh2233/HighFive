@@ -67,13 +67,14 @@ export default function CalendarPage() {
   };
 
   const navButtonStyle: React.CSSProperties = {
-    padding: 'var(--space-2) var(--space-4)',
-    backgroundColor: 'var(--color-primary)',
-    color: 'white',
-    border: 'none',
+    padding: 'var(--space-2) var(--space-3)',
+    backgroundColor: 'var(--bg-surface)',
+    color: 'var(--text-primary)',
+    border: '1px solid var(--border)',
     borderRadius: '6px',
     cursor: 'pointer',
     fontWeight: '600',
+    fontSize: '13px',
   };
 
   const summaryStyle: React.CSSProperties = {
@@ -84,17 +85,17 @@ export default function CalendarPage() {
   };
 
   const summaryCardStyle: React.CSSProperties = {
-    backgroundColor: 'var(--color-white)',
+    backgroundColor: 'var(--bg-surface)',
     padding: 'var(--space-4)',
     borderRadius: '8px',
-    border: '1px solid var(--color-gray-300)',
+    border: '1px solid var(--border)',
     textAlign: 'center',
   };
 
   const calendarStyle: React.CSSProperties = {
-    backgroundColor: 'var(--color-white)',
+    backgroundColor: 'var(--bg-surface)',
     borderRadius: '8px',
-    border: '1px solid var(--color-gray-300)',
+    border: '1px solid var(--border)',
     padding: 'var(--space-4)',
   };
 
@@ -122,13 +123,13 @@ export default function CalendarPage() {
   const dayStyle = (isCurrentMonth: boolean, hasEvents: boolean): React.CSSProperties => ({
     padding: 'var(--space-3)',
     minHeight: '80px',
-    border: '1px solid var(--color-gray-300)',
+    border: '1px solid var(--border)',
     borderRadius: '4px',
     backgroundColor: isCurrentMonth
       ? hasEvents
-        ? '#FFFBEB'
-        : 'var(--color-white)'
-      : 'var(--color-gray-100)',
+        ? 'var(--accent-light)'
+        : 'var(--bg-surface)'
+      : 'var(--bg-subtle)',
     opacity: isCurrentMonth ? 1 : 0.5,
   });
 
@@ -141,7 +142,7 @@ export default function CalendarPage() {
   const taskItemStyle: React.CSSProperties = {
     fontSize: '11px',
     padding: 'var(--space-1) var(--space-2)',
-    backgroundColor: 'var(--color-primary-light)',
+    backgroundColor: 'var(--accent-light)',
     borderRadius: '3px',
     marginBottom: '2px',
     overflow: 'hidden',
@@ -199,7 +200,7 @@ export default function CalendarPage() {
       {data && (
         <div style={summaryStyle}>
           <div style={summaryCardStyle}>
-            <div style={{ fontSize: '24px', fontWeight: '700', color: 'var(--color-primary)' }}>
+            <div style={{ fontSize: '24px', fontWeight: '700', color: 'var(--accent)' }}>
               {data.summary.total}
             </div>
             <div style={{ fontSize: '12px', color: 'var(--color-gray-600)' }}>
