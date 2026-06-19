@@ -24,6 +24,7 @@ model User {
   plannedTasks  Task[] @relation("planner")
   workerTasks   Task[] @relation("worker")
   timeLogs      TimeLog[]
+  infoItems     InfoItem[]
 
   @@map("users")
 }
@@ -94,4 +95,19 @@ model Notification {
 
   @@index([taskId])
   @@map("notifications")
+}
+
+model InfoItem {
+  id        Int      @id @default(autoincrement())
+  question  String
+  answer    String   @db.Text
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdBy Int
+  author    User     @relation(fields: [createdBy], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+  @@map("info_items")
 }
