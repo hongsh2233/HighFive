@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 
@@ -12,6 +12,150 @@ interface InfoItem {
   isActive: boolean;
   author: { id: number; name: string };
   createdAt: string;
+}
+
+// Renders answer text: **bold**, *italic*, - list, newlines
+function renderAnswer(text: string) {
+  const lines = text.split('\n');
+  const result: React.ReactNode[] = [];
+  let listItems: string[] = [];
+
+  const flushList = (key: string) => {
+    if (listItems.length === 0) return;
+    result.push(
+      <ul key={key} style={{ margin: '6px 0', paddingLeft: 20 }}>
+        {listItems.map((li, i) => (
+          <li key={i} style={{ marginBottom: 3 }}>
+            {renderInline(li)}
+          </li>
+        ))}
+      </ul>
+    );
+    listItems = [];
+  };
+
+  lines.forEach((line, i) => {
+    if (/^[-*] /.test(line)) {
+      listItems.push(line.slice(2));
+    } else {
+      flushList(`list-${i}`);
+      if (line.trim() === '') {
+        result.push(<br key={`br-${i}`} />);
+      } else {
+        result.push(<span key={`line-${i}`} style={{ display: 'block', marginBottom: 4 }}>{renderInline(line)}</span>);
+      }
+    }
+  });
+  flushList('list-end');
+  return result;
+}
+
+function renderInline(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('*') && part.endsWith('*')) {
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+}
+
+function SimpleEditor({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  const taRef = useRef<HTMLTextAreaElement>(null);
+
+  const insertFormat = (prefix: string, suffix: string, sample: string) => {
+    const ta = taRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = value.slice(start, end) || sample;
+    const before = value.slice(0, start);
+    const after = value.slice(end);
+    const newVal = before + prefix + selected + suffix + after;
+    onChange(newVal);
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.setSelectionRange(start + prefix.length, start + prefix.length + selected.length);
+    });
+  };
+
+  const insertBullet = () => {
+    const ta = taRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+    const before = value.slice(0, lineStart);
+    const after = value.slice(lineStart);
+    const newVal = before + '- ' + after;
+    onChange(newVal);
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.setSelectionRange(start + 2, start + 2);
+    });
+  };
+
+  const btnStyle: React.CSSProperties = {
+    padding: '3px 9px',
+    fontSize: 12,
+    fontWeight: 600,
+    border: '1px solid var(--border)',
+    borderRadius: 5,
+    backgroundColor: 'var(--bg-subtle)',
+    color: 'var(--text-secondary)',
+    cursor: 'pointer',
+    lineHeight: 1.5,
+  };
+
+  return (
+    <div style={{ border: '1px solid var(--border)', borderRadius: 7, overflow: 'hidden' }}>
+      <div style={{
+        display: 'flex', gap: 6, padding: '6px 8px',
+        backgroundColor: 'var(--bg-subtle)',
+        borderBottom: '1px solid var(--border)',
+      }}>
+        <button type="button" style={btnStyle} title="굵게" onClick={() => insertFormat('**', '**', '굵은 텍스트')}>
+          <strong>B</strong>
+        </button>
+        <button type="button" style={btnStyle} title="기울임" onClick={() => insertFormat('*', '*', '기울임 텍스트')}>
+          <em>I</em>
+        </button>
+        <button type="button" style={btnStyle} title="목록" onClick={insertBullet}>
+          ≡
+        </button>
+        <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-muted)', alignSelf: 'center' }}>
+          **굵게** *기울임* - 목록
+        </span>
+      </div>
+      <textarea
+        ref={taRef}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        required
+        rows={8}
+        style={{
+          width: '100%', padding: '10px 12px', fontSize: 13,
+          border: 'none', outline: 'none',
+          fontFamily: 'inherit', resize: 'vertical' as const,
+          lineHeight: 1.7,
+          boxSizing: 'border-box' as const,
+          backgroundColor: 'var(--bg-surface)',
+          color: 'var(--text-primary)',
+        }}
+      />
+    </div>
+  );
 }
 
 export default function InfoPage() {
@@ -83,8 +227,9 @@ export default function InfoPage() {
       }
       setShowForm(false);
       await fetchItems();
-    } catch {
-      setMessage({ type: 'error', text: '저장 중 오류가 발생했습니다.' });
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setMessage({ type: 'error', text: msg || '저장 중 오류가 발생했습니다.' });
     } finally {
       setSubmitting(false);
     }
@@ -172,24 +317,19 @@ export default function InfoPage() {
                     width: '100%', padding: '9px 12px', fontSize: 13,
                     border: '1px solid var(--border)', borderRadius: 7,
                     boxSizing: 'border-box' as const, fontFamily: 'inherit',
+                    backgroundColor: 'var(--bg-surface)', color: 'var(--text-primary)',
+                    outline: 'none',
                   }}
                 />
               </div>
-              <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 20 }}>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>
                   내용 / 답변
                 </label>
-                <textarea
+                <SimpleEditor
                   value={formA}
-                  onChange={e => setFormA(e.target.value)}
-                  placeholder="내용을 입력하세요..."
-                  required
-                  rows={6}
-                  style={{
-                    width: '100%', padding: '9px 12px', fontSize: 13,
-                    border: '1px solid var(--border)', borderRadius: 7,
-                    boxSizing: 'border-box' as const, fontFamily: 'inherit', resize: 'vertical' as const,
-                  }}
+                  onChange={setFormA}
+                  placeholder="내용을 입력하세요... (**굵게**, *기울임*, - 목록 사용 가능)"
                 />
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
@@ -314,12 +454,9 @@ export default function InfoPage() {
                       padding: '14px 20px 18px 58px',
                       borderTop: '1px solid var(--border)',
                     }}>
-                      <p style={{
-                        fontSize: 13, color: 'var(--text-secondary)',
-                        lineHeight: 1.8, whiteSpace: 'pre-wrap', margin: 0,
-                      }}>
-                        {item.answer}
-                      </p>
+                      <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+                        {renderAnswer(item.answer)}
+                      </div>
                       <div style={{ marginTop: 12, fontSize: 11, color: 'var(--text-muted)' }}>
                         등록: {item.author.name} · {new Date(item.createdAt).toLocaleDateString('ko-KR')}
                       </div>
