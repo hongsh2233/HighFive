@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db';
 import { parseRmsNo } from '@/lib/utils';
-import { sendWebhook } from '@/lib/webhook';
+import { notifyStatusChange as sendWebhookNotification } from '@/lib/webhook';
 
 export interface CreateTaskInput {
   title: string;
@@ -50,8 +50,14 @@ export async function updateTaskStatus(taskId: number, status: string) {
   });
 
   if (status === 'REVIEW') {
-    const message = `📢 [검수요청] ${task.worker?.name}님이 '${task.title}' 건의 검수를 요청했습니다.`;
-    await sendWebhook(message).catch(console.error);
+    sendWebhookNotification({
+      taskId,
+      taskTitle: task.title,
+      status,
+      workerName: task.worker?.name ?? '',
+      plannerName: task.planner?.name ?? '',
+      taskUrl: `${process.env.NEXTAUTH_URL ?? ''}/tasks/${taskId}`,
+    });
   }
 
   return task;
