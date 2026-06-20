@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
+import { ensureProjectsSchema } from '@/lib/db-init';
 
 const projectInclude = {
   creator: { select: { id: true, name: true } },
@@ -11,6 +12,7 @@ const projectInclude = {
 // GET /api/projects
 export async function GET() {
   try {
+    await ensureProjectsSchema();
     const { session, error } = await requireAuth();
     if (error) return error;
 
@@ -37,6 +39,7 @@ export async function GET() {
 // POST /api/projects
 export async function POST(req: NextRequest) {
   try {
+    await ensureProjectsSchema();
     const { session, error } = await requireAuth();
     if (error) return error;
 

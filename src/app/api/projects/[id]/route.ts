@@ -1,10 +1,12 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
+import { ensureProjectsSchema } from '@/lib/db-init';
 
 // GET /api/projects/[id]
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await ensureProjectsSchema();
     const { error } = await requireAuth();
     if (error) return error;
 
@@ -30,6 +32,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 // PATCH /api/projects/[id]
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await ensureProjectsSchema();
     const { session, error } = await requireAuth();
     if (error) return error;
 
@@ -78,6 +81,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 // DELETE /api/projects/[id]
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await ensureProjectsSchema();
     const { session, error } = await requireAuth();
     if (error) return error;
 
