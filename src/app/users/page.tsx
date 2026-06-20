@@ -64,7 +64,7 @@ export default function UsersPage() {
   };
 
   useEffect(() => {
-    if (!authLoading && currentUser?.role === 'ADMIN') {
+    if (!authLoading && ['ADMIN', 'MANAGER'].includes(currentUser?.role || '')) {
       fetchUsers();
       fetchProjects();
     }
@@ -170,9 +170,11 @@ export default function UsersPage() {
     return <div style={{ padding: 40 }}>로딩 중...</div>;
   }
 
-  if (currentUser?.role !== 'ADMIN') {
+  if (!['ADMIN', 'MANAGER'].includes(currentUser?.role || '')) {
     return <div style={{ padding: 40 }}>관리자만 접근 가능합니다.</div>;
   }
+
+  const isAdmin = currentUser?.role === 'ADMIN';
 
   return (
     <div style={{ padding: '40px 32px' }}>
@@ -182,7 +184,7 @@ export default function UsersPage() {
             <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>사용자 관리</h1>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>팀 멤버를 생성하고 관리합니다.</p>
           </div>
-          {!showForm && (
+          {isAdmin && !showForm && (
             <button onClick={openCreateForm} style={{ padding: '8px 16px', backgroundColor: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               + 사용자 생성
             </button>
@@ -200,7 +202,7 @@ export default function UsersPage() {
           </div>
         )}
 
-        {showForm && (
+        {isAdmin && showForm && (
           <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 24, marginBottom: 28 }}>
             <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 20 }}>
               {editingUser ? '사용자 수정' : '새 사용자 생성'}
@@ -286,7 +288,7 @@ export default function UsersPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr>
-                  {['이름', '이메일', '역할', '소속', '상태', '철수일', '소속 프로젝트', '가입일', ''].map(h => (
+                  {['이름', '이메일', '역할', '소속', '상태', '철수일', '소속 프로젝트', '가입일', ...(isAdmin ? [''] : [])].map(h => (
                     <th key={h} style={{ backgroundColor: 'var(--bg-subtle)', color: 'var(--text-muted)', padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
                       {h}
                     </th>
@@ -321,18 +323,20 @@ export default function UsersPage() {
                       </div>
                     </td>
                     <td style={{ padding: '12px 14px', color: 'var(--text-secondary)' }}>{new Date(u.createdAt).toLocaleDateString('ko-KR')}</td>
-                    <td style={{ padding: '12px 14px' }}>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={() => openEditForm(u)} style={{ padding: '3px 10px', fontSize: 11, fontWeight: 600, backgroundColor: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 5, cursor: 'pointer' }}>
-                          수정
-                        </button>
-                        {u.isActive && u.id !== Number(currentUser?.id) && (
-                          <button onClick={() => handleDeactivate(u.id)} style={{ padding: '3px 10px', fontSize: 11, fontWeight: 600, backgroundColor: 'transparent', color: 'var(--danger)', border: '1px solid #FECACA', borderRadius: 5, cursor: 'pointer' }}>
-                            비활성화
+                    {isAdmin && (
+                      <td style={{ padding: '12px 14px' }}>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button onClick={() => openEditForm(u)} style={{ padding: '3px 10px', fontSize: 11, fontWeight: 600, backgroundColor: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 5, cursor: 'pointer' }}>
+                            수정
                           </button>
-                        )}
-                      </div>
-                    </td>
+                          {u.isActive && u.id !== Number(currentUser?.id) && (
+                            <button onClick={() => handleDeactivate(u.id)} style={{ padding: '3px 10px', fontSize: 11, fontWeight: 600, backgroundColor: 'transparent', color: 'var(--danger)', border: '1px solid #FECACA', borderRadius: 5, cursor: 'pointer' }}>
+                              비활성화
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

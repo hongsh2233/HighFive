@@ -109,10 +109,11 @@ model Project {
   name             String
   status           String   @default("ACTIVE") // ACTIVE, CLOSED
   createdBy        Int
-  projectManagerId Int?
-  projectLeadName  String?
-  creator          User     @relation("projectCreator", fields: [createdBy], references: [id])
-  projectManager   User?    @relation("projectManager", fields: [projectManagerId], references: [id])
+  projectManagerId   Int?
+  projectManagerName String?
+  projectLeadName    String?
+  creator            User     @relation("projectCreator", fields: [createdBy], references: [id])
+  projectManager     User?    @relation("projectManager", fields: [projectManagerId], references: [id])
   members          ProjectMember[]
   tasks            Task[]
   createdAt        DateTime @default(now())

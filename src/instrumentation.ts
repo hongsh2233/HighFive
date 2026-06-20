@@ -61,6 +61,7 @@ export async function register() {
     await run(`ALTER TABLE users ADD COLUMN IF NOT EXISTS affiliation TEXT`);
     await run(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS "projectId" INTEGER`);
     await run(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS "projectManagerId" INTEGER REFERENCES users(id)`);
+    await run(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS "projectManagerName" TEXT`);
     await run(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS "projectLeadName" TEXT`);
 
     // FK for tasks.projectId (add separately to avoid duplicate constraint errors)

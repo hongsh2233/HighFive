@@ -5,16 +5,27 @@ import { requireRole, successResponse, errorResponse, hashPassword, generateTemp
 // GET /api/users
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireRole(['ADMIN', 'MANAGER']);
+    const { session, error } = await requireRole(['ADMIN', 'MANAGER']);
     if (error) return error;
 
     const { searchParams } = new URL(req.url);
     const role = searchParams.get('role');
     const projectId = searchParams.get('projectId');
 
+    const sessionRole = (session!.user as any).role;
+    const sessionUserId = parseInt((session!.user as any).id || '0');
+
     let where: any = role ? { role } : {};
 
-    if (projectId) {
+    if (sessionRole === 'MANAGER') {
+      // MANAGER는 자신이 속한 프로젝트의 멤버만 조회
+      const myProjects = await prisma.projectMember.findMany({
+        where: { userId: sessionUserId },
+        select: { projectId: true },
+      });
+      const myProjectIds = myProjects.map(p => p.projectId);
+      where = { ...where, projectMembers: { some: { projectId: { in: myProjectIds } } } };
+    } else if (projectId) {
       where = {
         ...where,
         projectMembers: { some: { projectId: parseInt(projectId) } },
@@ -92,17 +103,21 @@ export async function POST(req: NextRequest) {
         isActive: true,
         leaveDate: leaveDate ? new Date(leaveDate) : null,
         affiliation: affiliation || null,
-        projectMembers: projectIds?.length
-          ? { create: projectIds.map((pid: number) => ({ projectId: pid })) }
-          : undefined,
       },
+      select: { id: true, email: true, name: true, role: true, leaveDate: true, affiliation: true },
+    });
+
+    if (projectIds?.length) {
+      await prisma.projectMember.createMany({
+        data: projectIds.map((pid: number) => ({ projectId: pid, userId: user.id })),
+        skipDuplicates: true,
+      });
+    }
+
+    const userWithProjects = await prisma.user.findUnique({
+      where: { id: user.id },
       select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        leaveDate: true,
-        affiliation: true,
+        id: true, email: true, name: true, role: true, leaveDate: true, affiliation: true,
         projectMembers: { select: { project: { select: { id: true, name: true } } } },
       },
     });
@@ -110,7 +125,7 @@ export async function POST(req: NextRequest) {
     console.log(`✅ New user created: ${email} (temp password: ${tempPassword})`);
 
     return successResponse(
-      { ...user, tempPassword },
+      { ...userWithProjects, tempPassword },
       '사용자가 성공적으로 생성되었습니다.',
       201
     );

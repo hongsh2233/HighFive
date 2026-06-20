@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = parseInt((session!.user as any).id || '0');
-    const { name, projectManagerId, projectLeadName } = await req.json();
+    const { name, projectManagerName, projectLeadName } = await req.json();
 
     if (!name?.trim()) {
       return errorResponse('프로젝트 이름을 입력해주세요.', 400);
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       data: {
         name: name.trim(),
         createdBy: userId,
-        projectManagerId: projectManagerId ? parseInt(projectManagerId) : null,
+        projectManagerName: projectManagerName?.trim() || null,
         projectLeadName: projectLeadName?.trim() || null,
       },
     });

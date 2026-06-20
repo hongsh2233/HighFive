@@ -41,14 +41,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const { id } = await params;
     const body = await req.json();
-    const { name, status, projectManagerId, projectLeadName } = body;
+    const { name, status, projectManagerName, projectLeadName } = body;
 
     const project = await prisma.project.update({
       where: { id: parseInt(id) },
       data: {
         ...(name !== undefined && { name: name.trim() }),
         ...(status !== undefined && { status }),
-        ...(projectManagerId !== undefined && { projectManagerId: projectManagerId ? parseInt(projectManagerId) : null }),
+        ...(projectManagerName !== undefined && { projectManagerName: projectManagerName?.trim() || null }),
         ...(projectLeadName !== undefined && { projectLeadName: projectLeadName?.trim() || null }),
       },
       include: {

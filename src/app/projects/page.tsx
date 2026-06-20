@@ -13,21 +13,15 @@ interface Project {
   name: string;
   status: string;
   creator: { id: number; name: string };
-  projectManager?: { id: number; name: string } | null;
+  projectManagerName?: string | null;
   projectLeadName?: string | null;
   members: ProjectMember[];
   _count: { tasks: number };
   createdAt: string;
 }
 
-interface AllUser {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-}
 
-const emptyForm = { name: '', projectManagerId: '', projectLeadName: '' };
+const emptyForm = { name: '', projectManagerName: '', projectLeadName: '' };
 
 export default function ProjectsPage() {
   const { user } = useAuth();
@@ -37,6 +31,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  type AllUser = { id: number; name: string; email: string; role: string };
   const [allUsers, setAllUsers] = useState<AllUser[]>([]);
 
   const [showForm, setShowForm] = useState(false);
@@ -75,7 +70,7 @@ export default function ProjectsPage() {
     setEditingProject(p);
     setForm({
       name: p.name,
-      projectManagerId: p.projectManager ? String(p.projectManager.id) : '',
+      projectManagerName: p.projectManagerName || '',
       projectLeadName: p.projectLeadName || '',
     });
     setShowForm(true);
@@ -88,7 +83,7 @@ export default function ProjectsPage() {
     try {
       const payload = {
         name: form.name.trim(),
-        projectManagerId: form.projectManagerId ? parseInt(form.projectManagerId) : null,
+        projectManagerName: form.projectManagerName.trim() || null,
         projectLeadName: form.projectLeadName.trim() || null,
       };
 
@@ -218,16 +213,12 @@ export default function ProjectsPage() {
                 </div>
                 <div>
                   <label style={labelStyle}>PM (Project Manager)</label>
-                  <select
-                    value={form.projectManagerId}
-                    onChange={e => setForm(p => ({ ...p, projectManagerId: e.target.value }))}
+                  <input
+                    value={form.projectManagerName}
+                    onChange={e => setForm(p => ({ ...p, projectManagerName: e.target.value }))}
+                    placeholder="이름 직접 입력 (외부 인력 가능)"
                     style={inputStyle}
-                  >
-                    <option value="">선택 안함</option>
-                    {allUsers.map(u => (
-                      <option key={u.id} value={u.id}>{u.name} ({u.role === 'MANAGER' ? '관리자' : u.role === 'ADMIN' ? '최고관리자' : '작업자'})</option>
-                    ))}
-                  </select>
+                  />
                 </div>
                 <div>
                   <label style={labelStyle}>PL (Project Lead)</label>
@@ -289,7 +280,7 @@ export default function ProjectsPage() {
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: 20, fontSize: 12, color: 'var(--text-muted)' }}>
-                      {p.projectManager && <span>PM: <strong style={{ color: 'var(--text-secondary)' }}>{p.projectManager.name}</strong></span>}
+                      {p.projectManagerName && <span>PM: <strong style={{ color: 'var(--text-secondary)' }}>{p.projectManagerName}</strong></span>}
                       {p.projectLeadName && <span>PL: <strong style={{ color: 'var(--text-secondary)' }}>{p.projectLeadName}</strong></span>}
                       <span>멤버 {p.members.length}명</span>
                       <span>업무 {p._count.tasks}건</span>
