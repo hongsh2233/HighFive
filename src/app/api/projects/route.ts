@@ -2,6 +2,13 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 
+const projectInclude = {
+  creator: { select: { id: true, name: true } },
+  projectManager: { select: { id: true, name: true } },
+  members: { include: { user: { select: { id: true, name: true, role: true } } } },
+  _count: { select: { tasks: true } },
+} as const;
+
 // GET /api/projects
 export async function GET() {
   try {
@@ -17,11 +24,7 @@ export async function GET() {
 
     const projects = await prisma.project.findMany({
       where,
-      include: {
-        creator: { select: { id: true, name: true } },
-        members: { include: { user: { select: { id: true, name: true, role: true } } } },
-        _count: { select: { tasks: true } },
-      },
+      include: projectInclude,
       orderBy: { createdAt: 'desc' },
     });
 
@@ -44,26 +47,32 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = parseInt((session!.user as any).id || '0');
-    const { name } = await req.json();
+    const { name, projectManagerId, projectLeadName } = await req.json();
 
     if (!name?.trim()) {
       return errorResponse('프로젝트 이름을 입력해주세요.', 400);
     }
 
+    // 프로젝트 생성 후 멤버 별도 추가 (nested create FK 오류 방지)
     const project = await prisma.project.create({
       data: {
         name: name.trim(),
         createdBy: userId,
-        members: { create: { userId } },
-      },
-      include: {
-        creator: { select: { id: true, name: true } },
-        members: { include: { user: { select: { id: true, name: true, role: true } } } },
-        _count: { select: { tasks: true } },
+        projectManagerId: projectManagerId ? parseInt(projectManagerId) : null,
+        projectLeadName: projectLeadName?.trim() || null,
       },
     });
 
-    return successResponse(project, '프로젝트가 생성되었습니다.', 201);
+    await prisma.projectMember.create({
+      data: { projectId: project.id, userId },
+    });
+
+    const result = await prisma.project.findUnique({
+      where: { id: project.id },
+      include: projectInclude,
+    });
+
+    return successResponse(result, '프로젝트가 생성되었습니다.', 201);
   } catch (e) {
     console.error(e);
     return errorResponse('생성 실패', 500);

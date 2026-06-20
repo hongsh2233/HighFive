@@ -219,7 +219,10 @@ export default function UsersPage() {
                 </div>
                 <div>
                   <label style={labelStyle}>역할 *</label>
-                  <select value={formData.role} onChange={e => setFormData(p => ({ ...p, role: e.target.value }))} style={inputStyle}>
+                  <select value={formData.role} onChange={e => {
+                    const role = e.target.value;
+                    setFormData(p => ({ ...p, role, projectIds: role === 'ADMIN' ? [] : p.projectIds }));
+                  }} style={inputStyle}>
                     <option value="WORKER">작업자</option>
                     <option value="MANAGER">관리자</option>
                     <option value="ADMIN">최고관리자</option>
@@ -240,8 +243,8 @@ export default function UsersPage() {
               </div>
 
               {projects.length > 0 && (
-                <div style={{ marginBottom: 20 }}>
-                  <label style={labelStyle}>소속 프로젝트</label>
+                <div style={{ marginBottom: 20, opacity: formData.role === 'ADMIN' ? 0.4 : 1, pointerEvents: formData.role === 'ADMIN' ? 'none' : 'auto' }}>
+                  <label style={labelStyle}>소속 프로젝트 {formData.role === 'ADMIN' && <span style={{ fontWeight: 400, textTransform: 'none' }}>(최고관리자는 선택 불필요)</span>}</label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {projects.map(p => {
                       const selected = formData.projectIds.includes(p.id);
