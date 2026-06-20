@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import AppHeader from './AppHeader';
 
-const AUTH_REQUIRED_PATHS = ['/dashboard', '/tasks', '/calendar', '/stats', '/users', '/profile', '/info'];
+const AUTH_REQUIRED_PATHS = ['/dashboard', '/tasks', '/calendar', '/stats', '/users', '/profile', '/info', '/projects'];
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

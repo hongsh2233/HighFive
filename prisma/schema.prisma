@@ -14,17 +14,21 @@ model User {
   id            Int     @id @default(autoincrement())
   email         String  @unique
   name          String
-  role          String  @default("WORKER") // ADMIN, PLANNER, WORKER
+  role          String  @default("WORKER") // ADMIN, MANAGER, WORKER
   passwordHash  String
   isActive      Boolean @default(true)
+  leaveDate     DateTime?
+  affiliation   String?  // 정규 | 프리
   createdAt     DateTime @default(now())
   lastLoginAt   DateTime?
 
   // Relations
-  plannedTasks  Task[] @relation("planner")
-  workerTasks   Task[] @relation("worker")
-  timeLogs      TimeLog[]
-  infoItems     InfoItem[]
+  plannedTasks    Task[]          @relation("planner")
+  workerTasks     Task[]          @relation("worker")
+  timeLogs        TimeLog[]
+  infoItems       InfoItem[]
+  projectMembers  ProjectMember[]
+  createdProjects Project[]       @relation("projectCreator")
 
   @@map("users")
 }
@@ -40,12 +44,14 @@ model Task {
   isFreeze      Boolean @default(false)
   templateId    Int?
   notes         String?
+  projectId     Int?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   // Relations
-  planner       User    @relation("planner", fields: [plannerId], references: [id])
-  worker        User    @relation("worker", fields: [workerId], references: [id])
+  planner       User     @relation("planner", fields: [plannerId], references: [id])
+  worker        User     @relation("worker", fields: [workerId], references: [id])
+  project       Project? @relation(fields: [projectId], references: [id])
   timeLogs      TimeLog[]
 
   @@index([workerId, status])
@@ -95,6 +101,31 @@ model Notification {
 
   @@index([taskId])
   @@map("notifications")
+}
+
+model Project {
+  id        Int      @id @default(autoincrement())
+  name      String
+  status    String   @default("ACTIVE") // ACTIVE, CLOSED
+  createdBy Int
+  creator   User     @relation("projectCreator", fields: [createdBy], references: [id])
+  members   ProjectMember[]
+  tasks     Task[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("projects")
+}
+
+model ProjectMember {
+  projectId Int
+  userId    Int
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt  DateTime @default(now())
+
+  @@id([projectId, userId])
+  @@map("project_members")
 }
 
 model InfoItem {

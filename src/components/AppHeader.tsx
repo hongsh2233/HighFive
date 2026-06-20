@@ -135,17 +135,25 @@ export default function AppHeader() {
           </div>
 
           {/* 관리 메뉴 */}
-          {['ADMIN', 'PLANNER'].includes(user?.role || '') && (
+          {['ADMIN', 'MANAGER'].includes(user?.role || '') && (
             <div
               style={{ position: 'relative' }}
               onMouseEnter={() => handleMenuEnter('admin')}
               onMouseLeave={handleMenuLeave}
             >
-              <button style={navLinkStyle(openMenu === 'admin' || pathname.startsWith('/users') || pathname.startsWith('/stats'))}>
+              <button style={navLinkStyle(openMenu === 'admin' || pathname.startsWith('/users') || pathname.startsWith('/stats') || pathname.startsWith('/projects'))}>
                 관리
               </button>
               {openMenu === 'admin' && (
                 <div style={{ ...dropdownStyle, left: 0 }}>
+                  <Link
+                    href="/projects"
+                    style={dropdownItemStyle}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    프로젝트
+                  </Link>
                   {user?.role === 'ADMIN' && (
                     <Link
                       href="/users"

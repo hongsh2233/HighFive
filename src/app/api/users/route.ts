@@ -2,16 +2,24 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireRole, successResponse, errorResponse, hashPassword, generateTempPassword } from '@/lib/utils';
 
-// GET /api/users - 전체 사용자 목록 (ADMIN만)
+// GET /api/users
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireRole(['ADMIN']);
+    const { error } = await requireRole(['ADMIN', 'MANAGER']);
     if (error) return error;
 
     const { searchParams } = new URL(req.url);
     const role = searchParams.get('role');
+    const projectId = searchParams.get('projectId');
 
-    const where = role ? { role } : {};
+    let where: any = role ? { role } : {};
+
+    if (projectId) {
+      where = {
+        ...where,
+        projectMembers: { some: { projectId: parseInt(projectId) } },
+      };
+    }
 
     const users = await prisma.user.findMany({
       where,
@@ -21,8 +29,13 @@ export async function GET(req: NextRequest) {
         name: true,
         role: true,
         isActive: true,
+        leaveDate: true,
+        affiliation: true,
         createdAt: true,
         lastLoginAt: true,
+        projectMembers: {
+          select: { project: { select: { id: true, name: true, status: true } } },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -34,16 +47,15 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/users - 사용자 초대 (ADMIN만)
+// POST /api/users - 사용자 생성
 export async function POST(req: NextRequest) {
   try {
     const { error } = await requireRole(['ADMIN']);
     if (error) return error;
 
     const body = await req.json();
-    const { email, name, role } = body;
+    const { email, name, role, leaveDate, affiliation, projectIds } = body;
 
-    // 입력 검증
     if (!email || !name) {
       return errorResponse('이메일과 이름은 필수입니다.', 400, 'VALID_400');
     }
@@ -56,25 +68,21 @@ export async function POST(req: NextRequest) {
       return errorResponse('이름은 최소 2자 이상이어야 합니다.', 400, 'VALID_400');
     }
 
-    const validRoles = ['ADMIN', 'PLANNER', 'WORKER'];
+    const validRoles = ['ADMIN', 'MANAGER', 'WORKER'];
     if (role && !validRoles.includes(role)) {
       return errorResponse('유효하지 않은 역할입니다.', 400, 'VALID_400');
     }
 
-    // 이미 존재하는지 확인
     const existingUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
     });
-
     if (existingUser) {
       return errorResponse('이미 존재하는 이메일입니다.', 409, 'VALID_409');
     }
 
-    // 임시 비밀번호 생성 및 해싱
     const tempPassword = generateTempPassword();
     const hashedPassword = await hashPassword(tempPassword);
 
-    // 사용자 생성
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase(),
@@ -82,24 +90,32 @@ export async function POST(req: NextRequest) {
         role: role || 'WORKER',
         passwordHash: hashedPassword,
         isActive: true,
+        leaveDate: leaveDate ? new Date(leaveDate) : null,
+        affiliation: affiliation || null,
+        projectMembers: projectIds?.length
+          ? { create: projectIds.map((pid: number) => ({ projectId: pid })) }
+          : undefined,
       },
       select: {
         id: true,
         email: true,
         name: true,
         role: true,
+        leaveDate: true,
+        affiliation: true,
+        projectMembers: { select: { project: { select: { id: true, name: true } } } },
       },
     });
 
-    console.log(`✅ New user invited: ${email} (temp password: ${tempPassword})`);
+    console.log(`✅ New user created: ${email} (temp password: ${tempPassword})`);
 
     return successResponse(
       { ...user, tempPassword },
-      '사용자가 성공적으로 초대되었습니다.',
+      '사용자가 성공적으로 생성되었습니다.',
       201
     );
   } catch (err) {
     console.error(err);
-    return errorResponse('사용자 초대 중 오류가 발생했습니다.', 500);
+    return errorResponse('사용자 생성 중 오류가 발생했습니다.', 500);
   }
 }
