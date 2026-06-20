@@ -42,4 +42,23 @@ export async function ensureProjectsSchema() {
   `);
 
   await run(`ALTER TABLE project_members ADD COLUMN IF NOT EXISTS "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
+
+  // 알 수 없는 NOT NULL 컬럼(DEFAULT 없는)을 자동으로 nullable로 변환
+  // 프로덕션 DB에 예상치 못한 컬럼이 있어도 INSERT가 성공하도록 보장
+  await run(`
+    DO $$
+    DECLARE col TEXT;
+    BEGIN
+      FOR col IN
+        SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'projects'
+          AND is_nullable = 'NO'
+          AND column_default IS NULL
+          AND column_name <> 'id'
+      LOOP
+        EXECUTE format('ALTER TABLE projects ALTER COLUMN %I DROP NOT NULL', col);
+      END LOOP;
+    END $$
+  `);
 }
