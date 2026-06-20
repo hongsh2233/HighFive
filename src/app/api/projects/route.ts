@@ -30,9 +30,9 @@ export async function GET() {
     });
 
     return successResponse(projects);
-  } catch (e) {
-    console.error(e);
-    return errorResponse('조회 실패', 500);
+  } catch (e: any) {
+    console.error('[GET /api/projects]', e);
+    return errorResponse(`조회 실패: ${e?.message || String(e)}`, 500);
   }
 }
 

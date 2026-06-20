@@ -27,7 +27,7 @@ export async function ensureProjectsSchema() {
     )
   `);
 
-  await run(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS "createdBy" INTEGER NOT NULL DEFAULT 0`);
+  await run(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS "createdBy" INTEGER`);
   await run(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'ACTIVE'`);
   await run(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS "projectManagerName" TEXT`);
   await run(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS "projectLeadName" TEXT`);
@@ -42,6 +42,10 @@ export async function ensureProjectsSchema() {
   `);
 
   await run(`ALTER TABLE project_members ADD COLUMN IF NOT EXISTS "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
+
+  // Make createdBy nullable and remove DEFAULT 0 (existing rows may have 0 which has no matching user)
+  await run(`ALTER TABLE projects ALTER COLUMN "createdBy" DROP DEFAULT`);
+  await run(`ALTER TABLE projects ALTER COLUMN "createdBy" DROP NOT NULL`);
 
   // 알 수 없는 NOT NULL 컬럼(DEFAULT 없는)을 자동으로 nullable로 변환
   // 프로덕션 DB에 예상치 못한 컬럼이 있어도 INSERT가 성공하도록 보장

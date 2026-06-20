@@ -107,10 +107,10 @@ model Project {
   id                 Int      @id @default(autoincrement())
   name               String
   status             String   @default("ACTIVE") // ACTIVE, CLOSED
-  createdBy          Int
+  createdBy          Int?
   projectManagerName String?
   projectLeadName    String?
-  creator            User     @relation("projectCreator", fields: [createdBy], references: [id])
+  creator            User?    @relation("projectCreator", fields: [createdBy], references: [id])
   members            ProjectMember[]
   tasks            Task[]
   createdAt        DateTime @default(now())

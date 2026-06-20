@@ -44,7 +44,9 @@ export default function ProjectsPage() {
     try {
       const res = await apiClient.get<{ data: Project[] }>('/projects');
       setProjects(res.data.data);
-    } catch { /* silent */ } finally { setLoading(false); }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.response?.data?.message || '목록 조회 실패' });
+    } finally { setLoading(false); }
   };
 
   const fetchAllUsers = async () => {
