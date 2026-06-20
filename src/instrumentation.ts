@@ -59,6 +59,7 @@ export async function register() {
     await run(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "leaveDate" TIMESTAMP(3)`);
     await run(`ALTER TABLE users ADD COLUMN IF NOT EXISTS affiliation TEXT`);
     await run(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS "projectId" INTEGER`);
+    await run(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'ACTIVE'`);
     await run(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS "projectManagerName" TEXT`);
     await run(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS "projectLeadName" TEXT`);
 

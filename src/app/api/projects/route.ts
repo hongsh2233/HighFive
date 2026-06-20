@@ -53,9 +53,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Raw SQL로 생성 (Prisma 스키마/DB 컬럼 불일치 우회)
+    // status 컬럼은 DEFAULT 'ACTIVE' 이므로 INSERT에서 제외 (컬럼 부재 방어)
     const rows = await prisma.$queryRawUnsafe<{ id: number }[]>(
-      `INSERT INTO projects (name, status, "createdBy", "projectManagerName", "projectLeadName", "createdAt", "updatedAt")
-       VALUES ($1, 'ACTIVE', $2, $3, $4, NOW(), NOW())
+      `INSERT INTO projects (name, "createdBy", "projectManagerName", "projectLeadName", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, NOW(), NOW())
        RETURNING id`,
       name.trim(), userId,
       projectManagerName?.trim() || null,
