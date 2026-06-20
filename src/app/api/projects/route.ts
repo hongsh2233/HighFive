@@ -4,7 +4,6 @@ import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 
 const projectInclude = {
   creator: { select: { id: true, name: true } },
-  projectManager: { select: { id: true, name: true } },
   members: { include: { user: { select: { id: true, name: true, role: true } } } },
   _count: { select: { tasks: true } },
 } as const;
@@ -58,8 +57,8 @@ export async function POST(req: NextRequest) {
       data: {
         name: name.trim(),
         createdBy: userId,
-        projectManagerName: projectManagerName?.trim() || null,
-        projectLeadName: projectLeadName?.trim() || null,
+        ...(projectManagerName?.trim() && { projectManagerName: projectManagerName.trim() }),
+        ...(projectLeadName?.trim() && { projectLeadName: projectLeadName.trim() }),
       },
     });
 

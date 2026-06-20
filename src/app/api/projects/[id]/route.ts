@@ -13,7 +13,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       where: { id: parseInt(id) },
       include: {
         creator: { select: { id: true, name: true } },
-        projectManager: { select: { id: true, name: true } },
         members: { include: { user: { select: { id: true, name: true, email: true, role: true } } } },
         _count: { select: { tasks: true } },
       },
@@ -53,7 +52,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       },
       include: {
         creator: { select: { id: true, name: true } },
-        projectManager: { select: { id: true, name: true } },
         members: { include: { user: { select: { id: true, name: true, role: true } } } },
         _count: { select: { tasks: true } },
       },

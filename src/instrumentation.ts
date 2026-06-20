@@ -35,12 +35,11 @@ export async function register() {
         name TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'ACTIVE',
         "createdBy" INTEGER NOT NULL,
-        "projectManagerId" INTEGER,
+        "projectManagerName" TEXT,
         "projectLeadName" TEXT,
         "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT projects_createdBy_fkey FOREIGN KEY ("createdBy") REFERENCES users(id),
-        CONSTRAINT projects_projectManagerId_fkey FOREIGN KEY ("projectManagerId") REFERENCES users(id)
+        CONSTRAINT projects_createdBy_fkey FOREIGN KEY ("createdBy") REFERENCES users(id)
       )
     `);
 
@@ -56,11 +55,10 @@ export async function register() {
       )
     `);
 
-    // alter existing tables to add new columns
+    // alter existing tables to add new columns (idempotent for existing deployments)
     await run(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "leaveDate" TIMESTAMP(3)`);
     await run(`ALTER TABLE users ADD COLUMN IF NOT EXISTS affiliation TEXT`);
     await run(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS "projectId" INTEGER`);
-    await run(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS "projectManagerId" INTEGER REFERENCES users(id)`);
     await run(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS "projectManagerName" TEXT`);
     await run(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS "projectLeadName" TEXT`);
 
