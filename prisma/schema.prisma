@@ -29,6 +29,7 @@ model User {
   infoItems       InfoItem[]
   projectMembers  ProjectMember[]
   createdProjects Project[]       @relation("projectCreator")
+  managedProjects Project[]       @relation("projectManager")
 
   @@map("users")
 }
@@ -104,15 +105,18 @@ model Notification {
 }
 
 model Project {
-  id        Int      @id @default(autoincrement())
-  name      String
-  status    String   @default("ACTIVE") // ACTIVE, CLOSED
-  createdBy Int
-  creator   User     @relation("projectCreator", fields: [createdBy], references: [id])
-  members   ProjectMember[]
-  tasks     Task[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  name             String
+  status           String   @default("ACTIVE") // ACTIVE, CLOSED
+  createdBy        Int
+  projectManagerId Int?
+  projectLeadName  String?
+  creator          User     @relation("projectCreator", fields: [createdBy], references: [id])
+  projectManager   User?    @relation("projectManager", fields: [projectManagerId], references: [id])
+  members          ProjectMember[]
+  tasks            Task[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@map("projects")
 }
