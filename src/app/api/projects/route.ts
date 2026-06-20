@@ -52,28 +52,31 @@ export async function POST(req: NextRequest) {
       return errorResponse('프로젝트 이름을 입력해주세요.', 400);
     }
 
-    // 프로젝트 생성 후 멤버 별도 추가 (nested create FK 오류 방지)
-    const project = await prisma.project.create({
-      data: {
-        name: name.trim(),
-        createdBy: userId,
-        ...(projectManagerName?.trim() && { projectManagerName: projectManagerName.trim() }),
-        ...(projectLeadName?.trim() && { projectLeadName: projectLeadName.trim() }),
-      },
-    });
+    // Raw SQL로 생성 (Prisma 스키마/DB 컬럼 불일치 우회)
+    const rows = await prisma.$queryRawUnsafe<{ id: number }[]>(
+      `INSERT INTO projects (name, status, "createdBy", "projectManagerName", "projectLeadName", "createdAt", "updatedAt")
+       VALUES ($1, 'ACTIVE', $2, $3, $4, NOW(), NOW())
+       RETURNING id`,
+      name.trim(), userId,
+      projectManagerName?.trim() || null,
+      projectLeadName?.trim() || null,
+    );
+    const projectId = rows[0].id;
 
-    await prisma.projectMember.create({
-      data: { projectId: project.id, userId },
-    });
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO project_members ("projectId", "userId", "joinedAt")
+       VALUES ($1, $2, NOW()) ON CONFLICT DO NOTHING`,
+      projectId, userId,
+    );
 
     const result = await prisma.project.findUnique({
-      where: { id: project.id },
+      where: { id: projectId },
       include: projectInclude,
     });
 
     return successResponse(result, '프로젝트가 생성되었습니다.', 201);
-  } catch (e) {
-    console.error(e);
-    return errorResponse('생성 실패', 500);
+  } catch (e: any) {
+    console.error('[POST /api/projects]', e);
+    return errorResponse(`생성 실패: ${e?.message || String(e)}`, 500);
   }
 }
