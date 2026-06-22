@@ -1,0 +1,130 @@
+.page {
+  padding: var(--space-8);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: var(--space-8);
+}
+
+.errorBox {
+  padding: var(--space-3);
+  background-color: #FEF2F2;
+  border: 1px solid var(--color-danger);
+  border-radius: 6px;
+  color: #7F1D1D;
+  margin-bottom: var(--space-4);
+}
+
+.successBox {
+  padding: var(--space-3);
+  background-color: #D1FAE5;
+  border: 1px solid #10B981;
+  border-radius: 6px;
+  color: #065F46;
+  margin-bottom: var(--space-4);
+}
+
+.fieldGroup {
+  margin-bottom: var(--space-6);
+}
+
+.label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
+
+.input {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-gray-300);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.textarea {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-gray-300);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+  min-height: 120px;
+  resize: vertical;
+}
+
+.dateDisplay {
+  padding: var(--space-3);
+  background-color: var(--color-gray-100);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--color-gray-900);
+  font-weight: 500;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--color-gray-600);
+  margin-top: var(--space-2);
+}
+
+.hintError {
+  font-size: 12px;
+  color: #DC2626;
+  margin-top: var(--space-2);
+}
+
+.btnRow {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.submitBtn {
+  flex: 1;
+  padding: var(--space-3);
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submitBtn[data-loading="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancelBtn {
+  flex: 1;
+  padding: var(--space-3);
+  background-color: var(--bg-subtle);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.loading {
+  padding: var(--space-8);
+}
+
+.noPermission {
+  padding: var(--space-8);
+}
+
+.dangerText {
+  color: var(--color-danger);
+}

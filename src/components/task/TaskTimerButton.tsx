@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import apiClient from '@/lib/api-client';
 import { TimeLog } from '@/types';
+import styles from './TaskTimerButton.module.css';
 
 interface TaskTimerButtonProps {
   taskId: number;
@@ -14,7 +15,6 @@ export default function TaskTimerButton({ taskId, onTimerUpdated }: TaskTimerBut
   const [elapsed, setElapsed] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // 진행 중인 타이머 확인
   useEffect(() => {
     const checkActiveTimer = async () => {
       try {
@@ -35,14 +35,11 @@ export default function TaskTimerButton({ taskId, onTimerUpdated }: TaskTimerBut
     checkActiveTimer();
   }, [taskId]);
 
-  // 타이머 카운트다운
   useEffect(() => {
     if (!currentLog || currentLog.endTime) return;
-
     const timer = setInterval(() => {
       setElapsed((prev) => prev + 1);
     }, 1000);
-
     return () => clearInterval(timer);
   }, [currentLog]);
 
@@ -92,47 +89,15 @@ export default function TaskTimerButton({ taskId, onTimerUpdated }: TaskTimerBut
 
   const isRunning = !!currentLog && !currentLog.endTime;
 
-  const buttonStyle: React.CSSProperties = {
-    padding: 'var(--space-2) var(--space-4)',
-    backgroundColor: isRunning ? 'var(--color-danger)' : 'var(--color-primary)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: loading ? 'not-allowed' : 'pointer',
-    fontWeight: '600',
-    fontSize: '14px',
-    minWidth: '140px',
-    opacity: loading ? 0.6 : 1,
-    transition: 'background-color 0.2s',
-  };
-
   return (
     <button
       onClick={isRunning ? handleStop : handleStart}
       disabled={loading}
-      style={buttonStyle}
-      onMouseEnter={(e) => {
-        if (!loading) {
-          (e.target as HTMLButtonElement).style.backgroundColor = isRunning
-            ? 'var(--color-danger)'
-            : 'var(--color-primary-dark)';
-        }
-      }}
-      onMouseLeave={(e) => {
-        (e.target as HTMLButtonElement).style.backgroundColor = isRunning
-          ? 'var(--color-danger)'
-          : 'var(--color-primary)';
-      }}
+      data-running={isRunning}
+      data-loading={loading}
+      className={styles.btn}
     >
-      {isRunning ? (
-        <>
-          ⏹ {formatTime(elapsed)}
-        </>
-      ) : (
-        <>
-          ▶ 시작
-        </>
-      )}
+      {isRunning ? <>⏹ {formatTime(elapsed)}</> : <>▶ 시작</>}
     </button>
   );
 }

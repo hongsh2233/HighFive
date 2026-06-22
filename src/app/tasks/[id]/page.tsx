@@ -6,6 +6,23 @@ import { useTimer } from '@/hooks/useTimer';
 import apiClient from '@/lib/api-client';
 import { Task, TimeLog } from '@/types';
 import TaskTimerButton from '@/components/task/TaskTimerButton';
+import styles from './detail.module.css';
+
+const statusColors: { [key: string]: { bg: string; text: string; border: string } } = {
+  ASSIGNED: { bg: 'transparent', text: '#1D4ED8', border: '#93C5FD' },
+  PROGRESS: { bg: 'transparent', text: '#92400E', border: '#FCD34D' },
+  REVIEW:   { bg: 'transparent', text: '#5B21B6', border: '#C4B5FD' },
+  QA:       { bg: 'transparent', text: '#155E75', border: '#67E8F9' },
+  DONE:     { bg: 'transparent', text: '#065F46', border: '#6EE7B7' },
+};
+
+const statusLabels: { [key: string]: string } = {
+  ASSIGNED: '배정됨',
+  PROGRESS: '진행중',
+  REVIEW: '검수',
+  QA: 'QA',
+  DONE: '완료',
+};
 
 export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -26,7 +43,6 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         setTask(response.data.data);
         setFormData({ notes: response.data.data.notes || '' });
 
-        // 타임로그 조회
         const logsResponse = await apiClient.get<{ data: { logs: TimeLog[]; totalHours: number } }>(
           `/tasks/${id}/timelogs`
         );
@@ -45,7 +61,6 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   }, [id, authLoading]);
 
   const handleTimerUpdated = async (_log: TimeLog) => {
-    // 타이머 업데이트 후 로그 다시 로드
     try {
       const response = await apiClient.get<{ data: { logs: TimeLog[]; totalHours: number } }>(
         `/tasks/${id}/timelogs`
@@ -70,155 +85,60 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   };
 
   if (authLoading || loading) {
-    return <div style={{ padding: 'var(--space-8)' }}>로딩 중...</div>;
+    return <div className={styles.loading}>로딩 중...</div>;
   }
 
   if (error || !task) {
     return (
-      <div style={{ padding: 'var(--space-8)' }}>
-        <p style={{ color: 'var(--color-danger)' }}>{error || '업무를 찾을 수 없습니다.'}</p>
+      <div className={styles.errorPage}>
+        <p className={styles.dangerText}>{error || '업무를 찾을 수 없습니다.'}</p>
       </div>
     );
   }
 
-  const containerStyle: React.CSSProperties = {
-    padding: 'var(--space-8)',
-    maxWidth: '1000px',
-    margin: '0 auto',
-  };
-
-  const cardStyle: React.CSSProperties = {
-    backgroundColor: 'var(--bg-surface)',
-    padding: 'var(--space-6)',
-    borderRadius: '8px',
-    border: '1px solid var(--border)',
-    marginBottom: 'var(--space-6)',
-  };
-
-  const labelStyle: React.CSSProperties = {
-    fontSize: '12px',
-    fontWeight: '600',
-    color: 'var(--color-gray-600)',
-    textTransform: 'uppercase',
-    marginBottom: 'var(--space-1)',
-  };
-
-  const valueStyle: React.CSSProperties = {
-    fontSize: '16px',
-    fontWeight: '600',
-    marginBottom: 'var(--space-4)',
-  };
-
-  const gridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 'var(--space-4)',
-    marginBottom: 'var(--space-6)',
-  };
-
-  const statusColors: { [key: string]: { bg: string; text: string; border: string } } = {
-    ASSIGNED: { bg: 'transparent', text: '#1D4ED8', border: '#93C5FD' },
-    PROGRESS: { bg: 'transparent', text: '#92400E', border: '#FCD34D' },
-    REVIEW:   { bg: 'transparent', text: '#5B21B6', border: '#C4B5FD' },
-    QA:       { bg: 'transparent', text: '#155E75', border: '#67E8F9' },
-    DONE:     { bg: 'transparent', text: '#065F46', border: '#6EE7B7' },
-  };
-
-  const statusLabels: { [key: string]: string } = {
-    ASSIGNED: '배정됨',
-    PROGRESS: '진행중',
-    REVIEW: '검수',
-    QA: 'QA',
-    DONE: '완료',
-  };
-
+  const sc = statusColors[task.status] ?? { bg: 'transparent', text: '#374151', border: '#D4D4D8' };
   const badgeStyle = {
     display: 'inline-block',
     padding: '3px 8px',
-    backgroundColor: statusColors[task.status]?.bg || 'transparent',
-    color: statusColors[task.status]?.text || '#374151',
-    border: `1px solid ${statusColors[task.status]?.border || '#D4D4D8'}`,
+    backgroundColor: sc.bg,
+    color: sc.text,
+    border: `1px solid ${sc.border}`,
     borderRadius: '4px',
     fontSize: '11px',
     fontWeight: '600',
   };
 
-  const buttonStyle: React.CSSProperties = {
-    padding: 'var(--space-2) var(--space-4)',
-    backgroundColor: 'var(--accent)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontWeight: '600',
-    fontSize: '13px',
-    marginRight: 'var(--space-2)',
-  };
-
-  const textareaStyle: React.CSSProperties = {
-    width: '100%',
-    padding: 'var(--space-3)',
-    border: '1px solid var(--color-gray-300)',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontFamily: 'inherit',
-    resize: 'vertical',
-    minHeight: '120px',
-    boxSizing: 'border-box',
-  };
-
   return (
-    <div style={containerStyle}>
-      <div style={{ marginBottom: 'var(--space-8)' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: 'var(--space-2)' }}>
-          {task.title}
-        </h1>
-        <p style={{ color: 'var(--color-gray-600)', fontSize: '14px' }}>
+    <div className={styles.container}>
+      <div className={styles.pageHeader}>
+        <h1 className={styles.pageTitle}>{task.title}</h1>
+        <p className={styles.pageSubtitle}>
           업무 #{task.id}
           {task.rmsNo && ` · ${task.rmsNo}`}
         </p>
       </div>
 
-      {error && (
-        <div
-          style={{
-            padding: 'var(--space-3)',
-            backgroundColor: '#FEF2F2',
-            border: '1px solid var(--color-danger)',
-            borderRadius: '6px',
-            color: '#7F1D1D',
-            marginBottom: 'var(--space-4)',
-          }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <div className={styles.errorBox}>{error}</div>}
 
       {/* 기본 정보 */}
-      <div style={cardStyle}>
-        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
-          기본 정보
-        </h2>
-
-        <div style={gridStyle}>
+      <div className={styles.card}>
+        <h2 className={styles.cardTitle}>기본 정보</h2>
+        <div className={styles.grid}>
           <div>
-            <p style={labelStyle}>상태</p>
+            <p className={styles.fieldLabel}>상태</p>
             <div style={badgeStyle}>{statusLabels[task.status]}</div>
           </div>
-
           <div>
-            <p style={labelStyle}>담당자</p>
-            <p style={valueStyle}>{task.worker?.name || '-'}</p>
+            <p className={styles.fieldLabel}>담당자</p>
+            <p className={styles.fieldValue}>{task.worker?.name || '-'}</p>
           </div>
-
           <div>
-            <p style={labelStyle}>기획자</p>
-            <p style={valueStyle}>{task.planner?.name || '-'}</p>
+            <p className={styles.fieldLabel}>기획자</p>
+            <p className={styles.fieldValue}>{task.planner?.name || '-'}</p>
           </div>
-
           <div>
-            <p style={labelStyle}>목표일</p>
-            <p style={valueStyle}>
+            <p className={styles.fieldLabel}>목표일</p>
+            <p className={styles.fieldValue}>
               {task.targetDate ? new Date(task.targetDate).toLocaleDateString('ko-KR') : '-'}
             </p>
           </div>
@@ -226,14 +146,11 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       </div>
 
       {/* 메모 */}
-      <div style={cardStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '700' }}>메모</h2>
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <h2 className={styles.cardTitle} style={{ margin: 0 }}>메모</h2>
           {!editing && (
-            <button
-              onClick={() => setEditing(true)}
-              style={{ ...buttonStyle, backgroundColor: 'var(--color-gray-600)' }}
-            >
+            <button onClick={() => setEditing(true)} className={styles.btnSecondary}>
               수정
             </button>
           )}
@@ -244,112 +161,58 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              style={textareaStyle}
+              className={styles.textarea}
               placeholder="메모를 입력하세요..."
             />
-            <div style={{ marginTop: 'var(--space-4)' }}>
-              <button onClick={handleSave} style={buttonStyle}>
-                저장
-              </button>
+            <div className={styles.editActions}>
+              <button onClick={handleSave} className={styles.btn}>저장</button>
               <button
-                onClick={() => {
-                  setEditing(false);
-                  setFormData({ notes: task.notes || '' });
-                }}
-                style={{
-                  ...buttonStyle,
-                  backgroundColor: 'var(--color-gray-600)',
-                }}
+                onClick={() => { setEditing(false); setFormData({ notes: task.notes || '' }); }}
+                className={styles.btnSecondary}
               >
                 취소
               </button>
             </div>
           </div>
         ) : (
-          <p style={{ color: 'var(--color-gray-600)', whiteSpace: 'pre-wrap' }}>
-            {task.notes || '메모가 없습니다.'}
-          </p>
+          <p className={styles.noteText}>{task.notes || '메모가 없습니다.'}</p>
         )}
       </div>
 
       {/* 타임로그 */}
-      <div style={cardStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '700', margin: 0 }}>
-            타임로그
-          </h2>
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <h2 className={styles.cardTitle} style={{ margin: 0 }}>타임로그</h2>
           <TaskTimerButton taskId={parseInt(id)} onTimerUpdated={handleTimerUpdated} />
         </div>
 
-        {/* 총 소요 시간 */}
-        <div style={{
-          padding: 'var(--space-3)',
-          backgroundColor: 'var(--accent-light)',
-          borderRadius: '6px',
-          marginBottom: 'var(--space-4)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <span style={{ fontWeight: '600', color: 'var(--accent-hover)' }}>
-            총 소요 시간
-          </span>
-          <span style={{ fontSize: '20px', fontWeight: '700', color: 'var(--accent)' }}>
-            {totalHours.toFixed(2)} 시간
-          </span>
+        <div className={styles.totalTimeBox}>
+          <span className={styles.totalTimeLabel}>총 소요 시간</span>
+          <span className={styles.totalTimeValue}>{totalHours.toFixed(2)} 시간</span>
         </div>
 
-        {/* 타임로그 목록 */}
         {timeLogs.length === 0 ? (
-          <p style={{ color: 'var(--color-gray-600)', fontSize: '14px' }}>
-            아직 타이머 기록이 없습니다.
-          </p>
+          <p className={styles.emptyLogs}>아직 타이머 기록이 없습니다.</p>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{
-              width: '100%',
-              fontSize: '13px',
-              borderCollapse: 'collapse'
-            }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-gray-300)' }}>
-                  <th style={{ textAlign: 'left', padding: 'var(--space-2)', fontWeight: '600' }}>
-                    시작 시간
-                  </th>
-                  <th style={{ textAlign: 'left', padding: 'var(--space-2)', fontWeight: '600' }}>
-                    종료 시간
-                  </th>
-                  <th style={{ textAlign: 'left', padding: 'var(--space-2)', fontWeight: '600' }}>
-                    소요 시간
-                  </th>
-                  <th style={{ textAlign: 'left', padding: 'var(--space-2)', fontWeight: '600' }}>
-                    보정
-                  </th>
-                  <th style={{ textAlign: 'left', padding: 'var(--space-2)', fontWeight: '600' }}>
-                    최종 시간
-                  </th>
+          <div className={styles.tableWrapper}>
+            <table className={styles.table}>
+              <thead className={styles.tableHead}>
+                <tr>
+                  <th className={styles.th}>시작 시간</th>
+                  <th className={styles.th}>종료 시간</th>
+                  <th className={styles.th}>소요 시간</th>
+                  <th className={styles.th}>보정</th>
+                  <th className={styles.th}>최종 시간</th>
                 </tr>
               </thead>
               <tbody>
                 {timeLogs.map((log) => (
-                  <tr key={log.id} style={{ borderBottom: '1px solid var(--color-gray-100)' }}>
-                    <td style={{ padding: 'var(--space-2)' }}>
-                      {new Date(log.startTime).toLocaleString('ko-KR')}
-                    </td>
-                    <td style={{ padding: 'var(--space-2)' }}>
-                      {log.endTime
-                        ? new Date(log.endTime).toLocaleString('ko-KR')
-                        : '진행 중'}
-                    </td>
-                    <td style={{ padding: 'var(--space-2)' }}>
-                      {log.durationHours?.toFixed(2) || '-'} h
-                    </td>
-                    <td style={{ padding: 'var(--space-2)' }}>
-                      {log.adjustedHours > 0 ? '+' : ''}{log.adjustedHours.toFixed(2)} h
-                    </td>
-                    <td style={{ padding: 'var(--space-2)', fontWeight: '600' }}>
-                      {log.finalHours?.toFixed(2) || '-'} h
-                    </td>
+                  <tr key={log.id} className={styles.tableRow}>
+                    <td className={styles.td}>{new Date(log.startTime).toLocaleString('ko-KR')}</td>
+                    <td className={styles.td}>{log.endTime ? new Date(log.endTime).toLocaleString('ko-KR') : '진행 중'}</td>
+                    <td className={styles.td}>{log.durationHours?.toFixed(2) || '-'} h</td>
+                    <td className={styles.td}>{log.adjustedHours > 0 ? '+' : ''}{log.adjustedHours.toFixed(2)} h</td>
+                    <td className={styles.tdBold}>{log.finalHours?.toFixed(2) || '-'} h</td>
                   </tr>
                 ))}
               </tbody>

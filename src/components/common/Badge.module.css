@@ -1,0 +1,64 @@
+.badge {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+/* StatusBadge — data-status */
+.badge[data-status="ASSIGNED"] {
+  background-color: transparent;
+  color: #1D4ED8;
+  border: 1px solid #93C5FD;
+}
+
+.badge[data-status="PROGRESS"] {
+  background-color: transparent;
+  color: #92400E;
+  border: 1px solid #FCD34D;
+}
+
+.badge[data-status="REVIEW"] {
+  background-color: transparent;
+  color: #5B21B6;
+  border: 1px solid #C4B5FD;
+}
+
+.badge[data-status="QA"] {
+  background-color: transparent;
+  color: #155E75;
+  border: 1px solid #67E8F9;
+}
+
+.badge[data-status="DONE"] {
+  background-color: transparent;
+  color: #065F46;
+  border: 1px solid #6EE7B7;
+}
+
+/* Fallback for unknown status */
+.badge[data-status] {
+  border: 1px solid #D4D4D8;
+  color: #71717A;
+}
+
+/* RoleBadge — data-role */
+.badge[data-role="ADMIN"] {
+  background-color: transparent;
+  color: #DC2626;
+  border: 1px solid #FCA5A5;
+}
+
+.badge[data-role="PLANNER"] {
+  background-color: transparent;
+  color: #7C3AED;
+  border: 1px solid #C4B5FD;
+}
+
+.badge[data-role="WORKER"] {
+  background-color: transparent;
+  color: #1D4ED8;
+  border: 1px solid #93C5FD;
+}

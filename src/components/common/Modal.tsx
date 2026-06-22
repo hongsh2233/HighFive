@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import styles from './Modal.module.css';
 
 interface ModalProps {
   open: boolean;
@@ -21,31 +22,13 @@ export function Modal({ open, onClose, title, children, maxWidth = 560 }: ModalP
   if (!open) return null;
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1000,
-        background: 'rgba(17,24,39,0.5)',
-        backdropFilter: 'blur(2px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}
-    >
+    <div onClick={onClose} className={styles.overlay}>
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{
-          background: '#fff',
-          borderRadius: 12,
-          padding: '28px 32px',
-          maxWidth,
-          width: '100%',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-        }}
+        className={styles.panel}
+        style={{ maxWidth }}
       >
-        {title && (
-          <h2 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#111827' }}>
-            {title}
-          </h2>
-        )}
+        {title && <h2 className={styles.title}>{title}</h2>}
         {children}
       </div>
     </div>

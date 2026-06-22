@@ -1,0 +1,13 @@
+.container {
+  padding: var(--space-8);
+  display: flex;
+  gap: var(--space-4);
+  overflow-x: auto;
+  background-color: var(--color-bg-base);
+  min-height: calc(100vh - 100px);
+}
+
+.loading {
+  justify-content: center;
+  align-items: center;
+}

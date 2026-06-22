@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import axios from 'axios';
+import styles from './create.module.css';
 
 interface Worker {
   id: number;
@@ -43,7 +44,6 @@ export default function TaskCreatePage() {
     }
   }, [authLoading, user]);
 
-  // 프로젝트 선택 시 해당 멤버로 작업자 목록 갱신
   useEffect(() => {
     if (projectId) {
       const proj = projects.find(p => p.id === parseInt(projectId));
@@ -63,8 +63,6 @@ export default function TaskCreatePage() {
       const res = await axios.get('/api/projects');
       const activeProjects = (res.data.data || []).filter((p: Project) => p.status === 'ACTIVE');
       setProjects(activeProjects);
-
-      // ADMIN이고 프로젝트 없으면 전체 작업자 로드
       if (isAdmin && activeProjects.length === 0) fetchAllWorkers();
     } catch (err) {
       console.error(err);
@@ -109,45 +107,32 @@ export default function TaskCreatePage() {
     }
   };
 
-  if (authLoading) return <div style={{ padding: 'var(--space-8)' }}>로딩 중...</div>;
+  if (authLoading) return <div className={styles.loading}>로딩 중...</div>;
 
   if (!user || !['ADMIN', 'MANAGER'].includes(user.role ?? '')) {
-    return <div style={{ padding: 'var(--space-8)' }}><p style={{ color: 'var(--color-danger)' }}>업무를 등록할 권한이 없습니다.</p></div>;
+    return (
+      <div className={styles.noPermission}>
+        <p className={styles.dangerText}>업무를 등록할 권한이 없습니다.</p>
+      </div>
+    );
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: 'var(--space-3)', border: '1px solid var(--color-gray-300)',
-    borderRadius: '6px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box',
-  };
-
   return (
-    <div style={{ padding: 'var(--space-8)', maxWidth: '600px', margin: '0 auto' }}>
-      <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: 'var(--space-8)' }}>업무 등록</h1>
+    <div className={styles.page}>
+      <h1 className={styles.title}>업무 등록</h1>
 
-      {error && (
-        <div style={{ padding: 'var(--space-3)', backgroundColor: '#FEF2F2', border: '1px solid var(--color-danger)', borderRadius: '6px', color: '#7F1D1D', marginBottom: 'var(--space-4)' }}>
-          {error}
-        </div>
-      )}
-      {success && (
-        <div style={{ padding: 'var(--space-3)', backgroundColor: '#D1FAE5', border: '1px solid #10B981', borderRadius: '6px', color: '#065F46', marginBottom: 'var(--space-4)' }}>
-          {success}
-        </div>
-      )}
+      {error && <div className={styles.errorBox}>{error}</div>}
+      {success && <div className={styles.successBox}>{success}</div>}
 
       <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 'var(--space-6)' }}>
-          <label style={{ display: 'block', marginBottom: 'var(--space-2)', fontSize: '14px', fontWeight: '600', color: 'var(--color-gray-900)' }}>등록일자</label>
-          <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--color-gray-100)', borderRadius: '6px', fontSize: '14px', color: 'var(--color-gray-900)', fontWeight: '500' }}>
-            📅 {createdDate} (자동)
-          </div>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>등록일자</label>
+          <div className={styles.dateDisplay}>📅 {createdDate} (자동)</div>
         </div>
 
-        <div style={{ marginBottom: 'var(--space-6)' }}>
-          <label style={{ display: 'block', marginBottom: 'var(--space-2)', fontSize: '14px', fontWeight: '600', color: 'var(--color-gray-900)' }}>
-            프로젝트 {isManager && '*'}
-          </label>
-          <select value={projectId} onChange={e => setProjectId(e.target.value)} style={inputStyle} disabled={loading}>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>프로젝트 {isManager && '*'}</label>
+          <select value={projectId} onChange={e => setProjectId(e.target.value)} className={styles.input} disabled={loading}>
             <option value="">프로젝트 선택 {isAdmin ? '(선택사항)' : ''}</option>
             {projects.map(p => (
               <option key={p.id} value={p.id}>{p.name}</option>
@@ -155,55 +140,53 @@ export default function TaskCreatePage() {
           </select>
         </div>
 
-        <div style={{ marginBottom: 'var(--space-6)' }}>
-          <label style={{ display: 'block', marginBottom: 'var(--space-2)', fontSize: '14px', fontWeight: '600', color: 'var(--color-gray-900)' }}>업무 제목 *</label>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>업무 제목 *</label>
           <input
             type="text"
             value={title}
             onChange={e => setTitle(e.target.value)}
             placeholder="예: [DCBGIT-39085] 구글 원 2TB 상품 정보 수정"
-            style={inputStyle}
+            className={styles.input}
             disabled={loading}
           />
-          <p style={{ fontSize: '12px', color: 'var(--color-gray-600)', marginTop: 'var(--space-2)' }}>
-            선택사항: [RMS-NO] 형식으로 입력하면 자동으로 분류됩니다.
-          </p>
+          <p className={styles.hint}>선택사항: [RMS-NO] 형식으로 입력하면 자동으로 분류됩니다.</p>
         </div>
 
-        <div style={{ marginBottom: 'var(--space-6)' }}>
-          <label style={{ display: 'block', marginBottom: 'var(--space-2)', fontSize: '14px', fontWeight: '600', color: 'var(--color-gray-900)' }}>담당자 *</label>
-          <select value={workerId} onChange={e => setWorkerId(e.target.value)} style={inputStyle} disabled={loading}>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>담당자 *</label>
+          <select value={workerId} onChange={e => setWorkerId(e.target.value)} className={styles.input} disabled={loading}>
             <option value="">담당자를 선택해주세요.</option>
             {workers.map(w => (
               <option key={w.id} value={w.id}>{w.name} ({w.email})</option>
             ))}
           </select>
           {projectId && workers.length === 0 && (
-            <p style={{ fontSize: '12px', color: '#DC2626', marginTop: 'var(--space-2)' }}>선택한 프로젝트에 작업자가 없습니다.</p>
+            <p className={styles.hintError}>선택한 프로젝트에 작업자가 없습니다.</p>
           )}
         </div>
 
-        <div style={{ marginBottom: 'var(--space-6)' }}>
-          <label style={{ display: 'block', marginBottom: 'var(--space-2)', fontSize: '14px', fontWeight: '600', color: 'var(--color-gray-900)' }}>목표일</label>
-          <input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} style={inputStyle} disabled={loading} />
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>목표일</label>
+          <input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} className={styles.input} disabled={loading} />
         </div>
 
-        <div style={{ marginBottom: 'var(--space-6)' }}>
-          <label style={{ display: 'block', marginBottom: 'var(--space-2)', fontSize: '14px', fontWeight: '600', color: 'var(--color-gray-900)' }}>설명 및 노트</label>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>설명 및 노트</label>
           <textarea
             value={notes}
             onChange={e => setNotes(e.target.value)}
             placeholder="업무에 대한 상세 설명을 입력해주세요."
-            style={{ ...inputStyle, minHeight: '120px', resize: 'vertical' }}
+            className={styles.textarea}
             disabled={loading}
           />
         </div>
 
-        <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-          <button type="submit" style={{ flex: 1, padding: 'var(--space-3)', backgroundColor: 'var(--accent)', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', opacity: loading ? 0.6 : 1 }} disabled={loading}>
+        <div className={styles.btnRow}>
+          <button type="submit" data-loading={loading} className={styles.submitBtn} disabled={loading}>
             {loading ? '등록 중...' : '등록'}
           </button>
-          <button type="button" style={{ flex: 1, padding: 'var(--space-3)', backgroundColor: 'var(--bg-subtle)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }} onClick={() => router.push('/tasks')} disabled={loading}>
+          <button type="button" className={styles.cancelBtn} onClick={() => router.push('/tasks')} disabled={loading}>
             취소
           </button>
         </div>

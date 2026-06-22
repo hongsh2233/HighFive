@@ -1,0 +1,195 @@
+.container {
+  padding: var(--space-8);
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.loading {
+  padding: var(--space-8);
+}
+
+.errorPage {
+  padding: var(--space-8);
+}
+
+.dangerText {
+  color: var(--color-danger);
+}
+
+.pageHeader {
+  margin-bottom: var(--space-8);
+}
+
+.pageTitle {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: var(--space-2);
+}
+
+.pageSubtitle {
+  color: var(--color-gray-600);
+  font-size: 14px;
+}
+
+.errorBox {
+  padding: var(--space-3);
+  background-color: #FEF2F2;
+  border: 1px solid var(--color-danger);
+  border-radius: 6px;
+  color: #7F1D1D;
+  margin-bottom: var(--space-4);
+}
+
+.card {
+  background-color: var(--bg-surface);
+  padding: var(--space-6);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-bottom: var(--space-6);
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: var(--space-4);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  text-transform: uppercase;
+  margin-bottom: var(--space-1);
+}
+
+.fieldValue {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: var(--space-4);
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.btn {
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  margin-right: var(--space-2);
+}
+
+.btnSecondary {
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--color-gray-600);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  margin-right: var(--space-2);
+}
+
+.textarea {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-gray-300);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 120px;
+  box-sizing: border-box;
+}
+
+.editActions {
+  margin-top: var(--space-4);
+}
+
+.noteText {
+  color: var(--color-gray-600);
+  white-space: pre-wrap;
+}
+
+.totalTimeBox {
+  padding: var(--space-3);
+  background-color: var(--accent-light);
+  border-radius: 6px;
+  margin-bottom: var(--space-4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.totalTimeLabel {
+  font-weight: 600;
+  color: var(--accent-hover);
+}
+
+.totalTimeValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.emptyLogs {
+  color: var(--color-gray-600);
+  font-size: 14px;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  font-size: 13px;
+  border-collapse: collapse;
+}
+
+.tableHead tr {
+  border-bottom: 1px solid var(--color-gray-300);
+}
+
+.th {
+  text-align: left;
+  padding: var(--space-2);
+  font-weight: 600;
+}
+
+.td {
+  padding: var(--space-2);
+}
+
+.tdBold {
+  padding: var(--space-2);
+  font-weight: 600;
+}
+
+.tableRow {
+  border-bottom: 1px solid var(--color-gray-100);
+}
