@@ -97,7 +97,7 @@ export default function DashboardPage() {
           </h2>
           <div>
             <Link href="/users" style={adminLinkStyle}>
-              👥 팀 사용자 관리
+              👥 팀원 관리
             </Link>
           </div>
         </div>

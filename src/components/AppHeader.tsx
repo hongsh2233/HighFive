@@ -161,7 +161,7 @@ export default function AppHeader() {
                       onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
-                      사용자 관리
+                      팀원 관리
                     </Link>
                   )}
                   <Link

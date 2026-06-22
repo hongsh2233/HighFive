@@ -3,7 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import dynamic from 'next/dynamic';
 import axios from 'axios';
+import 'react-quill-new/dist/quill.snow.css';
+
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
 interface Worker {
   id: number;
@@ -64,6 +68,14 @@ export default function TaskCreatePage() {
       const activeProjects = (res.data.data || []).filter((p: Project) => p.status === 'ACTIVE');
       setProjects(activeProjects);
 
+      // MANAGER: 자신이 속한 첫 번째 프로젝트 자동 선택
+      if (isManager && activeProjects.length > 0) {
+        const myProject = activeProjects.find((p: Project) =>
+          p.members.some((m: { user: Worker }) => m.user.id === Number(user?.id))
+        );
+        if (myProject) setProjectId(String(myProject.id));
+      }
+
       // ADMIN이고 프로젝트 없으면 전체 작업자 로드
       if (isAdmin && activeProjects.length === 0) fetchAllWorkers();
     } catch (err) {
@@ -120,6 +132,16 @@ export default function TaskCreatePage() {
     borderRadius: '6px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box',
   };
 
+  const labelStyle: React.CSSProperties = {
+    display: 'block', marginBottom: 'var(--space-2)', fontSize: '14px', fontWeight: '600', color: 'var(--color-gray-900)',
+  };
+
+  const fieldStyle: React.CSSProperties = { marginBottom: 'var(--space-6)' };
+
+  const quillModules = {
+    toolbar: [['bold', 'italic', 'underline'], ['link'], ['clean']],
+  };
+
   return (
     <div style={{ padding: 'var(--space-8)', maxWidth: '600px', margin: '0 auto' }}>
       <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: 'var(--space-8)' }}>업무 등록</h1>
@@ -136,15 +158,15 @@ export default function TaskCreatePage() {
       )}
 
       <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 'var(--space-6)' }}>
-          <label style={{ display: 'block', marginBottom: 'var(--space-2)', fontSize: '14px', fontWeight: '600', color: 'var(--color-gray-900)' }}>등록일자</label>
+        <div style={fieldStyle}>
+          <label style={labelStyle}>등록일자</label>
           <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--color-gray-100)', borderRadius: '6px', fontSize: '14px', color: 'var(--color-gray-900)', fontWeight: '500' }}>
             📅 {createdDate} (자동)
           </div>
         </div>
 
-        <div style={{ marginBottom: 'var(--space-6)' }}>
-          <label style={{ display: 'block', marginBottom: 'var(--space-2)', fontSize: '14px', fontWeight: '600', color: 'var(--color-gray-900)' }}>
+        <div style={fieldStyle}>
+          <label style={labelStyle}>
             프로젝트 {isManager && '*'}
           </label>
           <select value={projectId} onChange={e => setProjectId(e.target.value)} style={inputStyle} disabled={loading}>
@@ -155,8 +177,8 @@ export default function TaskCreatePage() {
           </select>
         </div>
 
-        <div style={{ marginBottom: 'var(--space-6)' }}>
-          <label style={{ display: 'block', marginBottom: 'var(--space-2)', fontSize: '14px', fontWeight: '600', color: 'var(--color-gray-900)' }}>업무 제목 *</label>
+        <div style={fieldStyle}>
+          <label style={labelStyle}>업무 제목 *</label>
           <input
             type="text"
             value={title}
@@ -170,8 +192,8 @@ export default function TaskCreatePage() {
           </p>
         </div>
 
-        <div style={{ marginBottom: 'var(--space-6)' }}>
-          <label style={{ display: 'block', marginBottom: 'var(--space-2)', fontSize: '14px', fontWeight: '600', color: 'var(--color-gray-900)' }}>담당자 *</label>
+        <div style={fieldStyle}>
+          <label style={labelStyle}>담당자 *</label>
           <select value={workerId} onChange={e => setWorkerId(e.target.value)} style={inputStyle} disabled={loading}>
             <option value="">담당자를 선택해주세요.</option>
             {workers.map(w => (
@@ -183,19 +205,19 @@ export default function TaskCreatePage() {
           )}
         </div>
 
-        <div style={{ marginBottom: 'var(--space-6)' }}>
-          <label style={{ display: 'block', marginBottom: 'var(--space-2)', fontSize: '14px', fontWeight: '600', color: 'var(--color-gray-900)' }}>목표일</label>
+        <div style={fieldStyle}>
+          <label style={labelStyle}>목표일</label>
           <input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} style={inputStyle} disabled={loading} />
         </div>
 
-        <div style={{ marginBottom: 'var(--space-6)' }}>
-          <label style={{ display: 'block', marginBottom: 'var(--space-2)', fontSize: '14px', fontWeight: '600', color: 'var(--color-gray-900)' }}>설명 및 노트</label>
-          <textarea
+        <div style={{ ...fieldStyle, marginBottom: 'var(--space-8)' }}>
+          <label style={labelStyle}>비고</label>
+          <ReactQuill
+            theme="snow"
             value={notes}
-            onChange={e => setNotes(e.target.value)}
-            placeholder="업무에 대한 상세 설명을 입력해주세요."
-            style={{ ...inputStyle, minHeight: '120px', resize: 'vertical' }}
-            disabled={loading}
+            onChange={setNotes}
+            modules={quillModules}
+            style={{ backgroundColor: 'white' }}
           />
         </div>
 

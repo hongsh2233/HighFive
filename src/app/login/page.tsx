@@ -109,20 +109,6 @@ export default function LoginPage() {
           ))}
         </div>
 
-        {/* 기술 스택 태그 */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 40, position: 'relative' }}>
-          {['Next.js 15', 'Prisma', 'PostgreSQL', 'NextAuth'].map((tag) => (
-            <span key={tag} style={{
-              padding: '4px 10px',
-              borderRadius: 20,
-              background: 'rgba(94,106,210,0.18)',
-              border: '1px solid rgba(94,106,210,0.3)',
-              color: 'rgba(250,250,250,0.55)',
-              fontSize: 11,
-              fontWeight: 600,
-            }}>{tag}</span>
-          ))}
-        </div>
       </div>
 
       {/* 우측 로그인 폼 */}

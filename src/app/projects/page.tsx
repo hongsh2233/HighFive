@@ -215,19 +215,37 @@ export default function ProjectsPage() {
                 </div>
                 <div>
                   <label style={labelStyle}>PM (Project Manager)</label>
+                  <select
+                    onChange={e => { if (e.target.value) setForm(p => ({ ...p, projectManagerName: e.target.value })); }}
+                    style={{ ...inputStyle, marginBottom: 6 }}
+                  >
+                    <option value="">팀원에서 선택...</option>
+                    {allUsers.map(u => (
+                      <option key={u.id} value={u.name}>{u.name}</option>
+                    ))}
+                  </select>
                   <input
                     value={form.projectManagerName}
                     onChange={e => setForm(p => ({ ...p, projectManagerName: e.target.value }))}
-                    placeholder="이름 직접 입력 (외부 인력 가능)"
+                    placeholder="이름 직접 입력"
                     style={inputStyle}
                   />
                 </div>
                 <div>
                   <label style={labelStyle}>PL (Project Lead)</label>
+                  <select
+                    onChange={e => { if (e.target.value) setForm(p => ({ ...p, projectLeadName: e.target.value })); }}
+                    style={{ ...inputStyle, marginBottom: 6 }}
+                  >
+                    <option value="">팀원에서 선택...</option>
+                    {allUsers.map(u => (
+                      <option key={u.id} value={u.name}>{u.name}</option>
+                    ))}
+                  </select>
                   <input
                     value={form.projectLeadName}
                     onChange={e => setForm(p => ({ ...p, projectLeadName: e.target.value }))}
-                    placeholder="이름 직접 입력 (외부 인력 가능)"
+                    placeholder="이름 직접 입력"
                     style={inputStyle}
                   />
                 </div>

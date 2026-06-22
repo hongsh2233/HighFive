@@ -3,9 +3,13 @@
 import { useEffect, useState, use } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTimer } from '@/hooks/useTimer';
+import dynamic from 'next/dynamic';
 import apiClient from '@/lib/api-client';
 import { Task, TimeLog } from '@/types';
 import TaskTimerButton from '@/components/task/TaskTimerButton';
+import 'react-quill-new/dist/quill.snow.css';
+
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
 export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -155,18 +159,6 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     marginRight: 'var(--space-2)',
   };
 
-  const textareaStyle: React.CSSProperties = {
-    width: '100%',
-    padding: 'var(--space-3)',
-    border: '1px solid var(--color-gray-300)',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontFamily: 'inherit',
-    resize: 'vertical',
-    minHeight: '120px',
-    boxSizing: 'border-box',
-  };
-
   return (
     <div style={containerStyle}>
       <div style={{ marginBottom: 'var(--space-8)' }}>
@@ -225,10 +217,10 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       </div>
 
-      {/* 메모 */}
+      {/* 비고 */}
       <div style={cardStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '700' }}>메모</h2>
+          <h2 style={{ fontSize: '18px', fontWeight: '700' }}>비고</h2>
           {!editing && (
             <button
               onClick={() => setEditing(true)}
@@ -241,11 +233,12 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
         {editing ? (
           <div>
-            <textarea
+            <ReactQuill
+              theme="snow"
               value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              style={textareaStyle}
-              placeholder="메모를 입력하세요..."
+              onChange={(val) => setFormData({ ...formData, notes: val })}
+              modules={{ toolbar: [['bold', 'italic', 'underline'], ['link'], ['clean']] }}
+              style={{ backgroundColor: 'white', marginBottom: 'var(--space-4)' }}
             />
             <div style={{ marginTop: 'var(--space-4)' }}>
               <button onClick={handleSave} style={buttonStyle}>
@@ -256,19 +249,17 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                   setEditing(false);
                   setFormData({ notes: task.notes || '' });
                 }}
-                style={{
-                  ...buttonStyle,
-                  backgroundColor: 'var(--color-gray-600)',
-                }}
+                style={{ ...buttonStyle, backgroundColor: 'var(--color-gray-600)' }}
               >
                 취소
               </button>
             </div>
           </div>
         ) : (
-          <p style={{ color: 'var(--color-gray-600)', whiteSpace: 'pre-wrap' }}>
-            {task.notes || '메모가 없습니다.'}
-          </p>
+          <div
+            style={{ color: 'var(--color-gray-600)', fontSize: '14px', lineHeight: 1.6 }}
+            dangerouslySetInnerHTML={{ __html: task.notes || '<span style="color:var(--color-gray-400)">비고가 없습니다.</span>' }}
+          />
         )}
       </div>
 
