@@ -58,7 +58,7 @@ export default function DashboardPage() {
 
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>나의 업무</h2>
-        <div style={{ marginBottom: 'var(--space-4)' }}>
+        <div className={styles.mb4}>
           <Link href="/tasks/create" className={styles.actionLink}>
             ➕ 업무 등록
           </Link>

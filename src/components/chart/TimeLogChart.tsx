@@ -3,6 +3,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import styles from './TimeLogChart.module.css';
 
 interface DailyLog {
   date: string;
@@ -17,7 +18,7 @@ interface Props {
 export function TimeLogChart({ data, title }: Props) {
   if (!data.length) {
     return (
-      <div style={{ textAlign: 'center', padding: 40, color: '#9CA3AF' }}>
+      <div className={styles.empty}>
         기록된 공수가 없습니다.
       </div>
     );
@@ -32,9 +33,9 @@ export function TimeLogChart({ data, title }: Props) {
   const totalH = CHART_H + PADDING.top + PADDING.bottom;
 
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <div className={styles.wrapper}>
       {title && (
-        <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#374151' }}>{title}</p>
+        <p className={styles.title}>{title}</p>
       )}
       <svg width={totalW} height={totalH}>
         {/* Y축 눈금 */}

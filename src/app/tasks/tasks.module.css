@@ -1,0 +1,133 @@
+.container {
+  padding: var(--space-8);
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-6);
+}
+
+.pageTitle {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.pageCount {
+  font-size: 13px;
+  color: var(--color-gray-600);
+}
+
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--bg-surface);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  align-items: center;
+}
+
+.filterLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-700);
+  margin-right: var(--space-2);
+}
+
+.workerSelect {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-gray-300);
+  border-radius: 6px;
+  font-size: 14px;
+  margin-left: auto;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--bg-surface);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.th {
+  background-color: var(--bg-subtle);
+  color: var(--text-secondary);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+.thId { width: 60px; }
+.thAssignee { width: 100px; }
+.thStatus { width: 90px; }
+.thCreatedAt { width: 110px; }
+.thTarget { width: 100px; }
+.thHours { width: 120px; }
+.thChange { width: 110px; }
+
+.td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-gray-100);
+  font-size: 14px;
+}
+
+.tdId {
+  composes: td;
+  color: var(--color-gray-500);
+}
+
+.tdNotes {
+  composes: td;
+  color: var(--color-gray-600);
+  font-size: 13px;
+}
+
+.tdHours {
+  composes: td;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.tdCenter {
+  composes: td;
+  text-align: center;
+  padding: var(--space-8);
+}
+
+.statusSelect {
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid var(--color-gray-300);
+  border-radius: 4px;
+  width: 100%;
+}
+
+.errorBox {
+  padding: var(--space-3);
+  background-color: #FEF2F2;
+  border: 1px solid var(--color-danger);
+  border-radius: 6px;
+  color: #7F1D1D;
+  margin-bottom: var(--space-4);
+}
+
+.loadingPage {
+  padding: var(--space-8);
+}

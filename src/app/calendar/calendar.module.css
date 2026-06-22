@@ -1,0 +1,153 @@
+.loadingPage {
+  padding: var(--space-8);
+}
+
+.container {
+  padding: var(--space-8);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-8);
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.navRow {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.navBtn {
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.monthLabel {
+  padding: var(--space-2) var(--space-4);
+  font-weight: 600;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+.summaryCard {
+  background-color: var(--bg-surface);
+  padding: var(--space-4);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+.summaryValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.summaryValueAssigned {
+  font-size: 24px;
+  font-weight: 700;
+  color: #DBEAFE;
+}
+
+.summaryValueProgress {
+  font-size: 24px;
+  font-weight: 700;
+  color: #FEF3C7;
+}
+
+.summaryValueDone {
+  font-size: 24px;
+  font-weight: 700;
+  color: #D1FAE5;
+}
+
+.summaryLabel {
+  font-size: 12px;
+  color: var(--color-gray-600);
+}
+
+.calendarCard {
+  background-color: var(--bg-surface);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: var(--space-4);
+}
+
+.dayHeaderGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: var(--space-4);
+}
+
+.dayLabel {
+  text-align: center;
+  font-weight: 700;
+  padding: var(--space-2);
+  font-size: 12px;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  min-height: 500px;
+}
+
+.day {
+  padding: var(--space-3);
+  min-height: 80px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: var(--bg-surface);
+}
+
+.day[data-current-month="false"] {
+  background-color: var(--bg-subtle);
+  opacity: 0.5;
+}
+
+.day[data-current-month="true"][data-has-events="true"] {
+  background-color: var(--accent-light);
+}
+
+.dayNumber {
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+  font-size: 14px;
+}
+
+.taskItem {
+  font-size: 11px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: 3px;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.moreCount {
+  font-size: 11px;
+  color: var(--color-gray-600);
+}

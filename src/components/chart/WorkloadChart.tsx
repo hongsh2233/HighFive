@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import styles from './WorkloadChart.module.css';
 
 interface WorkerStat {
   id: number;
@@ -18,7 +19,7 @@ interface Props {
 export function WorkloadChart({ data }: Props) {
   if (!data.length) {
     return (
-      <div style={{ textAlign: 'center', padding: 40, color: '#9CA3AF' }}>
+      <div className={styles.empty}>
         데이터가 없습니다.
       </div>
     );
@@ -31,7 +32,7 @@ export function WorkloadChart({ data }: Props) {
   const BAR_MAX = 300;
 
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <div className={styles.wrapper}>
       <svg
         width={LABEL_WIDTH + BAR_MAX + 60}
         height={data.length * (BAR_HEIGHT + GAP) + 20}
@@ -88,13 +89,13 @@ export function WorkloadChart({ data }: Props) {
       </svg>
 
       {/* 범례 */}
-      <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 12, color: '#6B7280' }}>
+      <div className={styles.legend}>
         <span>
-          <span style={{ display: 'inline-block', width: 12, height: 12, background: '#059669', borderRadius: 2, marginRight: 4, verticalAlign: 'middle' }} />
+          <span className={styles.legendDotCompleted} />
           완료
         </span>
         <span>
-          <span style={{ display: 'inline-block', width: 12, height: 12, background: '#1A56DB', borderRadius: 2, marginRight: 4, verticalAlign: 'middle' }} />
+          <span className={styles.legendDotProgress} />
           진행중
         </span>
       </div>

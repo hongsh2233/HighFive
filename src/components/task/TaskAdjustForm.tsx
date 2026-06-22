@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import apiClient from '@/lib/api-client';
+import styles from './TaskAdjustForm.module.css';
 
 interface Props {
   taskId: number;
@@ -33,8 +34,8 @@ export function TaskAdjustForm({ taskId, logId, currentAdjusted, onSuccess, onCa
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <label style={{ fontSize: 13, color: '#374151' }}>
+    <form onSubmit={handleSubmit} className={styles.form}>
+      <label className={styles.label}>
         보정 시간 (시간 단위, + / − 가능)
       </label>
       <input
@@ -42,16 +43,14 @@ export function TaskAdjustForm({ taskId, logId, currentAdjusted, onSuccess, onCa
         step="0.25"
         value={hours}
         onChange={(e) => setHours(e.target.value)}
-        style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #D1D5DB', fontSize: 14 }}
+        className={styles.input}
       />
-      {error && <p style={{ color: '#DC2626', fontSize: 12, margin: 0 }}>{error}</p>}
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-        <button type="button" onClick={onCancel}
-          style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid #D1D5DB', background: 'transparent', cursor: 'pointer' }}>
+      {error && <p className={styles.errorMsg}>{error}</p>}
+      <div className={styles.actions}>
+        <button type="button" onClick={onCancel} className={styles.btnCancel}>
           취소
         </button>
-        <button type="submit" disabled={loading}
-          style={{ padding: '8px 16px', borderRadius: 6, background: '#1A56DB', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+        <button type="submit" disabled={loading} className={styles.btnSubmit}>
           {loading ? '저장 중...' : '저장'}
         </button>
       </div>

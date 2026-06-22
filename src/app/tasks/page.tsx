@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTasks } from '@/hooks/useTask';
 import axios from 'axios';
+import styles from './tasks.module.css';
 
 const statusColors: { [key: string]: { bg: string; text: string; border: string } } = {
   ASSIGNED: { bg: 'transparent', text: '#1D4ED8', border: '#93C5FD' },
@@ -111,27 +112,10 @@ export default function TaskListPage() {
   };
 
   if (authLoading) {
-    return <div style={{ padding: 'var(--space-8)' }}>로딩 중...</div>;
+    return <div className={styles.loadingPage}>로딩 중...</div>;
   }
 
-  const containerStyle: React.CSSProperties = {
-    padding: 'var(--space-8)',
-    maxWidth: '100%',
-    margin: '0 auto',
-  };
-
-  const filterBarStyle: React.CSSProperties = {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: 'var(--space-3)',
-    marginBottom: 'var(--space-6)',
-    padding: 'var(--space-3) var(--space-4)',
-    backgroundColor: 'var(--bg-surface)',
-    borderRadius: '8px',
-    border: '1px solid var(--border)',
-    alignItems: 'center',
-  };
-
+  // statusChipStyle kept inline — dynamic per status + active
   const statusChipStyle = (active: boolean, status: string): React.CSSProperties => ({
     padding: '6px 14px',
     borderRadius: '20px',
@@ -145,41 +129,7 @@ export default function TaskListPage() {
     transition: 'all 0.15s ease',
   });
 
-  const selectStyle: React.CSSProperties = {
-    padding: 'var(--space-2) var(--space-3)',
-    border: '1px solid var(--color-gray-300)',
-    borderRadius: '6px',
-    fontSize: '14px',
-    marginLeft: 'auto',
-  };
-
-  const tableStyle: React.CSSProperties = {
-    width: '100%',
-    borderCollapse: 'collapse',
-    backgroundColor: 'var(--bg-surface)',
-    borderRadius: '8px',
-    border: '1px solid var(--border)',
-    overflow: 'hidden',
-  };
-
-  const thStyle: React.CSSProperties = {
-    backgroundColor: 'var(--bg-subtle)',
-    color: 'var(--text-secondary)',
-    padding: 'var(--space-2) var(--space-3)',
-    textAlign: 'left',
-    fontSize: '11px',
-    fontWeight: '600',
-    letterSpacing: '0.05em',
-    textTransform: 'uppercase',
-    borderBottom: '1px solid var(--border)',
-  };
-
-  const tdStyle: React.CSSProperties = {
-    padding: 'var(--space-3)',
-    borderBottom: '1px solid var(--color-gray-100)',
-    fontSize: '14px',
-  };
-
+  // badgeStyle kept inline — dynamic per status
   const badgeStyle = (status: string): React.CSSProperties => {
     const color = statusColors[status] || { bg: 'transparent', text: '#374151', border: '#D4D4D8' };
     return {
@@ -204,17 +154,17 @@ export default function TaskListPage() {
   }
 
   return (
-    <div style={containerStyle}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: '700' }}>업무 목록</h1>
-        <span style={{ fontSize: '13px', color: 'var(--color-gray-600)' }}>
+    <div className={styles.container}>
+      <div className={styles.pageHeader}>
+        <h1 className={styles.pageTitle}>업무 목록</h1>
+        <span className={styles.pageCount}>
           총 {filteredTasks.length}건
         </span>
       </div>
 
       {/* 필터 바 */}
-      <div style={filterBarStyle}>
-        <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--color-gray-700)', marginRight: 'var(--space-2)' }}>
+      <div className={styles.filterBar}>
+        <span className={styles.filterLabel}>
           상태:
         </span>
         {ALL_STATUSES.map((status) => (
@@ -230,7 +180,7 @@ export default function TaskListPage() {
         <select
           value={selectedWorker}
           onChange={(e) => setSelectedWorker(e.target.value)}
-          style={selectStyle}
+          className={styles.workerSelect}
         >
           <option value="">모든 담당자</option>
           {workers.map((worker) => (
@@ -242,43 +192,36 @@ export default function TaskListPage() {
       </div>
 
       {error && (
-        <div style={{
-          padding: 'var(--space-3)',
-          backgroundColor: '#FEF2F2',
-          border: '1px solid var(--color-danger)',
-          borderRadius: '6px',
-          color: '#7F1D1D',
-          marginBottom: 'var(--space-4)',
-        }}>
+        <div className={styles.errorBox}>
           {error}
         </div>
       )}
 
-      <div style={{ overflowX: 'auto' }}>
-        <table style={tableStyle}>
+      <div className={styles.tableWrapper}>
+        <table className={styles.table}>
           <thead>
             <tr>
-              <th style={{ ...thStyle, width: '60px' }}>ID</th>
-              <th style={thStyle}>제목</th>
-              <th style={{ ...thStyle, width: '100px' }}>담당자</th>
-              <th style={{ ...thStyle, width: '90px' }}>상태</th>
-              <th style={{ ...thStyle, width: '110px' }}>등록일자</th>
-              <th style={{ ...thStyle, width: '100px' }}>목표일</th>
-              <th style={thStyle}>비고</th>
-              <th style={{ ...thStyle, width: '120px' }}>작업시간</th>
-              <th style={{ ...thStyle, width: '110px' }}>상태변경</th>
+              <th className={`${styles.th} ${styles.thId}`}>ID</th>
+              <th className={styles.th}>제목</th>
+              <th className={`${styles.th} ${styles.thAssignee}`}>담당자</th>
+              <th className={`${styles.th} ${styles.thStatus}`}>상태</th>
+              <th className={`${styles.th} ${styles.thCreatedAt}`}>등록일자</th>
+              <th className={`${styles.th} ${styles.thTarget}`}>목표일</th>
+              <th className={styles.th}>비고</th>
+              <th className={`${styles.th} ${styles.thHours}`}>작업시간</th>
+              <th className={`${styles.th} ${styles.thChange}`}>상태변경</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} style={{ ...tdStyle, textAlign: 'center', padding: 'var(--space-8)' }}>
+                <td colSpan={9} className={styles.tdCenter}>
                   로딩 중...
                 </td>
               </tr>
             ) : filteredTasks.length === 0 ? (
               <tr>
-                <td colSpan={9} style={{ ...tdStyle, textAlign: 'center', padding: 'var(--space-8)' }}>
+                <td colSpan={9} className={styles.tdCenter}>
                   {tasks.length === 0 ? '등록된 업무가 없습니다.' : '필터 조건에 맞는 업무가 없습니다.'}
                 </td>
               </tr>
@@ -297,41 +240,35 @@ export default function TaskListPage() {
                     transition: 'background-color 0.2s',
                   }}
                 >
-                  <td style={{ ...tdStyle, color: 'var(--color-gray-500)' }}>#{task.id}</td>
-                  <td style={tdStyle}>{task.title}</td>
-                  <td style={tdStyle}>{task.worker?.name || '-'}</td>
-                  <td style={tdStyle}>
+                  <td className={styles.tdId}>#{task.id}</td>
+                  <td className={styles.td}>{task.title}</td>
+                  <td className={styles.td}>{task.worker?.name || '-'}</td>
+                  <td className={styles.td}>
                     <span style={badgeStyle(task.status)}>
                       {statusLabels[task.status]}
                     </span>
                   </td>
-                  <td style={tdStyle}>
+                  <td className={styles.td}>
                     {task.createdAt
                       ? new Date(task.createdAt).toLocaleDateString('ko-KR')
                       : '-'}
                   </td>
-                  <td style={tdStyle}>
+                  <td className={styles.td}>
                     {task.targetDate
                       ? new Date(task.targetDate).toLocaleDateString('ko-KR')
                       : '-'}
                   </td>
-                  <td style={{ ...tdStyle, color: 'var(--color-gray-600)', fontSize: '13px' }}>
+                  <td className={styles.tdNotes}>
                     {task.notes || '-'}
                   </td>
-                  <td style={{ ...tdStyle, fontSize: '13px', fontWeight: '600', color: 'var(--color-primary)' }}>
+                  <td className={styles.tdHours}>
                     {calculateWorkHours(task.timeLogs || [])}
                   </td>
-                  <td style={tdStyle}>
+                  <td className={styles.td}>
                     <select
                       value={task.status}
                       onChange={(e) => updateStatus(task.id, e.target.value)}
-                      style={{
-                        padding: '6px 8px',
-                        fontSize: '12px',
-                        border: '1px solid var(--color-gray-300)',
-                        borderRadius: '4px',
-                        width: '100%',
-                      }}
+                      className={styles.statusSelect}
                     >
                       <option value="ASSIGNED">배정됨</option>
                       <option value="PROGRESS">진행중</option>

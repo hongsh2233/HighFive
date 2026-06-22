@@ -76,3 +76,7 @@
   padding: var(--space-8);
   text-align: center;
 }
+
+.mb4 {
+  margin-bottom: var(--space-4);
+}

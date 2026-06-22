@@ -193,3 +193,7 @@
 .tableRow {
   border-bottom: 1px solid var(--color-gray-100);
 }
+
+.noMargin {
+  margin: 0;
+}

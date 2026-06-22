@@ -1,0 +1,47 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.label {
+  font-size: 13px;
+  color: #374151;
+}
+
+.input {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #D1D5DB;
+  font-size: 14px;
+}
+
+.errorMsg {
+  color: #DC2626;
+  font-size: 12px;
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btnCancel {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid #D1D5DB;
+  background: transparent;
+  cursor: pointer;
+}
+
+.btnSubmit {
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: #1A56DB;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}

@@ -1,0 +1,325 @@
+.page {
+  padding: 40px 32px;
+  max-width: 100%;
+}
+
+.inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 40px;
+}
+
+.pageTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.pageSubtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.btnPrimary {
+  padding: 8px 16px;
+  background-color: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.message {
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+.messageSuccess {
+  background-color: #ECFDF5;
+  color: #065F46;
+  border: 1px solid #D1FAE5;
+}
+
+.messageError {
+  background-color: #FEF2F2;
+  color: #991B1B;
+  border: 1px solid #FECACA;
+}
+
+.formCard {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 28px;
+}
+
+.formTitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.formGroup {
+  margin-bottom: 16px;
+}
+
+.formGroupLast {
+  margin-bottom: 20px;
+}
+
+.label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.input {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  box-sizing: border-box;
+  font-family: inherit;
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.formActions {
+  display: flex;
+  gap: 10px;
+}
+
+.btnSubmit {
+  padding: 8px 20px;
+  background-color: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btnCancel {
+  padding: 8px 16px;
+  background-color: var(--bg-subtle);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.empty {
+  text-align: center;
+  padding: 60px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accordion {
+  background-color: var(--bg-surface);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+  border: 1px solid var(--border);
+}
+
+.accordion[data-open="true"] {
+  border-color: var(--accent);
+}
+
+.accordionHeader {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.accordionIndex {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-right: 14px;
+  flex-shrink: 0;
+  background-color: var(--bg-subtle);
+  color: var(--text-muted);
+}
+
+.accordionIndex[data-open="true"] {
+  background-color: var(--accent-light);
+  color: var(--accent);
+}
+
+.accordionQuestion {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.accordionQuestion[data-open="true"] {
+  color: var(--accent);
+}
+
+.accordionControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btnEdit {
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background-color: var(--bg-subtle);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btnDelete {
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background-color: transparent;
+  color: var(--danger);
+  border: 1px solid #FECACA;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.chevron {
+  font-size: 14px;
+  color: var(--text-muted);
+  display: inline-block;
+  transition: transform 0.2s;
+  margin-left: 4px;
+}
+
+.chevron[data-open="true"] {
+  color: var(--accent);
+  transform: rotate(180deg);
+}
+
+.accordionBody {
+  padding: 14px 20px 18px 58px;
+  border-top: 1px solid var(--border);
+}
+
+.answerText {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.answerMeta {
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* SimpleEditor */
+.editorWrapper {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.editorToolbar {
+  display: flex;
+  gap: 6px;
+  padding: 6px 8px;
+  background-color: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+}
+
+.editorBtn {
+  padding: 3px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background-color: var(--bg-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.editorHint {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+  align-self: center;
+}
+
+.editorTextarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 13px;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.7;
+  box-sizing: border-box;
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+/* renderAnswer helpers */
+.answerList {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+
+.answerListItem {
+  margin-bottom: 3px;
+}
+
+.answerLine {
+  display: block;
+  margin-bottom: 4px;
+}

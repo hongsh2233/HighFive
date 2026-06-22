@@ -26,7 +26,7 @@ export function Modal({ open, onClose, title, children, maxWidth = 560 }: ModalP
       <div
         onClick={(e) => e.stopPropagation()}
         className={styles.panel}
-        style={{ maxWidth }}
+        style={{ ['--modal-max-width' as string]: `${maxWidth}px` }}
       >
         {title && <h2 className={styles.title}>{title}</h2>}
         {children}

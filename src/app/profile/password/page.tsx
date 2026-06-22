@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import axios from 'axios';
+import styles from './password.module.css';
 
 export default function PasswordChangePage() {
   const router = useRouter();
@@ -17,13 +18,13 @@ export default function PasswordChangePage() {
   const [success, setSuccess] = useState('');
 
   if (authLoading) {
-    return <div style={{ padding: 'var(--space-8)' }}>로딩 중...</div>;
+    return <div className={styles.loadingPage}>로딩 중...</div>;
   }
 
   if (!user) {
     return (
-      <div style={{ padding: 'var(--space-8)' }}>
-        <p style={{ color: 'var(--color-danger)' }}>로그인이 필요합니다.</p>
+      <div className={styles.loadingPage}>
+        <p className={styles.dangerText}>로그인이 필요합니다.</p>
       </div>
     );
   }
@@ -75,142 +76,67 @@ export default function PasswordChangePage() {
     }
   };
 
-  const containerStyle: React.CSSProperties = {
-    padding: 'var(--space-8)',
-    maxWidth: '500px',
-    margin: '0 auto',
-  };
-
-  const formGroupStyle: React.CSSProperties = {
-    marginBottom: 'var(--space-6)',
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: 'block',
-    marginBottom: 'var(--space-2)',
-    fontSize: '14px',
-    fontWeight: '600',
-    color: 'var(--color-gray-900)',
-  };
-
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: 'var(--space-3)',
-    border: '1px solid var(--color-gray-300)',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontFamily: 'inherit',
-    boxSizing: 'border-box',
-  };
-
-  const buttonGroupStyle: React.CSSProperties = {
-    display: 'flex',
-    gap: 'var(--space-3)',
-  };
-
-  const submitButtonStyle: React.CSSProperties = {
-    flex: 1,
-    padding: 'var(--space-3)',
-    backgroundColor: 'var(--accent)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    fontSize: '13px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    opacity: loading ? 0.6 : 1,
-  };
-
-  const cancelButtonStyle: React.CSSProperties = {
-    flex: 1,
-    padding: 'var(--space-3)',
-    backgroundColor: 'var(--bg-subtle)',
-    color: 'var(--text-primary)',
-    border: '1px solid var(--border)',
-    borderRadius: '6px',
-    fontSize: '13px',
-    fontWeight: '600',
-    cursor: 'pointer',
-  };
-
-  const errorStyle: React.CSSProperties = {
-    padding: 'var(--space-3)',
-    backgroundColor: '#FEF2F2',
-    border: '1px solid var(--color-danger)',
-    borderRadius: '6px',
-    color: '#7F1D1D',
-    marginBottom: 'var(--space-4)',
-  };
-
-  const successStyle: React.CSSProperties = {
-    padding: 'var(--space-3)',
-    backgroundColor: '#D1FAE5',
-    border: '1px solid #10B981',
-    borderRadius: '6px',
-    color: '#065F46',
-    marginBottom: 'var(--space-4)',
-  };
-
   return (
-    <div style={containerStyle}>
-      <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: 'var(--space-8)' }}>
+    <div className={styles.container}>
+      <h1 className={styles.title}>
         비밀번호 변경
       </h1>
 
-      {error && <div style={errorStyle}>{error}</div>}
-      {success && <div style={successStyle}>{success}</div>}
+      {error && <div className={styles.errorBox}>{error}</div>}
+      {success && <div className={styles.successBox}>{success}</div>}
 
       <form onSubmit={handleSubmit}>
-        <div style={formGroupStyle}>
-          <label style={labelStyle}>현재 비밀번호 *</label>
+        <div className={styles.formGroup}>
+          <label className={styles.label}>현재 비밀번호 *</label>
           <input
             type="password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
             placeholder="현재 비밀번호를 입력하세요."
-            style={inputStyle}
+            className={styles.input}
             disabled={loading}
           />
         </div>
 
-        <div style={formGroupStyle}>
-          <label style={labelStyle}>새 비밀번호 *</label>
+        <div className={styles.formGroup}>
+          <label className={styles.label}>새 비밀번호 *</label>
           <input
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="새 비밀번호를 입력하세요. (8자 이상)"
-            style={inputStyle}
+            className={styles.input}
             disabled={loading}
           />
-          <p style={{ fontSize: '12px', color: 'var(--color-gray-600)', marginTop: 'var(--space-2)' }}>
+          <p className={styles.hint}>
             최소 8자, 영문 대소문자, 숫자, 특수문자 포함 권장
           </p>
         </div>
 
-        <div style={formGroupStyle}>
-          <label style={labelStyle}>새 비밀번호 확인 *</label>
+        <div className={styles.formGroup}>
+          <label className={styles.label}>새 비밀번호 확인 *</label>
           <input
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="새 비밀번호를 다시 입력하세요."
-            style={inputStyle}
+            className={styles.input}
             disabled={loading}
           />
         </div>
 
-        <div style={buttonGroupStyle}>
+        <div className={styles.buttonGroup}>
           <button
             type="submit"
-            style={submitButtonStyle}
+            className={styles.btnSubmit}
+            data-loading={loading ? 'true' : 'false'}
             disabled={loading}
           >
             {loading ? '변경 중...' : '비밀번호 변경'}
           </button>
           <button
             type="button"
-            style={cancelButtonStyle}
+            className={styles.btnCancel}
             onClick={() => router.back()}
             disabled={loading}
           >

@@ -1,0 +1,16 @@
+.empty {
+  text-align: center;
+  padding: 40px;
+  color: #9CA3AF;
+}
+
+.wrapper {
+  overflow-x: auto;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}

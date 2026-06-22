@@ -13,14 +13,6 @@ interface KanbanColumnProps {
   onTaskClick: (task: Task) => void;
 }
 
-const statusBorderColors: { [key: string]: string } = {
-  ASSIGNED: '#93C5FD',
-  PROGRESS: '#FCD34D',
-  REVIEW:   '#C4B5FD',
-  QA:       '#67E8F9',
-  DONE:     '#6EE7B7',
-};
-
 export default function KanbanColumn({
   title,
   status,
@@ -30,8 +22,6 @@ export default function KanbanColumn({
   onDrop,
   onTaskClick,
 }: KanbanColumnProps) {
-  const borderColor = statusBorderColors[status] ?? '#E4E4E7';
-
   return (
     <div className={styles.column}>
       <div className={styles.header}>
@@ -52,7 +42,7 @@ export default function KanbanColumn({
             <div
               key={task.id}
               className={styles.card}
-              style={{ borderLeft: `3px solid ${borderColor}` }}
+              data-status={status}
               draggable
               onDragStart={(e) => {
                 e.dataTransfer.effectAllowed = 'move';

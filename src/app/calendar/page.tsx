@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import { Task } from '@/types';
+import styles from './calendar.module.css';
 
 interface CalendarData {
   tasksByDate: { [key: string]: Task[] };
@@ -45,110 +46,8 @@ export default function CalendarPage() {
   }, [currentDate, authLoading]);
 
   if (authLoading || loading) {
-    return <div style={{ padding: 'var(--space-8)' }}>로딩 중...</div>;
+    return <div className={styles.loadingPage}>로딩 중...</div>;
   }
-
-  const containerStyle: React.CSSProperties = {
-    padding: 'var(--space-8)',
-    maxWidth: '1200px',
-    margin: '0 auto',
-  };
-
-  const headerStyle: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 'var(--space-8)',
-  };
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: '28px',
-    fontWeight: '700',
-  };
-
-  const navButtonStyle: React.CSSProperties = {
-    padding: 'var(--space-2) var(--space-3)',
-    backgroundColor: 'var(--bg-surface)',
-    color: 'var(--text-primary)',
-    border: '1px solid var(--border)',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontWeight: '600',
-    fontSize: '13px',
-  };
-
-  const summaryStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-    gap: 'var(--space-4)',
-    marginBottom: 'var(--space-8)',
-  };
-
-  const summaryCardStyle: React.CSSProperties = {
-    backgroundColor: 'var(--bg-surface)',
-    padding: 'var(--space-4)',
-    borderRadius: '8px',
-    border: '1px solid var(--border)',
-    textAlign: 'center',
-  };
-
-  const calendarStyle: React.CSSProperties = {
-    backgroundColor: 'var(--bg-surface)',
-    borderRadius: '8px',
-    border: '1px solid var(--border)',
-    padding: 'var(--space-4)',
-  };
-
-  const dayHeaderStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(7, 1fr)',
-    gap: '4px',
-    marginBottom: 'var(--space-4)',
-  };
-
-  const dayLabelStyle: React.CSSProperties = {
-    textAlign: 'center',
-    fontWeight: '700',
-    padding: 'var(--space-2)',
-    fontSize: '12px',
-  };
-
-  const calendarGridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(7, 1fr)',
-    gap: '4px',
-    minHeight: '500px',
-  };
-
-  const dayStyle = (isCurrentMonth: boolean, hasEvents: boolean): React.CSSProperties => ({
-    padding: 'var(--space-3)',
-    minHeight: '80px',
-    border: '1px solid var(--border)',
-    borderRadius: '4px',
-    backgroundColor: isCurrentMonth
-      ? hasEvents
-        ? 'var(--accent-light)'
-        : 'var(--bg-surface)'
-      : 'var(--bg-subtle)',
-    opacity: isCurrentMonth ? 1 : 0.5,
-  });
-
-  const dayNumberStyle: React.CSSProperties = {
-    fontWeight: '600',
-    marginBottom: 'var(--space-2)',
-    fontSize: '14px',
-  };
-
-  const taskItemStyle: React.CSSProperties = {
-    fontSize: '11px',
-    padding: 'var(--space-1) var(--space-2)',
-    backgroundColor: 'var(--accent-light)',
-    borderRadius: '3px',
-    marginBottom: '2px',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  };
 
   const statusColors: { [key: string]: string } = {
     ASSIGNED: '#DBEAFE',
@@ -174,22 +73,22 @@ export default function CalendarPage() {
   const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
 
   return (
-    <div style={containerStyle}>
-      <div style={headerStyle}>
-        <h1 style={titleStyle}>배포 캘린더</h1>
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h1 className={styles.title}>배포 캘린더</h1>
+        <div className={styles.navRow}>
           <button
             onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
-            style={navButtonStyle}
+            className={styles.navBtn}
           >
             ← 이전
           </button>
-          <span style={{ padding: 'var(--space-2) var(--space-4)', fontWeight: '600' }}>
+          <span className={styles.monthLabel}>
             {currentDate.getFullYear()}.{String(currentDate.getMonth() + 1).padStart(2, '0')}
           </span>
           <button
             onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
-            style={navButtonStyle}
+            className={styles.navBtn}
           >
             다음 →
           </button>
@@ -198,36 +97,36 @@ export default function CalendarPage() {
 
       {/* 통계 */}
       {data && (
-        <div style={summaryStyle}>
-          <div style={summaryCardStyle}>
-            <div style={{ fontSize: '24px', fontWeight: '700', color: 'var(--accent)' }}>
+        <div className={styles.summaryGrid}>
+          <div className={styles.summaryCard}>
+            <div className={styles.summaryValue}>
               {data.summary.total}
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--color-gray-600)' }}>
+            <div className={styles.summaryLabel}>
               총 업무
             </div>
           </div>
-          <div style={summaryCardStyle}>
-            <div style={{ fontSize: '24px', fontWeight: '700', color: '#DBEAFE' }}>
+          <div className={styles.summaryCard}>
+            <div className={styles.summaryValueAssigned}>
               {data.summary.assigned}
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--color-gray-600)' }}>
+            <div className={styles.summaryLabel}>
               배정됨
             </div>
           </div>
-          <div style={summaryCardStyle}>
-            <div style={{ fontSize: '24px', fontWeight: '700', color: '#FEF3C7' }}>
+          <div className={styles.summaryCard}>
+            <div className={styles.summaryValueProgress}>
               {data.summary.progress}
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--color-gray-600)' }}>
+            <div className={styles.summaryLabel}>
               진행중
             </div>
           </div>
-          <div style={summaryCardStyle}>
-            <div style={{ fontSize: '24px', fontWeight: '700', color: '#D1FAE5' }}>
+          <div className={styles.summaryCard}>
+            <div className={styles.summaryValueDone}>
               {data.summary.done}
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--color-gray-600)' }}>
+            <div className={styles.summaryLabel}>
               완료
             </div>
           </div>
@@ -235,32 +134,37 @@ export default function CalendarPage() {
       )}
 
       {/* 캘린더 */}
-      <div style={calendarStyle}>
-        <div style={dayHeaderStyle}>
+      <div className={styles.calendarCard}>
+        <div className={styles.dayHeaderGrid}>
           {weekDays.map((day) => (
-            <div key={day} style={dayLabelStyle}>
+            <div key={day} className={styles.dayLabel}>
               {day}
             </div>
           ))}
         </div>
 
-        <div style={calendarGridStyle}>
+        <div className={styles.calendarGrid}>
           {daysArray.map((date, idx) => {
             const dateKey = date.toISOString().split('T')[0];
             const dayTasks = data?.tasksByDate[dateKey] || [];
             const isCurrentMonth = date.getMonth() === currentDate.getMonth();
 
             return (
-              <div key={idx} style={dayStyle(isCurrentMonth, dayTasks.length > 0)}>
-                <div style={dayNumberStyle}>
+              <div
+                key={idx}
+                className={styles.day}
+                data-current-month={isCurrentMonth ? 'true' : 'false'}
+                data-has-events={dayTasks.length > 0 ? 'true' : 'false'}
+              >
+                <div className={styles.dayNumber}>
                   {date.getDate()}
                 </div>
                 <div>
                   {dayTasks.slice(0, 2).map((task) => (
                     <div
                       key={task.id}
+                      className={styles.taskItem}
                       style={{
-                        ...taskItemStyle,
                         backgroundColor: statusColors[task.status] || 'var(--color-primary-light)',
                       }}
                       title={task.title}
@@ -269,7 +173,7 @@ export default function CalendarPage() {
                     </div>
                   ))}
                   {dayTasks.length > 2 && (
-                    <div style={{ fontSize: '11px', color: 'var(--color-gray-600)' }}>
+                    <div className={styles.moreCount}>
                       +{dayTasks.length - 2}개
                     </div>
                   )}

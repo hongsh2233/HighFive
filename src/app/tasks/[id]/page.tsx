@@ -148,7 +148,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       {/* 메모 */}
       <div className={styles.card}>
         <div className={styles.cardHeader}>
-          <h2 className={styles.cardTitle} style={{ margin: 0 }}>메모</h2>
+          <h2 className={`${styles.cardTitle} ${styles.noMargin}`}>메모</h2>
           {!editing && (
             <button onClick={() => setEditing(true)} className={styles.btnSecondary}>
               수정
@@ -182,7 +182,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       {/* 타임로그 */}
       <div className={styles.card}>
         <div className={styles.cardHeader}>
-          <h2 className={styles.cardTitle} style={{ margin: 0 }}>타임로그</h2>
+          <h2 className={`${styles.cardTitle} ${styles.noMargin}`}>타임로그</h2>
           <TaskTimerButton taskId={parseInt(id)} onTimerUpdated={handleTimerUpdated} />
         </div>
 

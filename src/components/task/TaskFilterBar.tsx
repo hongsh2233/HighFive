@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { TASK_STATUS_ORDER, TASK_STATUS_LABEL } from '@/lib/constants';
+import styles from './TaskFilterBar.module.css';
 
 interface Props {
   status: string;
@@ -14,11 +15,11 @@ interface Props {
 
 export function TaskFilterBar({ status, workerId, workers, onStatusChange, onWorkerChange, onReset }: Props) {
   return (
-    <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
+    <div className={styles.bar}>
       <select
         value={status}
         onChange={(e) => onStatusChange(e.target.value)}
-        style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #D1D5DB', fontSize: 13 }}
+        className={styles.select}
       >
         <option value="">전체 상태</option>
         {TASK_STATUS_ORDER.map((s) => (
@@ -29,7 +30,7 @@ export function TaskFilterBar({ status, workerId, workers, onStatusChange, onWor
       <select
         value={workerId}
         onChange={(e) => onWorkerChange(e.target.value)}
-        style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #D1D5DB', fontSize: 13 }}
+        className={styles.select}
       >
         <option value="">전체 작업자</option>
         {workers.map((w) => (
@@ -39,11 +40,7 @@ export function TaskFilterBar({ status, workerId, workers, onStatusChange, onWor
 
       <button
         onClick={onReset}
-        style={{
-          padding: '6px 12px', borderRadius: 6,
-          border: '1px solid #D1D5DB', background: 'transparent',
-          color: '#4B5563', fontSize: 13, cursor: 'pointer',
-        }}
+        className={styles.btnReset}
       >
         초기화
       </button>

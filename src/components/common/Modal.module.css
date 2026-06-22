@@ -14,6 +14,7 @@
   border-radius: 12px;
   padding: 28px 32px;
   width: 100%;
+  max-width: var(--modal-max-width, 560px);
   box-shadow: 0 20px 60px rgba(0,0,0,0.15);
 }
 

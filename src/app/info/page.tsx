@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
+import styles from './info.module.css';
 
 interface InfoItem {
   id: number;
@@ -23,9 +24,9 @@ function renderAnswer(text: string) {
   const flushList = (key: string) => {
     if (listItems.length === 0) return;
     result.push(
-      <ul key={key} style={{ margin: '6px 0', paddingLeft: 20 }}>
+      <ul key={key} className={styles.answerList}>
         {listItems.map((li, i) => (
-          <li key={i} style={{ marginBottom: 3 }}>
+          <li key={i} className={styles.answerListItem}>
             {renderInline(li)}
           </li>
         ))}
@@ -42,7 +43,7 @@ function renderAnswer(text: string) {
       if (line.trim() === '') {
         result.push(<br key={`br-${i}`} />);
       } else {
-        result.push(<span key={`line-${i}`} style={{ display: 'block', marginBottom: 4 }}>{renderInline(line)}</span>);
+        result.push(<span key={`line-${i}`} className={styles.answerLine}>{renderInline(line)}</span>);
       }
     }
   });
@@ -105,35 +106,19 @@ function SimpleEditor({
     });
   };
 
-  const btnStyle: React.CSSProperties = {
-    padding: '3px 9px',
-    fontSize: 12,
-    fontWeight: 600,
-    border: '1px solid var(--border)',
-    borderRadius: 5,
-    backgroundColor: 'var(--bg-subtle)',
-    color: 'var(--text-secondary)',
-    cursor: 'pointer',
-    lineHeight: 1.5,
-  };
-
   return (
-    <div style={{ border: '1px solid var(--border)', borderRadius: 7, overflow: 'hidden' }}>
-      <div style={{
-        display: 'flex', gap: 6, padding: '6px 8px',
-        backgroundColor: 'var(--bg-subtle)',
-        borderBottom: '1px solid var(--border)',
-      }}>
-        <button type="button" style={btnStyle} title="굵게" onClick={() => insertFormat('**', '**', '굵은 텍스트')}>
+    <div className={styles.editorWrapper}>
+      <div className={styles.editorToolbar}>
+        <button type="button" className={styles.editorBtn} title="굵게" onClick={() => insertFormat('**', '**', '굵은 텍스트')}>
           <strong>B</strong>
         </button>
-        <button type="button" style={btnStyle} title="기울임" onClick={() => insertFormat('*', '*', '기울임 텍스트')}>
+        <button type="button" className={styles.editorBtn} title="기울임" onClick={() => insertFormat('*', '*', '기울임 텍스트')}>
           <em>I</em>
         </button>
-        <button type="button" style={btnStyle} title="목록" onClick={insertBullet}>
+        <button type="button" className={styles.editorBtn} title="목록" onClick={insertBullet}>
           ≡
         </button>
-        <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-muted)', alignSelf: 'center' }}>
+        <span className={styles.editorHint}>
           **굵게** *기울임* - 목록
         </span>
       </div>
@@ -144,15 +129,7 @@ function SimpleEditor({
         placeholder={placeholder}
         required
         rows={8}
-        style={{
-          width: '100%', padding: '10px 12px', fontSize: 13,
-          border: 'none', outline: 'none',
-          fontFamily: 'inherit', resize: 'vertical' as const,
-          lineHeight: 1.7,
-          boxSizing: 'border-box' as const,
-          backgroundColor: 'var(--bg-surface)',
-          color: 'var(--text-primary)',
-        }}
+        className={styles.editorTextarea}
       />
     </div>
   );
@@ -246,65 +223,39 @@ export default function InfoPage() {
   };
 
   return (
-    <div style={{ padding: '40px 32px', maxWidth: '100%' }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+    <div className={styles.page}>
+      <div className={styles.inner}>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 40 }}>
+        <div className={styles.pageHeader}>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>
+            <h1 className={styles.pageTitle}>
               프로젝트 정보
             </h1>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+            <p className={styles.pageSubtitle}>
               TMS 사용 가이드 및 자주 묻는 질문
             </p>
           </div>
           {isAdmin && !showForm && (
-            <button
-              onClick={openAddForm}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: 'var(--accent)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 7,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
+            <button onClick={openAddForm} className={styles.btnPrimary}>
               + 항목 추가
             </button>
           )}
         </div>
 
         {message && (
-          <div style={{
-            padding: '10px 14px',
-            borderRadius: 8,
-            marginBottom: 20,
-            fontSize: 13,
-            backgroundColor: message.type === 'success' ? '#ECFDF5' : '#FEF2F2',
-            color: message.type === 'success' ? '#065F46' : '#991B1B',
-            border: `1px solid ${message.type === 'success' ? '#D1FAE5' : '#FECACA'}`,
-          }}>
+          <div className={`${styles.message} ${message.type === 'success' ? styles.messageSuccess : styles.messageError}`}>
             {message.text}
           </div>
         )}
 
         {showForm && (
-          <div style={{
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 10,
-            padding: '24px',
-            marginBottom: 28,
-          }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 20 }}>
+          <div className={styles.formCard}>
+            <h2 className={styles.formTitle}>
               {editingItem ? '항목 수정' : '새 항목 추가'}
             </h2>
             <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
                   질문 / 제목
                 </label>
                 <input
@@ -313,17 +264,11 @@ export default function InfoPage() {
                   onChange={e => setFormQ(e.target.value)}
                   placeholder="예: 업무 상태를 어떻게 변경하나요?"
                   required
-                  style={{
-                    width: '100%', padding: '9px 12px', fontSize: 13,
-                    border: '1px solid var(--border)', borderRadius: 7,
-                    boxSizing: 'border-box' as const, fontFamily: 'inherit',
-                    backgroundColor: 'var(--bg-surface)', color: 'var(--text-primary)',
-                    outline: 'none',
-                  }}
+                  className={styles.input}
                 />
               </div>
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>
+              <div className={styles.formGroupLast}>
+                <label className={styles.label}>
                   내용 / 답변
                 </label>
                 <SimpleEditor
@@ -332,24 +277,18 @@ export default function InfoPage() {
                   placeholder="내용을 입력하세요... (**굵게**, *기울임*, - 목록 사용 가능)"
                 />
               </div>
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div className={styles.formActions}>
                 <button
                   type="submit"
                   disabled={submitting}
-                  style={{
-                    padding: '8px 20px', backgroundColor: 'var(--accent)', color: '#fff',
-                    border: 'none', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                  }}
+                  className={styles.btnSubmit}
                 >
                   {submitting ? '저장 중...' : (editingItem ? '수정' : '추가')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  style={{
-                    padding: '8px 16px', backgroundColor: 'var(--bg-subtle)', color: 'var(--text-primary)',
-                    border: '1px solid var(--border)', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                  }}
+                  className={styles.btnCancel}
                 >
                   취소
                 </button>
@@ -359,105 +298,62 @@ export default function InfoPage() {
         )}
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)', fontSize: 13 }}>
+          <div className={styles.loading}>
             로딩 중...
           </div>
         ) : items.length === 0 ? (
-          <div style={{
-            textAlign: 'center', padding: 60,
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border)', borderRadius: 10,
-            color: 'var(--text-muted)', fontSize: 13,
-          }}>
+          <div className={styles.empty}>
             {isAdmin ? '+ 항목 추가 버튼으로 첫 번째 정보를 등록하세요.' : '등록된 정보가 없습니다.'}
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className={styles.list}>
             {items.map((item, idx) => {
               const isOpen = openIds.has(item.id);
               return (
                 <div
                   key={item.id}
-                  style={{
-                    backgroundColor: 'var(--bg-surface)',
-                    border: `1px solid ${isOpen ? 'var(--accent)' : 'var(--border)'}`,
-                    borderRadius: 10,
-                    overflow: 'hidden',
-                    transition: 'border-color 0.15s',
-                  }}
+                  className={styles.accordion}
+                  data-open={isOpen ? 'true' : 'false'}
                 >
                   <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '14px 20px',
-                      cursor: 'pointer',
-                      userSelect: 'none' as const,
-                    }}
+                    className={styles.accordionHeader}
                     onClick={() => toggleAccordion(item.id)}
                   >
-                    <span style={{
-                      width: 24, height: 24,
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      backgroundColor: isOpen ? 'var(--accent-light)' : 'var(--bg-subtle)',
-                      color: isOpen ? 'var(--accent)' : 'var(--text-muted)',
-                      borderRadius: 6, fontSize: 11, fontWeight: 700,
-                      marginRight: 14, flexShrink: 0,
-                    }}>
+                    <span className={styles.accordionIndex} data-open={isOpen ? 'true' : 'false'}>
                       {idx + 1}
                     </span>
-                    <span style={{
-                      flex: 1, fontSize: 14, fontWeight: 600,
-                      color: isOpen ? 'var(--accent)' : 'var(--text-primary)',
-                    }}>
+                    <span className={styles.accordionQuestion} data-open={isOpen ? 'true' : 'false'}>
                       {item.question}
                     </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div className={styles.accordionControls}>
                       {isAdmin && (
                         <>
                           <button
                             onClick={e => { e.stopPropagation(); openEditForm(item); }}
-                            style={{
-                              padding: '3px 10px', fontSize: 11, fontWeight: 600,
-                              backgroundColor: 'var(--bg-subtle)', color: 'var(--text-secondary)',
-                              border: '1px solid var(--border)', borderRadius: 5, cursor: 'pointer',
-                            }}
+                            className={styles.btnEdit}
                           >
                             수정
                           </button>
                           <button
                             onClick={e => { e.stopPropagation(); handleDelete(item.id); }}
-                            style={{
-                              padding: '3px 10px', fontSize: 11, fontWeight: 600,
-                              backgroundColor: 'transparent', color: 'var(--danger)',
-                              border: '1px solid #FECACA', borderRadius: 5, cursor: 'pointer',
-                            }}
+                            className={styles.btnDelete}
                           >
                             삭제
                           </button>
                         </>
                       )}
-                      <span style={{
-                        fontSize: 14, color: isOpen ? 'var(--accent)' : 'var(--text-muted)',
-                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                        transition: 'transform 0.2s',
-                        display: 'inline-block',
-                        marginLeft: 4,
-                      }}>
+                      <span className={styles.chevron} data-open={isOpen ? 'true' : 'false'}>
                         ▾
                       </span>
                     </div>
                   </div>
 
                   {isOpen && (
-                    <div style={{
-                      padding: '14px 20px 18px 58px',
-                      borderTop: '1px solid var(--border)',
-                    }}>
-                      <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+                    <div className={styles.accordionBody}>
+                      <div className={styles.answerText}>
                         {renderAnswer(item.answer)}
                       </div>
-                      <div style={{ marginTop: 12, fontSize: 11, color: 'var(--text-muted)' }}>
+                      <div className={styles.answerMeta}>
                         등록: {item.author.name} · {new Date(item.createdAt).toLocaleDateString('ko-KR')}
                       </div>
                     </div>
