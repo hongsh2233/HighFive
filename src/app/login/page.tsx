@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { signIn } from 'next-auth/react';
+import styles from './login.module.css';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,55 +37,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      minHeight: '100vh',
-      backgroundColor: '#FAFAFA',
-    }}>
+    <div className={styles.wrapper}>
       {/* 좌측 브랜드 패널 */}
-      <div style={{
-        width: '42%',
-        background: 'linear-gradient(145deg, #18181B 0%, #27272A 50%, #1C1C2E 100%)',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        padding: '64px 56px',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        {/* 배경 장식 */}
-        <div style={{
-          position: 'absolute', top: -80, right: -80,
-          width: 320, height: 320,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(94,106,210,0.15) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: -60, left: -60,
-          width: 240, height: 240,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(94,106,210,0.10) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
+      <div className={styles.brandPanel}>
+        <div className={styles.bgDecorTop} />
+        <div className={styles.bgDecorBottom} />
 
         {/* 로고 */}
-        <div style={{ marginBottom: 48, position: 'relative' }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 48, height: 48,
-            borderRadius: 12,
-            background: 'linear-gradient(135deg, #5E6AD2, #7C85E0)',
-            marginBottom: 24,
-          }}>
-            <span style={{ color: '#fff', fontSize: 22, fontWeight: 800 }}>T</span>
+        <div className={styles.logoArea}>
+          <div className={styles.logoIcon}>
+            <span className={styles.logoIconText}>T</span>
           </div>
-          <h1 style={{ color: '#FAFAFA', fontSize: 32, fontWeight: 800, marginBottom: 12, letterSpacing: '-0.02em' }}>
-            TMS
-          </h1>
-          <p style={{ color: 'rgba(250,250,250,0.55)', fontSize: 14, lineHeight: 1.7 }}>
+          <h1 className={styles.brandTitle}>TMS</h1>
+          <p className={styles.brandDesc}>
             Task Management System<br />
             AI 웹 개발 비즈니스에 최적화된<br />
             경량 업무 관리 플랫폼
@@ -92,128 +57,61 @@ export default function LoginPage() {
         </div>
 
         {/* 기능 목록 */}
-        <div style={{ position: 'relative' }}>
+        <div className={styles.featureList}>
           {[
             { icon: '⚡', label: '실시간 칸반 보드' },
             { icon: '⏱', label: '타임 트래킹 & 공수 분석' },
             { icon: '🔔', label: 'Slack · 잔디 자동 알림' },
             { icon: '📊', label: '통계 리포트 & CSV 내보내기' },
           ].map((item) => (
-            <div key={item.label} style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              marginBottom: 14,
-            }}>
-              <span style={{ fontSize: 16 }}>{item.icon}</span>
-              <span style={{ color: 'rgba(250,250,250,0.70)', fontSize: 13 }}>{item.label}</span>
+            <div key={item.label} className={styles.featureItem}>
+              <span className={styles.featureIcon}>{item.icon}</span>
+              <span className={styles.featureLabel}>{item.label}</span>
             </div>
           ))}
         </div>
 
         {/* 기술 스택 태그 */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 40, position: 'relative' }}>
+        <div className={styles.techTags}>
           {['Next.js 15', 'Prisma', 'PostgreSQL', 'NextAuth'].map((tag) => (
-            <span key={tag} style={{
-              padding: '4px 10px',
-              borderRadius: 20,
-              background: 'rgba(94,106,210,0.18)',
-              border: '1px solid rgba(94,106,210,0.3)',
-              color: 'rgba(250,250,250,0.55)',
-              fontSize: 11,
-              fontWeight: 600,
-            }}>{tag}</span>
+            <span key={tag} className={styles.techTag}>{tag}</span>
           ))}
         </div>
       </div>
 
       {/* 우측 로그인 폼 */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: '64px 48px',
-        backgroundColor: '#FFFFFF',
-      }}>
-        <div style={{ width: '100%', maxWidth: 380 }}>
-          <div style={{ marginBottom: 40 }}>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#09090B', marginBottom: 8 }}>
-              로그인
-            </h2>
-            <p style={{ fontSize: 13, color: '#71717A' }}>
-              TMS 계정으로 로그인하세요
-            </p>
+      <div className={styles.formPanel}>
+        <div className={styles.formInner}>
+          <div className={styles.formHeader}>
+            <h2 className={styles.formTitle}>로그인</h2>
+            <p className={styles.formSubtitle}>TMS 계정으로 로그인하세요</p>
           </div>
 
           {error && (
-            <div style={{
-              padding: '10px 14px',
-              backgroundColor: '#FEF2F2',
-              border: '1px solid #FECACA',
-              borderRadius: 8,
-              color: '#991B1B',
-              fontSize: 13,
-              marginBottom: 20,
-            }}>
-              {error}
-            </div>
+            <div className={styles.errorBox}>{error}</div>
           )}
 
           <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{
-                display: 'block', marginBottom: 6,
-                fontSize: 13, fontWeight: 600, color: '#09090B',
-              }}>
-                이메일
-              </label>
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>이메일</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@company.com"
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  fontSize: 13,
-                  border: '1px solid #E4E4E7',
-                  borderRadius: 8,
-                  boxSizing: 'border-box',
-                  outline: 'none',
-                  transition: 'border-color 0.15s',
-                  backgroundColor: '#FAFAFA',
-                }}
-                onFocus={(e) => { e.target.style.borderColor = '#5E6AD2'; e.target.style.backgroundColor = '#fff'; }}
-                onBlur={(e) => { e.target.style.borderColor = '#E4E4E7'; e.target.style.backgroundColor = '#FAFAFA'; }}
+                className={styles.input}
                 disabled={loading}
               />
             </div>
 
-            <div style={{ marginBottom: 28 }}>
-              <label style={{
-                display: 'block', marginBottom: 6,
-                fontSize: 13, fontWeight: 600, color: '#09090B',
-              }}>
-                비밀번호
-              </label>
+            <div className={styles.fieldGroupLast}>
+              <label className={styles.label}>비밀번호</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  fontSize: 13,
-                  border: '1px solid #E4E4E7',
-                  borderRadius: 8,
-                  boxSizing: 'border-box',
-                  outline: 'none',
-                  transition: 'border-color 0.15s',
-                  backgroundColor: '#FAFAFA',
-                }}
-                onFocus={(e) => { e.target.style.borderColor = '#5E6AD2'; e.target.style.backgroundColor = '#fff'; }}
-                onBlur={(e) => { e.target.style.borderColor = '#E4E4E7'; e.target.style.backgroundColor = '#FAFAFA'; }}
+                className={styles.input}
                 disabled={loading}
               />
             </div>
@@ -221,25 +119,14 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              style={{
-                width: '100%',
-                padding: '11px',
-                background: loading ? '#A5B4FC' : 'linear-gradient(135deg, #5E6AD2, #7C85E0)',
-                color: 'white',
-                border: 'none',
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                letterSpacing: '0.01em',
-                transition: 'opacity 0.15s',
-              }}
+              data-loading={loading}
+              className={styles.submitBtn}
             >
               {loading ? '로그인 중...' : '로그인'}
             </button>
           </form>
 
-          <p style={{ marginTop: 32, fontSize: 12, color: '#A1A1AA', textAlign: 'center' }}>
+          <p className={styles.formFooter}>
             계정 문의는 시스템 관리자에게 연락하세요
           </p>
         </div>

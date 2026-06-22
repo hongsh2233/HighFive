@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
@@ -56,5 +57,5 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 export function generateTempPassword(): string {
-  return Math.random().toString(36).slice(-12);
+  return randomBytes(8).toString('hex');
 }

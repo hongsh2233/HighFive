@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse, parseRmsNo } from '@/lib/utils';
+import { sanitize } from '@/lib/sanitize';
 
 // GET /api/tasks
 export async function GET(req: NextRequest) {
@@ -75,7 +76,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, workerId, plannerId, targetDate, notes, projectId } = body;
+    const { title, workerId, plannerId, targetDate, projectId } = body;
+    const notes = sanitize(body.notes || '');
 
     if (!title || !workerId || !plannerId) {
       return errorResponse('필수 항목이 누락되었습니다.', 400, 'VALID_400');

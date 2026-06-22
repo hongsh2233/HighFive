@@ -107,8 +107,6 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log(`✅ New user created: ${email} (temp password: ${tempPassword})`);
-
     return successResponse(
       { ...user, tempPassword },
       '사용자가 성공적으로 생성되었습니다.',

@@ -2,87 +2,22 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import styles from './dashboard.module.css';
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div style={{ padding: 'var(--space-8)', textAlign: 'center' }}>
-        로딩 중...
-      </div>
-    );
+    return <div className={styles.loading}>로딩 중...</div>;
   }
 
-  const containerStyle: React.CSSProperties = {
-    padding: 'var(--space-8)',
-    maxWidth: '1440px',
-    margin: '0 auto',
-  };
-
-  const headerStyle: React.CSSProperties = {
-    marginBottom: 'var(--space-8)',
-  };
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: '28px',
-    fontWeight: '700',
-    marginBottom: 'var(--space-2)',
-  };
-
-  const subtitleStyle: React.CSSProperties = {
-    color: 'var(--color-gray-600)',
-    fontSize: '14px',
-  };
-
-
-
-  const emptyStateStyle: React.CSSProperties = {
-    textAlign: 'center',
-    padding: 'var(--space-12)',
-    backgroundColor: 'var(--bg-surface)',
-    borderRadius: '8px',
-    border: '1px solid var(--border)',
-  };
-
-  const emptyIconStyle: React.CSSProperties = {
-    fontSize: '48px',
-    marginBottom: 'var(--space-4)',
-  };
-
-  const adminLinkStyle: React.CSSProperties = {
-    display: 'inline-block',
-    padding: 'var(--space-2) var(--space-4)',
-    backgroundColor: 'var(--accent)',
-    color: 'white',
-    textDecoration: 'none',
-    borderRadius: '6px',
-    fontWeight: '600',
-    fontSize: '13px',
-    marginRight: 'var(--space-2)',
-    marginBottom: 'var(--space-2)',
-  };
-
-  const plannerLinkStyle: React.CSSProperties = {
-    display: 'inline-block',
-    padding: 'var(--space-2) var(--space-4)',
-    backgroundColor: 'var(--accent)',
-    color: 'white',
-    textDecoration: 'none',
-    borderRadius: '6px',
-    fontWeight: '600',
-    fontSize: '13px',
-    marginRight: 'var(--space-2)',
-    marginBottom: 'var(--space-2)',
-  };
-
   return (
-    <div style={containerStyle}>
-      <div style={headerStyle}>
-        <h1 style={titleStyle}>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h1 className={styles.title}>
           안녕하세요, {user?.name}님
         </h1>
-        <p style={subtitleStyle}>
+        <p className={styles.subtitle}>
           {user?.role === 'ADMIN' && '관리자'}
           {user?.role === 'PLANNER' && '기획자'}
           {user?.role === 'WORKER' && '작업자'}
@@ -91,12 +26,10 @@ export default function DashboardPage() {
       </div>
 
       {user?.role === 'ADMIN' && (
-        <div style={{ marginBottom: 'var(--space-8)' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
-            관리 기능
-          </h2>
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>관리 기능</h2>
           <div>
-            <Link href="/users" style={adminLinkStyle}>
+            <Link href="/users" className={styles.actionLink}>
               👥 팀 사용자 관리
             </Link>
           </div>
@@ -104,55 +37,45 @@ export default function DashboardPage() {
       )}
 
       {user?.role === 'PLANNER' && (
-        <div style={{ marginBottom: 'var(--space-8)' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
-            기획자 기능
-          </h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-            <Link href="/tasks" style={plannerLinkStyle}>
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>기획자 기능</h2>
+          <div className={styles.linkRow}>
+            <Link href="/tasks" className={styles.actionLink}>
               📋 업무 배정
             </Link>
-            <Link href="/stats" style={plannerLinkStyle}>
+            <Link href="/stats" className={styles.actionLink}>
               📊 통계 조회
             </Link>
-            <Link href="/tasks/kanban" style={plannerLinkStyle}>
+            <Link href="/tasks/kanban" className={styles.actionLink}>
               📈 칸반 보드
             </Link>
-            <Link href="/calendar" style={plannerLinkStyle}>
+            <Link href="/calendar" className={styles.actionLink}>
               📅 캘린더
             </Link>
           </div>
         </div>
       )}
 
-      <div style={{ marginBottom: 'var(--space-8)' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
-          나의 업무
-        </h2>
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>나의 업무</h2>
         <div style={{ marginBottom: 'var(--space-4)' }}>
-          <Link href="/tasks/create" style={plannerLinkStyle}>
+          <Link href="/tasks/create" className={styles.actionLink}>
             ➕ 업무 등록
           </Link>
         </div>
-        <div style={emptyStateStyle}>
-          <div style={emptyIconStyle}>📋</div>
-          <p style={{ fontSize: '16px', fontWeight: '600', marginBottom: 'var(--space-2)' }}>
-            배정된 업무가 없습니다.
-          </p>
-          <p style={{ fontSize: '13px', color: 'var(--color-gray-600)' }}>
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>📋</div>
+          <p className={styles.emptyTitle}>배정된 업무가 없습니다.</p>
+          <p className={styles.emptyDesc}>
             기획자에게 업무 배정을 요청하거나 새 업무를 만들어보세요.
           </p>
         </div>
       </div>
 
       <div>
-        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: 'var(--space-4)' }}>
-          최근 활동
-        </h2>
-        <div style={emptyStateStyle}>
-          <p style={{ fontSize: '13px', color: 'var(--color-gray-600)' }}>
-            최근 활동 기록이 없습니다.
-          </p>
+        <h2 className={styles.sectionTitle}>최근 활동</h2>
+        <div className={styles.emptyState}>
+          <p className={styles.emptyDesc}>최근 활동 기록이 없습니다.</p>
         </div>
       </div>
     </div>

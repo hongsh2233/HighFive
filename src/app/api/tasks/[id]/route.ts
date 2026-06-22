@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse, parseRmsNo } from '@/lib/utils';
+import { sanitize } from '@/lib/sanitize';
 
 // GET /api/tasks/[id] - 업무 상세 조회
 export async function GET(
@@ -68,7 +69,7 @@ export async function PATCH(
       updateData.rmsNo = rmsNo;
     }
     if (targetDate !== undefined) updateData.targetDate = targetDate ? new Date(targetDate) : null;
-    if (notes !== undefined) updateData.notes = notes;
+    if (notes !== undefined) updateData.notes = sanitize(notes || '');
     if (status !== undefined) updateData.status = status;
     updateData.updatedAt = new Date();
 
