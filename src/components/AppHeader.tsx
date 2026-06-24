@@ -81,14 +81,7 @@ export default function AppHeader() {
                 <div className={`${styles.dropdown} ${styles.dropdownLeft}`}>
                   <Link href="/projects" className={styles.dropdownItem}>프로젝트</Link>
                   {user?.role === 'ADMIN' && (
-                    <Link
-                      href="/users"
-                      style={dropdownItemStyle}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      팀원 관리
-                    </Link>
+                    <Link href="/users" className={styles.dropdownItem}>사용자 관리</Link>
                   )}
                   <Link href="/stats" className={styles.dropdownItem}>통계</Link>
                 </div>

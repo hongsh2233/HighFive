@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import dynamic from 'next/dynamic';
 import axios from 'axios';
+import styles from './create.module.css';
 import 'react-quill-new/dist/quill.snow.css';
 
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
@@ -76,16 +77,12 @@ export default function TaskCreatePage() {
       const res = await axios.get('/api/projects');
       const activeProjects = (res.data.data || []).filter((p: Project) => p.status === 'ACTIVE');
       setProjects(activeProjects);
-
-      // MANAGER: 자신이 속한 첫 번째 프로젝트 자동 선택
       if (isManager && activeProjects.length > 0) {
         const myProject = activeProjects.find((p: Project) =>
           p.members.some((m: { user: Worker }) => m.user.id === Number(user?.id))
         );
         if (myProject) setProjectId(String(myProject.id));
       }
-
-      // ADMIN이고 프로젝트 없으면 전체 작업자 로드
       if (isAdmin && activeProjects.length === 0) fetchAllWorkers();
     } catch (err) {
       console.error(err);
@@ -140,21 +137,6 @@ export default function TaskCreatePage() {
     );
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: 'var(--space-3)', border: '1px solid var(--color-gray-300)',
-    borderRadius: '6px', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box',
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: 'block', marginBottom: 'var(--space-2)', fontSize: '14px', fontWeight: '600', color: 'var(--color-gray-900)',
-  };
-
-  const fieldStyle: React.CSSProperties = { marginBottom: 'var(--space-6)' };
-
-  const quillModules = {
-    toolbar: [['bold', 'italic', 'underline'], ['link'], ['clean']],
-  };
-
   return (
     <div className={styles.page}>
       <div className={styles.pageHeader}>
@@ -164,73 +146,78 @@ export default function TaskCreatePage() {
       {error && <div className={styles.errorBox}>{error}</div>}
       {success && <div className={styles.successBox}>{success}</div>}
 
-      <form onSubmit={handleSubmit}>
-        <div style={fieldStyle}>
-          <label style={labelStyle}>등록일자</label>
-          <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--color-gray-100)', borderRadius: '6px', fontSize: '14px', color: 'var(--color-gray-900)', fontWeight: '500' }}>
-            📅 {createdDate} (자동)
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <div className={styles.leftPane}>
+          <div className={styles.card}>
+            <h2 className={styles.cardTitle}>기본 정보</h2>
+
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>등록일자</label>
+              <div className={styles.dateDisplay}>📅 {createdDate} (자동)</div>
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>프로젝트 {isManager && <span className={styles.required}>*</span>}</label>
+              <select value={projectId} onChange={e => setProjectId(e.target.value)} className={styles.input} disabled={loading}>
+                <option value="">프로젝트 선택 {isAdmin ? '(선택사항)' : ''}</option>
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>업무 제목 <span className={styles.required}>*</span></label>
+              <input
+                type="text"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                placeholder="예: [DCBGIT-39085] 구글 원 2TB 상품 정보 수정"
+                className={styles.input}
+                disabled={loading}
+              />
+              <p className={styles.hint}>선택사항: [RMS-NO] 형식으로 입력하면 자동으로 분류됩니다.</p>
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>담당자 <span className={styles.required}>*</span></label>
+              <select value={workerId} onChange={e => setWorkerId(e.target.value)} className={styles.input} disabled={loading}>
+                <option value="">담당자를 선택해주세요.</option>
+                {workers.map(w => (
+                  <option key={w.id} value={w.id}>{w.name} ({w.email})</option>
+                ))}
+              </select>
+              {projectId && workers.length === 0 && (
+                <p className={styles.hintError}>선택한 프로젝트에 작업자가 없습니다.</p>
+              )}
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>목표일</label>
+              <input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} className={styles.input} disabled={loading} />
+            </div>
           </div>
         </div>
 
-        <div style={fieldStyle}>
-          <label style={labelStyle}>
-            프로젝트 {isManager && '*'}
-          </label>
-          <select value={projectId} onChange={e => setProjectId(e.target.value)} style={inputStyle} disabled={loading}>
-            <option value="">프로젝트 선택 {isAdmin ? '(선택사항)' : ''}</option>
-            {projects.map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
+        <div className={styles.rightPane}>
+          <div className={styles.card}>
+            <h2 className={styles.cardTitle}>비고</h2>
+            <div className={styles.editorWrap}>
+              <ReactQuill
+                theme="snow"
+                value={notes}
+                onChange={setNotes}
+                modules={quillModules}
+                className={styles.editor}
+                placeholder="업무에 대한 상세 내용을 입력해주세요."
+              />
+            </div>
+          </div>
         </div>
 
-        <div style={fieldStyle}>
-          <label style={labelStyle}>업무 제목 *</label>
-          <input
-            type="text"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            placeholder="예: [DCBGIT-39085] 구글 원 2TB 상품 정보 수정"
-            style={inputStyle}
-            disabled={loading}
-          />
-          <p style={{ fontSize: '12px', color: 'var(--color-gray-600)', marginTop: 'var(--space-2)' }}>
-            선택사항: [RMS-NO] 형식으로 입력하면 자동으로 분류됩니다.
-          </p>
-        </div>
-
-        <div style={fieldStyle}>
-          <label style={labelStyle}>담당자 *</label>
-          <select value={workerId} onChange={e => setWorkerId(e.target.value)} style={inputStyle} disabled={loading}>
-            <option value="">담당자를 선택해주세요.</option>
-            {workers.map(w => (
-              <option key={w.id} value={w.id}>{w.name} ({w.email})</option>
-            ))}
-          </select>
-          {projectId && workers.length === 0 && (
-            <p style={{ fontSize: '12px', color: '#DC2626', marginTop: 'var(--space-2)' }}>선택한 프로젝트에 작업자가 없습니다.</p>
-          )}
-        </div>
-
-        <div style={fieldStyle}>
-          <label style={labelStyle}>목표일</label>
-          <input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} style={inputStyle} disabled={loading} />
-        </div>
-
-        <div style={{ ...fieldStyle, marginBottom: 'var(--space-8)' }}>
-          <label style={labelStyle}>비고</label>
-          <ReactQuill
-            theme="snow"
-            value={notes}
-            onChange={setNotes}
-            modules={quillModules}
-            style={{ backgroundColor: 'white' }}
-          />
-        </div>
-
-        <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-          <button type="submit" style={{ flex: 1, padding: 'var(--space-3)', backgroundColor: 'var(--accent)', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', opacity: loading ? 0.6 : 1 }} disabled={loading}>
-            {loading ? '등록 중...' : '등록'}
+        <div className={styles.btnRow}>
+          <button type="submit" data-loading={loading} className={styles.submitBtn} disabled={loading}>
+            {loading ? '등록 중...' : '업무 등록'}
           </button>
           <button type="button" className={styles.cancelBtn} onClick={() => router.push('/tasks')} disabled={loading}>
             취소

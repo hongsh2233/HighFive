@@ -29,8 +29,8 @@ export default function DashboardPage() {
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>관리 기능</h2>
           <div>
-            <Link href="/users" style={adminLinkStyle}>
-              👥 팀원 관리
+            <Link href="/users" className={styles.actionLink}>
+              👥 팀 사용자 관리
             </Link>
           </div>
         </div>

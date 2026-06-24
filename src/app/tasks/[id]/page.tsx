@@ -3,13 +3,26 @@
 import { useEffect, useState, use } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTimer } from '@/hooks/useTimer';
-import dynamic from 'next/dynamic';
 import apiClient from '@/lib/api-client';
 import { Task, TimeLog } from '@/types';
 import TaskTimerButton from '@/components/task/TaskTimerButton';
-import 'react-quill-new/dist/quill.snow.css';
+import styles from './detail.module.css';
 
-const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+const statusColors: { [key: string]: { bg: string; text: string; border: string } } = {
+  ASSIGNED: { bg: 'transparent', text: '#1D4ED8', border: '#93C5FD' },
+  PROGRESS: { bg: 'transparent', text: '#92400E', border: '#FCD34D' },
+  REVIEW:   { bg: 'transparent', text: '#5B21B6', border: '#C4B5FD' },
+  QA:       { bg: 'transparent', text: '#155E75', border: '#67E8F9' },
+  DONE:     { bg: 'transparent', text: '#065F46', border: '#6EE7B7' },
+};
+
+const statusLabels: { [key: string]: string } = {
+  ASSIGNED: '배정됨',
+  PROGRESS: '진행중',
+  REVIEW: '검수',
+  QA: 'QA',
+  DONE: '완료',
+};
 
 export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -95,18 +108,6 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     fontWeight: '600',
   };
 
-  const buttonStyle: React.CSSProperties = {
-    padding: 'var(--space-2) var(--space-4)',
-    backgroundColor: 'var(--accent)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontWeight: '600',
-    fontSize: '13px',
-    marginRight: 'var(--space-2)',
-  };
-
   return (
     <div className={styles.container}>
       <div className={styles.pageHeader}>
@@ -144,10 +145,10 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       </div>
 
-      {/* 비고 */}
-      <div style={cardStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '700' }}>비고</h2>
+      {/* 메모 */}
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <h2 className={`${styles.cardTitle} ${styles.noMargin}`}>메모</h2>
           {!editing && (
             <button onClick={() => setEditing(true)} className={styles.btnSecondary}>
               수정
@@ -157,31 +158,24 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
         {editing ? (
           <div>
-            <ReactQuill
-              theme="snow"
+            <textarea
               value={formData.notes}
-              onChange={(val) => setFormData({ ...formData, notes: val })}
-              modules={{ toolbar: [['bold', 'italic', 'underline'], ['link'], ['clean']] }}
-              style={{ backgroundColor: 'white', marginBottom: 'var(--space-4)' }}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              className={styles.textarea}
+              placeholder="메모를 입력하세요..."
             />
             <div className={styles.editActions}>
               <button onClick={handleSave} className={styles.btn}>저장</button>
               <button
-                onClick={() => {
-                  setEditing(false);
-                  setFormData({ notes: task.notes || '' });
-                }}
-                style={{ ...buttonStyle, backgroundColor: 'var(--color-gray-600)' }}
+                onClick={() => { setEditing(false); setFormData({ notes: task.notes || '' }); }}
+                className={styles.btnSecondary}
               >
                 취소
               </button>
             </div>
           </div>
         ) : (
-          <div
-            style={{ color: 'var(--color-gray-600)', fontSize: '14px', lineHeight: 1.6 }}
-            dangerouslySetInnerHTML={{ __html: task.notes || '<span style="color:var(--color-gray-400)">비고가 없습니다.</span>' }}
-          />
+          <p className={styles.noteText}>{task.notes || '메모가 없습니다.'}</p>
         )}
       </div>
 
