@@ -71,12 +71,6 @@ export default function LoginPage() {
           ))}
         </div>
 
-        {/* 기술 스택 태그 */}
-        <div className={styles.techTags}>
-          {['Next.js 15', 'Prisma', 'PostgreSQL', 'NextAuth'].map((tag) => (
-            <span key={tag} className={styles.techTag}>{tag}</span>
-          ))}
-        </div>
       </div>
 
       {/* 우측 로그인 폼 */}

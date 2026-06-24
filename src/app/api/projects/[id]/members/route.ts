@@ -1,10 +1,12 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
+import { ensureProjectsSchema } from '@/lib/db-init';
 
 // POST /api/projects/[id]/members - 멤버 추가
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await ensureProjectsSchema();
     const { session, error } = await requireAuth();
     if (error) return error;
 

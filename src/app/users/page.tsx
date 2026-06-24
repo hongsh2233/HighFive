@@ -65,7 +65,7 @@ export default function UsersPage() {
   };
 
   useEffect(() => {
-    if (!authLoading && currentUser?.role === 'ADMIN') {
+    if (!authLoading && ['ADMIN', 'MANAGER'].includes(currentUser?.role || '')) {
       fetchUsers();
       fetchProjects();
     }
@@ -107,7 +107,7 @@ export default function UsersPage() {
 
       if (editingUser) {
         await apiClient.patch(`/users/${editingUser.id}`, payload);
-        setMessage({ type: 'success', text: '사용자 정보가 수정되었습니다.' });
+        setMessage({ type: 'success', text: '팀원 정보가 수정되었습니다.' });
       } else {
         const res = await apiClient.post<{ data: { tempPassword: string } }>('/users', {
           email: formData.email,
@@ -159,36 +159,48 @@ export default function UsersPage() {
 
   const roleLabel = (role: string) => role === 'ADMIN' ? '최고관리자' : role === 'MANAGER' ? '관리자' : '작업자';
 
+  const roleBadgeStyle = (role: string): React.CSSProperties => {
+    const map: Record<string, { bg: string; color: string }> = {
+      ADMIN: { bg: '#FEE2E2', color: '#991B1B' },
+      MANAGER: { bg: '#FEF3C7', color: '#92400E' },
+      WORKER: { bg: '#DBEAFE', color: '#0C2D6B' },
+    };
+    const c = map[role] || map.WORKER;
+    return { display: 'inline-block', padding: '3px 8px', borderRadius: 4, fontSize: 11, fontWeight: 700, backgroundColor: c.bg, color: c.color };
+  };
+
   if (authLoading || loading) {
     return <div className={styles.loadingPage}>로딩 중...</div>;
   }
 
-  if (currentUser?.role !== 'ADMIN') {
-    return <div className={styles.loadingPage}>관리자만 접근 가능합니다.</div>;
+  if (!['ADMIN', 'MANAGER'].includes(currentUser?.role || '')) {
+    return <div style={{ padding: 40 }}>관리자만 접근 가능합니다.</div>;
   }
+
+  const isAdmin = currentUser?.role === 'ADMIN';
 
   return (
     <div className={styles.page}>
       <div className={styles.inner}>
-        <div className={styles.pageHeader}>
+        <div className={styles.header}>
           <div>
-            <h1 className={styles.pageTitle}>팀원 관리</h1>
-            <p className={styles.pageSubtitle}>팀원을 추가하고 관리합니다.</p>
+            <h1 className={styles.title}>팀원 관리</h1>
+            <p className={styles.subtitle}>팀원을 추가하고 관리합니다.</p>
           </div>
-          {!showForm && (
-            <button onClick={openCreateForm} className={styles.btnPrimary}>
+          {isAdmin && !showForm && (
+            <button onClick={openCreateForm} className={styles.addBtn}>
               + 팀원 추가
             </button>
           )}
         </div>
 
         {message && (
-          <div className={`${styles.message} ${message.type === 'success' ? styles.messageSuccess : styles.messageError}`}>
+          <div className={`${styles.alert} ${message.type === 'success' ? styles.alertSuccess : styles.alertError}`}>
             {message.text}
           </div>
         )}
 
-        {showForm && (
+        {isAdmin && showForm && (
           <div className={styles.formCard}>
             <h2 className={styles.formTitle}>
               {editingUser ? '팀원 수정' : '새 팀원 추가'}
@@ -232,9 +244,11 @@ export default function UsersPage() {
               </div>
 
               {projects.length > 0 && (
-                <div className={styles.projectSection} data-disabled={formData.role === 'ADMIN' ? 'true' : 'false'}>
-                  <label className={styles.label}>소속 프로젝트 {formData.role === 'ADMIN' && <span className={styles.labelNote}>(최고관리자는 선택 불필요)</span>}</label>
-                  <div className={styles.projectBtnRow}>
+                <div style={{ marginBottom: 20, opacity: formData.role === 'ADMIN' ? 0.4 : 1, pointerEvents: formData.role === 'ADMIN' ? 'none' : 'auto' }}>
+                  <label className={styles.label}>
+                    소속 프로젝트 {formData.role === 'ADMIN' && <span style={{ fontWeight: 400, textTransform: 'none' }}>(최고관리자는 선택 불필요)</span>}
+                  </label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {projects.map(p => {
                       const selected = formData.projectIds.includes(p.id);
                       return (
@@ -242,8 +256,12 @@ export default function UsersPage() {
                           key={p.id}
                           type="button"
                           onClick={() => toggleProject(p.id)}
-                          className={styles.projectBtn}
-                          data-selected={selected ? 'true' : 'false'}
+                          className={styles.projectToggle}
+                          style={{
+                            border: `1px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
+                            backgroundColor: selected ? 'var(--accent-light)' : 'var(--bg-subtle)',
+                            color: selected ? 'var(--accent)' : 'var(--text-secondary)',
+                          }}
                         >
                           {p.name}
                         </button>
@@ -254,10 +272,10 @@ export default function UsersPage() {
               )}
 
               <div className={styles.formActions}>
-                <button type="submit" disabled={submitting} className={styles.btnSubmit}>
+                <button type="submit" disabled={submitting} className={styles.btnPrimary}>
                   {submitting ? '저장 중...' : (editingUser ? '수정' : '추가')}
                 </button>
-                <button type="button" onClick={() => { setShowForm(false); resetForm(); }} className={styles.btnCancel}>
+                <button type="button" onClick={() => { setShowForm(false); resetForm(); }} className={styles.btnSecondary}>
                   취소
                 </button>
               </div>
@@ -266,11 +284,11 @@ export default function UsersPage() {
         )}
 
         <div className={styles.tableCard}>
-          <div className={styles.tableScroll}>
+          <div className={styles.tableWrap}>
             <table className={styles.table}>
               <thead>
                 <tr>
-                  {['이름', '이메일', '역할', '소속', '상태', '철수일', '소속 프로젝트', '가입일', ''].map(h => (
+                  {['이름', '이메일', '역할', '소속', '상태', '철수일', '소속 프로젝트', '가입일', ...(isAdmin ? [''] : [])].map(h => (
                     <th key={h} className={styles.th}>{h}</th>
                   ))}
                 </tr>
@@ -279,56 +297,45 @@ export default function UsersPage() {
                 {users.map(u => (
                   <tr key={u.id} className={styles.tr}>
                     <td className={styles.tdName}>{u.name}</td>
-                    <td className={styles.tdSecondary}>{u.email}</td>
+                    <td className={styles.tdMuted}>{u.email}</td>
+                    <td className={styles.td}><span style={roleBadgeStyle(u.role)}>{roleLabel(u.role)}</span></td>
+                    <td className={styles.tdMuted}>{u.affiliation || '-'}</td>
                     <td className={styles.td}>
-                      <span className={styles.roleBadge} data-role={u.role}>{roleLabel(u.role)}</span>
-                    </td>
-                    <td className={styles.tdSecondary}>{u.affiliation || '-'}</td>
-                    <td className={styles.td}>
-                      <span className={u.isActive ? styles.statusActive : styles.statusInactive} data-active={u.isActive ? 'true' : 'false'}>
+                      <span style={{ color: u.isActive ? '#059669' : '#DC2626', fontWeight: 600, fontSize: 12 }}>
                         {u.isActive ? '활성' : '비활성'}
                       </span>
                     </td>
-                    <td className={styles.tdSecondary}>
+                    <td className={styles.tdMuted}>
                       {u.leaveDate ? new Date(u.leaveDate).toLocaleDateString('ko-KR') : '-'}
                     </td>
                     <td className={styles.td}>
-                      <div className={styles.projectTagRow}>
+                      <div className={styles.projectTagsWrap}>
                         {u.projectMembers?.filter(pm => pm.project.status === 'ACTIVE').map(pm => (
-                          <span key={pm.project.id} className={styles.projectTag}>
-                            {pm.project.name}
-                          </span>
+                          <span key={pm.project.id} className={styles.projectTag}>{pm.project.name}</span>
                         ))}
                         {(!u.projectMembers || u.projectMembers.filter(pm => pm.project.status === 'ACTIVE').length === 0) && (
                           <span className={styles.tagEmpty}>-</span>
                         )}
                       </div>
                     </td>
-                    <td className={styles.tdSecondary}>{new Date(u.createdAt).toLocaleDateString('ko-KR')}</td>
-                    <td className={styles.td}>
-                      <div className={styles.rowActions}>
-                        <button onClick={() => openEditForm(u)} className={styles.btnEdit}>
-                          수정
-                        </button>
-                        {u.isActive && u.id !== Number(currentUser?.id) && (
-                          <button onClick={() => handleDeactivate(u.id)} className={styles.btnDeactivate}>
-                            비활성화
-                          </button>
-                        )}
-                        {(currentUser as any)?.email === 'admin@admin.co.kr' && u.id !== Number(currentUser?.id) && (
-                          <button onClick={() => handleDelete(u.id, u.name)} className={styles.btnDelete}>
-                            삭제
-                          </button>
-                        )}
-                      </div>
-                    </td>
+                    <td className={styles.tdMuted}>{new Date(u.createdAt).toLocaleDateString('ko-KR')}</td>
+                    {isAdmin && (
+                      <td className={styles.td}>
+                        <div className={styles.actionWrap}>
+                          <button onClick={() => openEditForm(u)} className={styles.btnEdit}>수정</button>
+                          {u.isActive && u.id !== Number(currentUser?.id) && (
+                            <button onClick={() => handleDeactivate(u.id)} className={styles.btnDeactivate}>비활성화</button>
+                          )}
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           {users.length === 0 && (
-            <div className={styles.emptyState}>등록된 팀원이 없습니다.</div>
+            <div className={styles.empty}>등록된 팀원이 없습니다.</div>
           )}
         </div>
       </div>

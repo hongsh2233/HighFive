@@ -1,10 +1,12 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
+import { ensureProjectsSchema } from '@/lib/db-init';
 
 // GET /api/projects/[id]
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await ensureProjectsSchema();
     const { error } = await requireAuth();
     if (error) return error;
 
@@ -31,6 +33,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 // PATCH /api/projects/[id]
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await ensureProjectsSchema();
     const { session, error } = await requireAuth();
     if (error) return error;
 
@@ -40,17 +43,28 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const { id } = await params;
+    const projectId = parseInt(id);
     const body = await req.json();
-    const { name, status, projectManagerId, projectLeadName } = body;
+    const { name, status, projectManagerName, projectLeadName } = body;
 
-    const project = await prisma.project.update({
-      where: { id: parseInt(id) },
-      data: {
-        ...(name !== undefined && { name: name.trim() }),
-        ...(status !== undefined && { status }),
-        ...(projectManagerId !== undefined && { projectManagerId: projectManagerId ? parseInt(projectManagerId) : null }),
-        ...(projectLeadName !== undefined && { projectLeadName: projectLeadName?.trim() || null }),
-      },
+    // 부분 업데이트: 전달된 필드만 SET
+    const setClauses: string[] = ['"updatedAt"=NOW()'];
+    const values: (string | number | null)[] = [];
+    let idx = 1;
+
+    if (name !== undefined) { setClauses.push(`name=$${idx++}`); values.push(name.trim()); }
+    if (status !== undefined) { setClauses.push(`status=$${idx++}`); values.push(status); }
+    if (projectManagerName !== undefined) { setClauses.push(`"projectManagerName"=$${idx++}`); values.push(projectManagerName?.trim() || null); }
+    if (projectLeadName !== undefined) { setClauses.push(`"projectLeadName"=$${idx++}`); values.push(projectLeadName?.trim() || null); }
+
+    values.push(projectId);
+    await prisma.$executeRawUnsafe(
+      `UPDATE projects SET ${setClauses.join(', ')} WHERE id=$${idx}`,
+      ...values,
+    );
+
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
       include: {
         creator: { select: { id: true, name: true } },
         projectManager: { select: { id: true, name: true } },
@@ -60,15 +74,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
 
     return successResponse(project, '수정되었습니다.');
-  } catch (e) {
-    console.error(e);
-    return errorResponse('수정 실패', 500);
+  } catch (e: any) {
+    console.error('[PATCH /api/projects/:id]', e);
+    return errorResponse(`수정 실패: ${e?.message || String(e)}`, 500);
   }
 }
 
 // DELETE /api/projects/[id]
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await ensureProjectsSchema();
     const { session, error } = await requireAuth();
     if (error) return error;
 

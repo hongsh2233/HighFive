@@ -7,26 +7,26 @@
   margin: 0 auto;
 }
 
-.pageHeader {
+.header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 36px;
 }
 
-.pageTitle {
+.title {
   font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 6px;
 }
 
-.pageSubtitle {
+.subtitle {
   font-size: 13px;
   color: var(--text-secondary);
 }
 
-.btnPrimary {
+.addBtn {
   padding: 8px 16px;
   background-color: var(--accent);
   color: #fff;
@@ -37,20 +37,20 @@
   cursor: pointer;
 }
 
-.message {
+.alert {
   padding: 10px 14px;
   border-radius: 8px;
   margin-bottom: 20px;
   font-size: 13px;
 }
 
-.messageSuccess {
+.alertSuccess {
   background-color: #ECFDF5;
   color: #065F46;
   border: 1px solid #D1FAE5;
 }
 
-.messageError {
+.alertError {
   background-color: #FEF2F2;
   color: #991B1B;
   border: 1px solid #FECACA;
@@ -87,11 +87,6 @@
   letter-spacing: 0.05em;
 }
 
-.labelNote {
-  font-weight: 400;
-  text-transform: none;
-}
-
 .input {
   width: 100%;
   padding: 9px 12px;
@@ -104,44 +99,12 @@
   color: var(--text-primary);
 }
 
-.projectSection {
-  margin-bottom: 20px;
-}
-
-.projectSection[data-disabled="true"] {
-  opacity: 0.4;
-  pointer-events: none;
-}
-
-.projectBtnRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.projectBtn {
-  padding: 5px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  border-radius: 5px;
-  cursor: pointer;
-  border: 1px solid var(--border);
-  background-color: var(--bg-subtle);
-  color: var(--text-secondary);
-}
-
-.projectBtn[data-selected="true"] {
-  border-color: var(--accent);
-  background-color: var(--accent-light);
-  color: var(--accent);
-}
-
 .formActions {
   display: flex;
   gap: 10px;
 }
 
-.btnSubmit {
+.btnPrimary {
   padding: 8px 20px;
   background-color: var(--accent);
   color: #fff;
@@ -152,7 +115,7 @@
   cursor: pointer;
 }
 
-.btnCancel {
+.btnSecondary {
   padding: 8px 16px;
   background-color: var(--bg-subtle);
   color: var(--text-primary);
@@ -170,7 +133,7 @@
   overflow: hidden;
 }
 
-.tableScroll {
+.tableWrap {
   overflow-x: auto;
 }
 
@@ -197,62 +160,19 @@
   border-bottom: 1px solid var(--border);
 }
 
+.td {
+  padding: 12px 14px;
+}
+
 .tdName {
   padding: 12px 14px;
   font-weight: 600;
   color: var(--text-primary);
 }
 
-.tdSecondary {
+.tdMuted {
   padding: 12px 14px;
   color: var(--text-secondary);
-}
-
-.td {
-  padding: 12px 14px;
-}
-
-/* Role badge — colors injected via data-role */
-.roleBadge {
-  display: inline-block;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.roleBadge[data-role="ADMIN"] {
-  background-color: #FEE2E2;
-  color: #991B1B;
-}
-
-.roleBadge[data-role="MANAGER"] {
-  background-color: #FEF3C7;
-  color: #92400E;
-}
-
-.roleBadge[data-role="WORKER"] {
-  background-color: #DBEAFE;
-  color: #0C2D6B;
-}
-
-/* Active status */
-.statusActive {
-  color: #059669;
-  font-weight: 600;
-  font-size: 12px;
-}
-
-.statusInactive {
-  color: #DC2626;
-  font-weight: 600;
-  font-size: 12px;
-}
-
-.projectTagRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
 }
 
 .projectTag {
@@ -264,11 +184,13 @@
   font-weight: 600;
 }
 
-.tagEmpty {
-  color: var(--text-muted);
+.projectTagsWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
-.rowActions {
+.actionWrap {
   display: flex;
   gap: 6px;
 }
@@ -295,28 +217,17 @@
   cursor: pointer;
 }
 
-.btnDelete {
-  padding: 3px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  background-color: #DC2626;
-  color: white;
-  border: 1px solid #DC2626;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.btnDelete:hover {
-  background-color: #B91C1C;
-}
-
-.emptyState {
+.empty {
   padding: 40px;
   text-align: center;
   color: var(--text-muted);
   font-size: 13px;
 }
 
-.loadingPage {
-  padding: 40px;
+.projectToggle {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 5px;
+  cursor: pointer;
 }

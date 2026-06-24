@@ -16,7 +16,7 @@
   font-weight: 700;
 }
 
-.pageCount {
+.count {
   font-size: 13px;
   color: var(--color-gray-600);
 }
@@ -48,12 +48,22 @@
   margin-left: auto;
 }
 
-.tableWrapper {
+.errorBox {
+  padding: var(--space-3);
+  background-color: #FEF2F2;
+  border: 1px solid var(--color-danger);
+  border-radius: 6px;
+  color: #7F1D1D;
+  margin-bottom: var(--space-4);
+}
+
+.tableWrap {
   overflow-x: auto;
 }
 
 .table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   background-color: var(--bg-surface);
   border-radius: 8px;
@@ -73,42 +83,23 @@
   border-bottom: 1px solid var(--border);
 }
 
-.thId { width: 60px; }
-.thAssignee { width: 100px; }
-.thStatus { width: 90px; }
-.thCreatedAt { width: 110px; }
-.thTarget { width: 100px; }
-.thHours { width: 120px; }
-.thChange { width: 110px; }
-
 .td {
   padding: var(--space-3);
   border-bottom: 1px solid var(--color-gray-100);
   font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tdId {
-  composes: td;
   color: var(--color-gray-500);
 }
 
-.tdNotes {
-  composes: td;
-  color: var(--color-gray-600);
-  font-size: 13px;
-}
-
 .tdHours {
-  composes: td;
   font-size: 13px;
   font-weight: 600;
   color: var(--color-primary);
-}
-
-.tdCenter {
-  composes: td;
-  text-align: center;
-  padding: var(--space-8);
 }
 
 .statusSelect {
@@ -118,66 +109,3 @@
   border-radius: 4px;
   width: 100%;
 }
-
-.errorBox {
-  padding: var(--space-3);
-  background-color: #FEF2F2;
-  border: 1px solid var(--color-danger);
-  border-radius: 6px;
-  color: #7F1D1D;
-  margin-bottom: var(--space-4);
-}
-
-.loadingPage {
-  padding: var(--space-8);
-}
-
-/* 제목 셀 - 상세보기 버튼 포함 */
-.titleCell {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
-
-.notesToggleBtn {
-  flex-shrink: 0;
-  padding: 2px 8px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--accent);
-  background: transparent;
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color 0.15s, color 0.15s;
-}
-
-.notesToggleBtn:hover,
-.notesToggleBtnActive {
-  background-color: var(--accent);
-  color: white;
-}
-
-/* 아코디언 비고 행 */
-.notesRow {
-  background-color: #F8FAFC;
-}
-
-.notesCell {
-  padding: var(--space-4) var(--space-6) !important;
-  border-bottom: 2px solid var(--border);
-}
-
-.notesContent {
-  font-size: 14px;
-  line-height: 1.7;
-  color: var(--text-primary);
-  max-width: 900px;
-}
-
-.notesContent p { margin: 0 0 var(--space-2); }
-.notesContent ul, .notesContent ol { padding-left: 20px; margin: 0 0 var(--space-2); }
-.notesContent strong { font-weight: 700; }
-.notesContent a { color: var(--accent); text-decoration: underline; }

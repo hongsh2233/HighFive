@@ -14,19 +14,15 @@ interface Project {
   name: string;
   status: string;
   creator: { id: number; name: string };
-  projectManager?: { id: number; name: string } | null;
+  projectManagerName?: string | null;
   projectLeadName?: string | null;
   members: ProjectMember[];
   _count: { tasks: number };
   createdAt: string;
 }
 
-interface AllUser {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-}
+
+const emptyForm = { name: '', projectManagerName: '', projectLeadName: '' };
 
 const emptyForm = { name: '', projectManagerId: '', projectLeadName: '' };
 
@@ -38,6 +34,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  type AllUser = { id: number; name: string; email: string; role: string };
   const [allUsers, setAllUsers] = useState<AllUser[]>([]);
 
   const [showForm, setShowForm] = useState(false);
@@ -50,7 +47,9 @@ export default function ProjectsPage() {
     try {
       const res = await apiClient.get<{ data: Project[] }>('/projects');
       setProjects(res.data.data);
-    } catch { /* silent */ } finally { setLoading(false); }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.response?.data?.message || '목록 조회 실패' });
+    } finally { setLoading(false); }
   };
 
   const fetchAllUsers = async () => {
@@ -76,7 +75,7 @@ export default function ProjectsPage() {
     setEditingProject(p);
     setForm({
       name: p.name,
-      projectManagerId: p.projectManager ? String(p.projectManager.id) : '',
+      projectManagerName: p.projectManagerName || '',
       projectLeadName: p.projectLeadName || '',
     });
     setShowForm(true);
@@ -89,7 +88,7 @@ export default function ProjectsPage() {
     try {
       const payload = {
         name: form.name.trim(),
-        projectManagerId: form.projectManagerId ? parseInt(form.projectManagerId) : null,
+        projectManagerName: form.projectManagerName.trim() || null,
         projectLeadName: form.projectLeadName.trim() || null,
       };
 
@@ -153,6 +152,27 @@ export default function ProjectsPage() {
     setSelectedProject(res.data.data);
   };
 
+  const statusBadge = (status: string): React.CSSProperties => ({
+    display: 'inline-block',
+    padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 700,
+    backgroundColor: status === 'ACTIVE' ? '#DCFCE7' : '#F4F4F5',
+    color: status === 'ACTIVE' ? '#166534' : '#71717A',
+  });
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '9px 12px', fontSize: 13,
+    border: '1px solid var(--border)', borderRadius: 7,
+    fontFamily: 'inherit', outline: 'none',
+    backgroundColor: 'var(--bg-surface)', color: 'var(--text-primary)',
+    boxSizing: 'border-box',
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block', fontSize: 12, fontWeight: 600,
+    color: 'var(--text-secondary)', marginBottom: 6,
+    textTransform: 'uppercase', letterSpacing: '0.05em',
+  };
+
   const memberIds = new Set(selectedProject?.members.map(m => m.user.id) || []);
   const nonMembers = allUsers.filter(u => !memberIds.has(u.id));
 
@@ -165,65 +185,79 @@ export default function ProjectsPage() {
             <p className={styles.pageSubtitle}>프로젝트를 생성하고 멤버를 관리합니다.</p>
           </div>
           {canManage && !showForm && (
-            <button onClick={openCreateForm} className={styles.createBtn}>
+            <button onClick={openCreateForm} style={{ padding: '8px 16px', backgroundColor: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               + 프로젝트 생성
             </button>
           )}
         </div>
 
         {message && (
-          <div className={styles.message} data-type={message.type}>
+          <div style={{ padding: '10px 14px', borderRadius: 8, marginBottom: 20, fontSize: 13, backgroundColor: message.type === 'success' ? '#ECFDF5' : '#FEF2F2', color: message.type === 'success' ? '#065F46' : '#991B1B', border: `1px solid ${message.type === 'success' ? '#D1FAE5' : '#FECACA'}` }}>
             {message.text}
           </div>
         )}
 
         {/* 생성/수정 폼 */}
         {showForm && (
-          <div className={styles.formCard}>
-            <h2 className={styles.formCardTitle}>
+          <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 24, marginBottom: 24 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 20 }}>
               {editingProject ? '프로젝트 수정' : '새 프로젝트 생성'}
             </h2>
             <form onSubmit={handleSubmit}>
-              <div className={styles.formGrid}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 20 }}>
                 <div>
-                  <label className={styles.formLabel}>프로젝트 이름 *</label>
+                  <label style={labelStyle}>프로젝트 이름 *</label>
                   <input
                     autoFocus
                     value={form.name}
                     onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                     placeholder="프로젝트 이름"
                     required
-                    className={styles.input}
+                    style={inputStyle}
                   />
                 </div>
                 <div>
-                  <label className={styles.formLabel}>PM (Project Manager)</label>
+                  <label style={labelStyle}>PM (Project Manager)</label>
                   <select
-                    value={form.projectManagerId}
-                    onChange={e => setForm(p => ({ ...p, projectManagerId: e.target.value }))}
-                    className={styles.input}
+                    onChange={e => { if (e.target.value) setForm(p => ({ ...p, projectManagerName: e.target.value })); }}
+                    style={{ ...inputStyle, marginBottom: 6 }}
                   >
-                    <option value="">선택 안함</option>
+                    <option value="">팀원에서 선택...</option>
                     {allUsers.map(u => (
-                      <option key={u.id} value={u.id}>{u.name} ({u.role === 'MANAGER' ? '관리자' : u.role === 'ADMIN' ? '최고관리자' : '작업자'})</option>
+                      <option key={u.id} value={u.name}>{u.name}</option>
                     ))}
                   </select>
+                  <input
+                    value={form.projectManagerName}
+                    onChange={e => setForm(p => ({ ...p, projectManagerName: e.target.value }))}
+                    placeholder="이름 직접 입력"
+                    style={inputStyle}
+                  />
                 </div>
                 <div>
-                  <label className={styles.formLabel}>PL (Project Lead)</label>
+                  <label style={labelStyle}>PL (Project Lead)</label>
+                  <select
+                    onChange={e => { if (e.target.value) setForm(p => ({ ...p, projectLeadName: e.target.value })); }}
+                    style={{ ...inputStyle, marginBottom: 6 }}
+                  >
+                    <option value="">팀원에서 선택...</option>
+                    {allUsers.map(u => (
+                      <option key={u.id} value={u.name}>{u.name}</option>
+                    ))}
+                  </select>
                   <input
                     value={form.projectLeadName}
                     onChange={e => setForm(p => ({ ...p, projectLeadName: e.target.value }))}
-                    placeholder="이름 직접 입력 (외부 인력 가능)"
-                    className={styles.input}
+                    placeholder="이름 직접 입력"
+                    style={inputStyle}
                   />
                 </div>
               </div>
-              <div className={styles.formActions}>
-                <button type="submit" disabled={submitting} className={styles.submitBtn}>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button type="submit" disabled={submitting} style={{ padding: '8px 20px', backgroundColor: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                   {submitting ? '저장 중...' : (editingProject ? '수정' : '생성')}
                 </button>
-                <button type="button" onClick={() => { setShowForm(false); setEditingProject(null); setForm(emptyForm); }} className={styles.cancelBtn}>
+                <button type="button" onClick={() => { setShowForm(false); setEditingProject(null); setForm(emptyForm); }} style={{ padding: '8px 16px', backgroundColor: 'var(--bg-subtle)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                   취소
                 </button>
               </div>
@@ -244,28 +278,31 @@ export default function ProjectsPage() {
                   <div
                     key={p.id}
                     onClick={() => handleSelectProject(p)}
-                    data-selected={selectedProject?.id === p.id}
-                    className={styles.projectCard}
+                    style={{ backgroundColor: 'var(--bg-surface)', border: `1px solid ${selectedProject?.id === p.id ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 10, padding: '16px 20px', cursor: 'pointer', transition: 'border-color 0.15s' }}
                   >
-                    <div className={styles.projectCardTop}>
-                      <span className={styles.projectName}>{p.name}</span>
-                      <span className={p.status === 'ACTIVE' ? styles.statusBadgeActive : styles.statusBadgeClosed}>
-                        {p.status === 'ACTIVE' ? '진행중' : '종료'}
-                      </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', flex: 1 }}>{p.name}</span>
+                      <span style={statusBadge(p.status)}>{p.status === 'ACTIVE' ? '진행중' : '종료'}</span>
                       {canManage && (
-                        <div className={styles.projectCardActions} onClick={e => e.stopPropagation()}>
-                          <button onClick={e => openEditForm(p, e)} className={styles.editBtn}>수정</button>
+                        <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
+                          <button onClick={e => openEditForm(p, e)} style={{ padding: '3px 10px', fontSize: 11, fontWeight: 600, backgroundColor: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 5, cursor: 'pointer' }}>
+                            수정
+                          </button>
                           {p.status === 'ACTIVE' ? (
-                            <button onClick={e => { e.stopPropagation(); handleClose(p.id); }} className={styles.closeBtn}>종료</button>
+                            <button onClick={e => { e.stopPropagation(); handleClose(p.id); }} style={{ padding: '3px 10px', fontSize: 11, fontWeight: 600, backgroundColor: 'transparent', color: 'var(--danger)', border: '1px solid #FECACA', borderRadius: 5, cursor: 'pointer' }}>
+                              종료
+                            </button>
                           ) : (
-                            <button onClick={e => { e.stopPropagation(); handleReopen(p.id); }} className={styles.reopenBtn}>재개</button>
+                            <button onClick={e => { e.stopPropagation(); handleReopen(p.id); }} style={{ padding: '3px 10px', fontSize: 11, fontWeight: 600, backgroundColor: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 5, cursor: 'pointer' }}>
+                              재개
+                            </button>
                           )}
                         </div>
                       )}
                     </div>
-                    <div className={styles.projectMeta}>
-                      {p.projectManager && <span>PM: <strong className={styles.metaStrong}>{p.projectManager.name}</strong></span>}
-                      {p.projectLeadName && <span>PL: <strong className={styles.metaStrong}>{p.projectLeadName}</strong></span>}
+                    <div style={{ display: 'flex', gap: 20, fontSize: 12, color: 'var(--text-muted)' }}>
+                      {p.projectManagerName && <span>PM: <strong style={{ color: 'var(--text-secondary)' }}>{p.projectManagerName}</strong></span>}
+                      {p.projectLeadName && <span>PL: <strong style={{ color: 'var(--text-secondary)' }}>{p.projectLeadName}</strong></span>}
                       <span>멤버 {p.members.length}명</span>
                       <span>업무 {p._count.tasks}건</span>
                     </div>
@@ -286,7 +323,7 @@ export default function ProjectsPage() {
                 <button onClick={() => setSelectedProject(null)} className={styles.memberPanelClose}>✕</button>
               </div>
 
-              <div className={styles.memberList}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
                 {selectedProject.members.map(m => (
                   <div key={m.user.id} className={styles.memberItem}>
                     <div className={styles.memberAvatar}>{m.user.name[0]}</div>
@@ -295,7 +332,7 @@ export default function ProjectsPage() {
                       <div className={styles.memberRole}>{m.user.role === 'ADMIN' ? '최고관리자' : m.user.role === 'MANAGER' ? '관리자' : '작업자'}</div>
                     </div>
                     {isAdmin && (
-                      <button onClick={() => handleRemoveMember(selectedProject.id, m.user.id)} className={styles.memberRemoveBtn}>✕</button>
+                      <button onClick={() => handleRemoveMember(selectedProject.id, m.user.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-muted)', padding: 4 }}>✕</button>
                     )}
                   </div>
                 ))}
@@ -306,7 +343,7 @@ export default function ProjectsPage() {
                   <div className={styles.addMemberLabel}>멤버 추가</div>
                   <select
                     onChange={e => { if (e.target.value) handleAddMember(selectedProject.id, parseInt(e.target.value)); e.target.value = ''; }}
-                    className={styles.addMemberSelect}
+                    style={{ width: '100%', padding: '8px 10px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 7, fontFamily: 'inherit', backgroundColor: 'var(--bg-surface)', color: 'var(--text-primary)' }}
                   >
                     <option value="">사용자 선택...</option>
                     {nonMembers.map(u => (

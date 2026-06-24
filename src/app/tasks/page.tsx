@@ -124,7 +124,6 @@ export default function TaskListPage() {
     return <div className={styles.loadingPage}>로딩 중...</div>;
   }
 
-  // statusChipStyle kept inline — dynamic per status + active
   const statusChipStyle = (active: boolean, status: string): React.CSSProperties => ({
     padding: '6px 14px',
     borderRadius: '20px',
@@ -138,7 +137,6 @@ export default function TaskListPage() {
     transition: 'all 0.15s ease',
   });
 
-  // badgeStyle kept inline — dynamic per status
   const badgeStyle = (status: string): React.CSSProperties => {
     const color = statusColors[status] || { bg: 'transparent', text: '#374151', border: '#D4D4D8' };
     return {
@@ -166,16 +164,12 @@ export default function TaskListPage() {
     <div className={styles.container}>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>업무 목록</h1>
-        <span className={styles.pageCount}>
-          총 {filteredTasks.length}건
-        </span>
+        <span className={styles.count}>총 {filteredTasks.length}건</span>
       </div>
 
       {/* 필터 바 */}
       <div className={styles.filterBar}>
-        <span className={styles.filterLabel}>
-          상태:
-        </span>
+        <span className={styles.filterLabel}>상태:</span>
         {ALL_STATUSES.map((status) => (
           <button
             key={status}
@@ -200,37 +194,33 @@ export default function TaskListPage() {
         </select>
       </div>
 
-      {error && (
-        <div className={styles.errorBox}>
-          {error}
-        </div>
-      )}
+      {error && <div className={styles.errorBox}>{error}</div>}
 
-      <div className={styles.tableWrapper}>
+      <div className={styles.tableWrap}>
         <table className={styles.table}>
           <thead>
             <tr>
-              <th className={`${styles.th} ${styles.thId}`}>ID</th>
-              <th className={styles.th}>제목</th>
-              <th className={`${styles.th} ${styles.thAssignee}`}>담당자</th>
-              <th className={`${styles.th} ${styles.thStatus}`}>상태</th>
-              <th className={`${styles.th} ${styles.thCreatedAt}`}>등록일자</th>
-              <th className={`${styles.th} ${styles.thTarget}`}>목표일</th>
+              <th className={styles.th} style={{ width: '60px' }}>ID</th>
+              <th className={styles.th} style={{ width: '40%' }}>제목</th>
+              <th className={styles.th} style={{ width: '100px' }}>담당자</th>
+              <th className={styles.th} style={{ width: '90px' }}>상태</th>
+              <th className={styles.th} style={{ width: '110px' }}>등록일자</th>
+              <th className={styles.th} style={{ width: '100px' }}>목표일</th>
               <th className={styles.th}>비고</th>
-              <th className={`${styles.th} ${styles.thHours}`}>작업시간</th>
-              <th className={`${styles.th} ${styles.thChange}`}>상태변경</th>
+              <th className={styles.th} style={{ width: '120px' }}>작업시간</th>
+              <th className={styles.th} style={{ width: '110px' }}>상태변경</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} className={styles.tdCenter}>
+                <td colSpan={9} className={styles.td} style={{ textAlign: 'center', padding: 'var(--space-8)' }}>
                   로딩 중...
                 </td>
               </tr>
             ) : filteredTasks.length === 0 ? (
               <tr>
-                <td colSpan={9} className={styles.tdCenter}>
+                <td colSpan={9} className={styles.td} style={{ textAlign: 'center', padding: 'var(--space-8)' }}>
                   {tasks.length === 0 ? '등록된 업무가 없습니다.' : '필터 조건에 맞는 업무가 없습니다.'}
                 </td>
               </tr>
@@ -247,45 +237,26 @@ export default function TaskListPage() {
                   onDrop={(e) => handleDrop(e, task.status)}
                   style={{
                     backgroundColor: task.status === 'DONE' ? '#F9FAFB' : draggedTask?.id === task.id ? '#F0F9FF' : 'white',
-                    cursor: 'grab',
                     opacity: draggedTask?.id === task.id ? 0.6 : 1,
                     transition: 'background-color 0.2s',
                   }}
                 >
-                  <td className={styles.tdId}>#{task.id}</td>
-                  <td className={styles.td}>
-                    <div className={styles.titleCell}>
-                      <span>{task.title}</span>
-                      {hasNotes && (
-                        <button
-                          className={`${styles.notesToggleBtn} ${isExpanded ? styles.notesToggleBtnActive : ''}`}
-                          onClick={(e) => { e.stopPropagation(); toggleNotes(task.id); }}
-                        >
-                          {isExpanded ? '접기 ▲' : '상세보기 ▼'}
-                        </button>
-                      )}
-                    </div>
-                  </td>
+                  <td className={`${styles.td} ${styles.tdId}`}>#{task.id}</td>
+                  <td className={styles.td}>{task.title}</td>
                   <td className={styles.td}>{task.worker?.name || '-'}</td>
                   <td className={styles.td}>
-                    <span style={badgeStyle(task.status)}>
-                      {statusLabels[task.status]}
-                    </span>
+                    <span style={badgeStyle(task.status)}>{statusLabels[task.status]}</span>
                   </td>
                   <td className={styles.td}>
-                    {task.createdAt
-                      ? new Date(task.createdAt).toLocaleDateString('ko-KR')
-                      : '-'}
+                    {task.createdAt ? new Date(task.createdAt).toLocaleDateString('ko-KR') : '-'}
                   </td>
                   <td className={styles.td}>
-                    {task.targetDate
-                      ? new Date(task.targetDate).toLocaleDateString('ko-KR')
-                      : '-'}
+                    {task.targetDate ? new Date(task.targetDate).toLocaleDateString('ko-KR') : '-'}
                   </td>
-                  <td className={styles.tdNotes}>
-                    {hasNotes ? '✓' : '-'}
+                  <td className={styles.td} style={{ color: 'var(--color-gray-600)', fontSize: '13px' }}>
+                    {task.notes ? <span dangerouslySetInnerHTML={{ __html: task.notes }} /> : '-'}
                   </td>
-                  <td className={styles.tdHours}>
+                  <td className={`${styles.td} ${styles.tdHours}`}>
                     {calculateWorkHours(task.timeLogs || [])}
                   </td>
                   <td className={styles.td}>
