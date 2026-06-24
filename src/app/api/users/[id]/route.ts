@@ -42,15 +42,35 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 }
 
-// DELETE /api/users/[id] - 비활성화
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// DELETE /api/users/[id] - 비활성화 (기본) 또는 완전삭제 (?hard=true, admin@admin.co.kr 전용)
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { error } = await requireRole(['ADMIN']);
+    const { error, session } = await requireRole(['ADMIN']);
     if (error) return error;
 
     const { id } = await params;
+    const userId = parseInt(id);
+    const hard = new URL(req.url).searchParams.get('hard') === 'true';
+
+    if (hard) {
+      const callerEmail = (session!.user as any).email;
+      if (callerEmail !== 'admin@admin.co.kr') {
+        return errorResponse('해당 권한이 없습니다.', 403);
+      }
+      const taskCount = await prisma.task.count({
+        where: { OR: [{ workerId: userId }, { plannerId: userId }] },
+      });
+      if (taskCount > 0) {
+        return errorResponse(`이 팀원에게 연결된 업무 ${taskCount}건이 있어 삭제할 수 없습니다. 먼저 업무를 재배정하세요.`, 409);
+      }
+      await prisma.projectMember.deleteMany({ where: { userId } });
+      await prisma.timeLog.deleteMany({ where: { workerId: userId } });
+      await prisma.user.delete({ where: { id: userId } });
+      return successResponse({ id: userId }, '삭제되었습니다.');
+    }
+
     const user = await prisma.user.update({
-      where: { id: parseInt(id) },
+      where: { id: userId },
       data: { isActive: false },
       select: { id: true, email: true, isActive: true },
     });
@@ -58,6 +78,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     return successResponse(user, '비활성화되었습니다.');
   } catch (e) {
     console.error(e);
-    return errorResponse('비활성화 실패', 500);
+    return errorResponse('처리 실패', 500);
   }
 }

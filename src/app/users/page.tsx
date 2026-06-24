@@ -137,6 +137,17 @@ export default function UsersPage() {
     }
   };
 
+  const handleDelete = async (id: number, name: string) => {
+    if (!confirm(`"${name}" 팀원을 완전히 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) return;
+    try {
+      await apiClient.delete(`/users/${id}?hard=true`);
+      setMessage({ type: 'success', text: '삭제되었습니다.' });
+      await fetchUsers();
+    } catch {
+      setMessage({ type: 'error', text: '삭제 실패' });
+    }
+  };
+
   const toggleProject = (id: number) => {
     setFormData(prev => ({
       ...prev,
@@ -161,12 +172,12 @@ export default function UsersPage() {
       <div className={styles.inner}>
         <div className={styles.pageHeader}>
           <div>
-            <h1 className={styles.pageTitle}>사용자 관리</h1>
-            <p className={styles.pageSubtitle}>팀 멤버를 생성하고 관리합니다.</p>
+            <h1 className={styles.pageTitle}>팀원 관리</h1>
+            <p className={styles.pageSubtitle}>팀원을 추가하고 관리합니다.</p>
           </div>
           {!showForm && (
             <button onClick={openCreateForm} className={styles.btnPrimary}>
-              + 사용자 생성
+              + 팀원 추가
             </button>
           )}
         </div>
@@ -180,7 +191,7 @@ export default function UsersPage() {
         {showForm && (
           <div className={styles.formCard}>
             <h2 className={styles.formTitle}>
-              {editingUser ? '사용자 수정' : '새 사용자 생성'}
+              {editingUser ? '팀원 수정' : '새 팀원 추가'}
             </h2>
             <form onSubmit={handleSubmit}>
               <div className={styles.formGrid}>
@@ -211,6 +222,7 @@ export default function UsersPage() {
                     <option value="">선택 안함</option>
                     <option value="정규">정규</option>
                     <option value="프리">프리</option>
+                    <option value="협력사">협력사</option>
                   </select>
                 </div>
                 <div>
@@ -243,7 +255,7 @@ export default function UsersPage() {
 
               <div className={styles.formActions}>
                 <button type="submit" disabled={submitting} className={styles.btnSubmit}>
-                  {submitting ? '저장 중...' : (editingUser ? '수정' : '생성')}
+                  {submitting ? '저장 중...' : (editingUser ? '수정' : '추가')}
                 </button>
                 <button type="button" onClick={() => { setShowForm(false); resetForm(); }} className={styles.btnCancel}>
                   취소
@@ -303,6 +315,11 @@ export default function UsersPage() {
                             비활성화
                           </button>
                         )}
+                        {(currentUser as any)?.email === 'admin@admin.co.kr' && u.id !== Number(currentUser?.id) && (
+                          <button onClick={() => handleDelete(u.id, u.name)} className={styles.btnDelete}>
+                            삭제
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -311,7 +328,7 @@ export default function UsersPage() {
             </table>
           </div>
           {users.length === 0 && (
-            <div className={styles.emptyState}>등록된 사용자가 없습니다.</div>
+            <div className={styles.emptyState}>등록된 팀원이 없습니다.</div>
           )}
         </div>
       </div>

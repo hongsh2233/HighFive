@@ -71,6 +71,15 @@ export default function TaskListPage() {
   const [selectedWorker, setSelectedWorker] = useState('');
   const [workers, setWorkers] = useState<any[]>([]);
   const [draggedTask, setDraggedTask] = useState<any>(null);
+  const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
+
+  const toggleNotes = (id: number) => {
+    setExpandedNotes(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
   useEffect(() => {
     fetchWorkers();
@@ -226,7 +235,10 @@ export default function TaskListPage() {
                 </td>
               </tr>
             ) : (
-              filteredTasks.map((task) => (
+              filteredTasks.flatMap((task) => {
+                const hasNotes = !!task.notes && task.notes.trim() !== '' && task.notes.trim() !== '<p><br></p>';
+                const isExpanded = expandedNotes.has(task.id);
+                return [
                 <tr
                   key={task.id}
                   draggable
@@ -241,7 +253,19 @@ export default function TaskListPage() {
                   }}
                 >
                   <td className={styles.tdId}>#{task.id}</td>
-                  <td className={styles.td}>{task.title}</td>
+                  <td className={styles.td}>
+                    <div className={styles.titleCell}>
+                      <span>{task.title}</span>
+                      {hasNotes && (
+                        <button
+                          className={`${styles.notesToggleBtn} ${isExpanded ? styles.notesToggleBtnActive : ''}`}
+                          onClick={(e) => { e.stopPropagation(); toggleNotes(task.id); }}
+                        >
+                          {isExpanded ? '접기 ▲' : '상세보기 ▼'}
+                        </button>
+                      )}
+                    </div>
+                  </td>
                   <td className={styles.td}>{task.worker?.name || '-'}</td>
                   <td className={styles.td}>
                     <span style={badgeStyle(task.status)}>
@@ -259,7 +283,7 @@ export default function TaskListPage() {
                       : '-'}
                   </td>
                   <td className={styles.tdNotes}>
-                    {task.notes || '-'}
+                    {hasNotes ? '✓' : '-'}
                   </td>
                   <td className={styles.tdHours}>
                     {calculateWorkHours(task.timeLogs || [])}
@@ -277,8 +301,19 @@ export default function TaskListPage() {
                       <option value="DONE">완료</option>
                     </select>
                   </td>
-                </tr>
-              ))
+                </tr>,
+                isExpanded && hasNotes && (
+                  <tr key={`notes-${task.id}`} className={styles.notesRow}>
+                    <td colSpan={9} className={styles.notesCell}>
+                      <div
+                        className={styles.notesContent}
+                        dangerouslySetInnerHTML={{ __html: task.notes ?? '' }}
+                      />
+                    </td>
+                  </tr>
+                ),
+              ];
+              })
             )}
           </tbody>
         </table>

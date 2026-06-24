@@ -1,13 +1,17 @@
 .page {
   padding: var(--space-8);
-  max-width: 600px;
+  max-width: 1280px;
   margin: 0 auto;
+}
+
+.pageHeader {
+  margin-bottom: var(--space-6);
 }
 
 .title {
   font-size: 28px;
   font-weight: 700;
-  margin-bottom: var(--space-8);
+  margin: 0;
 }
 
 .errorBox {
@@ -28,16 +32,66 @@
   margin-bottom: var(--space-4);
 }
 
+.form {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  grid-template-rows: 1fr auto;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.leftPane {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.rightPane {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.btnRow {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
+.card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: var(--space-6);
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 var(--space-5) 0;
+  color: var(--text-primary);
+}
+
 .fieldGroup {
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-5);
+}
+
+.fieldGroup:last-child {
+  margin-bottom: 0;
 }
 
 .label {
   display: block;
   margin-bottom: var(--space-2);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--color-gray-900);
+  color: var(--color-gray-700);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.required {
+  color: var(--color-danger);
 }
 
 .input {
@@ -48,56 +102,83 @@
   font-size: 14px;
   font-family: inherit;
   box-sizing: border-box;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  transition: border-color 0.15s;
 }
 
-.textarea {
-  width: 100%;
-  padding: var(--space-3);
-  border: 1px solid var(--color-gray-300);
-  border-radius: 6px;
-  font-size: 14px;
-  font-family: inherit;
-  box-sizing: border-box;
-  min-height: 120px;
-  resize: vertical;
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
 }
 
 .dateDisplay {
   padding: var(--space-3);
-  background-color: var(--color-gray-100);
+  background-color: var(--bg-subtle);
   border-radius: 6px;
   font-size: 14px;
-  color: var(--color-gray-900);
+  color: var(--text-secondary);
   font-weight: 500;
+  border: 1px solid var(--border);
 }
 
 .hint {
   font-size: 12px;
-  color: var(--color-gray-600);
+  color: var(--color-gray-500);
   margin-top: var(--space-2);
+  margin-bottom: 0;
 }
 
 .hintError {
   font-size: 12px;
   color: #DC2626;
   margin-top: var(--space-2);
+  margin-bottom: 0;
 }
 
-.btnRow {
+.editorWrap {
   display: flex;
-  gap: var(--space-3);
+  flex-direction: column;
+}
+
+.editor {
+  background-color: white;
+}
+
+.editor :global(.ql-container) {
+  min-height: 400px;
+  font-size: 14px;
+  font-family: inherit;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+.editor :global(.ql-toolbar) {
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  background-color: var(--bg-subtle);
+}
+
+.editor :global(.ql-editor) {
+  min-height: 400px;
+  line-height: 1.7;
 }
 
 .submitBtn {
-  flex: 1;
-  padding: var(--space-3);
+  padding: var(--space-3) var(--space-8);
   background-color: var(--accent);
   color: white;
   border: none;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.submitBtn:hover {
+  background-color: var(--accent-hover);
 }
 
 .submitBtn[data-loading="true"] {
@@ -106,15 +187,19 @@
 }
 
 .cancelBtn {
-  flex: 1;
-  padding: var(--space-3);
+  padding: var(--space-3) var(--space-6);
   background-color: var(--bg-subtle);
   color: var(--text-primary);
   border: 1px solid var(--border);
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.cancelBtn:hover {
+  background-color: var(--bg-surface);
 }
 
 .loading {
@@ -127,4 +212,19 @@
 
 .dangerText {
   color: var(--color-danger);
+}
+
+@media (max-width: 900px) {
+  .form {
+    grid-template-columns: 1fr;
+  }
+
+  .rightPane {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .btnRow {
+    grid-row: 3;
+  }
 }
