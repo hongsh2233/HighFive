@@ -29,7 +29,6 @@ model User {
   infoItems       InfoItem[]
   projectMembers  ProjectMember[]
   createdProjects Project[]       @relation("projectCreator")
-  managedProjects Project[]       @relation("projectManager")
 
   @@map("users")
 }
