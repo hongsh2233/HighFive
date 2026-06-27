@@ -53,8 +53,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const hard = new URL(req.url).searchParams.get('hard') === 'true';
 
     if (hard) {
-      const callerEmail = (session!.user as any).email;
-      if (callerEmail !== 'admin@admin.co.kr') {
+      const callerRole = (session!.user as any).role;
+      if (callerRole !== 'ADMIN') {
         return errorResponse('해당 권한이 없습니다.', 403);
       }
       const taskCount = await prisma.task.count({

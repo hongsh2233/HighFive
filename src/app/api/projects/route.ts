@@ -39,7 +39,7 @@ export async function GET() {
     return successResponse(projects);
   } catch (e: any) {
     console.error('[GET /api/projects]', e);
-    return errorResponse(`조회 실패: ${e?.message || String(e)}`, 500);
+    return errorResponse('조회 실패', 500);
   }
 }
 
@@ -88,6 +88,6 @@ export async function POST(req: NextRequest) {
     return successResponse(result, '프로젝트가 생성되었습니다.', 201);
   } catch (e: any) {
     console.error('[POST /api/projects]', e);
-    return errorResponse(`생성 실패: ${e?.message || String(e)}`, 500);
+    return errorResponse('생성 실패', 500);
   }
 }

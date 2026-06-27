@@ -76,7 +76,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return successResponse(project, '수정되었습니다.');
   } catch (e: any) {
     console.error('[PATCH /api/projects/:id]', e);
-    return errorResponse(`수정 실패: ${e?.message || String(e)}`, 500);
+    return errorResponse('수정 실패', 500);
   }
 }
 

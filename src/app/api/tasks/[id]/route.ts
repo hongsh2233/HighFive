@@ -70,7 +70,13 @@ export async function PATCH(
     }
     if (targetDate !== undefined) updateData.targetDate = targetDate ? new Date(targetDate) : null;
     if (notes !== undefined) updateData.notes = sanitize(notes || '');
-    if (status !== undefined) updateData.status = status;
+    if (status !== undefined) {
+      const validStatuses = ['ASSIGNED', 'PROGRESS', 'REVIEW', 'QA', 'WAITING', 'DONE', 'HOLD'];
+      if (!validStatuses.includes(status)) {
+        return errorResponse('유효하지 않은 상태값입니다.', 400, 'VALID_400');
+      }
+      updateData.status = status;
+    }
     updateData.updatedAt = new Date();
 
     const task = await prisma.task.update({

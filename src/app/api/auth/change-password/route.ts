@@ -20,6 +20,10 @@ export async function POST(req: NextRequest) {
       return errorResponse('현재 비밀번호와 새 비밀번호를 입력해주세요.', 400, 'VALID_400');
     }
 
+    if (newPassword.length < 8) {
+      return errorResponse('새 비밀번호는 8자 이상이어야 합니다.', 400, 'VALID_400');
+    }
+
     // 사용자 조회
     const user = await prisma.user.findUnique({
       where: { id: userId },

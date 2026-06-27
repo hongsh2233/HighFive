@@ -8,8 +8,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; logId: string }> }
 ) {
   try {
-    const { error } = await requireAuth();
+    const { session, error } = await requireAuth();
     if (error) return error;
+
+    const userId = parseInt((session!.user as any).id || '0');
+    const userRole = (session!.user as any).role;
 
     const { id, logId: rawLogId } = await params;
     const taskId = parseInt(id);
@@ -30,6 +33,10 @@ export async function PATCH(
 
     if (timeLog.taskId !== taskId) {
       return errorResponse('잘못된 업무 ID입니다.', 400, 'VALID_400');
+    }
+
+    if (timeLog.workerId !== userId && !['ADMIN', 'MANAGER'].includes(userRole)) {
+      return errorResponse('권한이 없습니다.', 403);
     }
 
     if (timeLog.endTime) {
