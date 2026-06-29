@@ -24,8 +24,6 @@ interface Project {
 
 const emptyForm = { name: '', projectManagerName: '', projectLeadName: '' };
 
-const emptyForm = { name: '', projectManagerId: '', projectLeadName: '' };
-
 export default function ProjectsPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';

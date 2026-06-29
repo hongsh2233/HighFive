@@ -9,13 +9,6 @@ const projectInclude = {
   _count: { select: { tasks: true } },
 } as const;
 
-const projectInclude = {
-  creator: { select: { id: true, name: true } },
-  projectManager: { select: { id: true, name: true } },
-  members: { include: { user: { select: { id: true, name: true, role: true } } } },
-  _count: { select: { tasks: true } },
-} as const;
-
 // GET /api/projects
 export async function GET() {
   try {
