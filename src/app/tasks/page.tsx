@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useTasks } from '@/hooks/useTask';
 import axios from 'axios';
@@ -256,14 +257,6 @@ export default function TaskListPage() {
                   <td className={styles.td}>
                     <div className={styles.titleCell}>
                       <span>{task.title}</span>
-                      {hasNotes && (
-                        <button
-                          className={`${styles.notesToggleBtn} ${isExpanded ? styles.notesToggleBtnActive : ''}`}
-                          onClick={(e) => { e.stopPropagation(); toggleNotes(task.id); }}
-                        >
-                          {isExpanded ? '접기 ▲' : '상세보기 ▼'}
-                        </button>
-                      )}
                     </div>
                   </td>
                   <td className={styles.td}>{task.worker?.name || '-'}</td>
@@ -283,7 +276,19 @@ export default function TaskListPage() {
                       : '-'}
                   </td>
                   <td className={styles.tdNotes}>
-                    {hasNotes ? '✓' : '-'}
+                    <div className={styles.notesBtns}>
+                      {hasNotes && (
+                        <button
+                          className={`${styles.notesToggleBtn} ${isExpanded ? styles.notesToggleBtnActive : ''}`}
+                          onClick={(e) => { e.stopPropagation(); toggleNotes(task.id); }}
+                        >
+                          {isExpanded ? '접기' : '간략'}
+                        </button>
+                      )}
+                      <Link href={`/tasks/${task.id}`} className={styles.detailBtn}>
+                        상세
+                      </Link>
+                    </div>
                   </td>
                   <td className={styles.tdHours}>
                     {calculateWorkHours(task.timeLogs || [])}
