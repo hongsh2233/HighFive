@@ -30,6 +30,7 @@ model User {
   projectMembers  ProjectMember[]
   createdProjects Project[]       @relation("projectCreator")
   taskHistories   TaskHistory[]
+  userNotifications UserNotification[]
 
   @@map("users")
 }
@@ -45,6 +46,7 @@ model Task {
   isFreeze      Boolean @default(false)
   templateId    Int?
   notes         String?
+  externalLink  String?
   projectId     Int?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -160,4 +162,19 @@ model TaskHistory {
 
   @@index([taskId])
   @@map("task_histories")
+}
+
+model UserNotification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  taskId    Int?
+  type      String   // WORKER_ASSIGNED, REVIEW_REQUESTED, WORKER_CHANGED
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("user_notifications")
 }

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse, parseRmsNo } from '@/lib/utils';
 import { sanitize } from '@/lib/sanitize';
 import { addHistory } from '@/lib/task-history';
+import { notifyWorkerChange } from '@/lib/notify';
 
 // GET /api/tasks/[id] - 업무 상세 조회
 export async function GET(
@@ -60,7 +61,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { title, targetDate, notes, status, workerId: newWorkerId } = body;
+    const { title, targetDate, notes, status, workerId: newWorkerId, externalLink } = body;
 
     // RMS 번호 파싱 (title이 있으면)
     let updateData: any = {};
@@ -71,6 +72,7 @@ export async function PATCH(
     }
     if (targetDate !== undefined) updateData.targetDate = targetDate ? new Date(targetDate) : null;
     if (notes !== undefined) updateData.notes = sanitize(notes || '');
+    if (externalLink !== undefined) updateData.externalLink = externalLink || null;
     if (status !== undefined) {
       const validStatuses = ['ASSIGNED', 'PROGRESS', 'REVIEW', 'QA', 'WAITING', 'DONE', 'HOLD'];
       if (!validStatuses.includes(status)) {
@@ -100,6 +102,8 @@ export async function PATCH(
     if (newWorkerId !== undefined && prevTask && prevTask.workerId !== parseInt(newWorkerId)) {
       await addHistory(taskId, editorId, 'WORKER_CHANGED',
         `${prevTask.worker?.name} → ${task.worker?.name}`);
+      const taskUrl = `${process.env.NEXTAUTH_URL}/tasks/${taskId}`;
+      notifyWorkerChange(taskId, task.title, task.workerId, task.worker?.name || '', task.plannerId, task.planner?.name || '', taskUrl).catch(() => {});
     }
     if (notes !== undefined) {
       await addHistory(taskId, editorId, 'NOTE_UPDATED');

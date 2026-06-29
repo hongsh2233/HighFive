@@ -31,6 +31,7 @@ export interface Task {
   isFreeze: boolean;
   templateId: number | null;
   notes: string | null;
+  externalLink: string | null;
   createdAt: string;
   updatedAt: string;
   worker?: {

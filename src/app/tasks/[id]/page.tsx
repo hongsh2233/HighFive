@@ -33,6 +33,9 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({ notes: '' });
+  const [externalLink, setExternalLink] = useState('');
+  const [linkEditing, setLinkEditing] = useState(false);
+  const [linkInput, setLinkInput] = useState('');
   const [timeLogs, setTimeLogs] = useState<TimeLog[]>([]);
   const [totalHours, setTotalHours] = useState(0);
   const [histories, setHistories] = useState<any[]>([]);
@@ -44,6 +47,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         const response = await apiClient.get<{ data: Task }>(`/tasks/${id}`);
         setTask(response.data.data);
         setFormData({ notes: response.data.data.notes || '' });
+        setExternalLink(response.data.data.externalLink || '');
+        setLinkInput(response.data.data.externalLink || '');
 
         const logsResponse = await apiClient.get<{ data: { logs: TimeLog[]; totalHours: number } }>(
           `/tasks/${id}/timelogs`
@@ -85,6 +90,18 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       setEditing(false);
     } catch (err) {
       setError('저장 실패');
+      console.error(err);
+    }
+  };
+
+  const handleLinkSave = async () => {
+    if (!task) return;
+    try {
+      await apiClient.patch(`/tasks/${task.id}`, { externalLink: linkInput });
+      setExternalLink(linkInput);
+      setLinkEditing(false);
+    } catch (err) {
+      setError('링크 저장 실패');
       console.error(err);
     }
   };
@@ -148,6 +165,40 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             </p>
           </div>
         </div>
+      </div>
+
+      {/* GitHub 연결 */}
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <h2 className={`${styles.cardTitle} ${styles.noMargin}`}>GitHub 연결</h2>
+          {!linkEditing && (
+            <button onClick={() => setLinkEditing(true)} className={styles.btnSecondary}>
+              {externalLink ? '수정' : '연결'}
+            </button>
+          )}
+        </div>
+        {linkEditing ? (
+          <div>
+            <input
+              type="url"
+              value={linkInput}
+              onChange={(e) => setLinkInput(e.target.value)}
+              placeholder="https://github.com/org/repo/issues/1"
+              className={styles.textarea}
+              style={{ height: 'auto', padding: '8px 10px', resize: 'none' }}
+            />
+            <div className={styles.editActions}>
+              <button onClick={handleLinkSave} className={styles.btn}>저장</button>
+              <button onClick={() => { setLinkEditing(false); setLinkInput(externalLink); }} className={styles.btnSecondary}>취소</button>
+            </div>
+          </div>
+        ) : externalLink ? (
+          <a href={externalLink} target="_blank" rel="noopener noreferrer" style={{ color: '#2563EB', fontSize: '13px', wordBreak: 'break-all' }}>
+            {externalLink}
+          </a>
+        ) : (
+          <p className={styles.emptyLogs}>연결된 GitHub URL이 없습니다.</p>
+        )}
       </div>
 
       {/* 메모 */}

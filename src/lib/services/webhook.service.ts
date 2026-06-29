@@ -4,15 +4,17 @@ export interface WebhookPayload {
   taskId: number;
   taskTitle: string;
   workerName: string;
+  plannerName?: string;
   status: string;
   taskUrl?: string;
 }
 
 function buildMessage(payload: WebhookPayload): string {
   const statusMessages: Record<string, string> = {
-    REVIEW: `📢 [검수요청] ${payload.workerName}님이 '${payload.taskTitle}' 건의 검수를 요청했습니다.`,
-    DONE:   `✅ [완료] '${payload.taskTitle}' 업무가 완료되었습니다.`,
-    QA:     `🔍 [QA] '${payload.taskTitle}' 업무가 QA 단계로 이동했습니다.`,
+    REVIEW:         `📢 [검수요청] ${payload.workerName}님이 '${payload.taskTitle}' 건의 검수를 요청했습니다.`,
+    DONE:           `✅ [완료] '${payload.taskTitle}' 업무가 완료되었습니다.`,
+    QA:             `🔍 [QA] '${payload.taskTitle}' 업무가 QA 단계로 이동했습니다.`,
+    WORKER_CHANGED: `🔀 [담당자변경] '${payload.taskTitle}' 담당자가 ${payload.workerName}으로 변경되었습니다.`,
   };
   const message = statusMessages[payload.status] ?? `🔔 '${payload.taskTitle}' 상태가 ${payload.status}로 변경되었습니다.`;
   return payload.taskUrl ? `${message}\n👉 ${payload.taskUrl}` : message;

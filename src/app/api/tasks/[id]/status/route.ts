@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 import { notifyStatusChange } from '@/lib/webhook';
+import { notifyReviewRequest } from '@/lib/notify';
 import { addHistory } from '@/lib/task-history';
 
 const validStatuses = ['ASSIGNED', 'PROGRESS', 'REVIEW', 'QA', 'DONE'];
@@ -56,6 +57,11 @@ export async function PATCH(
       plannerName: updatedTask.planner?.name || '-',
       taskUrl: `${process.env.NEXTAUTH_URL}/tasks/${updatedTask.id}`,
     });
+
+    if (status === 'REVIEW') {
+      const taskUrl = `${process.env.NEXTAUTH_URL}/tasks/${updatedTask.id}`;
+      notifyReviewRequest(updatedTask.id, updatedTask.title, updatedTask.workerId, updatedTask.worker?.name || '', updatedTask.plannerId, updatedTask.planner?.name || '', taskUrl).catch(() => {});
+    }
 
     const statusLabels: Record<string, string> = {
       ASSIGNED: '배정됨', PROGRESS: '진행중', REVIEW: '검수', QA: 'QA',
