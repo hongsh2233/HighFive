@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { successResponse, errorResponse } from '@/lib/utils';
+import { addHistory } from '@/lib/task-history';
 
 export async function POST(
   _req: NextRequest,
@@ -38,6 +39,8 @@ export async function POST(
     const timeLog = await prisma.timeLog.create({
       data: { taskId, workerId: userId, startTime: new Date() },
     });
+
+    await addHistory(taskId, userId, 'TIMER_START');
 
     return successResponse(timeLog, '타이머가 시작되었습니다.', 201);
   } catch (err) {

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse, parseRmsNo } from '@/lib/utils';
 import { sanitize } from '@/lib/sanitize';
+import { addHistory } from '@/lib/task-history';
 
 // GET /api/tasks/[id] - 업무 상세 조회
 export async function GET(
@@ -59,7 +60,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { title, targetDate, notes, status } = body;
+    const { title, targetDate, notes, status, workerId: newWorkerId } = body;
 
     // RMS 번호 파싱 (title이 있으면)
     let updateData: any = {};
@@ -79,6 +80,13 @@ export async function PATCH(
     }
     updateData.updatedAt = new Date();
 
+    // 담당자 변경 감지
+    const prevTask = await prisma.task.findUnique({
+      where: { id: taskId },
+      include: { worker: { select: { name: true } } },
+    });
+    if (newWorkerId !== undefined) updateData.workerId = parseInt(newWorkerId);
+
     const task = await prisma.task.update({
       where: { id: taskId },
       data: updateData,
@@ -87,6 +95,15 @@ export async function PATCH(
         worker: { select: { id: true, name: true, email: true } },
       },
     });
+
+    const editorId = parseInt((session!.user as any).id || '0');
+    if (newWorkerId !== undefined && prevTask && prevTask.workerId !== parseInt(newWorkerId)) {
+      await addHistory(taskId, editorId, 'WORKER_CHANGED',
+        `${prevTask.worker?.name} → ${task.worker?.name}`);
+    }
+    if (notes !== undefined) {
+      await addHistory(taskId, editorId, 'NOTE_UPDATED');
+    }
 
     return successResponse(task, '업무가 수정되었습니다.');
   } catch (err) {

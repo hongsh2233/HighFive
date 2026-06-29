@@ -7,6 +7,7 @@ import apiClient from '@/lib/api-client';
 import { Task, TimeLog } from '@/types';
 import TaskTimerButton from '@/components/task/TaskTimerButton';
 import styles from './detail.module.css';
+import { actionLabel } from '@/lib/task-history';
 
 const statusColors: { [key: string]: { bg: string; text: string; border: string } } = {
   ASSIGNED: { bg: 'transparent', text: '#1D4ED8', border: '#93C5FD' },
@@ -34,6 +35,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [formData, setFormData] = useState({ notes: '' });
   const [timeLogs, setTimeLogs] = useState<TimeLog[]>([]);
   const [totalHours, setTotalHours] = useState(0);
+  const [histories, setHistories] = useState<any[]>([]);
   useTimer(parseInt(id));
 
   useEffect(() => {
@@ -48,6 +50,9 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         );
         setTimeLogs(logsResponse.data.data.logs);
         setTotalHours(logsResponse.data.data.totalHours);
+
+        const historyRes = await apiClient.get<{ data: any[] }>(`/tasks/${id}/history`);
+        setHistories(historyRes.data.data);
       } catch (err: any) {
         setError(err.message || '업무 조회 실패');
       } finally {
@@ -218,6 +223,30 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
               </tbody>
             </table>
           </div>
+        )}
+      </div>
+
+      {/* 히스토리 */}
+      <div className={styles.card}>
+        <h2 className={styles.cardTitle}>활동 히스토리</h2>
+        {histories.length === 0 ? (
+          <p className={styles.emptyLogs}>히스토리가 없습니다.</p>
+        ) : (
+          <ul className={styles.historyList}>
+            {histories.map((h) => (
+              <li key={h.id} className={styles.historyItem}>
+                <span className={styles.historyDot} />
+                <div className={styles.historyBody}>
+                  <span className={styles.historyAction}>{actionLabel[h.action as keyof typeof actionLabel] ?? h.action}</span>
+                  {h.detail && <span className={styles.historyDetail}> — {h.detail}</span>}
+                  <div className={styles.historyMeta}>
+                    <span>{h.user?.name}</span>
+                    <span>{new Date(h.createdAt).toLocaleString('ko-KR')}</span>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </div>

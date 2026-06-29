@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 import { notifyStatusChange } from '@/lib/webhook';
+import { addHistory } from '@/lib/task-history';
 
 const validStatuses = ['ASSIGNED', 'PROGRESS', 'REVIEW', 'QA', 'DONE'];
 
@@ -11,7 +12,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await requireAuth();
+    const { session, error } = await requireAuth();
     if (error) return error;
 
     const { id } = await params;
@@ -55,6 +56,14 @@ export async function PATCH(
       plannerName: updatedTask.planner?.name || '-',
       taskUrl: `${process.env.NEXTAUTH_URL}/tasks/${updatedTask.id}`,
     });
+
+    const statusLabels: Record<string, string> = {
+      ASSIGNED: '배정됨', PROGRESS: '진행중', REVIEW: '검수', QA: 'QA',
+      WAITING: '대기', DONE: '완료', HOLD: '보류',
+    };
+    const userId = parseInt((session!.user as any).id || '0');
+    await addHistory(updatedTask.id, userId, 'STATUS_CHANGED',
+      `${statusLabels[task.status] ?? task.status} → ${statusLabels[status] ?? status}`);
 
     return successResponse(updatedTask, '업무 상태가 변경되었습니다.');
   } catch (err) {

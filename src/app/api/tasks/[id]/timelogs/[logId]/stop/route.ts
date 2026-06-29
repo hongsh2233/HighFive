@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
+import { addHistory } from '@/lib/task-history';
 
 // PATCH /api/tasks/[id]/timelogs/[logId]/stop - 타이머 종료
 export async function PATCH(
@@ -56,6 +57,9 @@ export async function PATCH(
         finalHours: Math.round(durationHours * 100) / 100 + (timeLog.adjustedHours || 0),
       },
     });
+
+    const hours = Math.round(durationHours * 100) / 100;
+    await addHistory(taskId, userId, 'TIMER_STOP', `${hours}시간`);
 
     return successResponse(updatedLog, '타이머가 종료되었습니다.');
   } catch (err) {

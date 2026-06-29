@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse, parseRmsNo } from '@/lib/utils';
 import { sanitize } from '@/lib/sanitize';
+import { addHistory } from '@/lib/task-history';
 
 // GET /api/tasks
 export async function GET(req: NextRequest) {
@@ -102,6 +103,9 @@ export async function POST(req: NextRequest) {
         project: { select: { id: true, name: true } },
       },
     });
+
+    const creatorId = parseInt((session!.user as any).id || '0');
+    await addHistory(task.id, creatorId, 'CREATED', `담당자: ${task.worker?.name}`);
 
     return successResponse(task, '업무가 생성되었습니다.', 201);
   } catch (err) {
