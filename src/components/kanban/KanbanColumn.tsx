@@ -41,7 +41,7 @@ export default function KanbanColumn({
           tasks.map((task) => (
             <div
               key={task.id}
-              className={styles.card}
+              className={`${styles.card} ${task.isGroup ? styles.cardGroup : ''} ${task.parentTaskId ? styles.cardChild : ''}`}
               data-status={status}
               draggable
               onDragStart={(e) => {
@@ -50,7 +50,11 @@ export default function KanbanColumn({
               }}
               onClick={() => onTaskClick(task)}
             >
-              <div className={styles.cardTitle}>{task.title}</div>
+              <div className={styles.cardTitle}>
+                {task.isGroup && <span className={styles.groupBadge}>그룹</span>}
+                {task.parentTaskId && <span className={styles.childArrow}>↳</span>}
+                {task.title}
+              </div>
               <div className={styles.cardMeta}>담당: {task.worker?.name || '-'}</div>
               {task.targetDate && (
                 <div className={styles.cardMetaDate}>

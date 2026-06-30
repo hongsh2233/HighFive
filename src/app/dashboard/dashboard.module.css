@@ -129,3 +129,31 @@
   color: var(--color-gray-500);
   white-space: nowrap;
 }
+
+.taskGroupInfo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.taskGroupBadge {
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #92400E;
+  background-color: #FEF3C7;
+  border: 1px solid #FCD34D;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.taskParentLabel {
+  font-size: 11px;
+  color: var(--color-gray-500);
+  white-space: nowrap;
+}
+
+.taskParentArrow {
+  color: var(--color-gray-400);
+}

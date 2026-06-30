@@ -57,9 +57,7 @@ export default function TaskListPage() {
   const { isLoading: authLoading } = useAuth();
   const { tasks, loading, error, updateStatus } = useTasks({ limit: 1000 });
 
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(
-    ALL_STATUSES.filter((s) => s !== 'DONE')
-  );
+  const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedWorker, setSelectedWorker] = useState('');
   const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
@@ -85,19 +83,14 @@ export default function TaskListPage() {
     new Map(tasks.filter((t) => t.worker).map((t: any) => [t.worker.id, t.worker])).values()
   ).sort((a: any, b: any) => a.name.localeCompare(b.name));
 
-  const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const values = Array.from(e.target.selectedOptions).map((opt) => opt.value);
-    setSelectedStatuses(values);
-  };
-
   if (authLoading) {
     return <div className={styles.loadingPage}>로딩 중...</div>;
   }
 
   // 필터링
   let filteredTasks = tasks;
-  if (selectedStatuses.length > 0) {
-    filteredTasks = filteredTasks.filter((task) => selectedStatuses.includes(task.status));
+  if (selectedStatus) {
+    filteredTasks = filteredTasks.filter((task) => task.status === selectedStatus);
   }
   if (selectedWorker) {
     filteredTasks = filteredTasks.filter((task) => task.workerId === parseInt(selectedWorker));
@@ -235,11 +228,11 @@ export default function TaskListPage() {
           상태:
         </span>
         <select
-          multiple
-          value={selectedStatuses}
-          onChange={handleStatusFilterChange}
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
           className={styles.statusFilterSelect}
         >
+          <option value="">전체 상태</option>
           {ALL_STATUSES.map((status) => (
             <option key={status} value={status}>
               {statusLabels[status]}

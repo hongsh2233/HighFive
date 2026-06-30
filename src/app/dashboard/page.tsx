@@ -19,6 +19,7 @@ export default function DashboardPage() {
   const { user, isLoading } = useAuth();
   const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
+  const [parentMap, setParentMap] = useState<Map<number, Task>>(new Map());
   const [loadingTasks, setLoadingTasks] = useState(true);
 
   useEffect(() => {
@@ -27,13 +28,15 @@ export default function DashboardPage() {
     const fetchDashboardData = async () => {
       setLoadingTasks(true);
       try {
-        const [myRes, recentRes] = await Promise.all([
-          apiClient.get<{ data: PaginatedResponse<Task> }>(`/tasks?workerId=${user.id}&limit=100`),
-          apiClient.get<{ data: PaginatedResponse<Task> }>('/tasks?limit=20'),
-        ]);
+        const allRes = await apiClient.get<{ data: PaginatedResponse<Task> }>('/tasks?limit=300');
+        const allTasks = allRes.data.data.data;
 
-        const mine = myRes.data.data.data
-          .filter((t) => t.status !== 'DONE')
+        const parents = new Map<number, Task>();
+        allTasks.forEach((t) => parents.set(t.id, t));
+        setParentMap(parents);
+
+        const mine = allTasks
+          .filter((t) => t.workerId === Number(user.id) && t.status !== 'DONE')
           .sort((a, b) => {
             const aTime = a.targetDate ? new Date(a.targetDate).getTime() : Infinity;
             const bTime = b.targetDate ? new Date(b.targetDate).getTime() : Infinity;
@@ -42,7 +45,7 @@ export default function DashboardPage() {
           .slice(0, 5);
         setMyTasks(mine);
 
-        const recent = [...recentRes.data.data.data]
+        const recent = [...allTasks]
           .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
           .slice(0, 5);
         setRecentTasks(recent);
@@ -55,6 +58,20 @@ export default function DashboardPage() {
 
     fetchDashboardData();
   }, [isLoading, user]);
+
+  const renderTaskGroup = (t: Task) => {
+    const parent = t.parentTaskId ? parentMap.get(t.parentTaskId) : null;
+    return (
+      <span className={styles.taskGroupInfo}>
+        {t.isGroup && <span className={styles.taskGroupBadge}>그룹</span>}
+        {parent && (
+          <span className={styles.taskParentLabel}>
+            📁 {parent.title} <span className={styles.taskParentArrow}>↳</span>
+          </span>
+        )}
+      </span>
+    );
+  };
 
   if (isLoading) {
     return <div className={styles.loading}>로딩 중...</div>;
@@ -128,6 +145,7 @@ export default function DashboardPage() {
           <ul className={styles.taskList}>
             {myTasks.map((t) => (
               <li key={t.id} className={styles.taskItem}>
+                {renderTaskGroup(t)}
                 <Link href={`/tasks/${t.id}`} className={styles.taskTitle}>
                   {t.title}
                 </Link>
@@ -157,6 +175,7 @@ export default function DashboardPage() {
           <ul className={styles.taskList}>
             {recentTasks.map((t) => (
               <li key={t.id} className={styles.taskItem}>
+                {renderTaskGroup(t)}
                 <Link href={`/tasks/${t.id}`} className={styles.taskTitle}>
                   {t.title}
                 </Link>
