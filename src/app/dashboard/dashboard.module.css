@@ -137,13 +137,9 @@
   flex-shrink: 0;
 }
 
-.taskGroupBadge {
-  padding: 1px 6px;
-  font-size: 10px;
-  font-weight: 700;
-  color: #92400E;
-  background-color: #FEF3C7;
-  border: 1px solid #FCD34D;
-  border-radius: 4px;
+.taskParentLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-gray-500);
   white-space: nowrap;
 }

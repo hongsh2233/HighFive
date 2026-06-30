@@ -40,11 +40,13 @@ export default function KanbanBoard({ onTaskClick }: KanbanBoardProps) {
 
   const groupedTasks = statuses.reduce(
     (acc, status) => {
-      acc[status] = tasks.filter((task) => task.status === status);
+      acc[status] = tasks.filter((task) => !task.isGroup && task.status === status);
       return acc;
     },
     {} as { [key: string]: Task[] }
   );
+
+  const parentMap = new Map<number, Task>(tasks.map((t) => [t.id, t]));
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -83,6 +85,7 @@ export default function KanbanBoard({ onTaskClick }: KanbanBoardProps) {
           title={statusLabels[status]}
           status={status}
           tasks={groupedTasks[status]}
+          parentMap={parentMap}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}

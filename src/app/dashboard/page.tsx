@@ -19,6 +19,7 @@ export default function DashboardPage() {
   const { user, isLoading } = useAuth();
   const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
+  const [parentMap, setParentMap] = useState<Map<number, Task>>(new Map());
   const [loadingTasks, setLoadingTasks] = useState(true);
 
   useEffect(() => {
@@ -30,8 +31,12 @@ export default function DashboardPage() {
         const allRes = await apiClient.get<{ data: PaginatedResponse<Task> }>('/tasks?limit=300');
         const allTasks = allRes.data.data.data;
 
+        const parents = new Map<number, Task>();
+        allTasks.forEach((t) => parents.set(t.id, t));
+        setParentMap(parents);
+
         const mine = allTasks
-          .filter((t) => t.workerId === Number(user.id) && t.status !== 'DONE')
+          .filter((t) => !t.isGroup && t.workerId === Number(user.id) && t.status !== 'DONE')
           .sort((a, b) => {
             const aTime = a.targetDate ? new Date(a.targetDate).getTime() : Infinity;
             const bTime = b.targetDate ? new Date(b.targetDate).getTime() : Infinity;
@@ -40,7 +45,8 @@ export default function DashboardPage() {
           .slice(0, 5);
         setMyTasks(mine);
 
-        const recent = [...allTasks]
+        const recent = allTasks
+          .filter((t) => !t.isGroup)
           .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
           .slice(0, 5);
         setRecentTasks(recent);
@@ -55,10 +61,11 @@ export default function DashboardPage() {
   }, [isLoading, user]);
 
   const renderTaskGroup = (t: Task) => {
-    if (!t.isGroup) return null;
+    const parent = t.parentTaskId ? parentMap.get(t.parentTaskId) : null;
+    if (!parent) return null;
     return (
       <span className={styles.taskGroupInfo}>
-        <span className={styles.taskGroupBadge}>그룹</span>
+        <span className={styles.taskParentLabel}>[{parent.title}]</span>
       </span>
     );
   };

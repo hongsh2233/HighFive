@@ -72,25 +72,15 @@
   gap: 4px;
 }
 
-.cardGroup {
-  background-color: #FFFBEB;
-  border-color: #FCD34D;
-}
-
-.groupBadge {
-  flex-shrink: 0;
-  padding: 1px 6px;
-  font-size: 10px;
-  font-weight: 700;
-  color: #92400E;
-  background-color: #FEF3C7;
-  border: 1px solid #FCD34D;
-  border-radius: 4px;
-}
-
 .cardChild {
   margin-left: var(--space-3);
   background-color: var(--bg-subtle);
+}
+
+.parentPrefix {
+  flex-shrink: 0;
+  color: var(--color-gray-500);
+  font-weight: 500;
 }
 
 .cardTitleText {

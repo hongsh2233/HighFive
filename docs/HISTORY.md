@@ -105,3 +105,10 @@
 
 - "칸반도 대시보드와 같은 맥락으로 처리해달라"는 요청에 따라, 11차에서 대시보드에 적용한 것과 동일하게 칸반 보드의 `[그룹명]` 접두사도 제거. `KanbanColumn.tsx`에서 `parentMap` prop, 부모 업무 조회 로직, `parentPrefix` 표시를 모두 제거하고 `task.isGroup` 카드의 "그룹" 배지와 하위 업무 카드의 들여쓰기(`cardChild`)만 유지. `KanbanBoard.tsx`에서 더 이상 쓰이지 않는 `parentMap` 생성 및 전달 코드 제거, `KanbanColumn.module.css`의 `parentPrefix` 클래스 제거.
 - 디버깅 체크: `npx tsc --noEmit`을 변경 전/후로 비교해 신규 타입 오류 없음을 확인. 동일한 환경 제약으로 `npm run build`/`npm run lint`는 실행하지 못함 — 실제 개발 환경에서 칸반 보드의 그룹/하위 카드 표시 확인 필요.
+
+## 2026-06-30 (13차)
+
+- 11~12차에서 적용한 "그룹은 목록에 자기 행으로 노출, 하위 업무에는 접두사 없음" 방식을 사용자 피드백에 따라 재변경: 그룹-하위업무 관계를 `[그룹명] 업무명` 접두사로 표현하되, 그룹 업무 자체는 목록/보드에 별도로 노출하지 않도록 변경.
+  - 대시보드(`/dashboard`): "나의 업무"/"최근 활동" 목록에서 `isGroup` 업무를 제외(`!t.isGroup` 필터 추가)하고, `renderTaskGroup` 헬퍼가 다시 `parentMap`을 통해 부모 그룹명을 조회해 `[그룹명]` 접두사로 표시하도록 변경. `dashboard.module.css`의 더 이상 쓰이지 않는 `taskGroupBadge` 클래스를 `taskParentLabel`로 교체.
+  - 칸반 보드(`KanbanBoard.tsx`/`KanbanColumn.tsx`): `groupedTasks` 계산 시 `isGroup` 업무를 컬럼에서 제외하고, `parentMap`을 다시 구성해 `KanbanColumn`에 전달. 하위 업무 카드에 `[그룹명]` 접두사(`parentPrefix`)를 다시 표시. 그룹 카드 자체가 더 이상 보드에 노출되지 않으므로 `cardGroup`/`groupBadge` 관련 코드와 CSS 클래스 제거.
+- 디버깅 체크: `npx tsc --noEmit`을 변경 전/후로 비교해 신규 타입 오류 없음을 확인. 동일한 환경 제약으로 `npm run build`/`npm run lint`는 실행하지 못함 — 실제 개발 환경에서 대시보드/칸반에서 그룹 업무가 숨겨지고 하위 업무에 `[그룹명]` 접두사가 표시되는지 확인 필요.
