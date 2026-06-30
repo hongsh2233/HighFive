@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
           worker: { select: { id: true, name: true, email: true } },
           project: { select: { id: true, name: true } },
           timeLogs: true,
+          _count: { select: { subTasks: true } },
         },
       }),
       prisma.task.count({ where }),
@@ -77,14 +78,17 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, workerId, plannerId, targetDate, projectId } = body;
+    const { title, workerId, plannerId, targetDate, projectId, labels, subTasks } = body;
     const notes = sanitize(body.notes || '');
+    const labelsStr: string | null = Array.isArray(labels) && labels.length > 0 ? labels.join(',') : null;
 
     if (!title || !workerId || !plannerId) {
       return errorResponse('필수 항목이 누락되었습니다.', 400, 'VALID_400');
     }
 
     const { cleanTitle, rmsNo } = parseRmsNo(title);
+    const creatorId = parseInt((session!.user as any).id || '0');
+    const isGroup = Array.isArray(subTasks) && subTasks.length > 0;
 
     const task = await prisma.task.create({
       data: {
@@ -93,7 +97,8 @@ export async function POST(req: NextRequest) {
         workerId: parseInt(workerId),
         plannerId: parseInt(plannerId),
         targetDate: targetDate ? new Date(targetDate) : null,
-        notes,
+        notes: isGroup ? null : notes,
+        labels: labelsStr,
         status: 'ASSIGNED',
         projectId: projectId ? parseInt(projectId) : null,
       },
@@ -104,10 +109,42 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const creatorId = parseInt((session!.user as any).id || '0');
     await addHistory(task.id, creatorId, 'CREATED', `담당자: ${task.worker?.name}`);
 
-    return successResponse(task, '업무가 생성되었습니다.', 201);
+    if (isGroup) {
+      for (const sub of subTasks) {
+        if (!sub?.title || !sub?.workerId) continue;
+        const { cleanTitle: subTitle, rmsNo: subRmsNo } = parseRmsNo(sub.title);
+        const subTask = await prisma.task.create({
+          data: {
+            title: subTitle,
+            rmsNo: subRmsNo,
+            workerId: parseInt(sub.workerId),
+            plannerId: parseInt(plannerId),
+            targetDate: sub.targetDate ? new Date(sub.targetDate) : null,
+            status: 'ASSIGNED',
+            projectId: projectId ? parseInt(projectId) : null,
+            labels: labelsStr,
+            parentTaskId: task.id,
+          },
+        });
+        await addHistory(subTask.id, creatorId, 'CREATED', `그룹 업무 "${task.title}"의 하위 업무로 생성`);
+      }
+    }
+
+    const result = await prisma.task.findUnique({
+      where: { id: task.id },
+      include: {
+        planner: { select: { id: true, name: true, email: true } },
+        worker: { select: { id: true, name: true, email: true } },
+        project: { select: { id: true, name: true } },
+        subTasks: {
+          include: { worker: { select: { id: true, name: true, email: true } } },
+        },
+      },
+    });
+
+    return successResponse(result, '업무가 생성되었습니다.', 201);
   } catch (err) {
     console.error(err);
     return errorResponse('업무 생성 중 오류가 발생했습니다.', 500);

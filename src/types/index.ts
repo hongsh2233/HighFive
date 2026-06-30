@@ -32,6 +32,8 @@ export interface Task {
   templateId: number | null;
   notes: string | null;
   externalLink: string | null;
+  labels: string | null;
+  parentTaskId: number | null;
   createdAt: string;
   updatedAt: string;
   worker?: {
@@ -45,6 +47,7 @@ export interface Task {
     email: string;
   };
   timeLogs?: TimeLog[];
+  subTasks?: Task[];
 }
 
 // TimeLog types

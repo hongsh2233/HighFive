@@ -48,6 +48,8 @@ model Task {
   notes         String?
   externalLink  String?
   projectId     Int?
+  labels        String?   // 콤마 구분 라벨 코드 ex) "URGENT,WEEKEND"
+  parentTaskId  Int?      // 그룹 업무의 하위 업무인 경우 부모 업무 id
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -57,10 +59,13 @@ model Task {
   project       Project? @relation(fields: [projectId], references: [id])
   timeLogs      TimeLog[]
   histories     TaskHistory[]
+  parentTask    Task?    @relation("subTasks", fields: [parentTaskId], references: [id])
+  subTasks      Task[]   @relation("subTasks")
 
   @@index([workerId, status])
   @@index([targetDate])
   @@index([rmsNo])
+  @@index([parentTaskId])
   @@map("tasks")
 }
 

@@ -63,9 +63,11 @@ User (M) ──< ProjectMember >── (M) Project (1) ──< Task
 | targetDate | DateTime? | 목표 완료일 |
 | isFreeze | Boolean | 배포 프리징 충돌 여부 |
 | templateId | Int? | 템플릿 참조 |
-| notes | String? | 비고 |
+| notes | String? | 비고 (그룹 업무는 null) |
 | externalLink | String? | 연결된 GitHub PR 등 외부 링크 |
 | projectId | Int? | 소속 프로젝트 |
+| labels | String? | 콤마 구분 라벨 코드 (`URGENT`/`WEEKEND`/`EMERGENCY`) |
+| parentTaskId | Int? | 그룹 업무의 하위 업무인 경우 부모 Task id (자기참조 관계 `subTasks`) |
 
 ### TimeLog
 | 필드 | 타입 | 비고 |
@@ -240,6 +242,14 @@ high5/
 출력: { rmsNo: "DCBGIT-39085", cleanTitle: "구글 원 2TB 상품 정보 수정" }
 패턴: /\[([A-Z]+-\d+)\]/
 ```
+
+### 그룹 업무 / 하위 업무 (`/tasks/create`)
+- 등록 폼에서 "그룹 업무로 등록" 체크 시 비고(Quill 에디터) 입력란이 사라지고 하위 업무(제목/담당자/목표일) 행을 여러 개 추가할 수 있다.
+- `POST /api/tasks`에 `subTasks: [{ title, workerId, targetDate }]` 배열을 함께 보내면 부모 Task 생성 후 각 항목을 `parentTaskId`로 연결된 자식 Task로 생성한다. 라벨은 부모/자식 모두 동일하게 적용된다.
+
+### 업무 라벨 (`긴급`/`주말대응`/`비상`)
+- `src/lib/constants.ts`의 `TASK_LABEL_LIST`/`TASK_LABEL_TEXT`/`TASK_LABEL_COLOR`로 정의.
+- 등록 폼에서 체크박스로 다중 선택, `Task.labels`에 콤마 구분 문자열로 저장.
 
 ### 업무 상태 전이 및 알림 트리거
 ```

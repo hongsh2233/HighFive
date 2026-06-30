@@ -36,6 +36,26 @@ export const USER_ROLE_LABEL: Record<string, string> = {
 
 export const TASK_STATUS_ORDER = ['ASSIGNED', 'PROGRESS', 'REVIEW', 'QA', 'DONE'];
 
+export const TASK_LABELS = {
+  URGENT: 'URGENT',
+  WEEKEND: 'WEEKEND',
+  EMERGENCY: 'EMERGENCY',
+} as const;
+
+export const TASK_LABEL_LIST = ['URGENT', 'WEEKEND', 'EMERGENCY'];
+
+export const TASK_LABEL_TEXT: Record<string, string> = {
+  URGENT: '긴급',
+  WEEKEND: '주말대응',
+  EMERGENCY: '비상',
+};
+
+export const TASK_LABEL_COLOR: Record<string, { bg: string; text: string; border: string }> = {
+  URGENT: { bg: 'rgba(220,38,38,0.08)', text: '#DC2626', border: '#FCA5A5' },
+  WEEKEND: { bg: 'rgba(217,119,6,0.08)', text: '#B45309', border: '#FCD34D' },
+  EMERGENCY: { bg: 'rgba(124,58,237,0.08)', text: '#6D28D9', border: '#C4B5FD' },
+};
+
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
 
 export const PAGINATION = {
