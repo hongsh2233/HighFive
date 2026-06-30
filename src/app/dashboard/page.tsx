@@ -35,8 +35,14 @@ export default function DashboardPage() {
         allTasks.forEach((t) => parents.set(t.id, t));
         setParentMap(parents);
 
+        const groupIds = new Set<number>();
+        allTasks.forEach((t) => {
+          if (t.parentTaskId) groupIds.add(t.parentTaskId);
+        });
+        const isStandaloneGroup = (t: Task) => t.isGroup || groupIds.has(t.id);
+
         const mine = allTasks
-          .filter((t) => !t.isGroup && t.workerId === Number(user.id) && t.status !== 'DONE')
+          .filter((t) => !isStandaloneGroup(t) && t.workerId === Number(user.id) && t.status !== 'DONE')
           .sort((a, b) => {
             const aTime = a.targetDate ? new Date(a.targetDate).getTime() : Infinity;
             const bTime = b.targetDate ? new Date(b.targetDate).getTime() : Infinity;
@@ -46,7 +52,7 @@ export default function DashboardPage() {
         setMyTasks(mine);
 
         const recent = allTasks
-          .filter((t) => !t.isGroup)
+          .filter((t) => !isStandaloneGroup(t))
           .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
           .slice(0, 5);
         setRecentTasks(recent);

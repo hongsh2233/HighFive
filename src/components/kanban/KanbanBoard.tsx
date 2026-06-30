@@ -38,9 +38,15 @@ export default function KanbanBoard({ onTaskClick }: KanbanBoardProps) {
     fetchAllTasks();
   }, []);
 
+  const groupIds = new Set<number>();
+  tasks.forEach((t) => {
+    if (t.parentTaskId) groupIds.add(t.parentTaskId);
+  });
+  const isStandaloneGroup = (t: Task) => t.isGroup || groupIds.has(t.id);
+
   const groupedTasks = statuses.reduce(
     (acc, status) => {
-      acc[status] = tasks.filter((task) => !task.isGroup && task.status === status);
+      acc[status] = tasks.filter((task) => !isStandaloneGroup(task) && task.status === status);
       return acc;
     },
     {} as { [key: string]: Task[] }
