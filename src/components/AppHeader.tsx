@@ -72,7 +72,7 @@ export default function AppHeader() {
               업무
             </button>
             {openMenu === 'task' && (
-              <div className={`${styles.dropdown} ${styles.dropdownLeft}`}>
+              <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
                 {[
                   { href: '/tasks/create', label: '업무 등록' },
                   { href: '/tasks', label: '업무 목록' },
@@ -101,7 +101,7 @@ export default function AppHeader() {
                 관리
               </button>
               {openMenu === 'admin' && (
-                <div className={`${styles.dropdown} ${styles.dropdownLeft}`}>
+                <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
                   <Link href="/projects" className={styles.dropdownItem} onClick={closeAll}>프로젝트</Link>
                   {user?.role === 'ADMIN' && (
                     <Link href="/users" className={styles.dropdownItem} onClick={closeAll}>팀원관리</Link>

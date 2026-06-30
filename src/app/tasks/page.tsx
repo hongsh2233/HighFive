@@ -222,7 +222,10 @@ export default function TaskListPage() {
               onChange={(e) => updateTask(task.id, { workerId: parseInt(e.target.value) } as any)}
               className={styles.statusSelect}
             >
-              {assignableWorkers.map((w) => (
+              {(task.worker && !assignableWorkers.find(w => w.id === (task.worker as any).id)
+                ? [{ id: (task.worker as any).id, name: (task.worker as any).name } as Worker, ...assignableWorkers]
+                : assignableWorkers
+              ).map((w) => (
                 <option key={w.id} value={w.id}>{w.name}</option>
               ))}
             </select>
