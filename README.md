@@ -77,6 +77,37 @@ npm run dev
 
 ---
 
+## Railway 배포
+
+이 프로젝트는 빌드 시 `prisma db push`가 자동으로 실행되도록 구성되어 있어, Railway에 배포하면 별도 마이그레이션 명령 없이 DB 스키마가 자동으로 생성/갱신됩니다.
+
+### 1. 프로젝트 생성 & Postgres 추가
+1. [Railway](https://railway.app) → **New Project** → 이 GitHub 저장소 연결
+2. 같은 프로젝트에 **+ New → Database → PostgreSQL** 추가 → `DATABASE_URL`이 서비스에 자동 주입됨
+
+### 2. 환경변수 설정
+서비스 **Variables** 탭에서 아래 값을 등록합니다 (`DATABASE_URL`은 Postgres 플러그인이 자동으로 채워줌):
+```env
+NEXTAUTH_SECRET=<openssl rand -base64 32 로 생성>
+NEXTAUTH_URL=https://<배포된 도메인>
+NEXT_PUBLIC_API_BASE_URL=/api
+```
+Slack/Jandi/카카오톡/GitHub webhook 등 선택 항목은 필요할 때만 추가합니다.
+
+### 3. 배포
+- `main` 브랜치에 push하면 Railway가 자동으로 빌드/배포합니다.
+- 빌드 커맨드(`npm run build` = `prisma generate && prisma db push --skip-generate && next build`)가 실행되며, 이 과정에서 `prisma db push`가 Railway Postgres에 현재 스키마(`prisma/schema.prisma`)를 자동 반영합니다. 즉 새 필드/모델을 추가해도 별도 마이그레이션 명령 없이 다음 배포 시 자동으로 DB에 생성됩니다.
+- `postbuild`에서 `prisma/init.ts`를 실행해 관리자 계정(`admin@admin.co.kr` / `Admin@2024!`)을 자동 생성합니다. **배포 후 반드시 비밀번호를 변경하세요.**
+- 헬스체크: `GET /api/health` (DB 연결까지 확인). `railway.json`에 헬스체크 경로/재시작 정책이 설정되어 있습니다.
+
+### 4. 샘플 데이터(선택)
+운영 환경에는 권장하지 않지만, 필요 시 Railway CLI로 1회 실행할 수 있습니다:
+```bash
+railway run npm run db:seed
+```
+
+---
+
 ## 명령어
 
 ```bash

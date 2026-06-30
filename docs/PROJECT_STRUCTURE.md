@@ -350,6 +350,15 @@ npm run lint          # ESLint 실행
 
 ---
 
+## 7-1. 배포 (Railway)
+
+- `railway.json`에 빌드/스타트 커맨드와 헬스체크(`GET /api/health`) 설정이 정의되어 있다.
+- `npm run build` 자체가 `prisma generate && prisma db push --skip-generate && next build`이므로, Railway에 push할 때마다 빌드 단계에서 `prisma/schema.prisma`가 자동으로 DB에 반영된다(별도 마이그레이션 명령 불필요).
+- Railway 프로젝트에 Postgres 플러그인을 추가하면 `DATABASE_URL`이 서비스에 자동 주입된다. `NEXTAUTH_SECRET`/`NEXTAUTH_URL`/`NEXT_PUBLIC_API_BASE_URL`은 직접 설정해야 한다.
+- `postbuild`(`prisma/init.ts`)가 배포마다 `admin@admin.co.kr` 관리자 계정을 upsert한다. 자세한 절차는 `README.md`의 "Railway 배포" 절 참고.
+
+---
+
 ## 8. 디자인 시스템
 
 ### 컬러 팔레트 (`src/app/globals.css`)
