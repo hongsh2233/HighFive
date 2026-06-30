@@ -4,7 +4,7 @@ import LayoutWrapper from "@/components/LayoutWrapper";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TMS - 업무 관리 시스템",
+  title: "High5 - 업무 관리 시스템",
   description: "AI 기반 경량 업무 관리 플랫폼",
 };
 

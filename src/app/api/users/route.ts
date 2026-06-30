@@ -1,16 +1,18 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireRole, successResponse, errorResponse, hashPassword, generateTempPassword } from '@/lib/utils';
+import { requireAuth, requireRole, successResponse, errorResponse, hashPassword, generateTempPassword } from '@/lib/utils';
 
 // GET /api/users
 export async function GET(req: NextRequest) {
   try {
-    const { session, error } = await requireRole(['ADMIN', 'MANAGER']);
-    if (error) return error;
-
     const { searchParams } = new URL(req.url);
     const role = searchParams.get('role');
     const projectId = searchParams.get('projectId');
+
+    // WORKER 역할 필터 조회(업무 담당자 배정/필터용)는 전 역할 허용, 그 외 전체 목록은 ADMIN/MANAGER만 허용
+    const auth = role === 'WORKER' ? await requireAuth() : await requireRole(['ADMIN', 'MANAGER']);
+    if (auth.error) return auth.error;
+    const { session } = auth;
 
     const sessionRole = (session!.user as any).role;
     const sessionUserId = parseInt((session!.user as any).id || '0');

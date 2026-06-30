@@ -1,4 +1,4 @@
-# TMS 프로젝트 구조 문서
+# High5 프로젝트 구조 문서
 
 > **최종 업데이트** 2026-06-30
 > **스택** Next.js 15 · Prisma 5 · PostgreSQL · NextAuth.js 4 · Zustand · MUI
@@ -105,7 +105,7 @@ User (M) ──< ProjectMember >── (M) Project (1) ──< Task
 ## 3. 디렉터리 구조
 
 ```
-tms/
+high5/
 ├── prisma/
 │   ├── schema.prisma
 │   ├── seed.ts                        # 초기 데이터 (admin 계정 포함)
@@ -125,7 +125,7 @@ tms/
 │   │   ├── calendar/page.tsx
 │   │   ├── projects/page.tsx
 │   │   ├── stats/page.tsx
-│   │   ├── users/page.tsx             # ADMIN 전용
+│   │   ├── users/page.tsx             # ADMIN 전용, "팀원관리" — 팀원 생성 시 임시 비밀번호를 모달로 안내, 소속 프로젝트는 체크박스로 선택
 │   │   ├── profile/password/page.tsx
 │   │   │
 │   │   ├── tasks/
@@ -179,7 +179,7 @@ tms/
 │   │           └── github/route.ts             # GitHub PR merge 연동
 │   │
 │   ├── components/
-│   │   ├── AppHeader.tsx              # 상단 GNB (메뉴, 알림 벨, 프로필)
+│   │   ├── AppHeader.tsx              # 상단 GNB (메뉴, 프로필, 모바일 햄버거 토글) — 알림 벨 제거됨
 │   │   ├── LayoutWrapper.tsx
 │   │   ├── Providers.tsx              # SessionProvider + AuthSync
 │   │   ├── common/
@@ -279,7 +279,7 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 |---|---|---|---|
 | POST | `/api/auth/[...nextauth]` | 공개 | 로그인/로그아웃 |
 | POST | `/api/auth/change-password` | ALL | 비밀번호 변경 |
-| GET | `/api/users` | ADMIN | 사용자 목록 |
+| GET | `/api/users` | ADMIN (단, `?role=WORKER` 조회는 인증된 전 역할 허용 — 업무 담당자 배정 드롭다운용) | 사용자 목록 |
 | POST | `/api/users` | ADMIN | 사용자 생성 |
 | PATCH/DELETE | `/api/users/[id]` | ADMIN | 사용자 수정/비활성화 |
 | GET | `/api/users/me` | ALL | 내 정보 |

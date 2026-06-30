@@ -232,7 +232,7 @@ export default function InfoPage() {
               프로젝트 정보
             </h1>
             <p className={styles.pageSubtitle}>
-              TMS 사용 가이드 및 자주 묻는 질문
+              High5 사용 가이드 및 자주 묻는 질문
             </p>
           </div>
           {isAdmin && !showForm && (

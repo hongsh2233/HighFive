@@ -1,7 +1,7 @@
 {
-  "name": "tms",
+  "name": "high5",
   "version": "1.0.0",
-  "description": "Task Management System with Next.js",
+  "description": "High5 Task Management System with Next.js",
   "private": true,
   "scripts": {
     "dev": "next dev",

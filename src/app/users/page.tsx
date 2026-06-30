@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
+import { Modal } from '@/components/common/Modal';
 import styles from './users.module.css';
 
 interface ProjectInfo {
@@ -45,6 +46,7 @@ export default function UsersPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -114,7 +116,7 @@ export default function UsersPage() {
           ...payload,
         });
         const tempPw = res.data.data?.tempPassword;
-        setMessage({ type: 'success', text: `생성 완료. 임시 비밀번호: ${tempPw}` });
+        if (tempPw) setTempPassword(tempPw);
       }
 
       setShowForm(false);
@@ -234,19 +236,20 @@ export default function UsersPage() {
               {projects.length > 0 && (
                 <div className={styles.projectSection} data-disabled={formData.role === 'ADMIN' ? 'true' : 'false'}>
                   <label className={styles.label}>소속 프로젝트 {formData.role === 'ADMIN' && <span className={styles.labelNote}>(최고관리자는 선택 불필요)</span>}</label>
-                  <div className={styles.projectBtnRow}>
+                  <div className={styles.projectCheckList}>
                     {projects.map(p => {
                       const selected = formData.projectIds.includes(p.id);
                       return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => toggleProject(p.id)}
-                          className={styles.projectBtn}
-                          data-selected={selected ? 'true' : 'false'}
-                        >
-                          {p.name}
-                        </button>
+                        <label key={p.id} className={styles.projectCheckItem} data-checked={selected ? 'true' : 'false'}>
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            disabled={formData.role === 'ADMIN'}
+                            onChange={() => toggleProject(p.id)}
+                            className={styles.projectCheckbox}
+                          />
+                          <span>{p.name}</span>
+                        </label>
                       );
                     })}
                   </div>
@@ -332,6 +335,27 @@ export default function UsersPage() {
           )}
         </div>
       </div>
+
+      <Modal open={!!tempPassword} onClose={() => setTempPassword(null)} title="팀원 생성 완료">
+        <div className={styles.tempPwBody}>
+          <p className={styles.tempPwDesc}>임시 비밀번호가 생성되었습니다. 팀원에게 안전하게 전달해주세요.</p>
+          <div className={styles.tempPwBox}>
+            <code className={styles.tempPwCode}>{tempPassword}</code>
+            <button
+              type="button"
+              className={styles.tempPwCopyBtn}
+              onClick={() => {
+                if (tempPassword) navigator.clipboard.writeText(tempPassword);
+              }}
+            >
+              복사
+            </button>
+          </div>
+          <button type="button" className={styles.btnSubmit} onClick={() => setTempPassword(null)}>
+            확인
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

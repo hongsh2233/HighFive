@@ -55,9 +55,9 @@ export async function GET(req: NextRequest) {
   const ics = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//TMS//KO',
+    'PRODID:-//High5//KO',
     'CALSCALE:GREGORIAN',
-    'X-WR-CALNAME:TMS 업무 일정',
+    'X-WR-CALNAME:High5 업무 일정',
     events,
     'END:VCALENDAR',
   ].join('\r\n');

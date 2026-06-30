@@ -1,4 +1,4 @@
-# TMS - Task Management System
+# High5 - Task Management System
 
 > AI 웹 개발 비즈니스에 최적화된 경량 업무 관리 플랫폼
 >

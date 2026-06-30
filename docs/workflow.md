@@ -1,4 +1,4 @@
-# TMS 작업 절차 (Workflow)
+# High5 작업 절차 (Workflow)
 
 > 이 저장소에서 기능 추가/수정 등 신규 작업을 진행할 때는 항상 아래 절차를 따른다.
 > Claude Code에서는 `.claude/skills/dev-workflow/SKILL.md`가 이 문서를 가리키는 skill로 등록되어 있다.

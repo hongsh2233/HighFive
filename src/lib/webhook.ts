@@ -78,7 +78,7 @@ ${statusEmoji[payload.status] || '📝'} *[${statusText[payload.status]}]* 업�
 
 <${payload.taskUrl}|업무 상세 보기>
     `.trim(),
-    username: 'TMS Bot',
+    username: 'High5 Bot',
     icon_emoji: ':clipboard:',
   };
 }
@@ -96,10 +96,10 @@ function buildJandiMessage(payload: WebhookPayload) {
   return {
     body: `[${statusText[payload.status]}] ${payload.taskTitle}`,
     connectInfo: {
-      commandName: 'TMS',
+      commandName: 'High5',
     },
     author: {
-      name: 'TMS Bot',
+      name: 'High5 Bot',
     },
   };
 }
