@@ -46,8 +46,6 @@ export default function KanbanBoard({ onTaskClick }: KanbanBoardProps) {
     {} as { [key: string]: Task[] }
   );
 
-  const parentMap = new Map<number, Task>(tasks.map((t) => [t.id, t]));
-
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
@@ -85,7 +83,6 @@ export default function KanbanBoard({ onTaskClick }: KanbanBoardProps) {
           title={statusLabels[status]}
           status={status}
           tasks={groupedTasks[status]}
-          parentMap={parentMap}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
