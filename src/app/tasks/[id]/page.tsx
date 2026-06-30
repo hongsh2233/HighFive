@@ -56,7 +56,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
   const userRole = (user as any)?.role;
   const canEdit = userRole === 'ADMIN' || userRole === 'PLANNER';
-  const canDelete = userRole === 'ADMIN';
+  const canDelete = userRole === 'ADMIN' || userRole === 'PLANNER';
 
   const fetchTask = async () => {
     try {

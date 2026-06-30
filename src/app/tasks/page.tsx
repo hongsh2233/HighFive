@@ -1,10 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useTasks } from '@/hooks/useTask';
+import apiClient from '@/lib/api-client';
 import styles from './tasks.module.css';
+
+interface Worker {
+  id: number;
+  name: string;
+}
 
 const statusLabels: { [key: string]: string } = {
   ASSIGNED: '배정됨',
@@ -55,8 +61,9 @@ const calculateWorkHours = (timeLogs: any[]): string => {
 
 export default function TaskListPage() {
   const { user, isLoading: authLoading } = useAuth();
-  const { tasks, loading, error, updateStatus, updateTask } = useTasks({ limit: 1000 });
+  const { tasks, loading, error, updateStatus, updateTask, deleteTask } = useTasks({ limit: 1000 });
   const canEditTitle = ['ADMIN', 'PLANNER'].includes((user as any)?.role ?? '');
+  const canDelete = canEditTitle;
 
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedWorker, setSelectedWorker] = useState('');
@@ -64,6 +71,29 @@ export default function TaskListPage() {
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
   const [editingTitleId, setEditingTitleId] = useState<number | null>(null);
   const [titleDraft, setTitleDraft] = useState('');
+  const [assignableWorkers, setAssignableWorkers] = useState<Worker[]>([]);
+
+  useEffect(() => {
+    if (!canEditTitle) return;
+    const fetchWorkers = async () => {
+      try {
+        const res = await apiClient.get<{ data: Worker[] }>('/users?role=WORKER');
+        setAssignableWorkers(res.data.data || []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchWorkers();
+  }, [canEditTitle]);
+
+  const handleDeleteTask = async (id: number) => {
+    if (!confirm('이 업무를 삭제하시겠습니까? 삭제 후에는 되돌릴 수 없습니다.')) return;
+    try {
+      await deleteTask(id);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const startTitleEdit = (task: any) => {
     if (!canEditTitle) return;
@@ -185,7 +215,21 @@ export default function TaskListPage() {
             )}
           </div>
         </td>
-        <td className={styles.td}>{task.worker?.name || '-'}</td>
+        <td className={styles.td}>
+          {canEditTitle ? (
+            <select
+              value={task.workerId ?? ''}
+              onChange={(e) => updateTask(task.id, { workerId: parseInt(e.target.value) } as any)}
+              className={styles.statusSelect}
+            >
+              {assignableWorkers.map((w) => (
+                <option key={w.id} value={w.id}>{w.name}</option>
+              ))}
+            </select>
+          ) : (
+            task.worker?.name || '-'
+          )}
+        </td>
         <td className={styles.td}>
           {task.createdAt
             ? new Date(task.createdAt).toLocaleDateString('ko-KR')
@@ -224,6 +268,15 @@ export default function TaskListPage() {
               <Link href={`/tasks/create?parentTaskId=${task.id}`} className={styles.addSubBtnSmall}>
                 + 하위 업무
               </Link>
+            )}
+            {canDelete && (
+              <button
+                type="button"
+                className={styles.deleteBtnSmall}
+                onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
+              >
+                삭제
+              </button>
             )}
           </div>
         </td>

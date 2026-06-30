@@ -135,3 +135,10 @@
 - 업무 상세(`/tasks/[id]`) 페이지에 "기본 정보" 수정/삭제 기능 추가. ADMIN/PLANNER(='관리자' 라벨)는 "수정" 버튼으로 제목/담당자(셀렉트박스)/목표일을 인라인으로 수정할 수 있고, ADMIN만 "삭제" 버튼으로 업무를 삭제할 수 있음(삭제 시 확인창 후 `/tasks`로 이동). 담당자 셀렉트박스는 `/api/users?role=WORKER` 목록을 사용.
 - 담당자 변경 시 기존에도 `WORKER_CHANGED` 이력이 남고 있었으나, 제목/목표일 변경은 이력이 남지 않던 것을 수정: `task-history.ts`에 `TITLE_CHANGED`, `TARGET_DATE_CHANGED` 액션과 라벨을 추가하고, `PATCH /api/tasks/[id]`에서 제목·목표일이 실제로 바뀐 경우 변경 전/후 값을 이력에 기록하도록 변경.
 - 디버깅 체크: `npx tsc --noEmit` 결과 변경한 파일(`tasks/[id]/page.tsx`, `tasks/[id]/route.ts`, `task-history.ts`)에서는 신규 타입 오류 없음을 확인. 동일한 환경 제약으로 `npm run build`/`npm run lint`는 실행하지 못함 — 실제 개발 환경에서 제목/담당자/목표일 수정 및 삭제, 이력 기록이 정상 동작하는지 확인 필요.
+
+## 2026-06-30 (18차)
+
+- 업무 삭제 권한을 ADMIN 전용에서 ADMIN/PLANNER(둘 다 화면에는 '관리자'로 표시됨)로 확대: `DELETE /api/tasks/[id]`와 업무 상세(`/tasks/[id]`) 페이지의 `canDelete`를 `['ADMIN','PLANNER'].includes(role)`로 변경.
+- 업무 목록(`/tasks`) 페이지에 담당자 셀렉트박스 추가: 기존에는 담당자가 텍스트로만 표시됐는데, ADMIN/PLANNER 권한 사용자에게는 상태 셀렉트와 동일한 방식으로 담당자를 셀렉트박스로 바로 변경할 수 있도록 변경(`/api/users?role=WORKER` 목록 사용, `updateTask`로 저장 — 백엔드에서 자동으로 `WORKER_CHANGED` 이력 기록).
+- 업무 목록 각 행에 "삭제" 버튼 추가(ADMIN/PLANNER 전용, 확인창 포함, `useTasks`의 `deleteTask` 사용).
+- 디버깅 체크: `npx tsc --noEmit` 결과 변경한 파일(`tasks/page.tsx`, `tasks/[id]/page.tsx`, `tasks/[id]/route.ts`)에서는 신규 타입 오류 없음을 확인. 동일한 환경 제약으로 `npm run build`/`npm run lint`는 실행하지 못함.

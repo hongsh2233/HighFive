@@ -173,6 +173,21 @@
   background: #ECFDF5;
 }
 
+.deleteBtnSmall {
+  padding: 2px 7px;
+  font-size: 11px;
+  border: 1px solid #FCA5A5;
+  border-radius: 4px;
+  background: transparent;
+  color: #DC2626;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.deleteBtnSmall:hover {
+  background: #FEF2F2;
+}
+
 .titleCell {
   display: flex;
   align-items: center;
