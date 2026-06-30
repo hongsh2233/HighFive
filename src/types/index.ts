@@ -34,6 +34,7 @@ export interface Task {
   externalLink: string | null;
   labels: string | null;
   isGroup: boolean;
+  timeCounterEnabled: boolean;
   parentTaskId: number | null;
   createdAt: string;
   updatedAt: string;

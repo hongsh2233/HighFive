@@ -69,7 +69,6 @@ export default function TaskListPage() {
     ALL_STATUSES.filter((s) => s !== 'DONE')
   );
   const [selectedWorker, setSelectedWorker] = useState('');
-  const [draggedTask, setDraggedTask] = useState<any>(null);
   const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
 
@@ -94,62 +93,22 @@ export default function TaskListPage() {
     new Map(tasks.filter((t) => t.worker).map((t: any) => [t.worker.id, t.worker])).values()
   ).sort((a: any, b: any) => a.name.localeCompare(b.name));
 
-  const toggleStatus = (status: string) => {
-    setSelectedStatuses((prev) =>
-      prev.includes(status)
-        ? prev.filter((s) => s !== status)
-        : [...prev, status]
-    );
-  };
-
-  const handleDragStart = (e: React.DragEvent, task: any) => {
-    setDraggedTask(task);
-    e.dataTransfer!.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer!.dropEffect = 'move';
-  };
-
-  const handleDrop = (e: React.DragEvent, newStatus: string) => {
-    e.preventDefault();
-    if (draggedTask && draggedTask.status !== newStatus) {
-      updateStatus(draggedTask.id, newStatus);
-      setDraggedTask(null);
-    }
+  const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const values = Array.from(e.target.selectedOptions).map((opt) => opt.value);
+    setSelectedStatuses(values);
   };
 
   if (authLoading) {
     return <div className={styles.loadingPage}>로딩 중...</div>;
   }
 
-  // statusChipStyle kept inline — dynamic per status + active
-  const statusChipStyle = (active: boolean, status: string): React.CSSProperties => ({
-    padding: '6px 14px',
-    borderRadius: '20px',
-    fontSize: '13px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    border: '2px solid',
-    borderColor: active ? statusColors[status]?.text || '#374151' : 'var(--color-gray-300)',
-    backgroundColor: active ? statusColors[status]?.bg || '#E5E7EB' : 'white',
-    color: active ? statusColors[status]?.text || '#374151' : 'var(--color-gray-500)',
-    transition: 'all 0.15s ease',
-  });
-
-  // badgeStyle kept inline — dynamic per status
-  const badgeStyle = (status: string): React.CSSProperties => {
+  // statusSelectStyle kept inline — dynamic per status, used for the combined 상태/상태변경 컬럼
+  const statusSelectStyle = (status: string): React.CSSProperties => {
     const color = statusColors[status] || { bg: 'transparent', text: '#374151', border: '#D4D4D8' };
     return {
-      display: 'inline-block',
-      padding: '3px 8px',
-      backgroundColor: color.bg,
       color: color.text,
-      border: `1px solid ${color.border}`,
-      borderRadius: '4px',
-      fontSize: '11px',
-      fontWeight: '600',
+      borderColor: color.border,
+      fontWeight: 600,
     };
   };
 
@@ -183,15 +142,8 @@ export default function TaskListPage() {
     const rows: React.ReactElement[] = [
       <tr
         key={task.id}
-        draggable
-        onDragStart={(e) => handleDragStart(e, task)}
-        onDragOver={handleDragOver}
-        onDrop={(e) => handleDrop(e, task.status)}
         style={{
-          backgroundColor: task.status === 'DONE' ? '#F9FAFB' : draggedTask?.id === task.id ? '#F0F9FF' : 'white',
-          cursor: 'grab',
-          opacity: draggedTask?.id === task.id ? 0.6 : 1,
-          transition: 'background-color 0.2s',
+          backgroundColor: task.status === 'DONE' ? '#F9FAFB' : 'white',
         }}
       >
         <td className={styles.tdId}>#{task.id}</td>
@@ -202,8 +154,9 @@ export default function TaskListPage() {
                 type="button"
                 className={styles.groupToggleBtn}
                 onClick={(e) => { e.stopPropagation(); toggleGroup(task.id); }}
+                aria-label={isGroupExpanded ? '하위 업무 접기' : '하위 업무 펼치기'}
               >
-                {isGroupExpanded ? '▼' : '▶'}
+                {isGroupExpanded ? '−' : '+'}
               </button>
             )}
             {isChild && <span className={styles.childArrow}>↳</span>}
@@ -211,11 +164,6 @@ export default function TaskListPage() {
           </div>
         </td>
         <td className={styles.td}>{task.worker?.name || '-'}</td>
-        <td className={styles.td}>
-          <span style={badgeStyle(task.status)}>
-            {statusLabels[task.status]}
-          </span>
-        </td>
         <td className={styles.td}>
           {task.createdAt
             ? new Date(task.createdAt).toLocaleDateString('ko-KR')
@@ -228,16 +176,25 @@ export default function TaskListPage() {
         </td>
         <td className={styles.tdNotes}>
           <div className={styles.notesBtns}>
-            {hasNotes && (
+            {isGroupRow ? (
               <button
-                className={`${styles.notesToggleBtn} ${isExpanded ? styles.notesToggleBtnActive : ''}`}
-                onClick={(e) => { e.stopPropagation(); toggleNotes(task.id); }}
+                className={`${styles.notesToggleBtn} ${isGroupExpanded ? styles.notesToggleBtnActive : ''}`}
+                onClick={(e) => { e.stopPropagation(); toggleGroup(task.id); }}
               >
-                {isExpanded ? '접기' : '간략'}
+                {isGroupExpanded ? '하위업무 접기' : '하위업무 보기'}
               </button>
+            ) : (
+              hasNotes && (
+                <button
+                  className={`${styles.notesToggleBtn} ${isExpanded ? styles.notesToggleBtnActive : ''}`}
+                  onClick={(e) => { e.stopPropagation(); toggleNotes(task.id); }}
+                >
+                  {isExpanded ? '접기' : '요약보기'}
+                </button>
+              )
             )}
             <Link href={`/tasks/${task.id}`} className={styles.detailBtn}>
-              상세
+              상세보기
             </Link>
             {task.isGroup && (
               <Link href={`/tasks/create?parentTaskId=${task.id}`} className={styles.addSubBtnSmall}>
@@ -254,6 +211,7 @@ export default function TaskListPage() {
             value={task.status}
             onChange={(e) => updateStatus(task.id, e.target.value)}
             className={styles.statusSelect}
+            style={statusSelectStyle(task.status)}
           >
             <option value="ASSIGNED">배정됨</option>
             <option value="PROGRESS">진행중</option>
@@ -264,10 +222,10 @@ export default function TaskListPage() {
         </td>
       </tr>,
     ];
-    if (isExpanded && hasNotes) {
+    if (!isGroupRow && isExpanded && hasNotes) {
       rows.push(
         <tr key={`notes-${task.id}`} className={styles.notesRow}>
-          <td colSpan={9} className={styles.notesCell}>
+          <td colSpan={8} className={styles.notesCell}>
             <div
               className={styles.notesContent}
               dangerouslySetInnerHTML={{ __html: task.notes ?? '' }}
@@ -293,15 +251,18 @@ export default function TaskListPage() {
         <span className={styles.filterLabel}>
           상태:
         </span>
-        {ALL_STATUSES.map((status) => (
-          <button
-            key={status}
-            onClick={() => toggleStatus(status)}
-            style={statusChipStyle(selectedStatuses.includes(status), status)}
-          >
-            {statusLabels[status]}
-          </button>
-        ))}
+        <select
+          multiple
+          value={selectedStatuses}
+          onChange={handleStatusFilterChange}
+          className={styles.statusFilterSelect}
+        >
+          {ALL_STATUSES.map((status) => (
+            <option key={status} value={status}>
+              {statusLabels[status]}
+            </option>
+          ))}
+        </select>
 
         <select
           value={selectedWorker}
@@ -330,24 +291,23 @@ export default function TaskListPage() {
               <th className={`${styles.th} ${styles.thId}`}>ID</th>
               <th className={styles.th}>제목</th>
               <th className={`${styles.th} ${styles.thAssignee}`}>담당자</th>
-              <th className={`${styles.th} ${styles.thStatus}`}>상태</th>
               <th className={`${styles.th} ${styles.thCreatedAt}`}>등록일자</th>
               <th className={`${styles.th} ${styles.thTarget}`}>목표일</th>
               <th className={styles.th}>비고</th>
               <th className={`${styles.th} ${styles.thHours}`}>작업시간</th>
-              <th className={`${styles.th} ${styles.thChange}`}>상태변경</th>
+              <th className={`${styles.th} ${styles.thStatus}`}>상태</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} className={styles.tdCenter}>
+                <td colSpan={8} className={styles.tdCenter}>
                   로딩 중...
                 </td>
               </tr>
             ) : filteredTasks.length === 0 ? (
               <tr>
-                <td colSpan={9} className={styles.tdCenter}>
+                <td colSpan={8} className={styles.tdCenter}>
                   {tasks.length === 0 ? '등록된 업무가 없습니다.' : '필터 조건에 맞는 업무가 없습니다.'}
                 </td>
               </tr>

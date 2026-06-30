@@ -48,6 +48,15 @@
   margin-left: auto;
 }
 
+.statusFilterSelect {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-gray-300);
+  border-radius: 6px;
+  font-size: 13px;
+  min-width: 140px;
+  height: 34px;
+}
+
 .errorBox {
   padding: var(--space-3);
   background-color: #FEF2F2;
@@ -172,13 +181,24 @@
 }
 
 .groupToggleBtn {
-  border: none;
-  background: transparent;
+  border: 1px solid var(--color-gray-300);
+  background: var(--bg-subtle);
   cursor: pointer;
-  font-size: 11px;
-  color: var(--color-gray-600);
-  padding: 0 2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-gray-700);
+  width: 20px;
+  height: 20px;
   line-height: 1;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.groupToggleBtn:hover {
+  background: var(--color-gray-200);
 }
 
 .childArrow {

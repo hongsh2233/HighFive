@@ -68,6 +68,7 @@ User (M) ──< ProjectMember >── (M) Project (1) ──< Task
 | projectId | Int? | 소속 프로젝트 |
 | labels | String? | 콤마 구분 라벨 코드 (`URGENT`/`WEEKEND`/`EMERGENCY`) |
 | isGroup | Boolean | 그룹 업무 여부 (하위 업무를 나중에 추가할 수 있는 부모 업무, 기본 false) |
+| timeCounterEnabled | Boolean | 상태 변경에 따른 자동 시간 카운트 사용 여부 (기본 true) |
 | parentTaskId | Int? | 그룹 업무의 하위 업무인 경우 부모 Task id (자기참조 관계 `subTasks`) |
 
 ### TimeLog
@@ -156,9 +157,7 @@ high5/
 │   │       │       ├── history/route.ts        # GET 업무 히스토리
 │   │       │       └── timelogs/
 │   │       │           ├── route.ts
-│   │       │           ├── start/route.ts
 │   │       │           └── [logId]/
-│   │       │               ├── stop/route.ts
 │   │       │               └── adjust/route.ts
 │   │       ├── projects/
 │   │       │   ├── route.ts
@@ -192,7 +191,6 @@ high5/
 │   │   │   ├── KanbanBoard.tsx
 │   │   │   └── KanbanColumn.tsx
 │   │   ├── task/
-│   │   │   ├── TaskTimerButton.tsx
 │   │   │   ├── TaskStatusBadge.tsx
 │   │   │   ├── TaskFilterBar.tsx
 │   │   │   └── TaskAdjustForm.tsx
@@ -203,7 +201,6 @@ high5/
 │   ├── hooks/
 │   │   ├── useAuth.ts                 # NextAuth 세션 + 역할 가드
 │   │   ├── useTask.ts                 # 업무 CRUD
-│   │   ├── useTimer.ts                # 타이머 시작/종료/경과시간
 │   │   └── useFreeze.ts               # 배포 프리징 감지
 │   │
 │   ├── store/                         # Zustand 전역 상태
@@ -265,13 +262,15 @@ ASSIGNED → PROGRESS → REVIEW → QA → DONE
 ### GitHub PR 연동 (`src/app/api/webhooks/github/route.ts`)
 - `Task.externalLink`에 등록된 PR URL이 머지되면 GitHub webhook(`pull_request` 이벤트, `x-hub-signature-256` 서명 검증)이 해당 업무를 갱신하고 히스토리에 기록
 
-### 타이머 흐름 (`src/hooks/useTimer.ts`)
+### 자동 시간 카운트 흐름 (`PATCH /api/tasks/[id]/status`)
+업무의 `timeCounterEnabled`가 true인 경우, 상태 변경 시 자동으로 타임로그가 시작/종료된다 (수동 시작/종료 버튼 없음).
 ```
-POST /tasks/[id]/timelogs/start          → startTime = NOW(), endTime = null
-PATCH /tasks/[id]/timelogs/[logId]/stop  → endTime = NOW(), durationHours 자동 계산
+status → PROGRESS (이전 상태가 PROGRESS가 아니었던 경우) → TimeLog 생성 (startTime = NOW())
+status → PROGRESS 외 상태 (이전 상태가 PROGRESS였던 경우) → 활성 TimeLog 종료 (endTime = NOW(), durationHours 자동 계산)
 PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours 갱신
 ```
-- 진행 중 페이지 이탈 시 `beforeUnload` 경고, 새로고침 시 활성 타이머 자동 복원
+- 업무 등록 시 "시간카운터 사용" 체크박스(기본 true)로 업무별 자동 카운트 여부 결정
+- `timeCounterEnabled`가 false인 업무는 상태가 바뀌어도 타임로그가 생성/종료되지 않음
 
 ### 인증 흐름
 ```
@@ -305,8 +304,7 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 | GET/PATCH/DELETE | `/api/tasks/[id]` | ALL/PLANNER+/ADMIN | 업무 상세/수정/삭제 |
 | PATCH | `/api/tasks/[id]/status` | ALL | 상태 변경 + 알림 트리거 |
 | GET | `/api/tasks/[id]/history` | ALL | 업무 히스토리 |
-| GET/POST | `/api/tasks/[id]/timelogs`, `/start` | ALL | 타임로그 조회/타이머 시작 |
-| PATCH | `/api/tasks/[id]/timelogs/[logId]/stop` | ALL | 타이머 종료 |
+| GET | `/api/tasks/[id]/timelogs` | ALL | 타임로그 조회 (자동 시작/종료는 status route에서 처리) |
 | PATCH | `/api/tasks/[id]/timelogs/[logId]/adjust` | ALL | 공수 보정 |
 | GET/POST | `/api/projects` | ALL/PLANNER+ | 프로젝트 목록/생성 |
 | GET/PATCH/DELETE | `/api/projects/[id]` | ALL/PLANNER+/ADMIN | 프로젝트 상세/수정/삭제 |

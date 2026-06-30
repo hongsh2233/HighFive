@@ -50,6 +50,7 @@ model Task {
   projectId     Int?
   labels        String?   // 콤마 구분 라벨 코드 ex) "URGENT,WEEKEND"
   isGroup       Boolean  @default(false) // 그룹 업무 여부 (하위 업무를 나중에 추가할 수 있는 부모 업무)
+  timeCounterEnabled Boolean @default(true) // 상태 변경에 따른 자동 시간 카운트 사용 여부
   parentTaskId  Int?      // 그룹 업무의 하위 업무인 경우 부모 업무 id
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

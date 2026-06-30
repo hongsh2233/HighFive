@@ -78,9 +78,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, workerId, plannerId, targetDate, projectId, labels, subTasks, isGroup, parentTaskId } = body;
+    const { title, workerId, plannerId, targetDate, projectId, labels, subTasks, isGroup, parentTaskId, timeCounterEnabled } = body;
     const notes = sanitize(body.notes || '');
     const labelsStr: string | null = Array.isArray(labels) && labels.length > 0 ? labels.join(',') : null;
+    const timeCounterEnabledReq = timeCounterEnabled !== false;
 
     if (!title || !workerId || !plannerId) {
       return errorResponse('필수 항목이 누락되었습니다.', 400, 'VALID_400');
@@ -108,6 +109,7 @@ export async function POST(req: NextRequest) {
           status: 'ASSIGNED',
           projectId: projectId ? parseInt(projectId) : null,
           parentTaskId: parent.id,
+          timeCounterEnabled: timeCounterEnabledReq,
         },
         include: {
           planner: { select: { id: true, name: true, email: true } },
@@ -135,6 +137,7 @@ export async function POST(req: NextRequest) {
         isGroup: isGroupReq,
         status: 'ASSIGNED',
         projectId: projectId ? parseInt(projectId) : null,
+        timeCounterEnabled: timeCounterEnabledReq,
       },
       include: {
         planner: { select: { id: true, name: true, email: true } },
@@ -160,6 +163,7 @@ export async function POST(req: NextRequest) {
             projectId: projectId ? parseInt(projectId) : null,
             labels: labelsStr,
             parentTaskId: task.id,
+            timeCounterEnabled: timeCounterEnabledReq,
           },
         });
         await addHistory(subTask.id, creatorId, 'CREATED', `그룹 업무 "${task.title}"의 하위 업무로 생성`);

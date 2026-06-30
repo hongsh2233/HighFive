@@ -69,6 +69,7 @@ function TaskCreateForm() {
   const [createdDate] = useState(new Date().toLocaleDateString('ko-KR'));
   const [labels, setLabels] = useState<string[]>([]);
   const [isGroup, setIsGroup] = useState(false);
+  const [timeCounterEnabled, setTimeCounterEnabled] = useState(true);
   const [subTasks, setSubTasks] = useState<SubTaskForm[]>([{ title: '', workerId: '', targetDate: '' }]);
 
   const toggleLabel = (code: string) => {
@@ -170,6 +171,7 @@ function TaskCreateForm() {
         labels,
         parentTaskId: parentTask ? parentTask.id : undefined,
         isGroup: !parentTask && isGroup,
+        timeCounterEnabled,
         subTasks: (!parentTask && isGroup) ? validSubTasks.map(s => ({
           title: s.title.trim(),
           workerId: parseInt(s.workerId),
@@ -278,6 +280,18 @@ function TaskCreateForm() {
                   </label>
                 ))}
               </div>
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <label className={styles.groupCheckLabel}>
+                <input
+                  type="checkbox"
+                  checked={timeCounterEnabled}
+                  onChange={e => setTimeCounterEnabled(e.target.checked)}
+                  className={styles.labelCheckbox}
+                />
+                시간카운터 사용 (상태 변경에 따라 작업 시간을 자동으로 계산합니다)
+              </label>
             </div>
 
             {!parentTask && (

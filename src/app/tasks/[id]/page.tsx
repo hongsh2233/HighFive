@@ -2,10 +2,8 @@
 
 import { useEffect, useState, use } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useTimer } from '@/hooks/useTimer';
 import apiClient from '@/lib/api-client';
 import { Task, TimeLog } from '@/types';
-import TaskTimerButton from '@/components/task/TaskTimerButton';
 import styles from './detail.module.css';
 import { actionLabel } from '@/lib/task-history';
 
@@ -39,7 +37,6 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [timeLogs, setTimeLogs] = useState<TimeLog[]>([]);
   const [totalHours, setTotalHours] = useState(0);
   const [histories, setHistories] = useState<any[]>([]);
-  useTimer(parseInt(id));
 
   useEffect(() => {
     const fetchTask = async () => {
@@ -69,18 +66,6 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       fetchTask();
     }
   }, [id, authLoading]);
-
-  const handleTimerUpdated = async (_log: TimeLog) => {
-    try {
-      const response = await apiClient.get<{ data: { logs: TimeLog[]; totalHours: number } }>(
-        `/tasks/${id}/timelogs`
-      );
-      setTimeLogs(response.data.data.logs);
-      setTotalHours(response.data.data.totalHours);
-    } catch (err) {
-      console.error('Failed to refresh timelogs:', err);
-    }
-  };
 
   const handleSave = async () => {
     if (!task) return;
@@ -239,8 +224,12 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       <div className={styles.card}>
         <div className={styles.cardHeader}>
           <h2 className={`${styles.cardTitle} ${styles.noMargin}`}>타임로그</h2>
-          <TaskTimerButton taskId={parseInt(id)} onTimerUpdated={handleTimerUpdated} />
         </div>
+        <p className={styles.emptyLogs} style={{ marginTop: '-8px' }}>
+          {task.timeCounterEnabled
+            ? '상태가 "진행중"으로 바뀌면 자동으로 시간이 누적되고, 다른 상태로 바뀌면 자동 종료됩니다.'
+            : '이 업무는 시간카운터가 꺼져 있어 자동으로 시간이 계산되지 않습니다.'}
+        </p>
 
         <div className={styles.totalTimeBox}>
           <span className={styles.totalTimeLabel}>총 소요 시간</span>

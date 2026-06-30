@@ -48,6 +48,37 @@ export async function PATCH(
       },
     });
 
+    // 시간카운터 사용 업무: 상태가 PROGRESS로 들어오면 자동 시작, PROGRESS에서 벗어나면 자동 종료
+    if (task.timeCounterEnabled) {
+      if (status === 'PROGRESS' && task.status !== 'PROGRESS') {
+        const activeLog = await prisma.timeLog.findFirst({
+          where: { taskId, endTime: null },
+        });
+        if (!activeLog) {
+          await prisma.timeLog.create({
+            data: { taskId, workerId: task.workerId, startTime: new Date() },
+          });
+        }
+      } else if (task.status === 'PROGRESS' && status !== 'PROGRESS') {
+        const activeLog = await prisma.timeLog.findFirst({
+          where: { taskId, endTime: null },
+        });
+        if (activeLog) {
+          const endTime = new Date();
+          const durationHours = (endTime.getTime() - activeLog.startTime.getTime()) / (1000 * 60 * 60);
+          const rounded = Math.round(durationHours * 100) / 100;
+          await prisma.timeLog.update({
+            where: { id: activeLog.id },
+            data: {
+              endTime,
+              durationHours: rounded,
+              finalHours: rounded + (activeLog.adjustedHours || 0),
+            },
+          });
+        }
+      }
+    }
+
     // Webhook 발송 (비동기)
     notifyStatusChange({
       taskId: updatedTask.id,
