@@ -1,11 +1,19 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import { Task, TimeLog } from '@/types';
 import styles from './detail.module.css';
 import { actionLabel } from '@/lib/task-history';
+
+interface Worker {
+  id: number;
+  name: string;
+  email: string;
+  role?: string;
+}
 
 const statusColors: { [key: string]: { bg: string; text: string; border: string } } = {
   ASSIGNED: { bg: 'transparent', text: '#1D4ED8', border: '#93C5FD' },
@@ -25,7 +33,8 @@ const statusLabels: { [key: string]: string } = {
 
 export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { isLoading: authLoading } = useAuth();
+  const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,34 +47,98 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [totalHours, setTotalHours] = useState(0);
   const [histories, setHistories] = useState<any[]>([]);
 
+  const [infoEditing, setInfoEditing] = useState(false);
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [infoForm, setInfoForm] = useState({ title: '', workerId: '', targetDate: '' });
+  const [infoSaving, setInfoSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [infoError, setInfoError] = useState<string | null>(null);
+
+  const userRole = (user as any)?.role;
+  const canEdit = userRole === 'ADMIN' || userRole === 'PLANNER';
+  const canDelete = userRole === 'ADMIN';
+
+  const fetchTask = async () => {
+    try {
+      const response = await apiClient.get<{ data: Task }>(`/tasks/${id}`);
+      const t = response.data.data;
+      setTask(t);
+      setFormData({ notes: t.notes || '' });
+      setExternalLink(t.externalLink || '');
+      setLinkInput(t.externalLink || '');
+      setInfoForm({
+        title: t.title,
+        workerId: t.workerId ? String(t.workerId) : '',
+        targetDate: t.targetDate ? new Date(t.targetDate).toISOString().slice(0, 10) : '',
+      });
+
+      const logsResponse = await apiClient.get<{ data: { logs: TimeLog[]; totalHours: number } }>(
+        `/tasks/${id}/timelogs`
+      );
+      setTimeLogs(logsResponse.data.data.logs);
+      setTotalHours(logsResponse.data.data.totalHours);
+
+      const historyRes = await apiClient.get<{ data: any[] }>(`/tasks/${id}/history`);
+      setHistories(historyRes.data.data);
+    } catch (err: any) {
+      setError(err.message || '업무 조회 실패');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchTask = async () => {
-      try {
-        const response = await apiClient.get<{ data: Task }>(`/tasks/${id}`);
-        setTask(response.data.data);
-        setFormData({ notes: response.data.data.notes || '' });
-        setExternalLink(response.data.data.externalLink || '');
-        setLinkInput(response.data.data.externalLink || '');
-
-        const logsResponse = await apiClient.get<{ data: { logs: TimeLog[]; totalHours: number } }>(
-          `/tasks/${id}/timelogs`
-        );
-        setTimeLogs(logsResponse.data.data.logs);
-        setTotalHours(logsResponse.data.data.totalHours);
-
-        const historyRes = await apiClient.get<{ data: any[] }>(`/tasks/${id}/history`);
-        setHistories(historyRes.data.data);
-      } catch (err: any) {
-        setError(err.message || '업무 조회 실패');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (!authLoading) {
       fetchTask();
     }
   }, [id, authLoading]);
+
+  useEffect(() => {
+    if (!canEdit) return;
+    const fetchWorkers = async () => {
+      try {
+        const res = await apiClient.get<{ data: Worker[] }>('/users?role=WORKER');
+        setWorkers(res.data.data || []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchWorkers();
+  }, [canEdit]);
+
+  const handleInfoSave = async () => {
+    if (!task) return;
+    setInfoError(null);
+    if (!infoForm.title.trim()) { setInfoError('업무 제목을 입력해주세요.'); return; }
+    if (!infoForm.workerId) { setInfoError('담당자를 선택해주세요.'); return; }
+    setInfoSaving(true);
+    try {
+      await apiClient.patch(`/tasks/${task.id}`, {
+        title: infoForm.title.trim(),
+        workerId: parseInt(infoForm.workerId),
+        targetDate: infoForm.targetDate || null,
+      });
+      setInfoEditing(false);
+      await fetchTask();
+    } catch (err: any) {
+      setInfoError(err.response?.data?.message || '업무 수정 실패');
+    } finally {
+      setInfoSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!task) return;
+    if (!confirm('이 업무를 삭제하시겠습니까? 삭제 후에는 되돌릴 수 없습니다.')) return;
+    setDeleting(true);
+    try {
+      await apiClient.delete(`/tasks/${task.id}`);
+      router.push('/tasks');
+    } catch (err: any) {
+      setInfoError(err.response?.data?.message || '업무 삭제 실패');
+      setDeleting(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!task) return;
@@ -126,30 +199,111 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       </div>
 
       {error && <div className={styles.errorBox}>{error}</div>}
+      {infoError && <div className={styles.errorBox}>{infoError}</div>}
 
       {/* 기본 정보 */}
       <div className={styles.card}>
-        <h2 className={styles.cardTitle}>기본 정보</h2>
-        <div className={styles.grid}>
-          <div>
-            <p className={styles.fieldLabel}>상태</p>
-            <div style={badgeStyle}>{statusLabels[task.status]}</div>
-          </div>
-          <div>
-            <p className={styles.fieldLabel}>담당자</p>
-            <p className={styles.fieldValue}>{task.worker?.name || '-'}</p>
-          </div>
-          <div>
-            <p className={styles.fieldLabel}>보고자</p>
-            <p className={styles.fieldValue}>{task.planner?.name || '-'}</p>
-          </div>
-          <div>
-            <p className={styles.fieldLabel}>목표일</p>
-            <p className={styles.fieldValue}>
-              {task.targetDate ? new Date(task.targetDate).toLocaleDateString('ko-KR') : '-'}
-            </p>
-          </div>
+        <div className={styles.cardHeader}>
+          <h2 className={`${styles.cardTitle} ${styles.noMargin}`}>기본 정보</h2>
+          {canEdit && !infoEditing && (
+            <div>
+              <button onClick={() => { setInfoEditing(true); setInfoError(null); }} className={styles.btnSecondary}>
+                수정
+              </button>
+              {canDelete && (
+                <button onClick={handleDelete} disabled={deleting} className={styles.btnDanger}>
+                  {deleting ? '삭제 중...' : '삭제'}
+                </button>
+              )}
+            </div>
+          )}
         </div>
+
+        {infoEditing ? (
+          <div>
+            <div className={styles.grid}>
+              <div>
+                <p className={styles.fieldLabel}>제목</p>
+                <input
+                  type="text"
+                  value={infoForm.title}
+                  onChange={(e) => setInfoForm({ ...infoForm, title: e.target.value })}
+                  className={styles.input}
+                  disabled={infoSaving}
+                />
+              </div>
+              <div>
+                <p className={styles.fieldLabel}>담당자</p>
+                <select
+                  value={infoForm.workerId}
+                  onChange={(e) => setInfoForm({ ...infoForm, workerId: e.target.value })}
+                  className={styles.input}
+                  disabled={infoSaving}
+                >
+                  <option value="">담당자를 선택해주세요.</option>
+                  {workers.map((w) => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <p className={styles.fieldLabel}>보고자</p>
+                <p className={styles.fieldValue}>{task.planner?.name || '-'}</p>
+              </div>
+              <div>
+                <p className={styles.fieldLabel}>목표일</p>
+                <input
+                  type="date"
+                  value={infoForm.targetDate}
+                  onChange={(e) => setInfoForm({ ...infoForm, targetDate: e.target.value })}
+                  className={styles.input}
+                  disabled={infoSaving}
+                />
+              </div>
+            </div>
+            <div className={styles.editActions}>
+              <button onClick={handleInfoSave} className={styles.btn} disabled={infoSaving}>
+                {infoSaving ? '저장 중...' : '저장'}
+              </button>
+              <button
+                onClick={() => {
+                  setInfoEditing(false);
+                  setInfoError(null);
+                  setInfoForm({
+                    title: task.title,
+                    workerId: task.workerId ? String(task.workerId) : '',
+                    targetDate: task.targetDate ? new Date(task.targetDate).toISOString().slice(0, 10) : '',
+                  });
+                }}
+                className={styles.btnSecondary}
+                disabled={infoSaving}
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.grid}>
+            <div>
+              <p className={styles.fieldLabel}>상태</p>
+              <div style={badgeStyle}>{statusLabels[task.status]}</div>
+            </div>
+            <div>
+              <p className={styles.fieldLabel}>담당자</p>
+              <p className={styles.fieldValue}>{task.worker?.name || '-'}</p>
+            </div>
+            <div>
+              <p className={styles.fieldLabel}>보고자</p>
+              <p className={styles.fieldValue}>{task.planner?.name || '-'}</p>
+            </div>
+            <div>
+              <p className={styles.fieldLabel}>목표일</p>
+              <p className={styles.fieldValue}>
+                {task.targetDate ? new Date(task.targetDate).toLocaleDateString('ko-KR') : '-'}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* GitHub 연결 */}

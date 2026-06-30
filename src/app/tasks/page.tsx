@@ -54,8 +54,9 @@ const calculateWorkHours = (timeLogs: any[]): string => {
 };
 
 export default function TaskListPage() {
-  const { isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { tasks, loading, error, updateStatus, updateTask } = useTasks({ limit: 1000 });
+  const canEditTitle = ['ADMIN', 'PLANNER'].includes((user as any)?.role ?? '');
 
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedWorker, setSelectedWorker] = useState('');
@@ -65,6 +66,7 @@ export default function TaskListPage() {
   const [titleDraft, setTitleDraft] = useState('');
 
   const startTitleEdit = (task: any) => {
+    if (!canEditTitle) return;
     setEditingTitleId(task.id);
     setTitleDraft(task.title);
   };

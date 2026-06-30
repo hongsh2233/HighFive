@@ -63,6 +63,15 @@ export async function PATCH(
     const body = await req.json();
     const { title, targetDate, notes, status, workerId: newWorkerId, externalLink } = body;
 
+    // 담당자/제목 변경 감지를 위해 수정 전 상태 조회
+    const prevTask = await prisma.task.findUnique({
+      where: { id: taskId },
+      include: { worker: { select: { name: true } } },
+    });
+    if (!prevTask) {
+      return errorResponse('업무를 찾을 수 없습니다.', 404, 'TASK_404');
+    }
+
     // RMS 번호 파싱 (title이 있으면)
     let updateData: any = {};
     if (title) {
@@ -82,11 +91,6 @@ export async function PATCH(
     }
     updateData.updatedAt = new Date();
 
-    // 담당자 변경 감지
-    const prevTask = await prisma.task.findUnique({
-      where: { id: taskId },
-      include: { worker: { select: { name: true } } },
-    });
     if (newWorkerId !== undefined) updateData.workerId = parseInt(newWorkerId);
 
     const task = await prisma.task.update({
@@ -99,11 +103,21 @@ export async function PATCH(
     });
 
     const editorId = parseInt((session!.user as any).id || '0');
-    if (newWorkerId !== undefined && prevTask && prevTask.workerId !== parseInt(newWorkerId)) {
+    if (newWorkerId !== undefined && prevTask.workerId !== parseInt(newWorkerId)) {
       await addHistory(taskId, editorId, 'WORKER_CHANGED',
         `${prevTask.worker?.name} → ${task.worker?.name}`);
       const taskUrl = `${process.env.NEXTAUTH_URL}/tasks/${taskId}`;
       notifyWorkerChange(taskId, task.title, task.workerId, task.worker?.name || '', task.plannerId, task.planner?.name || '', taskUrl).catch(() => {});
+    }
+    if (title && prevTask.title !== updateData.title) {
+      await addHistory(taskId, editorId, 'TITLE_CHANGED', `${prevTask.title} → ${task.title}`);
+    }
+    if (targetDate !== undefined) {
+      const prevDate = prevTask.targetDate ? prevTask.targetDate.toISOString().slice(0, 10) : null;
+      const newDate = task.targetDate ? task.targetDate.toISOString().slice(0, 10) : null;
+      if (prevDate !== newDate) {
+        await addHistory(taskId, editorId, 'TARGET_DATE_CHANGED', `${prevDate ?? '없음'} → ${newDate ?? '없음'}`);
+      }
     }
     if (notes !== undefined) {
       await addHistory(taskId, editorId, 'NOTE_UPDATED');

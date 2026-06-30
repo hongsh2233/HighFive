@@ -7,7 +7,9 @@ export type HistoryAction =
   | 'TIMER_START'
   | 'TIMER_STOP'
   | 'NOTE_UPDATED'
-  | 'TRANSFERRED';
+  | 'TRANSFERRED'
+  | 'TITLE_CHANGED'
+  | 'TARGET_DATE_CHANGED';
 
 export async function addHistory(
   taskId: number,
@@ -30,4 +32,6 @@ export const actionLabel: Record<HistoryAction, string> = {
   TIMER_STOP: '작업 종료',
   NOTE_UPDATED: '비고 수정',
   TRANSFERRED: '업무 이관',
+  TITLE_CHANGED: '제목 변경',
+  TARGET_DATE_CHANGED: '목표일 변경',
 };
