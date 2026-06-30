@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, workerId, plannerId, targetDate, projectId, labels, subTasks } = body;
+    const { title, workerId, plannerId, targetDate, projectId, labels, subTasks, isGroup, parentTaskId } = body;
     const notes = sanitize(body.notes || '');
     const labelsStr: string | null = Array.isArray(labels) && labels.length > 0 ? labels.join(',') : null;
 
@@ -88,7 +88,40 @@ export async function POST(req: NextRequest) {
 
     const { cleanTitle, rmsNo } = parseRmsNo(title);
     const creatorId = parseInt((session!.user as any).id || '0');
-    const isGroup = Array.isArray(subTasks) && subTasks.length > 0;
+
+    // 기존 그룹 업무에 하위 업무를 1건 추가하는 경우
+    if (parentTaskId) {
+      const parent = await prisma.task.findUnique({ where: { id: parseInt(parentTaskId) } });
+      if (!parent) {
+        return errorResponse('상위 그룹 업무를 찾을 수 없습니다.', 404, 'NOT_FOUND_404');
+      }
+
+      const subTask = await prisma.task.create({
+        data: {
+          title: cleanTitle,
+          rmsNo,
+          workerId: parseInt(workerId),
+          plannerId: parseInt(plannerId),
+          targetDate: targetDate ? new Date(targetDate) : null,
+          notes,
+          labels: labelsStr,
+          status: 'ASSIGNED',
+          projectId: projectId ? parseInt(projectId) : null,
+          parentTaskId: parent.id,
+        },
+        include: {
+          planner: { select: { id: true, name: true, email: true } },
+          worker: { select: { id: true, name: true, email: true } },
+          project: { select: { id: true, name: true } },
+        },
+      });
+
+      await addHistory(subTask.id, creatorId, 'CREATED', `그룹 업무 "${parent.title}"의 하위 업무로 추가`);
+
+      return successResponse(subTask, '하위 업무가 추가되었습니다.', 201);
+    }
+
+    const isGroupReq = isGroup === true;
 
     const task = await prisma.task.create({
       data: {
@@ -97,8 +130,9 @@ export async function POST(req: NextRequest) {
         workerId: parseInt(workerId),
         plannerId: parseInt(plannerId),
         targetDate: targetDate ? new Date(targetDate) : null,
-        notes: isGroup ? null : notes,
+        notes: isGroupReq ? null : notes,
         labels: labelsStr,
+        isGroup: isGroupReq,
         status: 'ASSIGNED',
         projectId: projectId ? parseInt(projectId) : null,
       },
@@ -111,7 +145,7 @@ export async function POST(req: NextRequest) {
 
     await addHistory(task.id, creatorId, 'CREATED', `담당자: ${task.worker?.name}`);
 
-    if (isGroup) {
+    if (isGroupReq && Array.isArray(subTasks) && subTasks.length > 0) {
       for (const sub of subTasks) {
         if (!sub?.title || !sub?.workerId) continue;
         const { cleanTitle: subTitle, rmsNo: subRmsNo } = parseRmsNo(sub.title);

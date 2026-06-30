@@ -150,6 +150,42 @@
   background: #EFF6FF;
 }
 
+.addSubBtnSmall {
+  padding: 2px 7px;
+  font-size: 11px;
+  border: 1px solid #6EE7B7;
+  border-radius: 4px;
+  background: transparent;
+  color: #065F46;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.addSubBtnSmall:hover {
+  background: #ECFDF5;
+}
+
+.titleCell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.groupToggleBtn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--color-gray-600);
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.childArrow {
+  color: var(--color-gray-400);
+  font-size: 13px;
+}
+
 .notesRow td {
   padding: 0 12px 8px 12px;
   background: #FAFAFA;

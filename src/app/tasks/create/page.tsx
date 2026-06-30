@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import dynamic from 'next/dynamic';
 import axios from 'axios';
@@ -42,9 +42,20 @@ const quillModules = {
 };
 
 export default function TaskCreatePage() {
+  return (
+    <Suspense fallback={<div className={styles.loading}>로딩 중...</div>}>
+      <TaskCreateForm />
+    </Suspense>
+  );
+}
+
+function TaskCreateForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const parentTaskIdParam = searchParams.get('parentTaskId');
   const { user, isLoading: authLoading } = useAuth();
 
+  const [parentTask, setParentTask] = useState<{ id: number; title: string } | null>(null);
   const [title, setTitle] = useState('');
   const [workerId, setWorkerId] = useState('');
   const [targetDate, setTargetDate] = useState('');
@@ -80,6 +91,21 @@ export default function TaskCreatePage() {
       fetchProjects();
     }
   }, [authLoading, user]);
+
+  useEffect(() => {
+    if (parentTaskIdParam) {
+      fetchParentTask(parentTaskIdParam);
+    }
+  }, [parentTaskIdParam]);
+
+  const fetchParentTask = async (id: string) => {
+    try {
+      const res = await axios.get(`/api/tasks/${id}`);
+      setParentTask({ id: res.data.data.id, title: res.data.data.title });
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     if (projectId) {
@@ -133,28 +159,25 @@ export default function TaskCreatePage() {
       if (isManager && !projectId) { setError('프로젝트를 선택해주세요.'); setLoading(false); return; }
 
       const validSubTasks = subTasks.filter(s => s.title.trim() && s.workerId);
-      if (isGroup && validSubTasks.length === 0) {
-        setError('하위 업무를 1개 이상 입력해주세요.');
-        setLoading(false);
-        return;
-      }
 
       await axios.post('/api/tasks', {
         title: title.trim(),
         workerId: parseInt(workerId),
         plannerId: user?.id,
         targetDate: targetDate ? new Date(targetDate) : null,
-        notes: isGroup ? '' : notes.trim(),
+        notes: (!parentTask && isGroup) ? '' : notes.trim(),
         projectId: projectId ? parseInt(projectId) : null,
         labels,
-        subTasks: isGroup ? validSubTasks.map(s => ({
+        parentTaskId: parentTask ? parentTask.id : undefined,
+        isGroup: !parentTask && isGroup,
+        subTasks: (!parentTask && isGroup) ? validSubTasks.map(s => ({
           title: s.title.trim(),
           workerId: parseInt(s.workerId),
           targetDate: s.targetDate || null,
         })) : undefined,
       });
 
-      setSuccess('업무가 등록되었습니다.');
+      setSuccess(parentTask ? '하위 업무가 추가되었습니다.' : '업무가 등록되었습니다.');
       setTimeout(() => router.push('/tasks'), 1000);
     } catch (err: any) {
       setError(err.response?.data?.message || '업무 등록 중 오류가 발생했습니다.');
@@ -176,7 +199,7 @@ export default function TaskCreatePage() {
   return (
     <div className={styles.page}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.title}>업무 등록</h1>
+        <h1 className={styles.title}>{parentTask ? '하위 업무 등록' : '업무 등록'}</h1>
       </div>
 
       {error && <div className={styles.errorBox}>{error}</div>}
@@ -191,6 +214,13 @@ export default function TaskCreatePage() {
               <label className={styles.label}>등록일자</label>
               <div className={styles.dateDisplay}>📅 {createdDate} (자동)</div>
             </div>
+
+            {parentTask && (
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>상위 그룹</label>
+                <div className={styles.dateDisplay}>📁 {parentTask.title}</div>
+              </div>
+            )}
 
             <div className={styles.fieldGroup}>
               <label className={styles.label}>프로젝트 {isManager && <span className={styles.required}>*</span>}</label>
@@ -250,24 +280,27 @@ export default function TaskCreatePage() {
               </div>
             </div>
 
-            <div className={styles.fieldGroup}>
-              <label className={styles.groupCheckLabel}>
-                <input
-                  type="checkbox"
-                  checked={isGroup}
-                  onChange={e => setIsGroup(e.target.checked)}
-                  className={styles.labelCheckbox}
-                />
-                그룹 업무로 등록 (하위 업무 여러 개 등록)
-              </label>
-            </div>
+            {!parentTask && (
+              <div className={styles.fieldGroup}>
+                <label className={styles.groupCheckLabel}>
+                  <input
+                    type="checkbox"
+                    checked={isGroup}
+                    onChange={e => setIsGroup(e.target.checked)}
+                    className={styles.labelCheckbox}
+                  />
+                  그룹 업무로 등록 (하위 업무는 지금 등록하거나, 나중에 그룹 업무 상세에서 추가할 수 있습니다)
+                </label>
+              </div>
+            )}
           </div>
         </div>
 
         <div className={styles.rightPane}>
-          {isGroup ? (
+          {!parentTask && isGroup ? (
             <div className={styles.card}>
               <h2 className={styles.cardTitle}>하위 업무</h2>
+              <p className={styles.hint}>지금 입력하지 않아도 그룹 업무 등록 후 목록에서 하위 업무를 추가할 수 있습니다.</p>
               {subTasks.map((sub, idx) => (
                 <div key={idx} className={styles.subTaskRow}>
                   <input

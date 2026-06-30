@@ -67,6 +67,7 @@ User (M) ──< ProjectMember >── (M) Project (1) ──< Task
 | externalLink | String? | 연결된 GitHub PR 등 외부 링크 |
 | projectId | Int? | 소속 프로젝트 |
 | labels | String? | 콤마 구분 라벨 코드 (`URGENT`/`WEEKEND`/`EMERGENCY`) |
+| isGroup | Boolean | 그룹 업무 여부 (하위 업무를 나중에 추가할 수 있는 부모 업무, 기본 false) |
 | parentTaskId | Int? | 그룹 업무의 하위 업무인 경우 부모 Task id (자기참조 관계 `subTasks`) |
 
 ### TimeLog
@@ -243,9 +244,12 @@ high5/
 패턴: /\[([A-Z]+-\d+)\]/
 ```
 
-### 그룹 업무 / 하위 업무 (`/tasks/create`)
-- 등록 폼에서 "그룹 업무로 등록" 체크 시 비고(Quill 에디터) 입력란이 사라지고 하위 업무(제목/담당자/목표일) 행을 여러 개 추가할 수 있다.
-- `POST /api/tasks`에 `subTasks: [{ title, workerId, targetDate }]` 배열을 함께 보내면 부모 Task 생성 후 각 항목을 `parentTaskId`로 연결된 자식 Task로 생성한다. 라벨은 부모/자식 모두 동일하게 적용된다.
+### 그룹 업무 / 하위 업무
+- **등록 (`/tasks/create`)**: "그룹 업무로 등록" 체크 시 비고(Quill 에디터) 입력란이 사라지고 하위 업무(제목/담당자/목표일) 행을 여러 개 추가할 수 있다. 하위 업무를 0건만 등록해도(체크만 하고 비워둠) 그룹으로 생성된다(`Task.isGroup = true`).
+  - `POST /api/tasks`에 `subTasks: [{ title, workerId, targetDate }]` 배열을 함께 보내면 부모 Task 생성 후 각 항목을 `parentTaskId`로 연결된 자식 Task로 생성한다. 라벨은 부모/자식 모두 동일하게 적용된다.
+- **이후 하위 업무 추가**: `/tasks/create?parentTaskId={groupId}` 형태로 접속하면 등록 폼이 "하위 업무 등록" 모드로 전환된다. 그룹/비고 UI 대신 상단에 "상위 그룹: {부모 업무명}" 고정 표시가 나타나고, 단일 업무 등록 시 `POST /api/tasks`에 `parentTaskId`만 함께 전달해 해당 그룹의 자식 Task 1건으로 생성한다.
+  - `POST /api/tasks`는 요청 바디에 `parentTaskId`가 있으면 위 단일 자식 생성 경로로, 없으면 기존 그룹+`subTasks` 일괄 생성 경로로 분기한다.
+- **목록 (`/tasks`)**: 부모가 없는(최상위) 업무만 1차 행으로 표시되고, `isGroup === true`이거나 하위 업무가 있는 행은 구글시트처럼 ▶/▼ 토글로 하위 업무를 펼치고 접을 수 있다. `isGroup === true`인 행에는 "+ 하위 업무" 버튼이 노출되며 `/tasks/create?parentTaskId=...`로 이동한다.
 
 ### 업무 라벨 (`긴급`/`주말대응`/`비상`)
 - `src/lib/constants.ts`의 `TASK_LABEL_LIST`/`TASK_LABEL_TEXT`/`TASK_LABEL_COLOR`로 정의.

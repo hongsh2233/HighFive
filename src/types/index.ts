@@ -33,6 +33,7 @@ export interface Task {
   notes: string | null;
   externalLink: string | null;
   labels: string | null;
+  isGroup: boolean;
   parentTaskId: number | null;
   createdAt: string;
   updatedAt: string;
@@ -48,6 +49,7 @@ export interface Task {
   };
   timeLogs?: TimeLog[];
   subTasks?: Task[];
+  _count?: { subTasks: number };
 }
 
 // TimeLog types

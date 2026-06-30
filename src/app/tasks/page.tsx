@@ -71,9 +71,18 @@ export default function TaskListPage() {
   const [selectedWorker, setSelectedWorker] = useState('');
   const [draggedTask, setDraggedTask] = useState<any>(null);
   const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
+  const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
 
   const toggleNotes = (id: number) => {
     setExpandedNotes(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleGroup = (id: number) => {
+    setExpandedGroups(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
@@ -153,6 +162,123 @@ export default function TaskListPage() {
     filteredTasks = filteredTasks.filter((task) => task.workerId === parseInt(selectedWorker));
   }
 
+  // 그룹/하위 업무 트리 구성: 최상위(부모 없는) 업무만 1차 행으로 노출, 하위 업무는 펼쳤을 때만 표시
+  const childrenMap = new Map<number, any[]>();
+  filteredTasks.forEach((task) => {
+    if (task.parentTaskId) {
+      const list = childrenMap.get(task.parentTaskId) || [];
+      list.push(task);
+      childrenMap.set(task.parentTaskId, list);
+    }
+  });
+  const topLevelTasks = filteredTasks.filter((task) => !task.parentTaskId);
+
+  const renderTaskRow = (
+    task: any,
+    opts: { isChild: boolean; isGroupRow: boolean; isGroupExpanded: boolean }
+  ): React.ReactElement[] => {
+    const { isChild, isGroupRow, isGroupExpanded } = opts;
+    const hasNotes = !!task.notes && task.notes.trim() !== '' && task.notes.trim() !== '<p><br></p>';
+    const isExpanded = expandedNotes.has(task.id);
+    const rows: React.ReactElement[] = [
+      <tr
+        key={task.id}
+        draggable
+        onDragStart={(e) => handleDragStart(e, task)}
+        onDragOver={handleDragOver}
+        onDrop={(e) => handleDrop(e, task.status)}
+        style={{
+          backgroundColor: task.status === 'DONE' ? '#F9FAFB' : draggedTask?.id === task.id ? '#F0F9FF' : 'white',
+          cursor: 'grab',
+          opacity: draggedTask?.id === task.id ? 0.6 : 1,
+          transition: 'background-color 0.2s',
+        }}
+      >
+        <td className={styles.tdId}>#{task.id}</td>
+        <td className={styles.td}>
+          <div className={styles.titleCell} style={isChild ? { paddingLeft: '24px' } : undefined}>
+            {isGroupRow && (
+              <button
+                type="button"
+                className={styles.groupToggleBtn}
+                onClick={(e) => { e.stopPropagation(); toggleGroup(task.id); }}
+              >
+                {isGroupExpanded ? '▼' : '▶'}
+              </button>
+            )}
+            {isChild && <span className={styles.childArrow}>↳</span>}
+            <span>{task.title}</span>
+          </div>
+        </td>
+        <td className={styles.td}>{task.worker?.name || '-'}</td>
+        <td className={styles.td}>
+          <span style={badgeStyle(task.status)}>
+            {statusLabels[task.status]}
+          </span>
+        </td>
+        <td className={styles.td}>
+          {task.createdAt
+            ? new Date(task.createdAt).toLocaleDateString('ko-KR')
+            : '-'}
+        </td>
+        <td className={styles.td}>
+          {task.targetDate
+            ? new Date(task.targetDate).toLocaleDateString('ko-KR')
+            : '-'}
+        </td>
+        <td className={styles.tdNotes}>
+          <div className={styles.notesBtns}>
+            {hasNotes && (
+              <button
+                className={`${styles.notesToggleBtn} ${isExpanded ? styles.notesToggleBtnActive : ''}`}
+                onClick={(e) => { e.stopPropagation(); toggleNotes(task.id); }}
+              >
+                {isExpanded ? '접기' : '간략'}
+              </button>
+            )}
+            <Link href={`/tasks/${task.id}`} className={styles.detailBtn}>
+              상세
+            </Link>
+            {task.isGroup && (
+              <Link href={`/tasks/create?parentTaskId=${task.id}`} className={styles.addSubBtnSmall}>
+                + 하위 업무
+              </Link>
+            )}
+          </div>
+        </td>
+        <td className={styles.tdHours}>
+          {calculateWorkHours(task.timeLogs || [])}
+        </td>
+        <td className={styles.td}>
+          <select
+            value={task.status}
+            onChange={(e) => updateStatus(task.id, e.target.value)}
+            className={styles.statusSelect}
+          >
+            <option value="ASSIGNED">배정됨</option>
+            <option value="PROGRESS">진행중</option>
+            <option value="REVIEW">검수</option>
+            <option value="QA">QA</option>
+            <option value="DONE">완료</option>
+          </select>
+        </td>
+      </tr>,
+    ];
+    if (isExpanded && hasNotes) {
+      rows.push(
+        <tr key={`notes-${task.id}`} className={styles.notesRow}>
+          <td colSpan={9} className={styles.notesCell}>
+            <div
+              className={styles.notesContent}
+              dangerouslySetInnerHTML={{ __html: task.notes ?? '' }}
+            />
+          </td>
+        </tr>
+      );
+    }
+    return rows;
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.pageHeader}>
@@ -226,88 +352,21 @@ export default function TaskListPage() {
                 </td>
               </tr>
             ) : (
-              filteredTasks.flatMap((task) => {
-                const hasNotes = !!task.notes && task.notes.trim() !== '' && task.notes.trim() !== '<p><br></p>';
-                const isExpanded = expandedNotes.has(task.id);
-                return [
-                <tr
-                  key={task.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, task)}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, task.status)}
-                  style={{
-                    backgroundColor: task.status === 'DONE' ? '#F9FAFB' : draggedTask?.id === task.id ? '#F0F9FF' : 'white',
-                    cursor: 'grab',
-                    opacity: draggedTask?.id === task.id ? 0.6 : 1,
-                    transition: 'background-color 0.2s',
-                  }}
-                >
-                  <td className={styles.tdId}>#{task.id}</td>
-                  <td className={styles.td}>
-                    <div className={styles.titleCell}>
-                      <span>{task.title}</span>
-                    </div>
-                  </td>
-                  <td className={styles.td}>{task.worker?.name || '-'}</td>
-                  <td className={styles.td}>
-                    <span style={badgeStyle(task.status)}>
-                      {statusLabels[task.status]}
-                    </span>
-                  </td>
-                  <td className={styles.td}>
-                    {task.createdAt
-                      ? new Date(task.createdAt).toLocaleDateString('ko-KR')
-                      : '-'}
-                  </td>
-                  <td className={styles.td}>
-                    {task.targetDate
-                      ? new Date(task.targetDate).toLocaleDateString('ko-KR')
-                      : '-'}
-                  </td>
-                  <td className={styles.tdNotes}>
-                    <div className={styles.notesBtns}>
-                      {hasNotes && (
-                        <button
-                          className={`${styles.notesToggleBtn} ${isExpanded ? styles.notesToggleBtnActive : ''}`}
-                          onClick={(e) => { e.stopPropagation(); toggleNotes(task.id); }}
-                        >
-                          {isExpanded ? '접기' : '간략'}
-                        </button>
-                      )}
-                      <Link href={`/tasks/${task.id}`} className={styles.detailBtn}>
-                        상세
-                      </Link>
-                    </div>
-                  </td>
-                  <td className={styles.tdHours}>
-                    {calculateWorkHours(task.timeLogs || [])}
-                  </td>
-                  <td className={styles.td}>
-                    <select
-                      value={task.status}
-                      onChange={(e) => updateStatus(task.id, e.target.value)}
-                      className={styles.statusSelect}
-                    >
-                      <option value="ASSIGNED">배정됨</option>
-                      <option value="PROGRESS">진행중</option>
-                      <option value="REVIEW">검수</option>
-                      <option value="QA">QA</option>
-                      <option value="DONE">완료</option>
-                    </select>
-                  </td>
-                </tr>,
-                isExpanded && hasNotes && (
-                  <tr key={`notes-${task.id}`} className={styles.notesRow}>
-                    <td colSpan={9} className={styles.notesCell}>
-                      <div
-                        className={styles.notesContent}
-                        dangerouslySetInnerHTML={{ __html: task.notes ?? '' }}
-                      />
-                    </td>
-                  </tr>
-                ),
-              ];
+              topLevelTasks.flatMap((task) => {
+                const children = childrenMap.get(task.id) || [];
+                const isGroupRow = task.isGroup || children.length > 0;
+                const isGroupExpanded = expandedGroups.has(task.id);
+                const rows = renderTaskRow(task, {
+                  isChild: false,
+                  isGroupRow,
+                  isGroupExpanded,
+                });
+                if (isGroupRow && isGroupExpanded) {
+                  children.forEach((child) => {
+                    rows.push(...renderTaskRow(child, { isChild: true, isGroupRow: false, isGroupExpanded: false }));
+                  });
+                }
+                return rows;
               })
             )}
           </tbody>
