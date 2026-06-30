@@ -7,6 +7,7 @@ interface KanbanColumnProps {
   title: string;
   status: string;
   tasks: Task[];
+  parentMap: Map<number, Task>;
   onDragOver: (e: React.DragEvent) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, status: string) => void;
@@ -17,6 +18,7 @@ export default function KanbanColumn({
   title,
   status,
   tasks,
+  parentMap,
   onDragOver,
   onDragLeave,
   onDrop,
@@ -38,31 +40,34 @@ export default function KanbanColumn({
         {tasks.length === 0 ? (
           <div className={styles.empty}>업무가 없습니다</div>
         ) : (
-          tasks.map((task) => (
-            <div
-              key={task.id}
-              className={`${styles.card} ${task.isGroup ? styles.cardGroup : ''} ${task.parentTaskId ? styles.cardChild : ''}`}
-              data-status={status}
-              draggable
-              onDragStart={(e) => {
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('taskId', task.id.toString());
-              }}
-              onClick={() => onTaskClick(task)}
-            >
-              <div className={styles.cardTitle}>
-                {task.isGroup && <span className={styles.groupBadge}>그룹</span>}
-                {task.parentTaskId && <span className={styles.childArrow}>↳</span>}
-                {task.title}
-              </div>
-              <div className={styles.cardMeta}>담당: {task.worker?.name || '-'}</div>
-              {task.targetDate && (
-                <div className={styles.cardMetaDate}>
-                  {new Date(task.targetDate).toLocaleDateString('ko-KR')}
+          tasks.map((task) => {
+            const parentTask = task.parentTaskId ? parentMap.get(task.parentTaskId) : undefined;
+            return (
+              <div
+                key={task.id}
+                className={`${styles.card} ${task.isGroup ? styles.cardGroup : ''} ${task.parentTaskId ? styles.cardChild : ''}`}
+                data-status={status}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.effectAllowed = 'move';
+                  e.dataTransfer.setData('taskId', task.id.toString());
+                }}
+                onClick={() => onTaskClick(task)}
+              >
+                <div className={styles.cardTitle}>
+                  {task.isGroup && <span className={styles.groupBadge}>그룹</span>}
+                  {parentTask && <span className={styles.parentPrefix}>[{parentTask.title}]</span>}
+                  <span className={styles.cardTitleText}>{task.title}</span>
                 </div>
-              )}
-            </div>
-          ))
+                <div className={styles.cardMeta}>담당: {task.worker?.name || '-'}</div>
+                {task.targetDate && (
+                  <div className={styles.cardMetaDate}>
+                    {new Date(task.targetDate).toLocaleDateString('ko-KR')}
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
     </div>

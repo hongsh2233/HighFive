@@ -149,11 +149,8 @@
 }
 
 .taskParentLabel {
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--color-gray-500);
   white-space: nowrap;
-}
-
-.taskParentArrow {
-  color: var(--color-gray-400);
 }

@@ -93,10 +93,16 @@
   background-color: var(--bg-subtle);
 }
 
-.childArrow {
+.parentPrefix {
   flex-shrink: 0;
-  color: var(--color-gray-400);
-  font-size: 13px;
+  color: var(--color-gray-500);
+  font-weight: 500;
+}
+
+.cardTitleText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cardMeta {

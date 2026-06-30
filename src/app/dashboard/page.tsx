@@ -64,11 +64,7 @@ export default function DashboardPage() {
     return (
       <span className={styles.taskGroupInfo}>
         {t.isGroup && <span className={styles.taskGroupBadge}>그룹</span>}
-        {parent && (
-          <span className={styles.taskParentLabel}>
-            📁 {parent.title} <span className={styles.taskParentArrow}>↳</span>
-          </span>
-        )}
+        {parent && <span className={styles.taskParentLabel}>[{parent.title}]</span>}
       </span>
     );
   };
