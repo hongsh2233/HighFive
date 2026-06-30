@@ -112,3 +112,8 @@
   - 대시보드(`/dashboard`): "나의 업무"/"최근 활동" 목록에서 `isGroup` 업무를 제외(`!t.isGroup` 필터 추가)하고, `renderTaskGroup` 헬퍼가 다시 `parentMap`을 통해 부모 그룹명을 조회해 `[그룹명]` 접두사로 표시하도록 변경. `dashboard.module.css`의 더 이상 쓰이지 않는 `taskGroupBadge` 클래스를 `taskParentLabel`로 교체.
   - 칸반 보드(`KanbanBoard.tsx`/`KanbanColumn.tsx`): `groupedTasks` 계산 시 `isGroup` 업무를 컬럼에서 제외하고, `parentMap`을 다시 구성해 `KanbanColumn`에 전달. 하위 업무 카드에 `[그룹명]` 접두사(`parentPrefix`)를 다시 표시. 그룹 카드 자체가 더 이상 보드에 노출되지 않으므로 `cardGroup`/`groupBadge` 관련 코드와 CSS 클래스 제거.
 - 디버깅 체크: `npx tsc --noEmit`을 변경 전/후로 비교해 신규 타입 오류 없음을 확인. 동일한 환경 제약으로 `npm run build`/`npm run lint`는 실행하지 못함 — 실제 개발 환경에서 대시보드/칸반에서 그룹 업무가 숨겨지고 하위 업무에 `[그룹명]` 접두사가 표시되는지 확인 필요.
+
+## 2026-06-30 (14차)
+
+- 대시보드(`/dashboard`) "나의 업무" 빈 상태 안내 문구의 "기획자에게 업무 배정을 요청하거나..."를 "관리자에게 업무 배정을 요청하거나..."로 변경.
+- 디버깅 체크: `npx tsc --noEmit`을 변경 전/후로 비교해 신규 타입 오류 없음을 확인. 동일한 환경 제약으로 `npm run build`/`npm run lint`는 실행하지 못함.

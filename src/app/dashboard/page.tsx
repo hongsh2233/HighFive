@@ -135,7 +135,7 @@ export default function DashboardPage() {
             <div className={styles.emptyIcon}>📋</div>
             <p className={styles.emptyTitle}>배정된 업무가 없습니다.</p>
             <p className={styles.emptyDesc}>
-              기획자에게 업무 배정을 요청하거나 새 업무를 만들어보세요.
+              관리자에게 업무 배정을 요청하거나 새 업무를 만들어보세요.
             </p>
           </div>
         ) : (
