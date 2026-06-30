@@ -6,14 +6,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTasks } from '@/hooks/useTask';
 import styles from './tasks.module.css';
 
-const statusColors: { [key: string]: { bg: string; text: string; border: string } } = {
-  ASSIGNED: { bg: 'transparent', text: '#1D4ED8', border: '#93C5FD' },
-  PROGRESS: { bg: 'transparent', text: '#92400E', border: '#FCD34D' },
-  REVIEW:   { bg: 'transparent', text: '#5B21B6', border: '#C4B5FD' },
-  QA:       { bg: 'transparent', text: '#155E75', border: '#67E8F9' },
-  DONE:     { bg: 'transparent', text: '#065F46', border: '#6EE7B7' },
-};
-
 const statusLabels: { [key: string]: string } = {
   ASSIGNED: '배정됨',
   PROGRESS: '진행중',
@@ -102,16 +94,6 @@ export default function TaskListPage() {
     return <div className={styles.loadingPage}>로딩 중...</div>;
   }
 
-  // statusSelectStyle kept inline — dynamic per status, used for the combined 상태/상태변경 컬럼
-  const statusSelectStyle = (status: string): React.CSSProperties => {
-    const color = statusColors[status] || { bg: 'transparent', text: '#374151', border: '#D4D4D8' };
-    return {
-      color: color.text,
-      borderColor: color.border,
-      fontWeight: 600,
-    };
-  };
-
   // 필터링
   let filteredTasks = tasks;
   if (selectedStatuses.length > 0) {
@@ -193,9 +175,11 @@ export default function TaskListPage() {
                 </button>
               )
             )}
-            <Link href={`/tasks/${task.id}`} className={styles.detailBtn}>
-              상세보기
-            </Link>
+            {!isGroupRow && (
+              <Link href={`/tasks/${task.id}`} className={styles.detailBtn}>
+                상세보기
+              </Link>
+            )}
             {task.isGroup && (
               <Link href={`/tasks/create?parentTaskId=${task.id}`} className={styles.addSubBtnSmall}>
                 + 하위 업무
@@ -211,7 +195,6 @@ export default function TaskListPage() {
             value={task.status}
             onChange={(e) => updateStatus(task.id, e.target.value)}
             className={styles.statusSelect}
-            style={statusSelectStyle(task.status)}
           >
             <option value="ASSIGNED">배정됨</option>
             <option value="PROGRESS">진행중</option>

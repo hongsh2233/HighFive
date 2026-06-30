@@ -140,7 +140,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             <p className={styles.fieldValue}>{task.worker?.name || '-'}</p>
           </div>
           <div>
-            <p className={styles.fieldLabel}>기획자</p>
+            <p className={styles.fieldLabel}>보고자</p>
             <p className={styles.fieldValue}>{task.planner?.name || '-'}</p>
           </div>
           <div>

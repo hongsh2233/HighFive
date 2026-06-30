@@ -1,11 +1,60 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import apiClient from '@/lib/api-client';
+import { Task, PaginatedResponse } from '@/types';
 import styles from './dashboard.module.css';
+
+const statusLabels: { [key: string]: string } = {
+  ASSIGNED: '배정됨',
+  PROGRESS: '진행중',
+  REVIEW: '검수',
+  QA: 'QA',
+  DONE: '완료',
+};
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth();
+  const [myTasks, setMyTasks] = useState<Task[]>([]);
+  const [recentTasks, setRecentTasks] = useState<Task[]>([]);
+  const [loadingTasks, setLoadingTasks] = useState(true);
+
+  useEffect(() => {
+    if (isLoading || !user) return;
+
+    const fetchDashboardData = async () => {
+      setLoadingTasks(true);
+      try {
+        const [myRes, recentRes] = await Promise.all([
+          apiClient.get<{ data: PaginatedResponse<Task> }>(`/tasks?workerId=${user.id}&limit=100`),
+          apiClient.get<{ data: PaginatedResponse<Task> }>('/tasks?limit=20'),
+        ]);
+
+        const mine = myRes.data.data.data
+          .filter((t) => t.status !== 'DONE')
+          .sort((a, b) => {
+            const aTime = a.targetDate ? new Date(a.targetDate).getTime() : Infinity;
+            const bTime = b.targetDate ? new Date(b.targetDate).getTime() : Infinity;
+            return aTime - bTime;
+          })
+          .slice(0, 5);
+        setMyTasks(mine);
+
+        const recent = [...recentRes.data.data.data]
+          .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+          .slice(0, 5);
+        setRecentTasks(recent);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingTasks(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [isLoading, user]);
 
   if (isLoading) {
     return <div className={styles.loading}>로딩 중...</div>;
@@ -63,20 +112,62 @@ export default function DashboardPage() {
             ➕ 업무 등록
           </Link>
         </div>
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>📋</div>
-          <p className={styles.emptyTitle}>배정된 업무가 없습니다.</p>
-          <p className={styles.emptyDesc}>
-            기획자에게 업무 배정을 요청하거나 새 업무를 만들어보세요.
-          </p>
-        </div>
+        {loadingTasks ? (
+          <div className={styles.emptyState}>
+            <p className={styles.emptyDesc}>불러오는 중...</p>
+          </div>
+        ) : myTasks.length === 0 ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIcon}>📋</div>
+            <p className={styles.emptyTitle}>배정된 업무가 없습니다.</p>
+            <p className={styles.emptyDesc}>
+              기획자에게 업무 배정을 요청하거나 새 업무를 만들어보세요.
+            </p>
+          </div>
+        ) : (
+          <ul className={styles.taskList}>
+            {myTasks.map((t) => (
+              <li key={t.id} className={styles.taskItem}>
+                <Link href={`/tasks/${t.id}`} className={styles.taskTitle}>
+                  {t.title}
+                </Link>
+                <span className={styles.taskStatus}>{statusLabels[t.status] ?? t.status}</span>
+                {t.targetDate && (
+                  <span className={styles.taskDate}>
+                    {new Date(t.targetDate).toLocaleDateString('ko-KR')}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div>
         <h2 className={styles.sectionTitle}>최근 활동</h2>
-        <div className={styles.emptyState}>
-          <p className={styles.emptyDesc}>최근 활동 기록이 없습니다.</p>
-        </div>
+        {loadingTasks ? (
+          <div className={styles.emptyState}>
+            <p className={styles.emptyDesc}>불러오는 중...</p>
+          </div>
+        ) : recentTasks.length === 0 ? (
+          <div className={styles.emptyState}>
+            <p className={styles.emptyDesc}>최근 활동 기록이 없습니다.</p>
+          </div>
+        ) : (
+          <ul className={styles.taskList}>
+            {recentTasks.map((t) => (
+              <li key={t.id} className={styles.taskItem}>
+                <Link href={`/tasks/${t.id}`} className={styles.taskTitle}>
+                  {t.title}
+                </Link>
+                <span className={styles.taskStatus}>{statusLabels[t.status] ?? t.status}</span>
+                <span className={styles.taskDate}>
+                  {new Date(t.updatedAt).toLocaleDateString('ko-KR')}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
