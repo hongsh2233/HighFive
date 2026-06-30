@@ -2,6 +2,8 @@
 
 > **최종 업데이트** 2026-06-30
 > **스택** Next.js 15 · Prisma 5 · PostgreSQL · NextAuth.js 4 · Zustand · MUI
+>
+> 이 문서는 코드 변경 시 항상 최신 상태로 유지된다. 작업 절차는 `.claude/skills/dev-workflow/SKILL.md`, 작업 이력은 `docs/HISTORY.md` 참고.
 
 ---
 
