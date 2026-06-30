@@ -55,12 +55,36 @@ const calculateWorkHours = (timeLogs: any[]): string => {
 
 export default function TaskListPage() {
   const { isLoading: authLoading } = useAuth();
-  const { tasks, loading, error, updateStatus } = useTasks({ limit: 1000 });
+  const { tasks, loading, error, updateStatus, updateTask } = useTasks({ limit: 1000 });
 
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedWorker, setSelectedWorker] = useState('');
   const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
+  const [editingTitleId, setEditingTitleId] = useState<number | null>(null);
+  const [titleDraft, setTitleDraft] = useState('');
+
+  const startTitleEdit = (task: any) => {
+    setEditingTitleId(task.id);
+    setTitleDraft(task.title);
+  };
+
+  const cancelTitleEdit = () => {
+    setEditingTitleId(null);
+    setTitleDraft('');
+  };
+
+  const saveTitleEdit = async (id: number) => {
+    const trimmed = titleDraft.trim();
+    if (!trimmed) { cancelTitleEdit(); return; }
+    try {
+      await updateTask(id, { title: trimmed });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      cancelTitleEdit();
+    }
+  };
 
   const toggleNotes = (id: number) => {
     setExpandedNotes(prev => {
@@ -135,7 +159,28 @@ export default function TaskListPage() {
               </button>
             )}
             {isChild && <span className={styles.childArrow}>↳</span>}
-            <span>{task.title}</span>
+            {editingTitleId === task.id ? (
+              <input
+                type="text"
+                value={titleDraft}
+                onChange={(e) => setTitleDraft(e.target.value)}
+                onBlur={() => saveTitleEdit(task.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveTitleEdit(task.id);
+                  if (e.key === 'Escape') cancelTitleEdit();
+                }}
+                onClick={(e) => e.stopPropagation()}
+                className={styles.titleInput}
+                autoFocus
+              />
+            ) : (
+              <span
+                className={styles.titleText}
+                onDoubleClick={(e) => { e.stopPropagation(); startTitleEdit(task); }}
+              >
+                {task.title}
+              </span>
+            )}
           </div>
         </td>
         <td className={styles.td}>{task.worker?.name || '-'}</td>
@@ -173,7 +218,7 @@ export default function TaskListPage() {
                 상세보기
               </Link>
             )}
-            {task.isGroup && (
+            {!isChild && (
               <Link href={`/tasks/create?parentTaskId=${task.id}`} className={styles.addSubBtnSmall}>
                 + 하위 업무
               </Link>

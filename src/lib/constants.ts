@@ -30,7 +30,7 @@ export const USER_ROLE = {
 
 export const USER_ROLE_LABEL: Record<string, string> = {
   ADMIN: '관리자',
-  PLANNER: '기획자',
+  PLANNER: '관리자',
   WORKER: '작업자',
 };
 

@@ -122,3 +122,10 @@
 
 - 대시보드/칸반에서 그룹 업무를 `!task.isGroup` 필터로만 숨기고 있어, `isGroup` 플래그가 설정되지 않은 레거시 그룹 업무(하위 업무는 있지만 `isGroup`이 false인 경우)가 `[그룹명]` 접두사 없이 자기 자신의 행/카드로 그대로 노출되던 버그 수정. 다른 업무의 `parentTaskId`로 참조되는(즉 하위 업무를 가진) 모든 업무 id를 모아 `isStandaloneGroup` 판정에 포함시켜, `isGroup` 플래그 여부와 무관하게 하위 업무를 가진 업무는 목록/보드에서 항상 제외하도록 변경(`src/app/dashboard/page.tsx`, `src/components/kanban/KanbanBoard.tsx`).
 - 디버깅 체크: `npx tsc --noEmit`을 변경 전/후로 비교해 신규 타입 오류 없음을 확인. 동일한 환경 제약으로 `npm run build`/`npm run lint`는 실행하지 못함 — 실제 개발 환경에서 `isGroup` 미설정 레거시 그룹 업무가 더 이상 단독 노출되지 않는지 확인 필요.
+
+## 2026-06-30 (16차)
+
+- 업무 목록(`/tasks`) 제목 더블클릭 인라인 수정 기능 추가: 제목을 더블클릭하면 입력창으로 전환되어 수정 가능하고, Enter/포커스아웃 시 저장(`updateTask`, `PATCH /tasks/:id`), Escape 시 취소. `tasks.module.css`에 `titleText`/`titleInput` 클래스 추가.
+- 그룹/하위 업무 등록 진입점 보강: 기존에는 `task.isGroup`이 true인 행에서만 "+ 하위 업무" 버튼이 보였는데, `isGroup` 플래그가 설정되지 않은 업무는 버튼이 보이지 않아 하위 업무를 추가할 방법이 없었음. 최상위(자식이 아닌) 모든 행에 "+ 하위 업무" 버튼을 노출하도록 변경하여, 어떤 업무든 하위 업무를 추가해 그룹으로 만들 수 있도록 개선.
+- 역할 라벨 변경: `USER_ROLE_LABEL.PLANNER`를 "기획자"에서 "관리자"로 변경(`src/lib/constants.ts`). 이에 맞춰 대시보드의 PLANNER 역할 환영문구 및 "기획자 기능" 섹션 제목도 "관리자"/"관리자 기능"으로 변경(`src/app/dashboard/page.tsx`).
+- 디버깅 체크: `npx tsc --noEmit` 결과 변경한 파일(`tasks/page.tsx`, `dashboard/page.tsx`, `constants.ts`)에서는 신규 타입 오류 없음을 확인(다른 파일들의 Prisma 생성 관련 기존 오류는 환경 제약으로 인한 기존 오류). 동일한 환경 제약으로 `npm run build`/`npm run lint`는 실행하지 못함.
