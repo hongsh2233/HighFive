@@ -19,7 +19,6 @@ export default function DashboardPage() {
   const { user, isLoading } = useAuth();
   const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
-  const [parentMap, setParentMap] = useState<Map<number, Task>>(new Map());
   const [loadingTasks, setLoadingTasks] = useState(true);
 
   useEffect(() => {
@@ -30,10 +29,6 @@ export default function DashboardPage() {
       try {
         const allRes = await apiClient.get<{ data: PaginatedResponse<Task> }>('/tasks?limit=300');
         const allTasks = allRes.data.data.data;
-
-        const parents = new Map<number, Task>();
-        allTasks.forEach((t) => parents.set(t.id, t));
-        setParentMap(parents);
 
         const mine = allTasks
           .filter((t) => t.workerId === Number(user.id) && t.status !== 'DONE')
@@ -60,11 +55,10 @@ export default function DashboardPage() {
   }, [isLoading, user]);
 
   const renderTaskGroup = (t: Task) => {
-    const parent = t.parentTaskId ? parentMap.get(t.parentTaskId) : null;
+    if (!t.isGroup) return null;
     return (
       <span className={styles.taskGroupInfo}>
-        {t.isGroup && <span className={styles.taskGroupBadge}>그룹</span>}
-        {parent && <span className={styles.taskParentLabel}>[{parent.title}]</span>}
+        <span className={styles.taskGroupBadge}>그룹</span>
       </span>
     );
   };

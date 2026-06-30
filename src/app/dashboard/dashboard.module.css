@@ -147,10 +147,3 @@
   border-radius: 4px;
   white-space: nowrap;
 }
-
-.taskParentLabel {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--color-gray-500);
-  white-space: nowrap;
-}

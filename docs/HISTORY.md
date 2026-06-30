@@ -94,3 +94,9 @@
   - 칸반(`KanbanColumn.tsx`): 하위 업무 카드 제목 앞에 `↳` 화살표 대신 `[{부모 업무명}]` 접두사를 표시하도록 변경. 카드별 부모 업무를 조회할 수 있도록 `parentMap: Map<number, Task>` prop을 추가(`KanbanBoard.tsx`에서 전체 업무로 구성해 전달). `KanbanColumn.module.css`의 더 이상 쓰이지 않는 `childArrow` 클래스를 `parentPrefix`/`cardTitleText` 클래스로 교체.
   - 대시보드(`/dashboard`): `renderTaskGroup` 헬퍼에서 "📁 {그룹명} ↳" 라벨을 `[{그룹명}]` 형식으로 변경(`dashboard.module.css`의 `taskParentArrow` 클래스 제거, `taskParentLabel` 스타일 단순화).
 - 디버깅 체크: `npx tsc --noEmit`을 변경 전/후로 비교해 신규 타입 오류 없음을 확인(특히 `KanbanColumnProps`에 추가된 필수 `parentMap` prop을 `KanbanBoard.tsx`에서 정상적으로 전달하는지 확인). 동일한 환경 제약으로 `npm run build`/`npm run lint`는 실행하지 못함 — 실제 개발 환경에서 칸반/대시보드의 `[그룹명] 업무명` 표시 확인 필요.
+
+## 2026-06-30 (11차)
+
+- 대시보드(`/dashboard`)는 그룹 업무 자체가 이미 목록에 독립된 행으로 노출되므로, 하위 업무 행에 `[그룹명]` 접두사를 추가로 표시하는 것이 그룹명 중복 노출이라는 피드백에 따라 제거. `renderTaskGroup` 헬퍼는 이제 `isGroup`인 행에만 "그룹" 배지를 표시하고, 하위 업무 행에는 더 이상 부모 그룹명을 표시하지 않음. 더 이상 쓰이지 않는 `parentMap` 상태/조회 로직과 `dashboard.module.css`의 `taskParentLabel` 클래스 제거.
+- 칸반 보드는 컬럼이 상태별로 분리되어 있어 그룹 카드와 하위 업무 카드가 같은 화면에 같이 보이지 않을 수 있으므로, `[그룹명]` 접두사를 그대로 유지(대시보드와 다른 맥락).
+- 디버깅 체크: `npx tsc --noEmit`을 변경 전/후로 비교해 신규 타입 오류 없음을 확인. 동일한 환경 제약으로 `npm run build`/`npm run lint`는 실행하지 못함 — 실제 개발 환경에서 대시보드 목록의 그룹/하위 업무 표시 확인 필요.
