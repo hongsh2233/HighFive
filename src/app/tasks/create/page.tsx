@@ -208,7 +208,7 @@ export default function TaskCreatePage() {
                 type="text"
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                placeholder="예: [DCBGIT-39085] 구글 원 2TB 상품 정보 수정"
+                placeholder="업무제목을 입력하세요."
                 className={styles.input}
                 disabled={loading}
               />

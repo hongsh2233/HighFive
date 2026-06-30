@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useTasks } from '@/hooks/useTask';
-import axios from 'axios';
 import styles from './tasks.module.css';
 
 const statusColors: { [key: string]: { bg: string; text: string; border: string } } = {
@@ -70,7 +69,6 @@ export default function TaskListPage() {
     ALL_STATUSES.filter((s) => s !== 'DONE')
   );
   const [selectedWorker, setSelectedWorker] = useState('');
-  const [workers, setWorkers] = useState<any[]>([]);
   const [draggedTask, setDraggedTask] = useState<any>(null);
   const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
 
@@ -82,18 +80,10 @@ export default function TaskListPage() {
     });
   };
 
-  useEffect(() => {
-    fetchWorkers();
-  }, []);
-
-  const fetchWorkers = async () => {
-    try {
-      const res = await axios.get('/api/users?role=WORKER');
-      setWorkers(res.data.data || []);
-    } catch (err) {
-      console.error('Failed to fetch workers:', err);
-    }
-  };
+  // 담당자 필터 목록: role=WORKER로 한정하지 않고, 실제로 업무에 배정된 담당자를 모두 노출
+  const workers = Array.from(
+    new Map(tasks.filter((t) => t.worker).map((t: any) => [t.worker.id, t.worker])).values()
+  ).sort((a: any, b: any) => a.name.localeCompare(b.name));
 
   const toggleStatus = (status: string) => {
     setSelectedStatuses((prev) =>
