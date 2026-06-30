@@ -142,3 +142,10 @@
 - 업무 목록(`/tasks`) 페이지에 담당자 셀렉트박스 추가: 기존에는 담당자가 텍스트로만 표시됐는데, ADMIN/PLANNER 권한 사용자에게는 상태 셀렉트와 동일한 방식으로 담당자를 셀렉트박스로 바로 변경할 수 있도록 변경(`/api/users?role=WORKER` 목록 사용, `updateTask`로 저장 — 백엔드에서 자동으로 `WORKER_CHANGED` 이력 기록).
 - 업무 목록 각 행에 "삭제" 버튼 추가(ADMIN/PLANNER 전용, 확인창 포함, `useTasks`의 `deleteTask` 사용).
 - 디버깅 체크: `npx tsc --noEmit` 결과 변경한 파일(`tasks/page.tsx`, `tasks/[id]/page.tsx`, `tasks/[id]/route.ts`)에서는 신규 타입 오류 없음을 확인. 동일한 환경 제약으로 `npm run build`/`npm run lint`는 실행하지 못함.
+
+## 2026-06-30 (19차)
+
+- 디자인 정리: 페이지마다 제각각이던 버튼/입력창/셀렉트 스타일을 통일. `globals.css`에 공통 프리미티브 클래스(`.btn` + `.btn-primary`/`.btn-secondary`/`.btn-ghost`/`.btn-success`/`.btn-danger`/`.btn-danger-solid`/`.btn-sm`, `.field-input`, `.field-select`)를 새로 정의해, Notion+Jira 스타일(플랫한 배경, 옅은 보더, 6px 라운드, 13px/11px 폰트 통일)로 버튼·인풋·셀렉트의 패딩/라운드/폰트크기/호버를 일치시킴.
+- 각 페이지의 CSS 모듈에서 버튼/입력 클래스를 위 프리미티브에 `composes`로 연결(컴포넌트 JSX는 변경 없이 CSS만 교체): `tasks/tasks.module.css`(상태/담당자 셀렉트, 상세보기/하위업무/삭제/메모 버튼, 그룹토글), `tasks/[id]/detail.module.css`(수정/삭제/취소 버튼, 인풋/텍스트영역), `tasks/create/create.module.css`(등록/취소/하위업무 추가·삭제 버튼, 인풋), `info/info.module.css`, `profile/password/password.module.css`, `projects/projects.module.css`, `stats/stats.module.css`, `users/users.module.css`(기존 그라데이션 버튼도 통일 톤으로 교체), `calendar/calendar.module.css`, `components/task/TaskAdjustForm.module.css`, `components/task/TaskFilterBar.module.css`.
+- 로그인 화면(`login.module.css`)은 별도 브랜딩 화면으로 판단해 이번 통일 작업에서 제외.
+- 디버깅 체크: `npx tsc --noEmit` 결과 변경한 파일들에서 신규 타입 오류 없음을 확인(CSS 전용 변경이라 타입에는 영향 없음). 동일한 환경 제약으로 `npm run build`/`npm run lint`는 실행하지 못함 — 실제 개발 환경에서 버튼/인풋 시각 통일 결과를 브라우저로 확인 필요.

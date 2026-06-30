@@ -7,18 +7,9 @@
 }
 
 .select {
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid #D1D5DB;
-  font-size: 13px;
+  composes: field-select from global;
 }
 
 .btnReset {
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid #D1D5DB;
-  background: transparent;
-  color: #4B5563;
-  font-size: 13px;
-  cursor: pointer;
+  composes: btn btn-secondary from global;
 }

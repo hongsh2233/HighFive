@@ -111,10 +111,7 @@
 }
 
 .statusSelect {
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-gray-300);
-  border-radius: 6px;
-  font-size: 13px;
+  composes: field-select from global;
   width: 100%;
 }
 
@@ -129,63 +126,25 @@
 }
 
 .notesToggleBtn {
-  padding: 2px 7px;
-  font-size: 11px;
-  border: 1px solid #C4B5FD;
-  border-radius: 4px;
-  background: transparent;
-  color: #5B21B6;
-  cursor: pointer;
-  white-space: nowrap;
+  composes: btn btn-sm btn-ghost from global;
 }
 
 .notesToggleBtnActive {
-  background: #EDE9FE;
+  background: var(--accent-light);
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .detailBtn {
-  padding: 2px 7px;
-  font-size: 11px;
-  border: 1px solid #93C5FD;
-  border-radius: 4px;
-  background: transparent;
-  color: #1D4ED8;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.detailBtn:hover {
-  background: #EFF6FF;
+  composes: btn btn-sm btn-secondary from global;
 }
 
 .addSubBtnSmall {
-  padding: 2px 7px;
-  font-size: 11px;
-  border: 1px solid #6EE7B7;
-  border-radius: 4px;
-  background: transparent;
-  color: #065F46;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.addSubBtnSmall:hover {
-  background: #ECFDF5;
+  composes: btn btn-sm btn-success from global;
 }
 
 .deleteBtnSmall {
-  padding: 2px 7px;
-  font-size: 11px;
-  border: 1px solid #FCA5A5;
-  border-radius: 4px;
-  background: transparent;
-  color: #DC2626;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.deleteBtnSmall:hover {
-  background: #FEF2F2;
+  composes: btn btn-sm btn-danger from global;
 }
 
 .titleCell {
@@ -195,12 +154,12 @@
 }
 
 .groupToggleBtn {
-  border: 1px solid var(--color-gray-300);
+  border: 1px solid var(--border-strong);
   background: var(--bg-subtle);
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--color-gray-700);
+  color: var(--text-secondary);
   width: 20px;
   height: 20px;
   line-height: 1;

@@ -40,22 +40,8 @@
 }
 
 .btnPrimary {
-  padding: 10px 18px;
-  background: linear-gradient(135deg, #D4AF63, #8E7AE0 60%, #5E6AD2);
-  color: #0B0A14;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  box-shadow: 0 4px 14px rgba(142,122,224,0.25);
-  transition: box-shadow 0.15s, transform 0.15s;
-}
-
-.btnPrimary:hover {
-  box-shadow: 0 6px 18px rgba(212,175,99,0.3);
-  transform: translateY(-1px);
+  composes: btn btn-primary from global;
+  padding: 9px 18px;
 }
 
 .message {
@@ -115,21 +101,7 @@
 }
 
 .input {
-  width: 100%;
-  padding: 9px 12px;
-  font-size: 13px;
-  border: 1px solid var(--border, #D1D5DB);
-  border-radius: 8px;
-  box-sizing: border-box;
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
-  background-color: #fff;
-  color: var(--text-primary, #111827);
-}
-
-.input:focus {
-  border-color: #8E7AE0;
-  box-shadow: 0 0 0 3px rgba(142,122,224,0.12);
+  composes: field-input from global;
 }
 
 .projectSection {
@@ -178,15 +150,8 @@
 }
 
 .btnSubmit {
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #D4AF63, #8E7AE0 60%, #5E6AD2);
-  color: #0B0A14;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 4px 14px rgba(142,122,224,0.25);
+  composes: btn btn-primary from global;
+  padding: 9px 20px;
 }
 
 .btnSubmit:disabled {
@@ -195,18 +160,8 @@
 }
 
 .btnCancel {
-  padding: 10px 20px;
-  background: #fff;
-  color: var(--text-muted, #6B7280);
-  border: 1px solid var(--border, #D1D5DB);
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btnCancel:hover {
-  background-color: #F3F4F6;
+  composes: btn btn-secondary from global;
+  padding: 9px 20px;
 }
 
 .tableCard {
@@ -330,29 +285,14 @@
 }
 
 .btnEdit {
-  padding: 5px 10px;
-  font-size: 12px;
-  font-weight: 600;
-  border: 1px solid var(--border, #D1D5DB);
-  border-radius: 6px;
-  background-color: #fff;
-  color: #374151;
-  cursor: pointer;
-}
-
-.btnEdit:hover {
-  background-color: #F3F4F6;
+  composes: btn btn-sm btn-ghost from global;
 }
 
 .btnDeactivate {
-  padding: 5px 10px;
-  font-size: 12px;
-  font-weight: 600;
-  border: 1px solid rgba(217,119,6,0.3);
-  border-radius: 6px;
+  composes: btn btn-sm from global;
+  border-color: rgba(217,119,6,0.3);
   background-color: rgba(217,119,6,0.06);
   color: #B45309;
-  cursor: pointer;
 }
 
 .btnDeactivate:hover {
@@ -360,18 +300,7 @@
 }
 
 .btnDelete {
-  padding: 5px 10px;
-  font-size: 12px;
-  font-weight: 600;
-  border: 1px solid rgba(220,38,38,0.3);
-  border-radius: 6px;
-  background-color: rgba(220,38,38,0.06);
-  color: #B91C1C;
-  cursor: pointer;
-}
-
-.btnDelete:hover {
-  background-color: rgba(220,38,38,0.12);
+  composes: btn btn-sm btn-danger from global;
 }
 
 .emptyState {
@@ -412,15 +341,7 @@
 }
 
 .tempPwCopyBtn {
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  border: none;
-  border-radius: 6px;
-  background: linear-gradient(135deg, #D4AF63, #8E7AE0 60%, #5E6AD2);
-  color: #0B0A14;
-  cursor: pointer;
-  white-space: nowrap;
+  composes: btn btn-sm btn-primary from global;
 }
 
 @media (max-width: 768px) {

@@ -27,14 +27,8 @@
 }
 
 .createBtn {
+  composes: btn btn-primary from global;
   padding: 8px 16px;
-  background-color: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 7px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 .message {
@@ -88,16 +82,7 @@
 }
 
 .input {
-  width: 100%;
-  padding: 9px 12px;
-  font-size: 13px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  font-family: inherit;
-  outline: none;
-  background-color: var(--bg-surface);
-  color: var(--text-primary);
-  box-sizing: border-box;
+  composes: field-input from global;
 }
 
 .formActions {
@@ -106,25 +91,13 @@
 }
 
 .submitBtn {
+  composes: btn btn-primary from global;
   padding: 8px 20px;
-  background-color: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 7px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 .cancelBtn {
+  composes: btn btn-secondary from global;
   padding: 8px 16px;
-  background-color: var(--bg-subtle);
-  color: var(--text-primary);
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 .layout {
@@ -212,36 +185,15 @@
 }
 
 .editBtn {
-  padding: 3px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  background-color: var(--bg-subtle);
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  cursor: pointer;
+  composes: btn btn-sm btn-ghost from global;
 }
 
 .closeBtn {
-  padding: 3px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  background-color: transparent;
-  color: var(--danger);
-  border: 1px solid #FECACA;
-  border-radius: 5px;
-  cursor: pointer;
+  composes: btn btn-sm btn-danger from global;
 }
 
 .reopenBtn {
-  padding: 3px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  background-color: var(--bg-subtle);
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  cursor: pointer;
+  composes: btn btn-sm btn-ghost from global;
 }
 
 .projectMeta {
@@ -358,12 +310,7 @@
 }
 
 .addMemberSelect {
+  composes: field-select from global;
   width: 100%;
-  padding: 8px 10px;
   font-size: 12px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  font-family: inherit;
-  background-color: var(--bg-surface);
-  color: var(--text-primary);
 }

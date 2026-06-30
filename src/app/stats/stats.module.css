@@ -21,14 +21,8 @@
 }
 
 .btnExport {
+  composes: btn btn-primary from global;
   padding: var(--space-2) var(--space-4);
-  background-color: var(--accent);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 13px;
 }
 
 .section {

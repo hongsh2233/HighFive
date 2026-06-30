@@ -10,10 +10,7 @@
 }
 
 .input {
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #D1D5DB;
-  font-size: 14px;
+  composes: field-input from global;
 }
 
 .errorMsg {
@@ -29,19 +26,11 @@
 }
 
 .btnCancel {
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: 1px solid #D1D5DB;
-  background: transparent;
-  cursor: pointer;
+  composes: btn btn-secondary from global;
+  padding: 7px 16px;
 }
 
 .btnSubmit {
-  padding: 8px 16px;
-  border-radius: 6px;
-  background: #1A56DB;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
+  composes: btn btn-primary from global;
+  padding: 7px 16px;
 }
