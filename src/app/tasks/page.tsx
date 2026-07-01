@@ -13,12 +13,6 @@ interface Worker {
   name: string;
 }
 
-interface Project {
-  id: number;
-  name: string;
-  status: string;
-}
-
 // 작업시간 계산 함수
 const calculateWorkHours = (timeLogs: any[]): string => {
   if (!timeLogs || timeLogs.length === 0) return '-';
@@ -71,7 +65,6 @@ export default function TaskListPage() {
   const [editingTitleId, setEditingTitleId] = useState<number | null>(null);
   const [titleDraft, setTitleDraft] = useState('');
   const [assignableWorkers, setAssignableWorkers] = useState<Worker[]>([]);
-  const [myProjects, setMyProjects] = useState<Project[]>([]);
 
   useEffect(() => {
     if (!canEditTitle) return;
@@ -85,19 +78,6 @@ export default function TaskListPage() {
     };
     fetchWorkers();
   }, [canEditTitle]);
-
-  // 소속된(또는 ADMIN이면 전체) 프로젝트 목록: 다른 프로젝트로 바로 전환할 수 있는 드롭다운용
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const res = await apiClient.get<{ data: Project[] }>('/projects');
-        setMyProjects((res.data.data || []).filter((p) => p.status === 'ACTIVE'));
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchProjects();
-  }, []);
 
   const handleDeleteTask = async (id: number) => {
     if (!confirm('이 업무를 삭제하시겠습니까? 삭제 후에는 되돌릴 수 없습니다.')) return;
@@ -150,6 +130,13 @@ export default function TaskListPage() {
   // 담당자 필터 목록: role=WORKER로 한정하지 않고, 실제로 업무에 배정된 담당자를 모두 노출
   const workers = Array.from(
     new Map(tasks.filter((t) => t.worker).map((t: any) => [t.worker.id, t.worker])).values()
+  ).sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+  // 프로젝트 전환 드롭다운 목록: /api/projects(소속 멤버 기준)가 아니라 실제 로드된 업무에서 파생
+  // — WORKER는 프로젝트 소속 여부와 무관하게 배정된 업무를 전부 조회하므로, 소속되지 않은 프로젝트의
+  // 업무를 갖고 있어도 그 프로젝트가 드롭다운에 정확히 노출되도록 하기 위함
+  const myProjects = Array.from(
+    new Map(tasks.filter((t: any) => t.project).map((t: any) => [t.project.id, t.project])).values()
   ).sort((a: any, b: any) => a.name.localeCompare(b.name));
 
   // 상태 필터 목록: 여러 프로젝트에 걸쳐 실제로 사용 중인 상태 코드를 라벨과 함께 모아 중복 제거

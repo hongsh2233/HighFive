@@ -11,9 +11,26 @@ export async function GET() {
     const userId = parseInt((session!.user as any).id || '0');
     const role = (session!.user as any).role;
 
-    const where = role === 'ADMIN' ? {} : { members: { some: { userId } } };
-    const projects = await prisma.project.findMany({ where, select: { id: true } });
-    const projectIds = projects.map((p) => p.id);
+    let projectIds: number[];
+    if (role === 'ADMIN') {
+      const projects = await prisma.project.findMany({ select: { id: true } });
+      projectIds = projects.map((p) => p.id);
+    } else {
+      // 프로젝트 멤버 소속뿐 아니라, 소속과 무관하게 배정/등록된 업무가 있는 프로젝트도 포함
+      // (WORKER의 업무 목록은 프로젝트 소속 여부와 무관하게 본인 배정 업무를 전부 보여주기 때문)
+      const [memberProjects, assignedTasks] = await Promise.all([
+        prisma.projectMember.findMany({ where: { userId }, select: { projectId: true } }),
+        prisma.task.findMany({
+          where: { OR: [{ workerId: userId }, { plannerId: userId }], projectId: { not: null } },
+          select: { projectId: true },
+          distinct: ['projectId'],
+        }),
+      ]);
+      const idSet = new Set<number>();
+      memberProjects.forEach((m) => idSet.add(m.projectId));
+      assignedTasks.forEach((t) => { if (t.projectId) idSet.add(t.projectId); });
+      projectIds = Array.from(idSet);
+    }
 
     const rows = await prisma.projectStatus.findMany({
       where: { projectId: { in: projectIds } },
