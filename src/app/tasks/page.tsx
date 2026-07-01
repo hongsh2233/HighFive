@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useTasks } from '@/hooks/useTask';
 import { useProjectStatuses } from '@/hooks/useProjectStatuses';
@@ -69,20 +69,32 @@ function TaskListContent() {
   const { user, isLoading: authLoading } = useAuth();
   const { tasks, loading, error, updateStatus, updateTask, deleteTask } = useTasks({ limit: 1000 });
   const { getStatuses } = useProjectStatuses();
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const initialProjectId = searchParams.get('projectId') || '';
   const canEditTitle = ['ADMIN', 'LEADER'].includes((user as any)?.role ?? '');
   const canDelete = canEditTitle;
 
-  const [selectedStatus, setSelectedStatus] = useState('');
-  const [selectedWorker, setSelectedWorker] = useState('');
-  const [selectedProject, setSelectedProject] = useState(initialProjectId);
+  const [selectedStatus, setSelectedStatus] = useState(searchParams.get('status') || '');
+  const [selectedWorker, setSelectedWorker] = useState(searchParams.get('workerId') || '');
+  const [selectedProject, setSelectedProject] = useState(searchParams.get('projectId') || '');
   const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
   const [editingTitleId, setEditingTitleId] = useState<number | null>(null);
   const [titleDraft, setTitleDraft] = useState('');
   const [assignableWorkers, setAssignableWorkers] = useState<Worker[]>([]);
   const [myProjects, setMyProjects] = useState<Project[]>([]);
+
+  // 필터 상태를 URL 쿼리에 반영 — 새로고침해도 필터가 유지되도록 함
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedProject) params.set('projectId', selectedProject);
+    if (selectedStatus) params.set('status', selectedStatus);
+    if (selectedWorker) params.set('workerId', selectedWorker);
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProject, selectedStatus, selectedWorker]);
 
   useEffect(() => {
     if (!canEditTitle) return;

@@ -259,3 +259,9 @@
   - `tasks/page.tsx`: `useSearchParams()`로 `projectId` 쿼리 파라미터를 읽어 `selectedProject` 초기값으로 사용하도록 수정. 이 훅 사용을 위해 페이지 컴포넌트를 `<Suspense>`로 감싸는 기존 컨벤션(`tasks/create/page.tsx`와 동일 패턴)을 그대로 적용.
 - **그룹 업무 행에서 상태 선택 드롭다운 노출 제거**: 그룹(하위 업무를 가진) 행은 그 자체로는 진행 상태를 직접 변경하는 개념이 없는데도 상태 변경 셀렉트박스가 노출되어 혼란을 줄 수 있었음. `renderTaskRow`의 상태 열을 `isGroupRow`일 때는 `-`만 표시하고, 일반 업무 행일 때만 기존 상태 셀렉트를 렌더링하도록 수정.
 - 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 오류는 기존 Prisma 클라이언트 미생성 관련뿐). 개발 서버에서 `middleware.ts`의 `protectedRoutes`를 임시로 비워 `/tasks`·`/tasks?projectId=1`·`/tasks/create`가 모두 200과 에러 없는 HTML을 반환함을 확인 후 원복. `npm run lint`는 이번에도 ESLint 설정 파일 부재로 실행하지 못함. **DB 미연결 환경이라 실제로 업무 등록 후 리다이렉트되는 화면에 방금 등록한 프로젝트가 필터링되어 보이는지, 그룹 행에서 상태 열이 의도한 대로 숨겨지는지는 재확인하지 못함 — 실제 환경에서 반드시 확인 필요.**
+
+## 2026-07-01 (32차)
+
+- **업무 목록 새로고침 시 필터 유지**: `/tasks`의 프로젝트/상태/담당자 필터가 컴포넌트 state로만 관리되어, 필터를 적용한 채로 브라우저를 새로고침(F5)하면 전부 초기화되던 문제 수정.
+  - `tasks/page.tsx`: `selectedProject`/`selectedStatus`/`selectedWorker` 값을 URL 쿼리 파라미터(`projectId`/`status`/`workerId`)에 실시간으로 동기화(`router.replace`, `scroll: false`)하도록 수정하고, 세 상태 모두 `useSearchParams()`로 읽은 값을 초기값으로 사용하도록 변경(기존에는 `projectId`만 URL과 연동되어 있었음). 이제 새로고침해도 주소창의 쿼리가 그대로 남아 필터가 복원되고, 필터가 적용된 URL을 그대로 북마크/공유해도 동일한 화면이 열림.
+- 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 오류는 기존 Prisma 클라이언트 미생성 관련뿐). 개발 서버에서 `middleware.ts`의 `protectedRoutes`를 임시로 비워 `/tasks`, `/tasks?projectId=1`, `/tasks?status=DONE&workerId=2`가 모두 200과 에러 없는 HTML을 반환함을 확인 후 원복. `npm run lint`는 이번에도 ESLint 설정 파일 부재로 실행하지 못함. **DB 미연결 환경이라 실제 로그인 세션에서 필터 선택 → 새로고침 시 값이 그대로 유지되는지는 재확인하지 못함 — 실제 환경에서 반드시 확인 필요.**
