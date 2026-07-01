@@ -18,7 +18,7 @@
 - **GitHub 연동**: PR이 머지되면 webhook으로 연결된 업무 자동 갱신
 - **외부연동**: Slack / 잔디 / Microsoft Teams / 텔레그램 / 카카오톡 webhook 알림 (ADMIN이 `/settings/integrations`에서 채널별 설정+테스트 발송)
 - **구글 캘린더 연동**: `/settings/calendar-sync`에서 개인 구독 URL 발급/복사
-- **프로젝트 위키**: 프로젝트별 문서 작성/조회(소속 멤버만), 우하단 플로팅 버튼으로 전체 위키 검색
+- **프로젝트 위키**: 헤더 "위키" 메뉴로 소속 프로젝트 문서 모아보기+등록, 우하단 플로팅 버튼으로 전체 위키 검색(소속 멤버만 열람)
 - **CSV/Excel 내보내기**: 업무 목록 파일 다운로드
 - **인증 & 권한**: NextAuth.js 기반 로그인, 역할 기반 접근 제어(ADMIN/LEADER/WORKER)
 - **공지**: 헤더 하단 배너 공지 (ADMIN/LEADER 작성, X로 닫기)

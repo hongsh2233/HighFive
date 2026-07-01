@@ -207,3 +207,12 @@
   - `src/lib/services/webhook.service.ts`(별도 경로: `notify.ts`의 담당자변경/검수요청 알림, `POST /api/webhooks/slack` 내부 엔드포인트에서 사용)는 기존 로직·`Notification` 테이블 기록은 그대로 두고 Slack/잔디 URL 조회만 `integrations.ts`의 `getWebhookUrl`을 사용하도록 변경 — 두 경로 모두 새 설정 화면을 동일하게 반영하도록 일관성 확보.
   - `/settings/integrations` 페이지 신설(ADMIN 전용, 페이지/API 모두 재검증): 채널별 Webhook URL(텔레그램은 봇 토큰+Chat ID) 입력, 사용 여부 토글, 저장 전에도 값 그대로 테스트 발송 가능(`POST /api/settings/integrations/[channel]/test`). `AppHeader`의 "설정" 드롭다운에 "외부연동" 항목 추가(ADMIN에게만 노출, LEADER에게는 다른 설정 메뉴만 보임).
 - 디버깅 체크: `npx tsc --noEmit`에서 신규 로직 오류 2건(`src/app/api/wiki/search/route.ts`의 널 내로잉 이슈, 암묵적 any) 발견 후 수정, 재실행 결과 신규 오류 없음(남은 오류는 전부 기존과 동일한 Prisma 클라이언트 미생성 관련). 개발 서버를 기동해 `/settings/calendar-sync`, `/settings/integrations`, `/projects/1/wiki`, `/projects`가 모두 200과 에러 없는 HTML을 반환함을 확인(이 경로들은 `middleware.ts`의 `protectedRoutes`에 포함되지 않아 별도 우회 없이 바로 확인 가능했음). `npm run lint`는 이번에도 ESLint 설정 파일 부재로 실행하지 못함(기존 제약). **실제 DB 연결 환경에서 로그인 후 위키 작성/검색/권한 차단, 캘린더 연동 URL 발급, 외부연동 채널별 실제 메시지 수신 여부를 반드시 재확인 필요.**
+
+## 2026-07-01 (26차)
+
+- 위키 진입 동선 개선: 직전 커밋에서 위키 접근 경로를 `/projects` 목록 → 프로젝트 선택 → 멤버 패널 링크로만 만들었더니 눈에 띄지 않고 문서 등록까지 클릭이 여러 번 필요하다는 피드백을 받아, 헤더 상단에 "위키" 메뉴(정보/신청 옆)와 `/wiki` 허브 페이지를 신설.
+  - `/wiki`: 소속된 모든 프로젝트(ADMIN은 전체)의 위키 문서를 `GET /api/wiki/search?q=`(빈 쿼리로 호출 시 전체 목록 반환)로 한 번에 불러와 프로젝트별로 묶어 카드 목록으로 표시. 상단 "+ 문서 등록" 버튼 클릭 시 프로젝트 선택 드롭다운 + 제목 + 본문(라이트 마크다운 에디터, `/projects/[id]/wiki`와 동일한 컴포넌트를 이 페이지에도 로컬로 구현) 입력 폼이 바로 열리고, 제출 시 선택한 프로젝트의 `POST /api/projects/[id]/wiki`로 등록됨. 소속 프로젝트가 없으면 "관리자에게 프로젝트 배정을 요청하세요" 안내만 표시.
+  - 문서 카드를 클릭하면 기존 `/projects/[id]/wiki?open=[id]` 상세 페이지로 이동(전결/삭제 등 나머지 관리 기능은 계속 그 페이지에서 담당).
+  - `GET /api/wiki/search`의 결과 개수 제한을 30 → 100으로 확대(허브에서 전체 목록 용도로도 재사용하기 위함).
+  - `AppHeader.tsx`에 "위키" 최상위 메뉴 추가(전 역할 노출), `LayoutWrapper.tsx`의 인증 필요 경로 목록에 `/wiki` 추가.
+- 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(기존 Prisma 클라이언트 미생성 오류만 잔존). 개발 서버에서 `/wiki`가 200과 에러 없는 HTML을 반환함을 확인.

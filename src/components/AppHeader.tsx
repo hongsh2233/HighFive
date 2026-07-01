@@ -63,6 +63,10 @@ export default function AppHeader() {
             신청
           </Link>
 
+          <Link href="/wiki" className={navClass(pathname === '/wiki' || pathname.startsWith('/projects/'))} onClick={closeAll}>
+            위키
+          </Link>
+
           {/* 업무 메뉴 */}
           <div
             className={styles.menuWrapper}

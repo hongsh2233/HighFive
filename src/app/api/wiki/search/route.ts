@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
       where,
       include: { project: { select: { id: true, name: true } } },
       orderBy: { updatedAt: 'desc' },
-      take: 30,
+      take: 100,
     });
 
     const results = pages.map((p) => ({

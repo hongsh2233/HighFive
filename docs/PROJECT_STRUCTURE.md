@@ -25,6 +25,7 @@
 /profile/**     → 인증 필요 (전 역할)
 /announcements  → 인증 필요 (전 역할 조회 가능, 작성/수정/삭제는 ADMIN/LEADER)
 /requests       → 인증 필요 (전 역할)
+/wiki           → 인증 필요 (전 역할, 소속 프로젝트 문서 모아보기 + 등록 허브)
 /projects/[id]/wiki → 인증 필요 (해당 프로젝트 소속 멤버 또는 ADMIN만 조회 가능, middleware 레벨이 아닌 API `checkAccess`로 검증)
 /settings/calendar-sync  → 인증 필요 (전 역할, 헤더 "설정" 메뉴는 ADMIN/LEADER에게만 노출되지만 URL 직접 접근은 인증만 요구)
 /settings/integrations   → 인증 필요 + 페이지/‌API 모두 ADMIN 전용
@@ -154,6 +155,7 @@ high5/
 │   │   ├── users/page.tsx             # ADMIN 전용, "팀원관리" — 팀원 생성 시 임시 비밀번호를 모달로 안내, 소속 프로젝트는 체크박스로 선택, 담당 리더(managerId) 지정
 │   │   ├── announcements/page.tsx     # ADMIN/LEADER 전용, 공지 등록/수정/게시중지/삭제 관리
 │   │   ├── requests/page.tsx          # 전 역할, 휴가/비품 신청 + 내 신청 목록 + (ADMIN/LEADER) 결재함
+│   │   ├── wiki/page.tsx              # 헤더 "위키" 메뉴 진입점(허브) — 소속 프로젝트 문서를 프로젝트별로 모아보기 + 프로젝트 선택 후 바로 문서 등록
 │   │   ├── settings/
 │   │   │   ├── calendar-sync/page.tsx     # 구글 캘린더 연동 안내 + 구독 URL 발급/복사 (전 역할, 헤더 메뉴는 ADMIN/LEADER 전용)
 │   │   │   └── integrations/page.tsx      # ADMIN 전용, Slack/잔디/Teams/텔레그램/카카오톡 채널별 설정+테스트 발송
@@ -229,7 +231,7 @@ high5/
 │   │           └── github/route.ts             # GitHub PR merge 연동
 │   │
 │   ├── components/
-│   │   ├── AppHeader.tsx              # 상단 GNB (메뉴, 프로필, 모바일 햄버거 토글) — 알림 벨 제거됨. "신청" 링크, "설정" 드롭다운(구 "관리")에 프로젝트/공지사항/팀원관리/통계/구글캘린더연동/외부연동(ADMIN)
+│   │   ├── AppHeader.tsx              # 상단 GNB (메뉴, 프로필, 모바일 햄버거 토글) — 알림 벨 제거됨. "신청"/"위키" 링크, "설정" 드롭다운(구 "관리")에 프로젝트/공지사항/팀원관리/통계/구글캘린더연동/외부연동(ADMIN)
 │   │   ├── AnnouncementBanner.tsx     # 헤더 하단 공지 배너 — 활성 공지 조회, X로 닫으면 localStorage에 dismiss 기록
 │   │   ├── WikiSearchButton.tsx       # 우하단 플로팅 버튼 — 클릭 시 위키 검색 모달, 결과 클릭 시 해당 프로젝트 위키로 이동
 │   │   ├── LayoutWrapper.tsx
@@ -348,10 +350,11 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 - 결재자는 `/requests` 페이지의 "결재 대기" 섹션에서 `PATCH /api/requests/[id]/decision`으로 승인/반려한다. 반려 시 사유 입력 필수.
 - **캘린더 반영**: `GET /api/tasks/calendar`가 해당 월과 겹치는 `status='APPROVED'`인 `LEAVE` 신청을 조회해 `leavesByDate`로 함께 반환하고, `/calendar` 페이지가 각 날짜 셀에 휴가자 이름을 표시한다(전결/일반 결재 승인 여부와 무관하게 APPROVED이면 모두 표시).
 
-### 프로젝트 위키 (`/projects/[id]/wiki`, `WikiSearchButton.tsx`)
-- 프로젝트 목록(`/projects`)에서 프로젝트를 선택하면 멤버 패널에 "📖 프로젝트 위키" 링크가 노출된다.
+### 프로젝트 위키 (`/wiki`, `/projects/[id]/wiki`, `WikiSearchButton.tsx`)
+- 헤더 상단 "위키" 메뉴 → `/wiki` 허브 페이지: 소속된 모든 프로젝트(ADMIN은 전체)의 위키 문서를 `GET /api/wiki/search?q=`(빈 쿼리 = 전체 목록, 최대 100건)로 한 번에 불러와 프로젝트별로 묶어 보여주고, 상단 "+ 문서 등록" 버튼으로 프로젝트를 선택해 바로 문서를 작성할 수 있다. 소속 프로젝트가 없으면 문서 등록 자체가 불가능하다는 안내를 표시한다.
+- 프로젝트 목록(`/projects`)에서 프로젝트를 선택하면 멤버 패널에도 "📖 프로젝트 위키" 링크가 노출된다(특정 프로젝트로 바로 진입하는 보조 경로).
 - `GET/POST /api/projects/[id]/wiki`, `PATCH/DELETE /api/projects/[id]/wiki/[wikiId]` 모두 해당 프로젝트 `ProjectMember` 또는 ADMIN만 호출 가능(`checkAccess`) — 소속되지 않은 사용자는 조회 자체가 403으로 차단된다. 삭제만 작성자 본인 또는 ADMIN으로 추가 제한.
-- 문서 내용은 `**굵게**`/`*기울임*`/`- 목록`을 지원하는 라이트 마크다운(`/info` FAQ 에디터와 동일한 렌더링 로직을 위키 페이지에 맞춰 재구현).
+- 문서 내용은 `**굵게**`/`*기울임*`/`- 목록`을 지원하는 라이트 마크다운(`/info` FAQ 에디터와 동일한 렌더링 로직을 위키 페이지/허브에 맞춰 재구현).
 - **플로팅 검색**: 로그인 후 모든 페이지 우하단에 `WikiSearchButton`이 떠 있고, 클릭하면 검색 모달이 열린다. `GET /api/wiki/search?q=`가 요청자가 속한 프로젝트(ADMIN은 전체)의 위키만 제목/내용 부분일치로 검색해 반환하며, 결과를 클릭하면 `/projects/[projectId]/wiki?open=[wikiId]`로 이동해 해당 문서를 자동으로 펼쳐 보여준다.
 
 ### 외부연동 (`/settings/integrations`, `src/lib/integrations.ts`)
