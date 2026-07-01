@@ -13,6 +13,12 @@ interface Worker {
   name: string;
 }
 
+interface Project {
+  id: number;
+  name: string;
+  status: string;
+}
+
 // 작업시간 계산 함수
 const calculateWorkHours = (timeLogs: any[]): string => {
   if (!timeLogs || timeLogs.length === 0) return '-';
@@ -65,6 +71,7 @@ export default function TaskListPage() {
   const [editingTitleId, setEditingTitleId] = useState<number | null>(null);
   const [titleDraft, setTitleDraft] = useState('');
   const [assignableWorkers, setAssignableWorkers] = useState<Worker[]>([]);
+  const [myProjects, setMyProjects] = useState<Project[]>([]);
 
   useEffect(() => {
     if (!canEditTitle) return;
@@ -78,6 +85,19 @@ export default function TaskListPage() {
     };
     fetchWorkers();
   }, [canEditTitle]);
+
+  // 프로젝트 전환 드롭다운 목록: 소속(멤버) + 배정된 업무가 있는 프로젝트 모두 포함(GET /api/projects가 둘 다 조회)
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const res = await apiClient.get<{ data: Project[] }>('/projects');
+        setMyProjects((res.data.data || []).filter((p) => p.status === 'ACTIVE'));
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchProjects();
+  }, []);
 
   const handleDeleteTask = async (id: number) => {
     if (!confirm('이 업무를 삭제하시겠습니까? 삭제 후에는 되돌릴 수 없습니다.')) return;
@@ -132,16 +152,15 @@ export default function TaskListPage() {
     new Map(tasks.filter((t) => t.worker).map((t: any) => [t.worker.id, t.worker])).values()
   ).sort((a: any, b: any) => a.name.localeCompare(b.name));
 
-  // 프로젝트 전환 드롭다운 목록: /api/projects(소속 멤버 기준)가 아니라 실제 로드된 업무에서 파생
-  // — WORKER는 프로젝트 소속 여부와 무관하게 배정된 업무를 전부 조회하므로, 소속되지 않은 프로젝트의
-  // 업무를 갖고 있어도 그 프로젝트가 드롭다운에 정확히 노출되도록 하기 위함
-  const myProjects = Array.from(
-    new Map(tasks.filter((t: any) => t.project).map((t: any) => [t.project.id, t.project])).values()
-  ).sort((a: any, b: any) => a.name.localeCompare(b.name));
-
-  // 상태 필터 목록: 여러 프로젝트에 걸쳐 실제로 사용 중인 상태 코드를 라벨과 함께 모아 중복 제거
+  // 상태 필터 목록: 현재 선택된 프로젝트/담당자 필터를 반영한 업무 범위에서 실제로 사용 중인 상태만 모음
+  // (프로젝트를 필터링했는데 상단 상태 목록에 다른 프로젝트의 상태가 섞여 나오지 않도록)
+  const tasksForStatusOptions = tasks.filter((t: any) => {
+    if (selectedProject && t.projectId !== parseInt(selectedProject)) return false;
+    if (selectedWorker && t.workerId !== parseInt(selectedWorker)) return false;
+    return true;
+  });
   const statusOptionMap = new Map<string, string>();
-  tasks.forEach((t: any) => {
+  tasksForStatusOptions.forEach((t: any) => {
     if (statusOptionMap.has(t.status)) return;
     const def = getStatuses(t.projectId).find((s) => s.code === t.status);
     statusOptionMap.set(t.status, def?.label ?? t.status);
@@ -349,7 +368,7 @@ export default function TaskListPage() {
             </span>
             <select
               value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
+              onChange={(e) => { setSelectedProject(e.target.value); setSelectedStatus(''); }}
               className={styles.statusFilterSelect}
             >
               <option value="">전체 프로젝트</option>

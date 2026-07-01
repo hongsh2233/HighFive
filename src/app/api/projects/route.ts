@@ -19,9 +19,17 @@ export async function GET() {
     const userId = parseInt((session!.user as any).id || '0');
     const role = (session!.user as any).role;
 
+    // 소속(ProjectMember)뿐 아니라 배정된 업무(workerId/plannerId)가 있는 프로젝트도 포함
+    // — WORKER는 프로젝트 멤버로 등록되지 않았어도 업무만 배정받는 경우가 있어,
+    //   멤버 여부만 보면 실제로 관련 있는 프로젝트가 누락되는 문제가 있었음
     const where = role === 'ADMIN'
       ? {}
-      : { members: { some: { userId } } };
+      : {
+          OR: [
+            { members: { some: { userId } } },
+            { tasks: { some: { OR: [{ workerId: userId }, { plannerId: userId }] } } },
+          ],
+        };
 
     const projects = await prisma.project.findMany({
       where,

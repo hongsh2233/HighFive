@@ -10,6 +10,7 @@ interface Project {
   id: number;
   name: string;
   status: string;
+  members: { user: { id: number } }[];
 }
 
 interface WikiSearchResult {
@@ -63,7 +64,7 @@ function SimpleEditor({ value, onChange, placeholder }: { value: string; onChang
 
 export default function WikiHubPage() {
   const router = useRouter();
-  const { isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [docs, setDocs] = useState<WikiSearchResult[]>([]);
@@ -81,7 +82,13 @@ export default function WikiHubPage() {
         apiClient.get<{ data: Project[] }>('/projects'),
         apiClient.get<{ data: WikiSearchResult[] }>('/wiki/search?q='),
       ]);
-      setProjects(projectsRes.data.data.filter((p) => p.status === 'ACTIVE'));
+      const userId = Number(user?.id);
+      const isAdmin = (user as any)?.role === 'ADMIN';
+      // 위키는 프로젝트 소속 멤버만 작성 가능하므로, 업무 배정만으로 노출되는 프로젝트는 제외
+      const writable = projectsRes.data.data.filter(
+        (p) => p.status === 'ACTIVE' && (isAdmin || p.members?.some((m) => m.user.id === userId))
+      );
+      setProjects(writable);
       setDocs(docsRes.data.data);
     } catch {
       setMessage({ type: 'error', text: '위키 목록 조회에 실패했습니다.' });
