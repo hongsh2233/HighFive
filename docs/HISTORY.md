@@ -289,3 +289,11 @@
   - `docs/개선1.0.md`: Phase 1·2 완료 표기, **Phase 3(칸반 노출)는 목록/상세로 충분하다고 판단해 진행하지 않기로 결정**했음을 명시.
   - **DB 마이그레이션 자동화 확인**: 별도 코드 변경 없음 — `package.json`의 `build` 스크립트가 이미 `prisma generate && prisma db push --skip-generate && next build` 순서로 구성되어 있어, `npm run build`를 실행할 때마다(배포 시 포함) 현재 스키마가 DB에 자동 반영된다. 이번 Phase 1에서 추가한 `ProjectField`/`TaskFieldValue` 테이블도 별도 마이그레이션 명령 없이 다음 빌드에서 자동 생성됨.
 - 디버깅 체크: `npx tsc --noEmit` 결과 변경 파일(`tasks/[id]/page.tsx`, `tasks/[id]/route.ts`)에서 신규 타입 오류 없음. 동일한 환경 제약(네트워크 차단)으로 `prisma generate`/`db push`/`npm run build`는 이번 세션에서 실행하지 못함 — **실제 배포 환경에서 빌드 후 브라우저로 상세 페이지의 "속성" 카드가 목록과 동일한 값을 보여주는지, 필드가 없는 업무는 카드가 안 보이는지 확인 필요.**
+
+## 2026-07-01 (35차)
+
+- **빌드 오류 수정**: 실제 배포(Railway) 빌드 로그에서 `./src/app/tasks/tasks.module.css` 컴파일 실패 발견 — `composition is only allowed when selector is single :local class name` 에러. 33차에서 추가한 `.addFieldPopover input, .addFieldPopover select { composes: field-input from global; ... }`가 원인. CSS Modules의 `composes`는 단일 클래스 셀렉터에만 허용되는데, 컴파운드(디센던트) 셀렉터에 적용해서 발생.
+  - `tasks.module.css`: 해당 규칙을 제거하고 독립된 `.addFieldInput { composes: field-input from global; font-size: 13px; }` 클래스로 분리.
+  - `tasks/page.tsx`: "+ 속성 추가" 팝오버의 input/select 3곳(이름/타입/선택지)에 `className={styles.addFieldInput}`을 직접 적용.
+  - 재발 방지 차원에서 저장소 전체 `.module.css`를 훑어 `composes`가 컴파운드 셀렉터에 걸린 다른 사례가 없는지 확인 — 없음.
+- 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음. `npx next build`로 재현 시도 — 이 CSS 컴파일 오류는 사라지고 빌드가 그 다음 단계(webpack 모듈 트랜스파일)까지 진행됨을 확인. 다만 이 샌드박스에는 `sanitize-html` 패키지가 설치되어 있지 않아(`@types/sanitize-html`만 있고 실제 패키지 없음) 이후 단계에서 무관한 `Module not found: Can't resolve 'sanitize-html'` 오류로 빌드가 중단됨 — 이는 이번 변경과 무관한 샌드박스 자체의 의존성 설치 문제이며, 실제 배포 로그에서는 해당 단계까지 통과했었으므로 별도 조치 없이 다음 배포에서 확인 필요.

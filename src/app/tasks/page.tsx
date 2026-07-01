@@ -585,9 +585,14 @@ function TaskListContent() {
                         placeholder="속성 이름"
                         value={newFieldName}
                         onChange={(e) => setNewFieldName(e.target.value)}
+                        className={styles.addFieldInput}
                         autoFocus
                       />
-                      <select value={newFieldType} onChange={(e) => setNewFieldType(e.target.value as FieldType)}>
+                      <select
+                        value={newFieldType}
+                        onChange={(e) => setNewFieldType(e.target.value as FieldType)}
+                        className={styles.addFieldInput}
+                      >
                         <option value="TEXT">텍스트</option>
                         <option value="NUMBER">숫자</option>
                         <option value="DATE">날짜</option>
@@ -600,6 +605,7 @@ function TaskListContent() {
                           placeholder="선택지(콤마로 구분)"
                           value={newFieldOptions}
                           onChange={(e) => setNewFieldOptions(e.target.value)}
+                          className={styles.addFieldInput}
                         />
                       )}
                       <div className={styles.addFieldPopoverActions}>

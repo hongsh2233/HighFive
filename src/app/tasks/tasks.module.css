@@ -255,8 +255,7 @@
   gap: 8px;
 }
 
-.addFieldPopover input,
-.addFieldPopover select {
+.addFieldInput {
   composes: field-input from global;
   font-size: 13px;
 }
