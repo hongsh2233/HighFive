@@ -168,3 +168,8 @@
 - 보안 강화: 로그인 세션을 24시간 → 30분으로 제한. `session.maxAge`와 `session.updateAge`를 모두 `30*60`으로 동일하게 설정해, 활동 여부와 무관하게 로그인 후 정확히 30분 뒤 세션이 절대 만료되도록 변경(기존에는 `updateAge` 기본값이 커서 활동 시 슬라이딩 갱신되는 구조였음)(`src/lib/auth.ts`).
 - 세션 만료 시 조치 추가: `SessionProvider`에 `refetchInterval={60}`을 설정해 60초마다 세션 상태를 재확인하도록 하고, 로그인 상태였던 사용자의 세션이 만료(`unauthenticated`)되면 알림창으로 "30분 동안 활동이 없어 세션이 만료되었습니다"를 안내한 뒤 자동 로그아웃 처리하고 `/login`으로 이동시킴(`src/components/Providers.tsx`).
 - 디버깅 체크: `npx tsc --noEmit` 결과 변경한 파일(`auth.ts`, `Providers.tsx`)에서 신규 타입 오류 없음을 확인. 동일한 환경 제약으로 `npm run build`/`npm run lint`는 실행하지 못함 — 실제 개발 환경에서 30분 경과 후 세션 만료 알림 및 자동 로그아웃 동작 확인 필요.
+
+## 2026-07-01 (23차)
+
+- 로그인 페이지(`src/app/login/login.module.css`) 디자인을 앱 전체 디자인 시스템(`globals.css`의 라이트 배경 `--bg-base`/인디고 accent `--accent`/플랫 버튼 스타일)에 맞춰 전면 리스타일. 기존에는 골드·퍼플 그라디언트의 다크 테마(라디얼 그라디언트 배경, 그라디언트 로고/버튼, 강한 글로우 섀도우)라서 나머지 페이지(대시보드/업무/헤더 등)의 라이트+인디고 톤과 이질감이 컸음. 로고 아이콘을 `--header-bg` 단색으로, 브랜드 타이틀 텍스트 그라디언트를 `--text-primary` 단색으로, 제출 버튼을 `.btn-primary`와 동일한 `--accent` 단색 배경으로, 인풋/에러박스를 앱의 `field-input`/`errorBox` 톤(라이트 배경, `var(--border-strong)` 보더)으로 교체. JSX(`page.tsx`) 구조는 변경하지 않고 CSS만 수정.
+- 디버깅 체크: `node_modules`를 `--ignore-scripts`로 설치 후(Prisma 엔진 바이너리 다운로드는 환경 네트워크 제약으로 여전히 실패) `npx tsc --noEmit` 실행 — 로그인 페이지 관련 신규 오류 없음(남은 오류는 전부 Prisma 클라이언트 미생성으로 인한 기존 오류). `npm run dev`로 개발 서버를 직접 기동해 `/login`을 Playwright로 스크린샷 촬영, 라이트 배경+인디고 버튼으로 정상 렌더링되는 것을 시각적으로 확인함. `npm run lint`는 저장소에 ESLint 설정 파일이 없어 대화형 설정이 필요해 이번에도 실행하지 못함(기존부터 있던 제약, 이번 변경과 무관).
