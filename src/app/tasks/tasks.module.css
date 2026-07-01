@@ -206,3 +206,69 @@
   color: var(--color-gray-700);
   line-height: 1.6;
 }
+
+/* 커스텀 필드(속성) — 노션 스타일 자유 컬럼 */
+.fieldTh {
+  position: relative;
+  white-space: nowrap;
+}
+
+.fieldRemoveBtn {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 11px;
+  margin-left: 4px;
+  padding: 0 2px;
+}
+
+.fieldRemoveBtn:hover {
+  color: var(--danger);
+}
+
+.addFieldWrap {
+  position: relative;
+}
+
+.addFieldBtn {
+  composes: btn btn-sm btn-ghost from global;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 600;
+}
+
+.addFieldPopover {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  padding: 12px;
+  width: 220px;
+  text-transform: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.addFieldPopover input,
+.addFieldPopover select {
+  composes: field-input from global;
+  font-size: 13px;
+}
+
+.addFieldPopoverActions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.fieldCellInput {
+  composes: field-input from global;
+  padding: 4px 8px;
+  font-size: 13px;
+}

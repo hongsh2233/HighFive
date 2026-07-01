@@ -54,6 +54,7 @@ export async function GET(req: NextRequest) {
           worker: { select: { id: true, name: true, email: true } },
           project: { select: { id: true, name: true } },
           timeLogs: true,
+          fieldValues: true,
           _count: { select: { subTasks: true } },
         },
       }),

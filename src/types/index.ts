@@ -56,7 +56,27 @@ export interface Task {
   } | null;
   timeLogs?: TimeLog[];
   subTasks?: Task[];
+  fieldValues?: TaskFieldValue[];
   _count?: { subTasks: number };
+}
+
+// 프로젝트별 커스텀 필드 (노션식 자유 속성)
+export type FieldType = 'TEXT' | 'NUMBER' | 'DATE' | 'SELECT' | 'CHECKBOX';
+
+export interface ProjectField {
+  id: number;
+  projectId: number;
+  name: string;
+  type: FieldType;
+  options: string | null; // SELECT 타입일 때 콤마 구분 선택지
+  order: number;
+}
+
+export interface TaskFieldValue {
+  id: number;
+  taskId: number;
+  fieldId: number;
+  value: string | null;
 }
 
 // 프로젝트별(또는 기본) 상태 정의

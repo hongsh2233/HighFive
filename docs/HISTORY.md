@@ -265,3 +265,17 @@
 - **업무 목록 새로고침 시 필터 유지**: `/tasks`의 프로젝트/상태/담당자 필터가 컴포넌트 state로만 관리되어, 필터를 적용한 채로 브라우저를 새로고침(F5)하면 전부 초기화되던 문제 수정.
   - `tasks/page.tsx`: `selectedProject`/`selectedStatus`/`selectedWorker` 값을 URL 쿼리 파라미터(`projectId`/`status`/`workerId`)에 실시간으로 동기화(`router.replace`, `scroll: false`)하도록 수정하고, 세 상태 모두 `useSearchParams()`로 읽은 값을 초기값으로 사용하도록 변경(기존에는 `projectId`만 URL과 연동되어 있었음). 이제 새로고침해도 주소창의 쿼리가 그대로 남아 필터가 복원되고, 필터가 적용된 URL을 그대로 북마크/공유해도 동일한 화면이 열림.
 - 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 오류는 기존 Prisma 클라이언트 미생성 관련뿐). 개발 서버에서 `middleware.ts`의 `protectedRoutes`를 임시로 비워 `/tasks`, `/tasks?projectId=1`, `/tasks?status=DONE&workerId=2`가 모두 200과 에러 없는 HTML을 반환함을 확인 후 원복. `npm run lint`는 이번에도 ESLint 설정 파일 부재로 실행하지 못함. **DB 미연결 환경이라 실제 로그인 세션에서 필터 선택 → 새로고침 시 값이 그대로 유지되는지는 재확인하지 못함 — 실제 환경에서 반드시 확인 필요.**
+
+## 2026-07-01 (33차)
+
+- **개선 1.0 Phase 1: 프로젝트별 커스텀 필드(노션식 자유 속성) 도입** (`docs/개선1.0.md` 계획 문서 기반). 업무 목록의 8개 고정 컬럼 외에, 프로젝트마다 원하는 속성(컬럼)을 자유롭게 추가/삭제할 수 있게 함 — "노션의 자유도 + 지라의 편의성"을 목표로 하되 필드 타입은 5종(텍스트/숫자/날짜/선택/체크박스), 프로젝트당 최대 10개로 제한해 복잡도를 통제.
+  - `prisma/schema.prisma`: `ProjectField`(정의: `projectId`, `name`, `type`, `options`, `order`, `@@unique([projectId, name])`), `TaskFieldValue`(값: `taskId`, `fieldId`, `value`, `@@unique([taskId, fieldId])`) 모델 추가. 기존 `ProjectStatus`와 동일한 "프로젝트 단위 정의 + 값 테이블" 패턴 재사용.
+  - `src/app/api/projects/[id]/fields/route.ts`(신규): GET 조회, PUT 전체 교체(ADMIN/LEADER, 최대 10개·이름 필수 검증) — `statuses/route.ts`와 동일 구조.
+  - `src/app/api/tasks/[id]/fields/route.ts`(신규): PUT으로 개별 업무의 필드 값 upsert(ADMIN/LEADER).
+  - `src/app/api/tasks/route.ts`: 목록 조회 시 `fieldValues` include 추가.
+  - `src/hooks/useProjectFields.ts`(신규): `useProjectStatuses.ts` 패턴을 따라 `getFields`/`saveFields`/`saveValue` 제공.
+  - `src/types/index.ts`: `ProjectField`, `TaskFieldValue` 타입 추가, `Task.fieldValues?` 필드 추가.
+  - `src/app/tasks/page.tsx` / `tasks.module.css`: 프로젝트를 선택했을 때만 커스텀 필드 컬럼을 동적으로 렌더링. 헤더의 "+ 속성 추가" 버튼(팝오버로 이름/타입/선택지 입력)으로 즉석 추가, 각 필드 헤더의 ✕ 버튼으로 삭제(확인창 포함). 셀은 타입별 인라인 편집(텍스트/숫자/날짜=input, 선택=select, 체크박스=checkbox)이며 값은 즉시 로컬 반영 후 `PUT /api/tasks/:id/fields`로 저장.
+  - 전체 보기(프로젝트 미선택) 상태에서는 커스텀 필드 컬럼을 숨김(여러 프로젝트의 서로 다른 필드가 뒤섞이는 것을 방지).
+  - Phase 2(업무 상세 페이지 반영)·Phase 3(칸반 노출)는 이번 범위에서 제외 — `docs/개선1.0.md` 참고.
+- 디버깅 체크: `npx tsc --noEmit` 결과 변경/신규 파일에서 신규 타입 오류 없음(Prisma 클라이언트가 네트워크 제약으로 생성되지 않아 `prisma.*` 호출이 전반적으로 `any`로 처리되는 기존 베이스라인은 여전함 — `PrismaClient` export 오류 등). `npx prisma generate`/`migrate`는 이 환경에서 DB 및 Prisma 엔진 다운로드용 네트워크가 차단되어 있어 실행 불가(기존과 동일한 환경 제약) — **실제 배포/개발 환경에서 반드시 `npx prisma migrate dev`(또는 `db push`)로 스키마를 반영하고, 브라우저에서 프로젝트 선택 → 속성 추가/편집/삭제 → 새로고침 후 값 유지까지 end-to-end로 확인 필요.**

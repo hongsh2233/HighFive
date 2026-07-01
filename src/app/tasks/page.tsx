@@ -6,7 +6,9 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useTasks } from '@/hooks/useTask';
 import { useProjectStatuses } from '@/hooks/useProjectStatuses';
+import { useProjectFields } from '@/hooks/useProjectFields';
 import apiClient from '@/lib/api-client';
+import { ProjectField, FieldType } from '@/types';
 import styles from './tasks.module.css';
 
 interface Worker {
@@ -84,6 +86,55 @@ function TaskListContent() {
   const [titleDraft, setTitleDraft] = useState('');
   const [assignableWorkers, setAssignableWorkers] = useState<Worker[]>([]);
   const [myProjects, setMyProjects] = useState<Project[]>([]);
+
+  // 커스텀 필드(속성) — 노션식 자유 컬럼. 프로젝트가 선택된 경우에만 노출
+  const selectedProjectId = selectedProject ? parseInt(selectedProject) : null;
+  const { fields, saveFields, saveValue } = useProjectFields(selectedProjectId);
+  const [fieldValueOverrides, setFieldValueOverrides] = useState<Record<string, string>>({});
+  const [showAddField, setShowAddField] = useState(false);
+  const [newFieldName, setNewFieldName] = useState('');
+  const [newFieldType, setNewFieldType] = useState<FieldType>('TEXT');
+  const [newFieldOptions, setNewFieldOptions] = useState('');
+
+  const getFieldValue = (task: any, field: ProjectField): string => {
+    const key = `${task.id}-${field.id}`;
+    if (key in fieldValueOverrides) return fieldValueOverrides[key];
+    return task.fieldValues?.find((fv: any) => fv.fieldId === field.id)?.value ?? '';
+  };
+
+  const handleFieldValueChange = (taskId: number, field: ProjectField, value: string) => {
+    setFieldValueOverrides((prev) => ({ ...prev, [`${taskId}-${field.id}`]: value }));
+    saveValue(taskId, field.id, value || null).catch((err) => console.error(err));
+  };
+
+  const handleAddField = async () => {
+    if (!newFieldName.trim()) return;
+    try {
+      const next = [
+        ...fields.map((f) => ({ name: f.name, type: f.type, options: f.options })),
+        { name: newFieldName.trim(), type: newFieldType, options: newFieldType === 'SELECT' ? newFieldOptions : null },
+      ];
+      await saveFields(next as any);
+      setNewFieldName('');
+      setNewFieldType('TEXT');
+      setNewFieldOptions('');
+      setShowAddField(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleRemoveField = async (fieldId: number) => {
+    if (!confirm('이 속성을 삭제하시겠습니까? 저장된 값도 함께 삭제됩니다.')) return;
+    try {
+      const next = fields
+        .filter((f) => f.id !== fieldId)
+        .map((f) => ({ name: f.name, type: f.type, options: f.options }));
+      await saveFields(next as any);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // 필터 상태를 URL 쿼리에 반영 — 새로고침해도 필터가 유지되도록 함
   useEffect(() => {
@@ -360,12 +411,17 @@ function TaskListContent() {
             </select>
           )}
         </td>
+        {selectedProjectId && fields.map((field) => (
+          <td key={field.id} className={styles.td}>
+            {renderFieldCell(task, field)}
+          </td>
+        ))}
       </tr>,
     ];
     if (!isGroupRow && isExpanded && hasNotes) {
       rows.push(
         <tr key={`notes-${task.id}`} className={styles.notesRow}>
-          <td colSpan={8} className={styles.notesCell}>
+          <td colSpan={colCount} className={styles.notesCell}>
             <div
               className={styles.notesContent}
               dangerouslySetInnerHTML={{ __html: task.notes ?? '' }}
@@ -376,6 +432,48 @@ function TaskListContent() {
     }
     return rows;
   };
+
+  const renderFieldCell = (task: any, field: ProjectField) => {
+    const value = getFieldValue(task, field);
+    if (!canEditTitle) {
+      if (field.type === 'CHECKBOX') return value === 'true' ? '✓' : '-';
+      return value || '-';
+    }
+    if (field.type === 'CHECKBOX') {
+      return (
+        <input
+          type="checkbox"
+          checked={value === 'true'}
+          onChange={(e) => handleFieldValueChange(task.id, field, e.target.checked ? 'true' : 'false')}
+        />
+      );
+    }
+    if (field.type === 'SELECT') {
+      const options = (field.options || '').split(',').map((o) => o.trim()).filter(Boolean);
+      return (
+        <select
+          value={value}
+          onChange={(e) => handleFieldValueChange(task.id, field, e.target.value)}
+          className={styles.fieldCellInput}
+        >
+          <option value="">-</option>
+          {options.map((o) => (
+            <option key={o} value={o}>{o}</option>
+          ))}
+        </select>
+      );
+    }
+    return (
+      <input
+        type={field.type === 'NUMBER' ? 'number' : field.type === 'DATE' ? 'date' : 'text'}
+        defaultValue={value}
+        onBlur={(e) => handleFieldValueChange(task.id, field, e.target.value)}
+        className={styles.fieldCellInput}
+      />
+    );
+  };
+
+  const colCount = 8 + (selectedProjectId ? fields.length : 0);
 
   return (
     <div className={styles.container}>
@@ -456,18 +554,78 @@ function TaskListContent() {
               <th className={styles.th}>비고</th>
               <th className={`${styles.th} ${styles.thHours}`}>작업시간</th>
               <th className={`${styles.th} ${styles.thStatus}`}>상태</th>
+              {selectedProjectId && fields.map((field) => (
+                <th key={field.id} className={`${styles.th} ${styles.fieldTh}`}>
+                  {field.name}
+                  {canEditTitle && (
+                    <button
+                      type="button"
+                      className={styles.fieldRemoveBtn}
+                      onClick={() => handleRemoveField(field.id)}
+                      aria-label={`${field.name} 속성 삭제`}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </th>
+              ))}
+              {selectedProjectId && canEditTitle && (
+                <th className={`${styles.th} ${styles.addFieldWrap}`}>
+                  <button
+                    type="button"
+                    className={styles.addFieldBtn}
+                    onClick={() => setShowAddField((v) => !v)}
+                  >
+                    + 속성 추가
+                  </button>
+                  {showAddField && (
+                    <div className={styles.addFieldPopover}>
+                      <input
+                        type="text"
+                        placeholder="속성 이름"
+                        value={newFieldName}
+                        onChange={(e) => setNewFieldName(e.target.value)}
+                        autoFocus
+                      />
+                      <select value={newFieldType} onChange={(e) => setNewFieldType(e.target.value as FieldType)}>
+                        <option value="TEXT">텍스트</option>
+                        <option value="NUMBER">숫자</option>
+                        <option value="DATE">날짜</option>
+                        <option value="SELECT">선택</option>
+                        <option value="CHECKBOX">체크박스</option>
+                      </select>
+                      {newFieldType === 'SELECT' && (
+                        <input
+                          type="text"
+                          placeholder="선택지(콤마로 구분)"
+                          value={newFieldOptions}
+                          onChange={(e) => setNewFieldOptions(e.target.value)}
+                        />
+                      )}
+                      <div className={styles.addFieldPopoverActions}>
+                        <button type="button" className={styles.detailBtn} onClick={() => setShowAddField(false)}>
+                          취소
+                        </button>
+                        <button type="button" className={styles.addSubBtnSmall} onClick={handleAddField}>
+                          추가
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} className={styles.tdCenter}>
+                <td colSpan={colCount} className={styles.tdCenter}>
                   로딩 중...
                 </td>
               </tr>
             ) : filteredTasks.length === 0 ? (
               <tr>
-                <td colSpan={8} className={styles.tdCenter}>
+                <td colSpan={colCount} className={styles.tdCenter}>
                   {tasks.length === 0 ? '등록된 업무가 없습니다.' : '필터 조건에 맞는 업무가 없습니다.'}
                 </td>
               </tr>

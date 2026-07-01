@@ -105,6 +105,9 @@ User (1) ──< Request [requester / approver] (1) ──< Announcement (전결
 ### ProjectStatus
 프로젝트별 업무 상태(칸반 단계) 정의. `projectId`, `code`(Task.status에 저장되는 값, `@@unique([projectId, code])`), `label`, `color`(hex, nullable), `order`, `isProgress`(자동 시간카운터 시작 트리거), `isDone`(완료 집계). 프로젝트에 이 테이블 row가 하나도 없으면 `src/lib/task-status.ts`의 `DEFAULT_STATUSES`(ASSIGNED/PROGRESS/REVIEW/QA/DONE)를 그 자리에서 합성해 반환한다 — 마이그레이션 없이도 기존 프로젝트가 그대로 동작하는 이유.
 
+### ProjectField / TaskFieldValue
+프로젝트별 커스텀 필드(노션식 자유 속성). `ProjectField`는 정의(`projectId`, `name`, `type`: TEXT/NUMBER/DATE/SELECT/CHECKBOX, `options`: SELECT일 때 콤마구분 선택지, `order`, `@@unique([projectId, name])`, 프로젝트당 최대 10개), `TaskFieldValue`는 업무별 값(`taskId`, `fieldId`, `value`: 모든 타입을 문자열로 저장, `@@unique([taskId, fieldId])`). `ProjectStatus`와 동일한 "프로젝트 단위 정의 테이블 + 값 테이블" 패턴이며, 상태와 달리 기본값 폴백은 없음(필드가 없으면 그냥 컬럼이 없는 것). `/api/projects/[id]/fields`(GET/PUT, PUT은 ADMIN/LEADER)와 `/api/tasks/[id]/fields`(PUT, 값 upsert)로 관리하고, `useProjectFields` 훅이 조회/저장을 감싼다. 업무 목록(`/tasks`)에서 프로젝트를 선택했을 때만 커스텀 필드 컬럼이 동적으로 노출되며, 헤더의 "+ 속성 추가" 버튼으로 즉석 추가, 컬럼 헤더의 ✕ 버튼으로 삭제한다.
+
 ### Template
 업무 생성 시 사용하는 기본 제목/가이드 텍스트 템플릿. `name`, `defaultTitle`, `defaultPlannerId`, `guideText`.
 
@@ -262,7 +265,8 @@ high5/
 │   │   ├── useAuth.ts                 # NextAuth 세션 + 역할 가드
 │   │   ├── useTask.ts                 # 업무 CRUD
 │   │   ├── useFreeze.ts               # 배포 프리징 감지
-│   │   └── useProjectStatuses.ts      # GET /api/projects/statuses 일괄 조회 + projectId별 조회 헬퍼(getStatuses), tasks/kanban 등에서 공용
+│   │   ├── useProjectStatuses.ts      # GET /api/projects/statuses 일괄 조회 + projectId별 조회 헬퍼(getStatuses), tasks/kanban 등에서 공용
+│   │   └── useProjectFields.ts        # GET /api/projects/[id]/fields 조회 + 필드정의 저장(saveFields)/값 저장(saveValue), 업무 목록의 커스텀 필드 컬럼에서 사용
 │   │
 │   ├── store/                         # Zustand 전역 상태
 │   │   ├── authStore.ts               # 인증 상태 (persist, hasRole, isAdmin, isLeader)

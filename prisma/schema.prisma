@@ -70,6 +70,7 @@ model Task {
   histories     TaskHistory[]
   parentTask    Task?    @relation("subTasks", fields: [parentTaskId], references: [id])
   subTasks      Task[]   @relation("subTasks")
+  fieldValues   TaskFieldValue[]
 
   @@index([workerId, status])
   @@index([targetDate])
@@ -133,6 +134,7 @@ model Project {
   tasks            Task[]
   wikiPages        WikiPage[]
   statuses         ProjectStatus[]
+  fields           ProjectField[]
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -280,4 +282,35 @@ model ProjectStatus {
   @@unique([projectId, code])
   @@index([projectId, order])
   @@map("project_statuses")
+}
+
+model ProjectField {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  name      String              // 노출 라벨 (예: "고객사", "예상공수")
+  type      String              // TEXT | NUMBER | DATE | SELECT | CHECKBOX
+  options   String?             // SELECT 타입일 때 콤마구분 선택지
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  values    TaskFieldValue[]
+
+  @@unique([projectId, name])
+  @@index([projectId, order])
+  @@map("project_fields")
+}
+
+model TaskFieldValue {
+  id      Int          @id @default(autoincrement())
+  taskId  Int
+  fieldId Int
+  value   String?
+
+  task    Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  field   ProjectField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, fieldId])
+  @@index([taskId])
+  @@map("task_field_values")
 }
