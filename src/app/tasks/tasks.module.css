@@ -116,13 +116,15 @@
 }
 
 .tdNotes {
-  white-space: nowrap;
+  white-space: normal;
+  min-width: 150px;
 }
 
 .notesBtns {
   display: flex;
   gap: 4px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .notesToggleBtn {

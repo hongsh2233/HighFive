@@ -157,3 +157,8 @@
 - max-width 1460px 통일: 이전에 설정된 1460px 값을 19차에서 1446px로 잘못 복구했던 부분을 전체 CSS 파일(`globals.css`, `dashboard`, `calendar`, `stats`, `projects`, `info`, `detail`, `create` 등)에서 1460px로 재설정.
 - 로그인 폼 중앙 배치: 기존 좌우 분할 레이아웃(brandPanel + formPanel)에서 세로 중앙 정렬로 변경. CSS만 수정(JSX 유지): wrapper를 `flex-direction: column; align-items: center; justify-content: center`로, brandPanel을 컴팩트 수평 로고로, formPanel을 `max-width:420px` 중앙 카드로 리스타일. 기존 그라데이션 다크 톤은 그대로 유지(`login.module.css`).
 - 디버깅 체크: `npx tsc --noEmit` 결과 변경한 파일(`AppHeader.tsx`, `tasks/page.tsx`)에서 신규 타입 오류 없음을 확인. 동일한 환경 제약으로 `npm run build`/`npm run lint`는 실행하지 못함.
+
+## 2026-07-01 (21차)
+
+- 업무 목록(`/tasks`) 테이블 비고(notes) 컬럼 가로스크롤 수정: `table-layout: fixed` 컬럼 폭이 좁은 상태에서 요약보기/상세보기/+하위업무/삭제 버튼 4개가 `.notesBtns`(flex, nowrap)에 한 줄로 강제되어 넘치면서 테이블 전체 가로스크롤을 유발하던 문제. `.notesBtns`에 `flex-wrap: wrap` 추가, `.tdNotes`는 `white-space: nowrap` → `normal`로 바꾸고 `min-width: 150px` 지정해 버튼이 셀 안에서 줄바꿈되도록 수정(`tasks.module.css`).
+- 디버깅 체크: `npx tsc --noEmit` 결과 신규 타입 오류 없음(CSS 전용 변경). 동일한 환경 제약으로 `npm run build`/`npm run lint`는 실행하지 못함.
