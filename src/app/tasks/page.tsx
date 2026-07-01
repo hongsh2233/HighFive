@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useTasks } from '@/hooks/useTask';
+import { useProjectStatuses } from '@/hooks/useProjectStatuses';
 import apiClient from '@/lib/api-client';
 import styles from './tasks.module.css';
 
@@ -11,16 +12,6 @@ interface Worker {
   id: number;
   name: string;
 }
-
-const statusLabels: { [key: string]: string } = {
-  ASSIGNED: '배정됨',
-  PROGRESS: '진행중',
-  REVIEW: '검수',
-  QA: 'QA',
-  DONE: '완료',
-};
-
-const ALL_STATUSES = ['ASSIGNED', 'PROGRESS', 'REVIEW', 'QA', 'DONE'];
 
 // 작업시간 계산 함수
 const calculateWorkHours = (timeLogs: any[]): string => {
@@ -62,6 +53,7 @@ const calculateWorkHours = (timeLogs: any[]): string => {
 export default function TaskListPage() {
   const { user, isLoading: authLoading } = useAuth();
   const { tasks, loading, error, updateStatus, updateTask, deleteTask } = useTasks({ limit: 1000 });
+  const { getStatuses } = useProjectStatuses();
   const canEditTitle = ['ADMIN', 'LEADER'].includes((user as any)?.role ?? '');
   const canDelete = canEditTitle;
 
@@ -139,6 +131,15 @@ export default function TaskListPage() {
     new Map(tasks.filter((t) => t.worker).map((t: any) => [t.worker.id, t.worker])).values()
   ).sort((a: any, b: any) => a.name.localeCompare(b.name));
 
+  // 상태 필터 목록: 여러 프로젝트에 걸쳐 실제로 사용 중인 상태 코드를 라벨과 함께 모아 중복 제거
+  const statusOptionMap = new Map<string, string>();
+  tasks.forEach((t: any) => {
+    if (statusOptionMap.has(t.status)) return;
+    const def = getStatuses(t.projectId).find((s) => s.code === t.status);
+    statusOptionMap.set(t.status, def?.label ?? t.status);
+  });
+  const statusOptions = Array.from(statusOptionMap.entries());
+
   if (authLoading) {
     return <div className={styles.loadingPage}>로딩 중...</div>;
   }
@@ -170,11 +171,13 @@ export default function TaskListPage() {
     const { isChild, isGroupRow, isGroupExpanded } = opts;
     const hasNotes = !!task.notes && task.notes.trim() !== '' && task.notes.trim() !== '<p><br></p>';
     const isExpanded = expandedNotes.has(task.id);
+    const taskStatuses = getStatuses(task.projectId);
+    const isTaskDone = taskStatuses.find((s) => s.code === task.status)?.isDone ?? false;
     const rows: React.ReactElement[] = [
       <tr
         key={task.id}
         style={{
-          backgroundColor: task.status === 'DONE' ? '#F9FAFB' : 'white',
+          backgroundColor: isTaskDone ? '#F9FAFB' : 'white',
         }}
       >
         <td className={styles.tdId}>#{task.id}</td>
@@ -292,11 +295,12 @@ export default function TaskListPage() {
             onChange={(e) => updateStatus(task.id, e.target.value)}
             className={styles.statusSelect}
           >
-            <option value="ASSIGNED">배정됨</option>
-            <option value="PROGRESS">진행중</option>
-            <option value="REVIEW">검수</option>
-            <option value="QA">QA</option>
-            <option value="DONE">완료</option>
+            {!taskStatuses.some((s) => s.code === task.status) && (
+              <option value={task.status}>{task.status} (기타)</option>
+            )}
+            {taskStatuses.map((s) => (
+              <option key={s.code} value={s.code}>{s.label}</option>
+            ))}
           </select>
         </td>
       </tr>,
@@ -336,9 +340,9 @@ export default function TaskListPage() {
           className={styles.statusFilterSelect}
         >
           <option value="">전체 상태</option>
-          {ALL_STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {statusLabels[status]}
+          {statusOptions.map(([code, label]) => (
+            <option key={code} value={code}>
+              {label}
             </option>
           ))}
         </select>

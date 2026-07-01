@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useProjectStatuses } from '@/hooks/useProjectStatuses';
 import apiClient from '@/lib/api-client';
 import { Task, TimeLog } from '@/types';
 import styles from './detail.module.css';
@@ -15,26 +16,11 @@ interface Worker {
   role?: string;
 }
 
-const statusColors: { [key: string]: { bg: string; text: string; border: string } } = {
-  ASSIGNED: { bg: 'transparent', text: '#1D4ED8', border: '#93C5FD' },
-  PROGRESS: { bg: 'transparent', text: '#92400E', border: '#FCD34D' },
-  REVIEW:   { bg: 'transparent', text: '#5B21B6', border: '#C4B5FD' },
-  QA:       { bg: 'transparent', text: '#155E75', border: '#67E8F9' },
-  DONE:     { bg: 'transparent', text: '#065F46', border: '#6EE7B7' },
-};
-
-const statusLabels: { [key: string]: string } = {
-  ASSIGNED: '배정됨',
-  PROGRESS: '진행중',
-  REVIEW: '검수',
-  QA: 'QA',
-  DONE: '완료',
-};
-
 export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
+  const { getStatuses } = useProjectStatuses();
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -176,13 +162,14 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  const sc = statusColors[task.status] ?? { bg: 'transparent', text: '#374151', border: '#D4D4D8' };
+  const currentStatusDef = getStatuses(task.projectId).find((s) => s.code === task.status);
+  const statusColor = currentStatusDef?.color || '#374151';
   const badgeStyle = {
     display: 'inline-block',
     padding: '3px 8px',
-    backgroundColor: sc.bg,
-    color: sc.text,
-    border: `1px solid ${sc.border}`,
+    backgroundColor: 'transparent',
+    color: statusColor,
+    border: `1px solid ${statusColor}`,
     borderRadius: '4px',
     fontSize: '11px',
     fontWeight: '600',
@@ -286,7 +273,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
           <div className={styles.grid}>
             <div>
               <p className={styles.fieldLabel}>상태</p>
-              <div style={badgeStyle}>{statusLabels[task.status]}</div>
+              <div style={badgeStyle}>{currentStatusDef?.label ?? task.status}</div>
             </div>
             <div>
               <p className={styles.fieldLabel}>담당자</p>

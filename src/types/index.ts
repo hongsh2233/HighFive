@@ -18,7 +18,8 @@ export interface AuthResponse {
 }
 
 // Task types
-export type TaskStatus = "ASSIGNED" | "PROGRESS" | "REVIEW" | "QA" | "DONE";
+// 상태 코드는 프로젝트별로 커스터마이징 가능하므로 고정 유니언이 아닌 string
+export type TaskStatus = string;
 
 export interface Task {
   id: number;
@@ -36,6 +37,7 @@ export interface Task {
   isGroup: boolean;
   timeCounterEnabled: boolean;
   parentTaskId: number | null;
+  projectId: number | null;
   createdAt: string;
   updatedAt: string;
   worker?: {
@@ -48,9 +50,23 @@ export interface Task {
     name: string;
     email: string;
   };
+  project?: {
+    id: number;
+    name: string;
+  } | null;
   timeLogs?: TimeLog[];
   subTasks?: Task[];
   _count?: { subTasks: number };
+}
+
+// 프로젝트별(또는 기본) 상태 정의
+export interface ProjectStatusDef {
+  code: string;
+  label: string;
+  color: string | null;
+  order: number;
+  isProgress: boolean;
+  isDone: boolean;
 }
 
 // TimeLog types

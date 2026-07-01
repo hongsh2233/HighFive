@@ -216,3 +216,16 @@
   - `GET /api/wiki/search`의 결과 개수 제한을 30 → 100으로 확대(허브에서 전체 목록 용도로도 재사용하기 위함).
   - `AppHeader.tsx`에 "위키" 최상위 메뉴 추가(전 역할 노출), `LayoutWrapper.tsx`의 인증 필요 경로 목록에 `/wiki` 추가.
 - 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(기존 Prisma 클라이언트 미생성 오류만 잔존). 개발 서버에서 `/wiki`가 200과 에러 없는 HTML을 반환함을 확인.
+
+## 2026-07-01 (27차)
+
+- **프로젝트별 업무 상태(칸반 단계) 커스터마이징**: 기존에는 ASSIGNED/PROGRESS/REVIEW/QA/DONE 5단계가 전체 프로젝트에 고정. 사용자 확인 결과 "단계 수·순서까지 자유롭게" 구성 가능하도록 결정하고 구현.
+  - `ProjectStatus` 모델 신설(`projectId`+`code` unique, `label`, `color`, `order`, `isProgress`, `isDone`). `src/lib/task-status.ts`의 `getProjectStatuses(projectId)`가 DB에 커스텀 단계가 있으면 그것을, 없으면(기존 프로젝트 포함) `DEFAULT_STATUSES`(기존 5단계와 동일한 값)를 그 자리에서 합성해 반환 — 마이그레이션 없이 기존 프로젝트가 그대로 동작.
+  - `GET/PUT /api/projects/[id]/statuses`(조회는 전 역할, 저장은 ADMIN/LEADER), `GET /api/projects/statuses`(접근 가능한 전체 프로젝트 상태를 일괄 조회하는 N+1 방지용 벌크 엔드포인트) 신설.
+  - `/projects/[id]/statuses` 관리 페이지 신설: 단계 추가/삭제, 위/아래 순서 변경, 이름/색상(`<input type="color">`)/진행중 단계(`isProgress`)/완료 단계(`isDone`) 편집 후 일괄 저장. 저장 시 라벨에서 코드 자동 생성(중복 시 접미사), 기존 단계는 코드가 보존되어 기존 업무의 상태값이 깨지지 않음. `/projects` 멤버 패널에 "⚙️ 상태 관리" 링크 추가(ADMIN/LEADER만).
+  - `POST /api/tasks`의 하드코딩된 `status: 'ASSIGNED'`(그룹/하위 업무 포함 3곳)를 프로젝트의 첫 단계 코드로 교체. `PATCH /api/tasks/[id]/status`의 고정 `validStatuses` 배열과 `status === 'PROGRESS'` 리터럴 비교(자동 시간카운터 트리거)를 프로젝트별 상태 조회 + `isProgress` 플래그 기반으로 일반화. `PATCH /api/tasks/[id]`의 상태값 검증도 동일하게 동적 검사로 교체.
+  - `useProjectStatuses` 훅 신설(`GET /api/projects/statuses` 한 번 호출 후 `getStatuses(projectId)`로 조회) — `/tasks`(상태 필터 드롭다운을 실제 사용 중인 상태의 동적 합집합으로, 행별 상태 변경 셀렉트를 해당 업무의 프로젝트 상태 목록으로), `/tasks/[id]`(상태 배지 라벨/색상을 프로젝트 상태에서 조회), `/tasks/kanban`(신설된 프로젝트 선택 드롭다운으로 해당 프로젝트의 단계를 컬럼으로 구성, 미선택 시 실사용 상태의 동적 합집합, 컬럼에 없는 상태값은 "기타" 컬럼으로 격리)에 적용.
+  - `KanbanColumn`은 고정 CSS `[data-status]` 색상 대신 프로젝트 상태의 `color` 값을 인라인 스타일로 적용하도록 변경.
+  - `api/stats/summary`의 `done`/`completionRate`는 업무별 프로젝트의 `isDone` 플래그 기반으로 일반화. **스코프 경계**: 배정됨/진행중/검수/QA 4개 세부 통계 카드, 대시보드 업무 카드 라벨, 캘린더 업무 칩 배경색은 여전히 기본 5단계 리터럴 코드 기준이라 커스텀 상태 프로젝트에서는 정확히 반영되지 않음(깨지지는 않고 원문 코드나 중립색으로 표시) — 필요 시 후속 작업.
+- **대시보드 정리**: "리더 기능" 섹션 제목 텍스트 제거, 링크를 업무배정/통계조회/캘린더/신규 신청(→`/requests`) 4개로 교체(칸반 보드 링크 제거). "나의 업무" 섹션 아래 "업무 등록" 버튼 삭제. 버튼 이모지(👥📋📊📈📅➕)를 모두 제거하고 `.actionLink`를 전역 `.btn .btn-secondary` 프리미티브 기반으로 리스타일해 다른 페이지와 톤을 맞춤(`dashboard/page.tsx`, `dashboard.module.css`, 미사용 `.mb4` 클래스 삭제).
+- 디버깅 체크: `npx tsc --noEmit`에서 신규 오류 2건(`stats/summary/route.ts`의 `Set`/`Array.from` 타입 추론 이슈로 `unknown` 추론) 발견 후 `Set<number | null>` 명시로 수정, 재확인 결과 신규 오류 없음(잔존 오류는 전부 기존 Prisma 클라이언트 미생성 관련). 개발 서버 기동 후 `middleware.ts`의 `protectedRoutes`를 임시로 비워 `/dashboard`·`/tasks`·`/tasks/kanban`·`/projects/1/statuses`가 200과 에러 없는 HTML을 반환함을 확인한 뒤 원복(DB 미연결로 실제 세션 발급 불가에 따른 임시 검증). `npm run lint`는 이번에도 ESLint 설정 파일 부재로 실행하지 못함(기존 제약). **실제 DB 연결 환경에서 프로젝트 상태 단계 저장/재정렬, 커스텀 단계로 업무 생성·상태변경(자동 시간카운터 포함), 칸반 프로젝트 필터, 통계 완료율 전체 플로우를 반드시 재확인 필요.**

@@ -4,6 +4,7 @@ import { requireAuth, successResponse, errorResponse, parseRmsNo } from '@/lib/u
 import { sanitize } from '@/lib/sanitize';
 import { addHistory } from '@/lib/task-history';
 import { notifyWorkerChange } from '@/lib/notify';
+import { isValidStatus } from '@/lib/task-status';
 
 // GET /api/tasks/[id] - 업무 상세 조회
 export async function GET(
@@ -83,8 +84,7 @@ export async function PATCH(
     if (notes !== undefined) updateData.notes = sanitize(notes || '');
     if (externalLink !== undefined) updateData.externalLink = externalLink || null;
     if (status !== undefined) {
-      const validStatuses = ['ASSIGNED', 'PROGRESS', 'REVIEW', 'QA', 'WAITING', 'DONE', 'HOLD'];
-      if (!validStatuses.includes(status)) {
+      if (!(await isValidStatus(prevTask.projectId, status))) {
         return errorResponse('유효하지 않은 상태값입니다.', 400, 'VALID_400');
       }
       updateData.status = status;

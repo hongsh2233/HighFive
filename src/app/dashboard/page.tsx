@@ -99,7 +99,7 @@ export default function DashboardPage() {
           <h2 className={styles.sectionTitle}>관리 기능</h2>
           <div>
             <Link href="/users" className={styles.actionLink}>
-              👥 팀원관리
+              팀원관리
             </Link>
           </div>
         </div>
@@ -107,19 +107,18 @@ export default function DashboardPage() {
 
       {user?.role === 'LEADER' && (
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>리더 기능</h2>
           <div className={styles.linkRow}>
             <Link href="/tasks" className={styles.actionLink}>
-              📋 업무 배정
+              업무 배정
             </Link>
             <Link href="/stats" className={styles.actionLink}>
-              📊 통계 조회
-            </Link>
-            <Link href="/tasks/kanban" className={styles.actionLink}>
-              📈 칸반 보드
+              통계 조회
             </Link>
             <Link href="/calendar" className={styles.actionLink}>
-              📅 캘린더
+              캘린더
+            </Link>
+            <Link href="/requests" className={styles.actionLink}>
+              신규 신청
             </Link>
           </div>
         </div>
@@ -127,11 +126,6 @@ export default function DashboardPage() {
 
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>나의 업무</h2>
-        <div className={styles.mb4}>
-          <Link href="/tasks/create" className={styles.actionLink}>
-            ➕ 업무 등록
-          </Link>
-        </div>
         {loadingTasks ? (
           <div className={styles.emptyState}>
             <p className={styles.emptyDesc}>불러오는 중...</p>

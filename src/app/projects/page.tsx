@@ -322,12 +322,22 @@ export default function ProjectsPage() {
                 <button onClick={() => setSelectedProject(null)} className={styles.memberPanelClose}>✕</button>
               </div>
 
-              <Link
-                href={`/projects/${selectedProject.id}/wiki`}
-                style={{ display: 'block', textAlign: 'center', padding: '8px 12px', marginBottom: 16, backgroundColor: 'var(--bg-subtle)', color: 'var(--text-primary)', borderRadius: 7, fontSize: 12, fontWeight: 600, border: '1px solid var(--border)' }}
-              >
-                📖 프로젝트 위키
-              </Link>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                <Link
+                  href={`/projects/${selectedProject.id}/wiki`}
+                  style={{ flex: 1, display: 'block', textAlign: 'center', padding: '8px 12px', backgroundColor: 'var(--bg-subtle)', color: 'var(--text-primary)', borderRadius: 7, fontSize: 12, fontWeight: 600, border: '1px solid var(--border)' }}
+                >
+                  📖 위키
+                </Link>
+                {canManage && (
+                  <Link
+                    href={`/projects/${selectedProject.id}/statuses`}
+                    style={{ flex: 1, display: 'block', textAlign: 'center', padding: '8px 12px', backgroundColor: 'var(--bg-subtle)', color: 'var(--text-primary)', borderRadius: 7, fontSize: 12, fontWeight: 600, border: '1px solid var(--border)' }}
+                  >
+                    ⚙️ 상태 관리
+                  </Link>
+                )}
+              </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
                 {selectedProject.members.map(m => (

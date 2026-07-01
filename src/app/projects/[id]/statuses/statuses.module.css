@@ -1,0 +1,165 @@
+.page {
+  padding: 40px 32px;
+  max-width: 100%;
+}
+
+.inner {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.pageHeader {
+  margin-bottom: 28px;
+}
+
+.backLink {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.backLink:hover {
+  color: var(--accent);
+}
+
+.pageTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.pageSubtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.loading {
+  text-align: center;
+  padding: 60px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.message {
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+.messageSuccess {
+  background-color: #ECFDF5;
+  color: #065F46;
+  border: 1px solid #D1FAE5;
+}
+
+.messageError {
+  background-color: #FEF2F2;
+  color: #991B1B;
+  border: 1px solid #FECACA;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.orderControls {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.btnOrder {
+  width: 20px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-subtle);
+  border: none;
+  border-radius: 3px;
+  font-size: 9px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.btnOrder:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.colorInput {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  background: none;
+}
+
+.labelInput {
+  composes: field-input from global;
+  flex: 1;
+  min-width: 0;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.btnRemove {
+  composes: btn btn-sm btn-danger from global;
+  flex-shrink: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.btnAdd {
+  composes: btn btn-secondary from global;
+}
+
+.btnSave {
+  composes: btn btn-primary from global;
+  margin-left: auto;
+  padding: 8px 24px;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+@media (max-width: 640px) {
+  .row {
+    flex-wrap: wrap;
+  }
+}

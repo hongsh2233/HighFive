@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse, parseRmsNo } from '@/lib/utils';
 import { sanitize } from '@/lib/sanitize';
 import { addHistory } from '@/lib/task-history';
+import { getProjectStatuses } from '@/lib/task-status';
 
 // GET /api/tasks
 export async function GET(req: NextRequest) {
@@ -89,6 +90,8 @@ export async function POST(req: NextRequest) {
 
     const { cleanTitle, rmsNo } = parseRmsNo(title);
     const creatorId = parseInt((session!.user as any).id || '0');
+    const resolvedProjectId = projectId ? parseInt(projectId) : null;
+    const [initialStatus] = await getProjectStatuses(resolvedProjectId);
 
     // 기존 그룹 업무에 하위 업무를 1건 추가하는 경우
     if (parentTaskId) {
@@ -106,8 +109,8 @@ export async function POST(req: NextRequest) {
           targetDate: targetDate ? new Date(targetDate) : null,
           notes,
           labels: labelsStr,
-          status: 'ASSIGNED',
-          projectId: projectId ? parseInt(projectId) : null,
+          status: initialStatus.code,
+          projectId: resolvedProjectId,
           parentTaskId: parent.id,
           timeCounterEnabled: timeCounterEnabledReq,
         },
@@ -135,8 +138,8 @@ export async function POST(req: NextRequest) {
         notes: isGroupReq ? null : notes,
         labels: labelsStr,
         isGroup: isGroupReq,
-        status: 'ASSIGNED',
-        projectId: projectId ? parseInt(projectId) : null,
+        status: initialStatus.code,
+        projectId: resolvedProjectId,
         timeCounterEnabled: timeCounterEnabledReq,
       },
       include: {
@@ -159,8 +162,8 @@ export async function POST(req: NextRequest) {
             workerId: parseInt(sub.workerId),
             plannerId: parseInt(plannerId),
             targetDate: sub.targetDate ? new Date(sub.targetDate) : null,
-            status: 'ASSIGNED',
-            projectId: projectId ? parseInt(projectId) : null,
+            status: initialStatus.code,
+            projectId: resolvedProjectId,
             labels: labelsStr,
             parentTaskId: task.id,
             timeCounterEnabled: timeCounterEnabledReq,

@@ -6,6 +6,7 @@ import styles from './KanbanColumn.module.css';
 interface KanbanColumnProps {
   title: string;
   status: string;
+  color?: string | null;
   tasks: Task[];
   parentMap: Map<number, Task>;
   onDragOver: (e: React.DragEvent) => void;
@@ -17,6 +18,7 @@ interface KanbanColumnProps {
 export default function KanbanColumn({
   title,
   status,
+  color,
   tasks,
   parentMap,
   onDragOver,
@@ -27,6 +29,7 @@ export default function KanbanColumn({
   return (
     <div className={styles.column}>
       <div className={styles.header}>
+        {color && <span className={styles.colorDot} style={{ backgroundColor: color }} />}
         <span>{title}</span>
         <div className={styles.badge}>{tasks.length}</div>
       </div>
@@ -46,7 +49,7 @@ export default function KanbanColumn({
               <div
                 key={task.id}
                 className={`${styles.card} ${task.parentTaskId ? styles.cardChild : ''}`}
-                data-status={status}
+                style={color ? { borderLeftColor: color } : undefined}
                 draggable
                 onDragStart={(e) => {
                   e.dataTransfer.effectAllowed = 'move';

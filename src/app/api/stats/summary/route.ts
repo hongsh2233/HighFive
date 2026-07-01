@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireRole, successResponse, errorResponse } from '@/lib/utils';
+import { getProjectStatuses } from '@/lib/task-status';
 
 // GET /api/stats/summary - 월간 요약 통계
 export async function GET(req: NextRequest) {
@@ -36,6 +37,18 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    // 프로젝트별 "완료" 단계 코드 집합 구성 (커스텀 상태 대응, 완료율 계산용)
+    const distinctProjectIds = Array.from(new Set<number | null>(tasks.map((t) => t.projectId)));
+    const doneCodesByProject = new Map<number | null, Set<string>>();
+    await Promise.all(
+      distinctProjectIds.map(async (pid) => {
+        const statuses = await getProjectStatuses(pid);
+        doneCodesByProject.set(pid, new Set(statuses.filter((s) => s.isDone).map((s) => s.code)));
+      })
+    );
+    const isTaskDone = (t: (typeof tasks)[number]) => doneCodesByProject.get(t.projectId)?.has(t.status) ?? false;
+    const doneCount = tasks.filter(isTaskDone).length;
+
     const summary = {
       month: month + 1,
       year,
@@ -45,8 +58,8 @@ export async function GET(req: NextRequest) {
         progress: tasks.filter((t) => t.status === 'PROGRESS').length,
         review: tasks.filter((t) => t.status === 'REVIEW').length,
         qa: tasks.filter((t) => t.status === 'QA').length,
-        done: tasks.filter((t) => t.status === 'DONE').length,
-        completionRate: tasks.length > 0 ? Math.round((tasks.filter((t) => t.status === 'DONE').length / tasks.length) * 100) : 0,
+        done: doneCount,
+        completionRate: tasks.length > 0 ? Math.round((doneCount / tasks.length) * 100) : 0,
       },
       timeLogs: {
         total: timeLogs.length,

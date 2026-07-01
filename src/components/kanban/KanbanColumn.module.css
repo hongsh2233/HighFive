@@ -20,6 +20,13 @@
   letter-spacing: 0.05em;
 }
 
+.colorDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -46,6 +53,7 @@
   padding: var(--space-3);
   border-radius: 7px;
   border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -53,12 +61,6 @@
 .card:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,0.10);
 }
-
-.card[data-status="ASSIGNED"] { border-left: 3px solid #93C5FD; }
-.card[data-status="PROGRESS"]  { border-left: 3px solid #FCD34D; }
-.card[data-status="REVIEW"]    { border-left: 3px solid #C4B5FD; }
-.card[data-status="QA"]        { border-left: 3px solid #67E8F9; }
-.card[data-status="DONE"]      { border-left: 3px solid #6EE7B7; }
 
 .cardTitle {
   font-size: 14px;

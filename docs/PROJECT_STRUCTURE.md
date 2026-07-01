@@ -27,6 +27,7 @@
 /requests       → 인증 필요 (전 역할)
 /wiki           → 인증 필요 (전 역할, 소속 프로젝트 문서 모아보기 + 등록 허브)
 /projects/[id]/wiki → 인증 필요 (해당 프로젝트 소속 멤버 또는 ADMIN만 조회 가능, middleware 레벨이 아닌 API `checkAccess`로 검증)
+/projects/[id]/statuses → 인증 필요, 페이지 자체는 ADMIN/LEADER 전용(프로젝트별 업무 상태 단계 관리)
 /settings/calendar-sync  → 인증 필요 (전 역할, 헤더 "설정" 메뉴는 ADMIN/LEADER에게만 노출되지만 URL 직접 접근은 인증만 요구)
 /settings/integrations   → 인증 필요 + 페이지/‌API 모두 ADMIN 전용
 /stats          → ADMIN, LEADER만
@@ -71,7 +72,7 @@ User (1) ──< Request [requester / approver] (1) ──< Announcement (전결
 | rmsNo | String? | 제목에서 자동 파싱 ex) `DCBGIT-39085` |
 | title | String | RMS 번호 제거 후 저장 |
 | plannerId / workerId | Int FK | 담당 기획자 / 작업자 |
-| status | String | ASSIGNED / PROGRESS / REVIEW / QA / DONE |
+| status | String | 프로젝트별 `ProjectStatus.code` 참조(FK 아님, 문자열 값만 저장). 프로젝트에 커스텀 단계가 없으면 기본값 ASSIGNED/PROGRESS/REVIEW/QA/DONE 사용 |
 | targetDate | DateTime? | 목표 완료일 |
 | isFreeze | Boolean | 배포 프리징 충돌 여부 |
 | templateId | Int? | 템플릿 참조 |
@@ -100,6 +101,9 @@ User (1) ──< Request [requester / approver] (1) ──< Announcement (전결
 | Project.status | String | ACTIVE / CLOSED |
 | Project.projectManagerName / projectLeadName | String? | 표시용 텍스트 필드 |
 | ProjectMember | 복합키 (projectId, userId) | 프로젝트-사용자 매핑 |
+
+### ProjectStatus
+프로젝트별 업무 상태(칸반 단계) 정의. `projectId`, `code`(Task.status에 저장되는 값, `@@unique([projectId, code])`), `label`, `color`(hex, nullable), `order`, `isProgress`(자동 시간카운터 시작 트리거), `isDone`(완료 집계). 프로젝트에 이 테이블 row가 하나도 없으면 `src/lib/task-status.ts`의 `DEFAULT_STATUSES`(ASSIGNED/PROGRESS/REVIEW/QA/DONE)를 그 자리에서 합성해 반환한다 — 마이그레이션 없이도 기존 프로젝트가 그대로 동작하는 이유.
 
 ### Template
 업무 생성 시 사용하는 기본 제목/가이드 텍스트 템플릿. `name`, `defaultTitle`, `defaultPlannerId`, `guideText`.
@@ -168,8 +172,10 @@ high5/
 │   │   │   └── [id]/page.tsx          # 상세 + 타임로그 + 히스토리
 │   │   │
 │   │   ├── projects/
-│   │   │   ├── page.tsx               # 프로젝트 목록/생성/멤버 관리, 선택 시 멤버 패널에 "위키" 링크 노출
-│   │   │   └── [id]/wiki/page.tsx     # 프로젝트 위키 목록/작성/수정/삭제 (소속 멤버 또는 ADMIN만 접근, ?open=id로 특정 문서 자동 펼침)
+│   │   │   ├── page.tsx               # 프로젝트 목록/생성/멤버 관리, 선택 시 멤버 패널에 "위키"/"상태 관리"(ADMIN·LEADER) 링크 노출
+│   │   │   └── [id]/
+│   │   │       ├── wiki/page.tsx      # 프로젝트 위키 목록/작성/수정/삭제 (소속 멤버 또는 ADMIN만 접근, ?open=id로 특정 문서 자동 펼침)
+│   │   │       └── statuses/page.tsx  # 프로젝트 업무 상태(칸반 단계) 관리 — 단계 추가/삭제/순서·색상·진행중·완료 플래그 편집 (ADMIN/LEADER 전용)
 │   │   │
 │   │   └── api/
 │   │       ├── auth/
@@ -194,9 +200,11 @@ high5/
 │   │       │               └── adjust/route.ts
 │   │       ├── projects/
 │   │       │   ├── route.ts
+│   │       │   ├── statuses/route.ts            # GET 접근 가능한 전체 프로젝트의 상태 단계 일괄 조회 (N+1 방지)
 │   │       │   └── [id]/
 │   │       │       ├── route.ts
 │   │       │       ├── members/route.ts
+│   │       │       ├── statuses/route.ts        # GET 단계 조회(기본값 폴백) / PUT 전체 저장 (ADMIN·LEADER)
 │   │       │       └── wiki/
 │   │       │           ├── route.ts            # GET 목록 / POST 작성 (소속 멤버 또는 ADMIN)
 │   │       │           └── [wikiId]/route.ts   # PATCH 수정 / DELETE(작성자 본인·ADMIN)
@@ -253,7 +261,8 @@ high5/
 │   ├── hooks/
 │   │   ├── useAuth.ts                 # NextAuth 세션 + 역할 가드
 │   │   ├── useTask.ts                 # 업무 CRUD
-│   │   └── useFreeze.ts               # 배포 프리징 감지
+│   │   ├── useFreeze.ts               # 배포 프리징 감지
+│   │   └── useProjectStatuses.ts      # GET /api/projects/statuses 일괄 조회 + projectId별 조회 헬퍼(getStatuses), tasks/kanban 등에서 공용
 │   │
 │   ├── store/                         # Zustand 전역 상태
 │   │   ├── authStore.ts               # 인증 상태 (persist, hasRole, isAdmin, isLeader)
@@ -267,6 +276,7 @@ high5/
 │   │   ├── integrations.ts            # 외부연동(Slack/잔디/Teams/텔레그램/카카오톡) DB우선·.env폴백 발송 로직, 테스트 발송
 │   │   ├── webhook.ts                 # 업무 상태 변경 시 notifyStatusChange → integrations.ts로 전 채널 동시 발송
 │   │   ├── notify.ts                  # 인앱 알림(UserNotification) 생성
+│   │   ├── task-status.ts             # DEFAULT_STATUSES + getProjectStatuses/resolveStatus/isValidStatus — 프로젝트별 상태 조회의 단일 소스(서버 전용)
 │   │   ├── task-history.ts            # TaskHistory 기록 헬퍼
 │   │   ├── ical-token.ts              # iCal 구독 토큰 서명/검증
 │   │   ├── sanitize.ts                # HTML sanitize (react-quill 콘텐츠)
@@ -316,14 +326,23 @@ ASSIGNED → PROGRESS → REVIEW → QA → DONE
 - `Task.externalLink`에 등록된 PR URL이 머지되면 GitHub webhook(`pull_request` 이벤트, `x-hub-signature-256` 서명 검증)이 해당 업무를 갱신하고 히스토리에 기록
 
 ### 자동 시간 카운트 흐름 (`PATCH /api/tasks/[id]/status`)
-업무의 `timeCounterEnabled`가 true인 경우, 상태 변경 시 자동으로 타임로그가 시작/종료된다 (수동 시작/종료 버튼 없음).
+업무의 `timeCounterEnabled`가 true인 경우, 상태 변경 시 자동으로 타임로그가 시작/종료된다 (수동 시작/종료 버튼 없음). 리터럴 `'PROGRESS'` 문자열이 아니라 해당 업무가 속한 프로젝트의 `ProjectStatus.isProgress` 플래그로 판단한다(커스텀 상태 대응).
 ```
-status → PROGRESS (이전 상태가 PROGRESS가 아니었던 경우) → TimeLog 생성 (startTime = NOW())
-status → PROGRESS 외 상태 (이전 상태가 PROGRESS였던 경우) → 활성 TimeLog 종료 (endTime = NOW(), durationHours 자동 계산)
+status → isProgress=true 단계 (이전 상태가 isProgress=false였던 경우) → TimeLog 생성 (startTime = NOW())
+status → isProgress=false 단계 (이전 상태가 isProgress=true였던 경우) → 활성 TimeLog 종료 (endTime = NOW(), durationHours 자동 계산)
 PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours 갱신
 ```
 - 업무 등록 시 "시간카운터 사용" 체크박스(기본 true)로 업무별 자동 카운트 여부 결정
 - `timeCounterEnabled`가 false인 업무는 상태가 바뀌어도 타임로그가 생성/종료되지 않음
+
+### 프로젝트별 업무 상태 (`/projects/[id]/statuses`, `src/lib/task-status.ts`)
+- 기존에는 ASSIGNED/PROGRESS/REVIEW/QA/DONE 5단계가 전체 프로젝트에 고정되어 있었으나, 프로젝트마다 단계 수·이름·순서·색상을 자유롭게 구성할 수 있도록 `ProjectStatus` 모델을 도입했다.
+- **폴백 원칙**: 프로젝트에 `ProjectStatus` row가 하나도 없으면(기존 프로젝트 포함) `getProjectStatuses()`가 그 자리에서 기본 5단계를 합성해 반환 — 별도 데이터 마이그레이션 없이 기존 프로젝트가 그대로 동작한다. `/projects/[id]/statuses`에서 저장하는 순간부터 그 프로젝트는 커스텀 목록을 갖는다.
+- 업무 생성 시 초기 상태는 하드코딩된 `'ASSIGNED'`가 아니라 프로젝트 상태 목록의 첫 번째 단계(`order` 오름차순)로 설정된다.
+- `PATCH /api/tasks/[id]/status`, `PATCH /api/tasks/[id]`의 상태값 검증은 고정 배열이 아니라 업무가 속한 프로젝트의 현재 상태 목록을 조회해 동적으로 검사한다.
+- **칸반 보드**(`/tasks/kanban`)에 프로젝트 선택 드롭다운이 추가됨: 프로젝트를 선택하면 그 프로젝트의 단계가 컬럼이 되고, "전체 프로젝트"를 보면 실제 사용 중인 상태 코드를 모아 컬럼을 동적으로 구성한다. 단계가 삭제되는 등 컬럼 목록에 없는 상태값을 가진 업무는 "기타" 컬럼에 모인다.
+- **업무 목록**(`/tasks`)의 상태 필터/행별 상태 변경 셀렉트도 각 업무가 속한 프로젝트의 상태 목록을 사용(`useProjectStatuses` 훅으로 `GET /api/projects/statuses` 일괄 조회 후 클라이언트에서 매핑).
+- **스코프 경계(의도적으로 남겨둔 부분)**: `/stats` 요약의 배정됨/진행중/검수/QA 4개 세부 카드는 여전히 리터럴 코드(`'ASSIGNED'` 등) 기준으로 집계 — 커스텀 상태를 쓰는 프로젝트의 업무는 이 4개 카드에는 잡히지 않는다(단, `total`/`done`/`completionRate`는 `isDone` 플래그 기반으로 일반화되어 정확함). 대시보드의 업무 카드 상태 라벨, 캘린더의 업무 칩 배경색도 기본 5단계 기준 매핑을 유지하며 커스텀 코드는 원문 그대로 표시되거나 중립색으로 대체된다(깨지지는 않음). 필요 시 후속 작업으로 확장 가능.
 
 ### 인증 흐름
 ```
@@ -388,6 +407,8 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 | GET/POST | `/api/projects` | ALL/LEADER+ | 프로젝트 목록/생성 |
 | GET/PATCH/DELETE | `/api/projects/[id]` | ALL/LEADER+/ADMIN | 프로젝트 상세/수정/삭제 |
 | POST/DELETE | `/api/projects/[id]/members` | LEADER+ | 프로젝트 멤버 관리 |
+| GET | `/api/projects/statuses` | ALL | 접근 가능한 전체 프로젝트의 상태 단계 일괄 조회 |
+| GET/PUT | `/api/projects/[id]/statuses` | ALL(GET) / LEADER+(PUT) | 프로젝트 상태 단계 조회(기본값 폴백)/전체 저장 |
 | GET/POST | `/api/projects/[id]/wiki` | 소속 멤버 또는 ADMIN | 프로젝트 위키 목록/작성 |
 | PATCH/DELETE | `/api/projects/[id]/wiki/[wikiId]` | 소속 멤버 또는 ADMIN (삭제는 작성자·ADMIN만) | 위키 문서 수정/삭제 |
 | GET | `/api/wiki/search` | ALL (소속 프로젝트 범위, ADMIN은 전체) | 위키 통합 검색 (`?q=`) |

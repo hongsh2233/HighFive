@@ -4,8 +4,7 @@ import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 import { notifyStatusChange } from '@/lib/webhook';
 import { notifyReviewRequest } from '@/lib/notify';
 import { addHistory } from '@/lib/task-history';
-
-const validStatuses = ['ASSIGNED', 'PROGRESS', 'REVIEW', 'QA', 'DONE'];
+import { getProjectStatuses } from '@/lib/task-status';
 
 // PATCH /api/tasks/[id]/status - 업무 상태 변경
 export async function PATCH(
@@ -25,10 +24,6 @@ export async function PATCH(
     const body = await req.json();
     const { status } = body;
 
-    if (!status || !validStatuses.includes(status)) {
-      return errorResponse('유효하지 않은 상태입니다.', 400, 'VALID_400');
-    }
-
     // 업무 존재 확인
     const task = await prisma.task.findUnique({
       where: { id: taskId },
@@ -37,6 +32,13 @@ export async function PATCH(
     if (!task) {
       return errorResponse('업무를 찾을 수 없습니다.', 404, 'TASK_404');
     }
+
+    const projectStatuses = await getProjectStatuses(task.projectId);
+    const newStatusDef = projectStatuses.find((s) => s.code === status);
+    if (!status || !newStatusDef) {
+      return errorResponse('유효하지 않은 상태입니다.', 400, 'VALID_400');
+    }
+    const prevStatusDef = projectStatuses.find((s) => s.code === task.status);
 
     // 상태 변경
     const updatedTask = await prisma.task.update({
@@ -48,9 +50,11 @@ export async function PATCH(
       },
     });
 
-    // 시간카운터 사용 업무: 상태가 PROGRESS로 들어오면 자동 시작, PROGRESS에서 벗어나면 자동 종료
+    // 시간카운터 사용 업무: 진행중 단계(isProgress)로 들어오면 자동 시작, 벗어나면 자동 종료
+    const wasProgress = !!prevStatusDef?.isProgress;
+    const isProgress = !!newStatusDef.isProgress;
     if (task.timeCounterEnabled) {
-      if (status === 'PROGRESS' && task.status !== 'PROGRESS') {
+      if (isProgress && !wasProgress) {
         const activeLog = await prisma.timeLog.findFirst({
           where: { taskId, endTime: null },
         });
@@ -59,7 +63,7 @@ export async function PATCH(
             data: { taskId, workerId: task.workerId, startTime: new Date() },
           });
         }
-      } else if (task.status === 'PROGRESS' && status !== 'PROGRESS') {
+      } else if (wasProgress && !isProgress) {
         const activeLog = await prisma.timeLog.findFirst({
           where: { taskId, endTime: null },
         });
@@ -94,13 +98,9 @@ export async function PATCH(
       notifyReviewRequest(updatedTask.id, updatedTask.title, updatedTask.workerId, updatedTask.worker?.name || '', updatedTask.plannerId, updatedTask.planner?.name || '', taskUrl).catch(() => {});
     }
 
-    const statusLabels: Record<string, string> = {
-      ASSIGNED: '배정됨', PROGRESS: '진행중', REVIEW: '검수', QA: 'QA',
-      WAITING: '대기', DONE: '완료', HOLD: '보류',
-    };
     const userId = parseInt((session!.user as any).id || '0');
     await addHistory(updatedTask.id, userId, 'STATUS_CHANGED',
-      `${statusLabels[task.status] ?? task.status} → ${statusLabels[status] ?? status}`);
+      `${prevStatusDef?.label ?? task.status} → ${newStatusDef.label}`);
 
     return successResponse(updatedTask, '업무 상태가 변경되었습니다.');
   } catch (err) {

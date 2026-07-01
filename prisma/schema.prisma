@@ -132,6 +132,7 @@ model Project {
   members            ProjectMember[]
   tasks            Task[]
   wikiPages        WikiPage[]
+  statuses         ProjectStatus[]
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -260,4 +261,23 @@ model Integration {
   updatedAt  DateTime @updatedAt
 
   @@map("integrations")
+}
+
+model ProjectStatus {
+  id         Int      @id @default(autoincrement())
+  projectId  Int
+  code       String   // Task.status에 저장되는 값
+  label      String
+  color      String?  // hex, 미지정 시 프론트 기본색 사용
+  order      Int      @default(0)
+  isProgress Boolean  @default(false) // 이 상태로 들어오면 자동 시간카운터 시작(빠지면 종료)
+  isDone     Boolean  @default(false) // 완료로 집계(통계 등)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, code])
+  @@index([projectId, order])
+  @@map("project_statuses")
 }
