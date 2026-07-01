@@ -25,9 +25,14 @@
 /profile/**     → 인증 필요 (전 역할)
 /announcements  → 인증 필요 (전 역할 조회 가능, 작성/수정/삭제는 ADMIN/LEADER)
 /requests       → 인증 필요 (전 역할)
+/projects/[id]/wiki → 인증 필요 (해당 프로젝트 소속 멤버 또는 ADMIN만 조회 가능, middleware 레벨이 아닌 API `checkAccess`로 검증)
+/settings/calendar-sync  → 인증 필요 (전 역할, 헤더 "설정" 메뉴는 ADMIN/LEADER에게만 노출되지만 URL 직접 접근은 인증만 요구)
+/settings/integrations   → 인증 필요 + 페이지/‌API 모두 ADMIN 전용
 /stats          → ADMIN, LEADER만
 /users          → ADMIN만
 ```
+
+> `/projects`, `/announcements`, `/settings/**`, `/info`는 `middleware.ts`의 `protectedRoutes`가 아니라 각 페이지의 `useAuth()` 훅 + API의 `requireAuth`/`requireRole`로 보호된다(다른 인증 필요 페이지와 동일한 기존 패턴).
 
 ---
 
@@ -116,6 +121,12 @@ User (1) ──< Request [requester / approver] (1) ──< Announcement (전결
 ### Request
 휴가/비품 신청. `type`(LEAVE/SUPPLY), `title`, `content`(SUPPLY 품목/사유), `startDate`/`endDate`(LEAVE 전용), `isAnnouncement`(체크 시 전결), `status`(PENDING/APPROVED/REJECTED), `requesterId`, `approverId`(신청 시점 `requester.managerId` 스냅샷), `rejectReason`, `decidedAt`.
 
+### WikiPage
+프로젝트별 위키 문서. `projectId`, `title`, `content`(마크다운 라이트: `**굵게**`/`*기울임*`/`- 목록`), `authorId`. 조회/작성/수정은 해당 프로젝트 `ProjectMember` 또는 ADMIN만 가능(`checkAccess` — `/api/projects/[id]/wiki` 참고), 삭제는 작성자 본인 또는 ADMIN만 가능.
+
+### Integration
+채널별 외부연동(알림 발송) 설정. `channel`(SLACK/JANDI/TEAMS/TELEGRAM/KAKAO, unique), `webhookUrl`, `botToken`/`chatId`(TELEGRAM 전용), `isEnabled`. `src/lib/integrations.ts`가 DB에 저장된 값을 우선 사용하고, 해당 채널에 DB row가 아예 없을 때만 `.env`(`SLACK_WEBHOOK_URL` 등)로 폴백한다. `Notification` 모델(발송 로그)과는 별개로, 이 모델은 "어디로 보낼지"에 대한 설정만 저장한다.
+
 ---
 
 ## 3. 디렉터리 구조
@@ -139,11 +150,13 @@ high5/
 │   │   ├── dashboard/page.tsx
 │   │   ├── info/page.tsx              # FAQ
 │   │   ├── calendar/page.tsx
-│   │   ├── projects/page.tsx
 │   │   ├── stats/page.tsx
 │   │   ├── users/page.tsx             # ADMIN 전용, "팀원관리" — 팀원 생성 시 임시 비밀번호를 모달로 안내, 소속 프로젝트는 체크박스로 선택, 담당 리더(managerId) 지정
 │   │   ├── announcements/page.tsx     # ADMIN/LEADER 전용, 공지 등록/수정/게시중지/삭제 관리
 │   │   ├── requests/page.tsx          # 전 역할, 휴가/비품 신청 + 내 신청 목록 + (ADMIN/LEADER) 결재함
+│   │   ├── settings/
+│   │   │   ├── calendar-sync/page.tsx     # 구글 캘린더 연동 안내 + 구독 URL 발급/복사 (전 역할, 헤더 메뉴는 ADMIN/LEADER 전용)
+│   │   │   └── integrations/page.tsx      # ADMIN 전용, Slack/잔디/Teams/텔레그램/카카오톡 채널별 설정+테스트 발송
 │   │   ├── profile/password/page.tsx
 │   │   │
 │   │   ├── tasks/
@@ -151,6 +164,10 @@ high5/
 │   │   │   ├── create/page.tsx
 │   │   │   ├── kanban/page.tsx
 │   │   │   └── [id]/page.tsx          # 상세 + 타임로그 + 히스토리
+│   │   │
+│   │   ├── projects/
+│   │   │   ├── page.tsx               # 프로젝트 목록/생성/멤버 관리, 선택 시 멤버 패널에 "위키" 링크 노출
+│   │   │   └── [id]/wiki/page.tsx     # 프로젝트 위키 목록/작성/수정/삭제 (소속 멤버 또는 ADMIN만 접근, ?open=id로 특정 문서 자동 펼침)
 │   │   │
 │   │   └── api/
 │   │       ├── auth/
@@ -177,7 +194,12 @@ high5/
 │   │       │   ├── route.ts
 │   │       │   └── [id]/
 │   │       │       ├── route.ts
-│   │       │       └── members/route.ts
+│   │       │       ├── members/route.ts
+│   │       │       └── wiki/
+│   │       │           ├── route.ts            # GET 목록 / POST 작성 (소속 멤버 또는 ADMIN)
+│   │       │           └── [wikiId]/route.ts   # PATCH 수정 / DELETE(작성자 본인·ADMIN)
+│   │       ├── wiki/
+│   │       │   └── search/route.ts             # GET?q= 소속 프로젝트(ADMIN은 전체) 위키 통합 검색, 플로팅 버튼에서 사용
 │   │       ├── info/
 │   │       │   ├── route.ts
 │   │       │   └── [id]/route.ts
@@ -196,13 +218,20 @@ high5/
 │   │       ├── calendar/
 │   │       │   ├── ical/route.ts               # 구독용 iCal 피드
 │   │       │   └── ical-url/route.ts           # 구독 URL 발급
+│   │       ├── settings/
+│   │       │   └── integrations/
+│   │       │       ├── route.ts                # GET 채널별 설정 목록 (ADMIN)
+│   │       │       └── [channel]/
+│   │       │           ├── route.ts            # PUT 채널 설정 저장 (ADMIN)
+│   │       │           └── test/route.ts       # POST 테스트 메시지 발송 (ADMIN)
 │   │       └── webhooks/
 │   │           ├── slack/route.ts              # Slack/잔디 알림 발송
 │   │           └── github/route.ts             # GitHub PR merge 연동
 │   │
 │   ├── components/
-│   │   ├── AppHeader.tsx              # 상단 GNB (메뉴, 프로필, 모바일 햄버거 토글) — 알림 벨 제거됨. "신청" 링크, 관리 메뉴에 "공지사항" 포함
+│   │   ├── AppHeader.tsx              # 상단 GNB (메뉴, 프로필, 모바일 햄버거 토글) — 알림 벨 제거됨. "신청" 링크, "설정" 드롭다운(구 "관리")에 프로젝트/공지사항/팀원관리/통계/구글캘린더연동/외부연동(ADMIN)
 │   │   ├── AnnouncementBanner.tsx     # 헤더 하단 공지 배너 — 활성 공지 조회, X로 닫으면 localStorage에 dismiss 기록
+│   │   ├── WikiSearchButton.tsx       # 우하단 플로팅 버튼 — 클릭 시 위키 검색 모달, 결과 클릭 시 해당 프로젝트 위키로 이동
 │   │   ├── LayoutWrapper.tsx
 │   │   ├── Providers.tsx              # SessionProvider + AuthSync
 │   │   ├── common/
@@ -225,7 +254,7 @@ high5/
 │   │   └── useFreeze.ts               # 배포 프리징 감지
 │   │
 │   ├── store/                         # Zustand 전역 상태
-│   │   ├── authStore.ts               # 인증 상태 (persist, hasRole, isAdmin)
+│   │   ├── authStore.ts               # 인증 상태 (persist, hasRole, isAdmin, isLeader)
 │   │   └── taskStore.ts               # 업무 목록 + 필터 + 낙관적 업데이트
 │   │
 │   ├── lib/
@@ -233,7 +262,8 @@ high5/
 │   │   ├── db-init.ts
 │   │   ├── auth.ts                    # NextAuth 옵션 (CredentialsProvider)
 │   │   ├── api-client.ts              # Axios 인스턴스 + 인터셉터
-│   │   ├── webhook.ts                 # Slack·잔디·카카오 알림 발송
+│   │   ├── integrations.ts            # 외부연동(Slack/잔디/Teams/텔레그램/카카오톡) DB우선·.env폴백 발송 로직, 테스트 발송
+│   │   ├── webhook.ts                 # 업무 상태 변경 시 notifyStatusChange → integrations.ts로 전 채널 동시 발송
 │   │   ├── notify.ts                  # 인앱 알림(UserNotification) 생성
 │   │   ├── task-history.ts            # TaskHistory 기록 헬퍼
 │   │   ├── ical-token.ts              # iCal 구독 토큰 서명/검증
@@ -244,7 +274,7 @@ high5/
 │   │       ├── task.service.ts        # 업무 생성, 상태 변경
 │   │       ├── user.service.ts        # 사용자 초대·수정·비활성화
 │   │       ├── stats.service.ts       # 월간 요약, 작업자 부하량 집계
-│   │       └── webhook.service.ts     # notifyStatusChange (DB 기록 포함)
+│   │       └── webhook.service.ts     # notifyWorkerChange/notifyReviewRequest용 notifyStatusChange (Slack/잔디, DB 기록 포함, integrations.ts의 getWebhookUrl 사용)
 │   │
 │   └── types/
 │       ├── index.ts                   # 전체 타입 (User, Task, TimeLog 등)
@@ -318,6 +348,18 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 - 결재자는 `/requests` 페이지의 "결재 대기" 섹션에서 `PATCH /api/requests/[id]/decision`으로 승인/반려한다. 반려 시 사유 입력 필수.
 - **캘린더 반영**: `GET /api/tasks/calendar`가 해당 월과 겹치는 `status='APPROVED'`인 `LEAVE` 신청을 조회해 `leavesByDate`로 함께 반환하고, `/calendar` 페이지가 각 날짜 셀에 휴가자 이름을 표시한다(전결/일반 결재 승인 여부와 무관하게 APPROVED이면 모두 표시).
 
+### 프로젝트 위키 (`/projects/[id]/wiki`, `WikiSearchButton.tsx`)
+- 프로젝트 목록(`/projects`)에서 프로젝트를 선택하면 멤버 패널에 "📖 프로젝트 위키" 링크가 노출된다.
+- `GET/POST /api/projects/[id]/wiki`, `PATCH/DELETE /api/projects/[id]/wiki/[wikiId]` 모두 해당 프로젝트 `ProjectMember` 또는 ADMIN만 호출 가능(`checkAccess`) — 소속되지 않은 사용자는 조회 자체가 403으로 차단된다. 삭제만 작성자 본인 또는 ADMIN으로 추가 제한.
+- 문서 내용은 `**굵게**`/`*기울임*`/`- 목록`을 지원하는 라이트 마크다운(`/info` FAQ 에디터와 동일한 렌더링 로직을 위키 페이지에 맞춰 재구현).
+- **플로팅 검색**: 로그인 후 모든 페이지 우하단에 `WikiSearchButton`이 떠 있고, 클릭하면 검색 모달이 열린다. `GET /api/wiki/search?q=`가 요청자가 속한 프로젝트(ADMIN은 전체)의 위키만 제목/내용 부분일치로 검색해 반환하며, 결과를 클릭하면 `/projects/[projectId]/wiki?open=[wikiId]`로 이동해 해당 문서를 자동으로 펼쳐 보여준다.
+
+### 외부연동 (`/settings/integrations`, `src/lib/integrations.ts`)
+- ADMIN이 채널(Slack/잔디/Microsoft Teams/텔레그램/카카오톡)별로 Webhook URL(또는 텔레그램은 봇 토큰+Chat ID)을 저장하고 사용 여부를 토글할 수 있다. 저장 전 "테스트 발송" 버튼으로 실제 값을 즉시 검증 가능(`POST /api/settings/integrations/[channel]/test`).
+- `getWebhookUrl`/`sendToChannel`/`broadcastNotification`은 **DB(`Integration` 테이블)에 저장된 값을 우선** 사용하고, 해당 채널에 DB row가 아예 없을 때만 `.env`(`SLACK_WEBHOOK_URL` 등 기존 변수)로 폴백한다 — 즉 UI에서 한 번이라도 저장하면 그 값이 `.env`보다 우선한다.
+- 업무 상태가 변경되면(`PATCH /api/tasks/[id]/status`) `src/lib/webhook.ts`의 `notifyStatusChange`가 활성화된 5개 채널 전체에 동시 발송한다(기존에는 Slack/잔디/카카오톡 3개만 개별 함수로 하드코딩되어 있었음).
+- 헤더 "설정" 드롭다운의 "외부연동" 메뉴 항목은 ADMIN에게만 노출(LEADER도 다른 설정 메뉴는 보이지만 이 항목은 보이지 않음), 페이지/API 모두 ADMIN 권한을 재검증한다.
+
 ---
 
 ## 5. API 전체 목록
@@ -343,6 +385,9 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 | GET/POST | `/api/projects` | ALL/LEADER+ | 프로젝트 목록/생성 |
 | GET/PATCH/DELETE | `/api/projects/[id]` | ALL/LEADER+/ADMIN | 프로젝트 상세/수정/삭제 |
 | POST/DELETE | `/api/projects/[id]/members` | LEADER+ | 프로젝트 멤버 관리 |
+| GET/POST | `/api/projects/[id]/wiki` | 소속 멤버 또는 ADMIN | 프로젝트 위키 목록/작성 |
+| PATCH/DELETE | `/api/projects/[id]/wiki/[wikiId]` | 소속 멤버 또는 ADMIN (삭제는 작성자·ADMIN만) | 위키 문서 수정/삭제 |
+| GET | `/api/wiki/search` | ALL (소속 프로젝트 범위, ADMIN은 전체) | 위키 통합 검색 (`?q=`) |
 | GET/POST | `/api/info` | ALL/ADMIN | FAQ 목록/생성 |
 | PATCH/DELETE | `/api/info/[id]` | ADMIN | FAQ 수정/삭제 |
 | GET | `/api/announcements` | ALL (`?all=true`는 ADMIN/LEADER 전용, 비활성 포함) | 공지 목록 |
@@ -357,6 +402,9 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 | GET | `/api/stats/workload` | LEADER+ | 작업자별 부하량 |
 | GET | `/api/calendar/ical-url` | ALL | iCal 구독 URL 발급 |
 | GET | `/api/calendar/ical` | 토큰 인증 | iCal 피드 |
+| GET | `/api/settings/integrations` | ADMIN | 외부연동 채널별 설정 목록 |
+| PUT | `/api/settings/integrations/[channel]` | ADMIN | 채널 설정 저장 |
+| POST | `/api/settings/integrations/[channel]/test` | ADMIN | 테스트 메시지 발송 |
 | POST | `/api/webhooks/slack` | 내부 | Slack/잔디 알림 발송 |
 | POST | `/api/webhooks/github` | 서명 검증 | GitHub PR merge 연동 |
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './projects.module.css';
@@ -320,6 +321,13 @@ export default function ProjectsPage() {
                 </div>
                 <button onClick={() => setSelectedProject(null)} className={styles.memberPanelClose}>✕</button>
               </div>
+
+              <Link
+                href={`/projects/${selectedProject.id}/wiki`}
+                style={{ display: 'block', textAlign: 'center', padding: '8px 12px', marginBottom: 16, backgroundColor: 'var(--bg-subtle)', color: 'var(--text-primary)', borderRadius: 7, fontSize: 12, fontWeight: 600, border: '1px solid var(--border)' }}
+              >
+                📖 프로젝트 위키
+              </Link>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
                 {selectedProject.members.map(m => (

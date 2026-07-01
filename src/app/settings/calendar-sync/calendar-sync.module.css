@@ -1,0 +1,87 @@
+.loadingPage {
+  padding: var(--space-8);
+}
+
+.container {
+  padding: var(--space-8);
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-8);
+}
+
+.errorBox {
+  padding: var(--space-3);
+  background-color: #FEF2F2;
+  border: 1px solid var(--color-danger);
+  border-radius: 6px;
+  color: #7F1D1D;
+  margin-bottom: var(--space-4);
+}
+
+.card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: var(--space-6);
+}
+
+.cardTitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: var(--space-2);
+}
+
+.cardDesc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+  line-height: 1.7;
+}
+
+.btnGenerate {
+  composes: btn btn-primary from global;
+  padding: 8px 18px;
+}
+
+.urlRow {
+  display: flex;
+  gap: 8px;
+  margin-top: var(--space-4);
+}
+
+.urlInput {
+  composes: field-input from global;
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.btnCopy {
+  composes: btn btn-secondary from global;
+  padding: 8px 16px;
+  flex-shrink: 0;
+}
+
+.stepList {
+  padding-left: 20px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 2;
+}
+
+.dangerText {
+  color: var(--color-danger);
+}

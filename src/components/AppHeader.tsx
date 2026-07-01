@@ -7,7 +7,7 @@ import { signOut } from 'next-auth/react';
 import { useState, useRef } from 'react';
 import styles from './AppHeader.module.css';
 
-type MenuName = 'task' | 'admin' | 'account' | null;
+type MenuName = 'task' | 'settings' | 'account' | null;
 
 export default function AppHeader() {
   const router = useRouter();
@@ -91,20 +91,20 @@ export default function AppHeader() {
             )}
           </div>
 
-          {/* 관리 메뉴 */}
+          {/* 설정 메뉴 */}
           {isAdminOrLeader && (
             <div
               className={styles.menuWrapper}
-              onMouseEnter={() => handleMenuEnter('admin')}
+              onMouseEnter={() => handleMenuEnter('settings')}
               onMouseLeave={handleMenuLeave}
             >
               <button
-                className={navClass(openMenu === 'admin' || pathname.startsWith('/users') || pathname.startsWith('/stats') || pathname.startsWith('/projects') || pathname.startsWith('/announcements'))}
-                onClick={() => setOpenMenu(openMenu === 'admin' ? null : 'admin')}
+                className={navClass(openMenu === 'settings' || pathname.startsWith('/users') || pathname.startsWith('/stats') || pathname.startsWith('/projects') || pathname.startsWith('/announcements') || pathname.startsWith('/settings'))}
+                onClick={() => setOpenMenu(openMenu === 'settings' ? null : 'settings')}
               >
-                관리
+                설정
               </button>
-              {openMenu === 'admin' && (
+              {openMenu === 'settings' && (
                 <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
                   <Link href="/projects" className={styles.dropdownItem} onClick={closeAll}>프로젝트</Link>
                   <Link href="/announcements" className={styles.dropdownItem} onClick={closeAll}>공지사항</Link>
@@ -112,6 +112,10 @@ export default function AppHeader() {
                     <Link href="/users" className={styles.dropdownItem} onClick={closeAll}>팀원관리</Link>
                   )}
                   <Link href="/stats" className={styles.dropdownItem} onClick={closeAll}>통계</Link>
+                  <Link href="/settings/calendar-sync" className={styles.dropdownItem} onClick={closeAll}>구글 캘린더 연동</Link>
+                  {user?.role === 'ADMIN' && (
+                    <Link href="/settings/integrations" className={styles.dropdownItem} onClick={closeAll}>외부연동</Link>
+                  )}
                 </div>
               )}
             </div>
@@ -136,22 +140,6 @@ export default function AppHeader() {
                   <div className={styles.accountEmail}>{user?.email}</div>
                 </div>
                 <Link href="/profile/password" className={styles.dropdownItem} onClick={closeAll}>비밀번호 변경</Link>
-                <button
-                  onClick={async () => {
-                    try {
-                      const res = await fetch('/api/calendar/ical-url');
-                      const json = await res.json();
-                      await navigator.clipboard.writeText(json.data.url);
-                      alert('캘린더 구독 URL이 복사되었습니다.\nGoogle Calendar → 다른 캘린더 → URL로 추가에 붙여넣기 하세요.');
-                    } catch {
-                      alert('복사에 실패했습니다.');
-                    }
-                    closeAll();
-                  }}
-                  className={styles.dropdownItem}
-                >
-                  캘린더 구독 URL 복사
-                </button>
                 <button
                   onClick={handleLogout}
                   className={`${styles.dropdownItem} ${styles.dropdownDanger}`}

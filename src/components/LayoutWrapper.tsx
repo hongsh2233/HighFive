@@ -4,8 +4,9 @@ import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import AppHeader from './AppHeader';
 import AnnouncementBanner from './AnnouncementBanner';
+import WikiSearchButton from './WikiSearchButton';
 
-const AUTH_REQUIRED_PATHS = ['/dashboard', '/tasks', '/calendar', '/stats', '/users', '/profile', '/info', '/projects', '/announcements', '/requests'];
+const AUTH_REQUIRED_PATHS = ['/dashboard', '/tasks', '/calendar', '/stats', '/users', '/profile', '/info', '/projects', '/announcements', '/requests', '/settings'];
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -24,6 +25,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
       {!isLoginPage && <AppHeader />}
       {!isLoginPage && <AnnouncementBanner />}
       {children}
+      {!isLoginPage && <WikiSearchButton />}
     </div>
   );
 }

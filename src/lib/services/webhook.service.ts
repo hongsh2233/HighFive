@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { getWebhookUrl } from '@/lib/integrations';
 
 export interface WebhookPayload {
   taskId: number;
@@ -37,16 +38,18 @@ export async function notifyStatusChange(payload: WebhookPayload) {
   const message = buildMessage(payload);
   const results: Array<{ channel: string; success: boolean }> = [];
 
-  if (process.env.SLACK_WEBHOOK_URL) {
-    const success = await sendToChannel(process.env.SLACK_WEBHOOK_URL, message, 'SLACK').catch(() => false);
+  const slackUrl = await getWebhookUrl('SLACK');
+  if (slackUrl) {
+    const success = await sendToChannel(slackUrl, message, 'SLACK').catch(() => false);
     results.push({ channel: 'SLACK', success });
     await prisma.notification.create({
       data: { taskId: payload.taskId, channel: 'SLACK', message, isSuccess: success },
     });
   }
 
-  if (process.env.JANDI_WEBHOOK_URL) {
-    const success = await sendToChannel(process.env.JANDI_WEBHOOK_URL, message, 'JANDI').catch(() => false);
+  const jandiUrl = await getWebhookUrl('JANDI');
+  if (jandiUrl) {
+    const success = await sendToChannel(jandiUrl, message, 'JANDI').catch(() => false);
     results.push({ channel: 'JANDI', success });
     await prisma.notification.create({
       data: { taskId: payload.taskId, channel: 'JANDI', message, isSuccess: success },

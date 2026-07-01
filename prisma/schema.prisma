@@ -37,6 +37,7 @@ model User {
   announcements      Announcement[] @relation("announcementAuthor")
   requestsMade       Request[]      @relation("requestRequester")
   requestsToApprove  Request[]      @relation("requestApprover")
+  wikiPages          WikiPage[]     @relation("wikiAuthor")
 
   @@map("users")
 }
@@ -130,6 +131,7 @@ model Project {
   creator            User?    @relation("projectCreator", fields: [createdBy], references: [id])
   members            ProjectMember[]
   tasks            Task[]
+  wikiPages        WikiPage[]
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -230,4 +232,32 @@ model Request {
   @@index([approverId, status])
   @@index([type, status, startDate])
   @@map("requests")
+}
+
+model WikiPage {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  title     String
+  content   String   @db.Text
+  authorId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author    User     @relation("wikiAuthor", fields: [authorId], references: [id])
+
+  @@index([projectId])
+  @@map("wiki_pages")
+}
+
+model Integration {
+  id         Int      @id @default(autoincrement())
+  channel    String   @unique // SLACK, JANDI, TEAMS, TELEGRAM, KAKAO
+  webhookUrl String?
+  botToken   String?  // TELEGRAM 봇 토큰
+  chatId     String?  // TELEGRAM chat id
+  isEnabled  Boolean  @default(false)
+  updatedAt  DateTime @updatedAt
+
+  @@map("integrations")
 }
