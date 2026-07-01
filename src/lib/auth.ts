@@ -69,7 +69,10 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 24 * 60 * 60,
+    // 보안 정책: 로그인 후 활동 여부와 무관하게 30분 뒤 세션 절대 만료
+    // updateAge를 maxAge와 동일하게 두어 세션 쿠키가 중간에 슬라이딩 갱신되지 않도록 함
+    maxAge: 30 * 60,
+    updateAge: 30 * 60,
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

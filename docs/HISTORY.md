@@ -162,3 +162,9 @@
 
 - 업무 목록(`/tasks`) 테이블 비고(notes) 컬럼 가로스크롤 수정: `table-layout: fixed` 컬럼 폭이 좁은 상태에서 요약보기/상세보기/+하위업무/삭제 버튼 4개가 `.notesBtns`(flex, nowrap)에 한 줄로 강제되어 넘치면서 테이블 전체 가로스크롤을 유발하던 문제. `.notesBtns`에 `flex-wrap: wrap` 추가, `.tdNotes`는 `white-space: nowrap` → `normal`로 바꾸고 `min-width: 150px` 지정해 버튼이 셀 안에서 줄바꿈되도록 수정(`tasks.module.css`).
 - 디버깅 체크: `npx tsc --noEmit` 결과 신규 타입 오류 없음(CSS 전용 변경). 동일한 환경 제약으로 `npm run build`/`npm run lint`는 실행하지 못함.
+
+## 2026-07-01 (22차)
+
+- 보안 강화: 로그인 세션을 24시간 → 30분으로 제한. `session.maxAge`와 `session.updateAge`를 모두 `30*60`으로 동일하게 설정해, 활동 여부와 무관하게 로그인 후 정확히 30분 뒤 세션이 절대 만료되도록 변경(기존에는 `updateAge` 기본값이 커서 활동 시 슬라이딩 갱신되는 구조였음)(`src/lib/auth.ts`).
+- 세션 만료 시 조치 추가: `SessionProvider`에 `refetchInterval={60}`을 설정해 60초마다 세션 상태를 재확인하도록 하고, 로그인 상태였던 사용자의 세션이 만료(`unauthenticated`)되면 알림창으로 "30분 동안 활동이 없어 세션이 만료되었습니다"를 안내한 뒤 자동 로그아웃 처리하고 `/login`으로 이동시킴(`src/components/Providers.tsx`).
+- 디버깅 체크: `npx tsc --noEmit` 결과 변경한 파일(`auth.ts`, `Providers.tsx`)에서 신규 타입 오류 없음을 확인. 동일한 환경 제약으로 `npm run build`/`npm run lint`는 실행하지 못함 — 실제 개발 환경에서 30분 경과 후 세션 만료 알림 및 자동 로그아웃 동작 확인 필요.
