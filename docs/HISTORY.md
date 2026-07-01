@@ -279,3 +279,13 @@
   - 전체 보기(프로젝트 미선택) 상태에서는 커스텀 필드 컬럼을 숨김(여러 프로젝트의 서로 다른 필드가 뒤섞이는 것을 방지).
   - Phase 2(업무 상세 페이지 반영)·Phase 3(칸반 노출)는 이번 범위에서 제외 — `docs/개선1.0.md` 참고.
 - 디버깅 체크: `npx tsc --noEmit` 결과 변경/신규 파일에서 신규 타입 오류 없음(Prisma 클라이언트가 네트워크 제약으로 생성되지 않아 `prisma.*` 호출이 전반적으로 `any`로 처리되는 기존 베이스라인은 여전함 — `PrismaClient` export 오류 등). `npx prisma generate`/`migrate`는 이 환경에서 DB 및 Prisma 엔진 다운로드용 네트워크가 차단되어 있어 실행 불가(기존과 동일한 환경 제약) — **실제 배포/개발 환경에서 반드시 `npx prisma migrate dev`(또는 `db push`)로 스키마를 반영하고, 브라우저에서 프로젝트 선택 → 속성 추가/편집/삭제 → 새로고침 후 값 유지까지 end-to-end로 확인 필요.**
+
+## 2026-07-01 (34차)
+
+- **개선 1.0 Phase 2: 업무 상세 페이지에 커스텀 필드(속성) 반영**, Phase 3(칸반 노출)는 사용자 확인 후 보류.
+  - `src/app/tasks/[id]/page.tsx`: "기본 정보" 카드 아래 "속성" 카드 추가. `useProjectFields(task.projectId)`로 해당 프로젝트의 커스텀 필드를 조회하고, 필드가 하나도 없으면 카드 자체를 렌더링하지 않음. ADMIN/LEADER는 목록 페이지와 동일한 타입별 인라인 편집(텍스트/숫자/날짜=input, 선택=select, 체크박스=checkbox)이 가능하고, `saveValue`로 `PUT /api/tasks/:id/fields`에 저장.
+  - `src/app/api/tasks/[id]/route.ts`: GET 응답에 `fieldValues` include 추가(기존에는 목록 조회(`/api/tasks`)에만 포함되어 있어 상세 조회 시 값이 비어 있었음).
+  - `src/app/tasks/[id]/detail.module.css`: `.fieldSelect`(선택형 필드용, 기존 `field-select` 프리미티브 재사용) 클래스 추가.
+  - `docs/개선1.0.md`: Phase 1·2 완료 표기, **Phase 3(칸반 노출)는 목록/상세로 충분하다고 판단해 진행하지 않기로 결정**했음을 명시.
+  - **DB 마이그레이션 자동화 확인**: 별도 코드 변경 없음 — `package.json`의 `build` 스크립트가 이미 `prisma generate && prisma db push --skip-generate && next build` 순서로 구성되어 있어, `npm run build`를 실행할 때마다(배포 시 포함) 현재 스키마가 DB에 자동 반영된다. 이번 Phase 1에서 추가한 `ProjectField`/`TaskFieldValue` 테이블도 별도 마이그레이션 명령 없이 다음 빌드에서 자동 생성됨.
+- 디버깅 체크: `npx tsc --noEmit` 결과 변경 파일(`tasks/[id]/page.tsx`, `tasks/[id]/route.ts`)에서 신규 타입 오류 없음. 동일한 환경 제약(네트워크 차단)으로 `prisma generate`/`db push`/`npm run build`는 이번 세션에서 실행하지 못함 — **실제 배포 환경에서 빌드 후 브라우저로 상세 페이지의 "속성" 카드가 목록과 동일한 값을 보여주는지, 필드가 없는 업무는 카드가 안 보이는지 확인 필요.**

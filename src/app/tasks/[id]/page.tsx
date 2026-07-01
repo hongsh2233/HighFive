@@ -4,8 +4,9 @@ import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjectStatuses } from '@/hooks/useProjectStatuses';
+import { useProjectFields } from '@/hooks/useProjectFields';
 import apiClient from '@/lib/api-client';
-import { Task, TimeLog } from '@/types';
+import { Task, TimeLog, ProjectField } from '@/types';
 import styles from './detail.module.css';
 import { actionLabel } from '@/lib/task-history';
 
@@ -43,6 +44,61 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const userRole = (user as any)?.role;
   const canEdit = userRole === 'ADMIN' || userRole === 'LEADER';
   const canDelete = userRole === 'ADMIN' || userRole === 'LEADER';
+
+  // 커스텀 필드(속성) — /tasks 목록과 동일한 개념, 상세 페이지에서도 편집 가능
+  const { fields, saveValue } = useProjectFields(task?.projectId ?? null);
+  const [fieldValueOverrides, setFieldValueOverrides] = useState<Record<number, string>>({});
+
+  const getFieldValue = (field: ProjectField): string => {
+    if (field.id in fieldValueOverrides) return fieldValueOverrides[field.id];
+    return task?.fieldValues?.find((fv) => fv.fieldId === field.id)?.value ?? '';
+  };
+
+  const handleFieldValueChange = (field: ProjectField, value: string) => {
+    if (!task) return;
+    setFieldValueOverrides((prev) => ({ ...prev, [field.id]: value }));
+    saveValue(task.id, field.id, value || null).catch((err) => console.error(err));
+  };
+
+  const renderFieldValue = (field: ProjectField) => {
+    const value = getFieldValue(field);
+    if (!canEdit) {
+      if (field.type === 'CHECKBOX') return value === 'true' ? '✓' : '-';
+      return value || '-';
+    }
+    if (field.type === 'CHECKBOX') {
+      return (
+        <input
+          type="checkbox"
+          checked={value === 'true'}
+          onChange={(e) => handleFieldValueChange(field, e.target.checked ? 'true' : 'false')}
+        />
+      );
+    }
+    if (field.type === 'SELECT') {
+      const options = (field.options || '').split(',').map((o) => o.trim()).filter(Boolean);
+      return (
+        <select
+          value={value}
+          onChange={(e) => handleFieldValueChange(field, e.target.value)}
+          className={styles.fieldSelect}
+        >
+          <option value="">-</option>
+          {options.map((o) => (
+            <option key={o} value={o}>{o}</option>
+          ))}
+        </select>
+      );
+    }
+    return (
+      <input
+        type={field.type === 'NUMBER' ? 'number' : field.type === 'DATE' ? 'date' : 'text'}
+        defaultValue={value}
+        onBlur={(e) => handleFieldValueChange(field, e.target.value)}
+        className={styles.input}
+      />
+    );
+  };
 
   const fetchTask = async () => {
     try {
@@ -292,6 +348,23 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         )}
       </div>
+
+      {/* 속성 (프로젝트별 커스텀 필드) */}
+      {fields.length > 0 && (
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <h2 className={`${styles.cardTitle} ${styles.noMargin}`}>속성</h2>
+          </div>
+          <div className={styles.grid}>
+            {fields.map((field) => (
+              <div key={field.id}>
+                <p className={styles.fieldLabel}>{field.name}</p>
+                <div className={styles.fieldValue}>{renderFieldValue(field)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* GitHub 연결 */}
       <div className={styles.card}>

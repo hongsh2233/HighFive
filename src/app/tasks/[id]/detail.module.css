@@ -184,6 +184,11 @@
   composes: field-input from global;
 }
 
+.fieldSelect {
+  composes: field-select from global;
+  width: 100%;
+}
+
 .btnDanger {
   composes: btn btn-danger-solid from global;
   padding: var(--space-2) var(--space-4);

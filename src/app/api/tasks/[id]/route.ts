@@ -27,6 +27,7 @@ export async function GET(
         planner: { select: { id: true, name: true, email: true } },
         worker: { select: { id: true, name: true, email: true } },
         timeLogs: { orderBy: { createdAt: 'desc' } },
+        fieldValues: true,
       },
     });
 
