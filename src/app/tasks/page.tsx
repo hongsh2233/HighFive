@@ -13,6 +13,12 @@ interface Worker {
   name: string;
 }
 
+interface Project {
+  id: number;
+  name: string;
+  status: string;
+}
+
 // 작업시간 계산 함수
 const calculateWorkHours = (timeLogs: any[]): string => {
   if (!timeLogs || timeLogs.length === 0) return '-';
@@ -59,11 +65,13 @@ export default function TaskListPage() {
 
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedWorker, setSelectedWorker] = useState('');
+  const [selectedProject, setSelectedProject] = useState('');
   const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
   const [editingTitleId, setEditingTitleId] = useState<number | null>(null);
   const [titleDraft, setTitleDraft] = useState('');
   const [assignableWorkers, setAssignableWorkers] = useState<Worker[]>([]);
+  const [myProjects, setMyProjects] = useState<Project[]>([]);
 
   useEffect(() => {
     if (!canEditTitle) return;
@@ -77,6 +85,19 @@ export default function TaskListPage() {
     };
     fetchWorkers();
   }, [canEditTitle]);
+
+  // 소속된(또는 ADMIN이면 전체) 프로젝트 목록: 다른 프로젝트로 바로 전환할 수 있는 드롭다운용
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const res = await apiClient.get<{ data: Project[] }>('/projects');
+        setMyProjects((res.data.data || []).filter((p) => p.status === 'ACTIVE'));
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchProjects();
+  }, []);
 
   const handleDeleteTask = async (id: number) => {
     if (!confirm('이 업무를 삭제하시겠습니까? 삭제 후에는 되돌릴 수 없습니다.')) return;
@@ -151,6 +172,9 @@ export default function TaskListPage() {
   }
   if (selectedWorker) {
     filteredTasks = filteredTasks.filter((task) => task.workerId === parseInt(selectedWorker));
+  }
+  if (selectedProject) {
+    filteredTasks = filteredTasks.filter((task) => task.projectId === parseInt(selectedProject));
   }
 
   // 그룹/하위 업무 트리 구성: 최상위(부모 없는) 업무만 1차 행으로 노출, 하위 업무는 펼쳤을 때만 표시
@@ -331,6 +355,26 @@ export default function TaskListPage() {
 
       {/* 필터 바 */}
       <div className={styles.filterBar}>
+        {myProjects.length > 0 && (
+          <>
+            <span className={styles.filterLabel}>
+              프로젝트:
+            </span>
+            <select
+              value={selectedProject}
+              onChange={(e) => setSelectedProject(e.target.value)}
+              className={styles.statusFilterSelect}
+            >
+              <option value="">전체 프로젝트</option>
+              {myProjects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+
         <span className={styles.filterLabel}>
           상태:
         </span>
