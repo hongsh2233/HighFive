@@ -11,7 +11,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { id } = await params;
     const userId = parseInt(id);
     const body = await req.json();
-    const { name, role, isActive, leaveDate, affiliation, projectIds } = body;
+    const { name, role, isActive, leaveDate, affiliation, projectIds, managerId } = body;
+
+    if (managerId !== undefined && managerId !== null && parseInt(managerId) === userId) {
+      return errorResponse('본인을 담당 리더로 지정할 수 없습니다.', 400, 'VALID_400');
+    }
 
     const user = await prisma.user.update({
       where: { id: userId },
@@ -21,8 +25,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(isActive !== undefined && { isActive }),
         ...(leaveDate !== undefined && { leaveDate: leaveDate ? new Date(leaveDate) : null }),
         ...(affiliation !== undefined && { affiliation: affiliation || null }),
+        ...(managerId !== undefined && { managerId: managerId ? parseInt(managerId) : null }),
       },
-      select: { id: true, email: true, name: true, role: true, isActive: true, leaveDate: true, affiliation: true },
+      select: { id: true, email: true, name: true, role: true, isActive: true, leaveDate: true, affiliation: true, managerId: true },
     });
 
     if (projectIds !== undefined) {

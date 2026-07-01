@@ -233,7 +233,7 @@
   color: #92702F;
 }
 
-.roleBadge[data-role="MANAGER"] {
+.roleBadge[data-role="LEADER"] {
   background-color: rgba(142,122,224,0.12);
   color: #5E4FB8;
 }

@@ -42,7 +42,7 @@ export async function PATCH(
       return errorResponse('잘못된 업무 ID입니다.', 400, 'VALID_400');
     }
 
-    if (timeLog.workerId !== userId && !['ADMIN', 'MANAGER'].includes(userRole)) {
+    if (timeLog.workerId !== userId && !['ADMIN', 'LEADER'].includes(userRole)) {
       return errorResponse('권한이 없습니다.', 403);
     }
 

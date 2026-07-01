@@ -24,13 +24,13 @@ export const TASK_STATUS_COLOR: Record<string, { bg: string; text: string; borde
 
 export const USER_ROLE = {
   ADMIN: 'ADMIN',
-  PLANNER: 'PLANNER',
+  LEADER: 'LEADER',
   WORKER: 'WORKER',
 } as const;
 
 export const USER_ROLE_LABEL: Record<string, string> = {
   ADMIN: '관리자',
-  PLANNER: '관리자',
+  LEADER: '리더',
   WORKER: '작업자',
 };
 

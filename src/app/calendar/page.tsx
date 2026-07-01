@@ -8,6 +8,7 @@ import styles from './calendar.module.css';
 
 interface CalendarData {
   tasksByDate: { [key: string]: Task[] };
+  leavesByDate: { [key: string]: string[] };
   summary: {
     total: number;
     assigned: number;
@@ -147,6 +148,7 @@ export default function CalendarPage() {
           {daysArray.map((date, idx) => {
             const dateKey = date.toISOString().split('T')[0];
             const dayTasks = data?.tasksByDate[dateKey] || [];
+            const dayLeaves = data?.leavesByDate[dateKey] || [];
             const isCurrentMonth = date.getMonth() === currentDate.getMonth();
 
             return (
@@ -154,12 +156,17 @@ export default function CalendarPage() {
                 key={idx}
                 className={styles.day}
                 data-current-month={isCurrentMonth ? 'true' : 'false'}
-                data-has-events={dayTasks.length > 0 ? 'true' : 'false'}
+                data-has-events={(dayTasks.length > 0 || dayLeaves.length > 0) ? 'true' : 'false'}
               >
                 <div className={styles.dayNumber}>
                   {date.getDate()}
                 </div>
                 <div>
+                  {dayLeaves.map((name) => (
+                    <div key={name} className={styles.leaveItem} title={`${name} 휴가`}>
+                      🌴 {name}
+                    </div>
+                  ))}
                   {dayTasks.slice(0, 2).map((task) => (
                     <div
                       key={task.id}

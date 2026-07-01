@@ -37,7 +37,7 @@ export default function AppHeader() {
   };
 
   const navClass = (active: boolean) => active ? styles.navLinkActive : styles.navLink;
-  const isAdminOrManager = ['ADMIN', 'MANAGER'].includes(user?.role || '');
+  const isAdminOrLeader = ['ADMIN', 'LEADER'].includes(user?.role || '');
 
   return (
     <header className={styles.header}>
@@ -57,6 +57,10 @@ export default function AppHeader() {
         <nav className={`${styles.nav} ${mobileOpen ? styles.navOpen : ''}`}>
           <Link href="/info" className={navClass(pathname === '/info')} onClick={closeAll}>
             정보
+          </Link>
+
+          <Link href="/requests" className={navClass(pathname.startsWith('/requests'))} onClick={closeAll}>
+            신청
           </Link>
 
           {/* 업무 메뉴 */}
@@ -88,14 +92,14 @@ export default function AppHeader() {
           </div>
 
           {/* 관리 메뉴 */}
-          {isAdminOrManager && (
+          {isAdminOrLeader && (
             <div
               className={styles.menuWrapper}
               onMouseEnter={() => handleMenuEnter('admin')}
               onMouseLeave={handleMenuLeave}
             >
               <button
-                className={navClass(openMenu === 'admin' || pathname.startsWith('/users') || pathname.startsWith('/stats') || pathname.startsWith('/projects'))}
+                className={navClass(openMenu === 'admin' || pathname.startsWith('/users') || pathname.startsWith('/stats') || pathname.startsWith('/projects') || pathname.startsWith('/announcements'))}
                 onClick={() => setOpenMenu(openMenu === 'admin' ? null : 'admin')}
               >
                 관리
@@ -103,6 +107,7 @@ export default function AppHeader() {
               {openMenu === 'admin' && (
                 <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
                   <Link href="/projects" className={styles.dropdownItem} onClick={closeAll}>프로젝트</Link>
+                  <Link href="/announcements" className={styles.dropdownItem} onClick={closeAll}>공지사항</Link>
                   {user?.role === 'ADMIN' && (
                     <Link href="/users" className={styles.dropdownItem} onClick={closeAll}>팀원관리</Link>
                   )}

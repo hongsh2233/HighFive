@@ -17,7 +17,7 @@ interface AuthState {
   setUser: (user: AuthUser | null) => void;
   hasRole: (roles: UserRole[]) => boolean;
   isAdmin: () => boolean;
-  isPlanner: () => boolean;
+  isLeader: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -35,9 +35,9 @@ export const useAuthStore = create<AuthState>()(
 
       isAdmin: () => get().user?.role === 'ADMIN',
 
-      isPlanner: () => {
+      isLeader: () => {
         const role = get().user?.role;
-        return role === 'ADMIN' || role === 'PLANNER';
+        return role === 'ADMIN' || role === 'LEADER';
       },
     }),
     {

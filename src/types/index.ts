@@ -1,5 +1,5 @@
 // User types
-export type UserRole = "ADMIN" | "PLANNER" | "WORKER";
+export type UserRole = "ADMIN" | "LEADER" | "WORKER";
 
 export interface User {
   id: number;

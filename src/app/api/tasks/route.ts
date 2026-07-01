@@ -25,8 +25,8 @@ export async function GET(req: NextRequest) {
     if (workerId) where.workerId = parseInt(workerId);
     if (projectId) where.projectId = parseInt(projectId);
 
-    // MANAGER: 소속 프로젝트 업무만 조회
-    if (role === 'MANAGER') {
+    // LEADER: 소속 프로젝트 업무만 조회
+    if (role === 'LEADER') {
       const myProjectIds = await prisma.projectMember.findMany({
         where: { userId },
         select: { projectId: true },
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     if (error) return error;
 
     const userRole = (session?.user as any)?.role;
-    if (!['ADMIN', 'MANAGER'].includes(userRole)) {
+    if (!['ADMIN', 'LEADER'].includes(userRole)) {
       return errorResponse('업무를 생성할 권한이 없습니다.', 403, 'AUTH_403');
     }
 

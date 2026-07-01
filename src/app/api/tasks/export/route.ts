@@ -7,7 +7,7 @@ import * as XLSX from 'xlsx';
 // GET /api/tasks/export?format=csv|xlsx&from=&to=
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireRole(['ADMIN', 'PLANNER']);
+    const { error } = await requireRole(['ADMIN', 'LEADER']);
     if (error) return error;
 
     const { searchParams } = new URL(req.url);

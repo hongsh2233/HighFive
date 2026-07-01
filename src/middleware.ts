@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 // 보호가 필요한 라우트
-const protectedRoutes = ['/dashboard', '/tasks', '/calendar', '/stats', '/users'];
+const protectedRoutes = ['/dashboard', '/tasks', '/calendar', '/stats', '/users', '/announcements', '/requests'];
 const adminRoutes = ['/users'];
-const plannerRoutes = ['/stats'];
+const leaderRoutes = ['/stats'];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -31,9 +31,9 @@ export async function middleware(req: NextRequest) {
       }
     }
 
-    // Planner 이상 필요한 라우트
-    if (plannerRoutes.some((route) => pathname.startsWith(route))) {
-      if (!['ADMIN', 'PLANNER'].includes(userRole)) {
+    // Leader 이상 필요한 라우트
+    if (leaderRoutes.some((route) => pathname.startsWith(route))) {
+      if (!['ADMIN', 'LEADER'].includes(userRole)) {
         return NextResponse.redirect(new URL('/dashboard', req.url));
       }
     }

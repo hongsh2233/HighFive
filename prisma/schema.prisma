@@ -14,11 +14,12 @@ model User {
   id            Int     @id @default(autoincrement())
   email         String  @unique
   name          String
-  role          String  @default("WORKER") // ADMIN, MANAGER, WORKER
+  role          String  @default("WORKER") // ADMIN, LEADER, WORKER
   passwordHash  String
   isActive      Boolean @default(true)
   leaveDate     DateTime?
   affiliation   String?  // 정규 | 프리
+  managerId     Int?     // 결재 라인상의 담당 리더(상급자)
   createdAt     DateTime @default(now())
   lastLoginAt   DateTime?
 
@@ -31,6 +32,11 @@ model User {
   createdProjects Project[]       @relation("projectCreator")
   taskHistories   TaskHistory[]
   userNotifications UserNotification[]
+  manager           User?          @relation("userManager", fields: [managerId], references: [id])
+  subordinates       User[]        @relation("userManager")
+  announcements      Announcement[] @relation("announcementAuthor")
+  requestsMade       Request[]      @relation("requestRequester")
+  requestsToApprove  Request[]      @relation("requestApprover")
 
   @@map("users")
 }
@@ -184,4 +190,44 @@ model UserNotification {
 
   @@index([userId, isRead])
   @@map("user_notifications")
+}
+
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  authorId  Int
+  isActive  Boolean  @default(true)
+  requestId Int?     @unique // 신청서에서 '공지로 등록'(전결)으로 자동 생성된 경우 연결
+  createdAt DateTime @default(now())
+
+  author    User     @relation("announcementAuthor", fields: [authorId], references: [id])
+  request   Request? @relation(fields: [requestId], references: [id])
+
+  @@index([isActive])
+  @@map("announcements")
+}
+
+model Request {
+  id             Int       @id @default(autoincrement())
+  type           String    // LEAVE, SUPPLY
+  title          String
+  content        String?   @db.Text
+  startDate      DateTime? // LEAVE 전용 (휴가 시작일)
+  endDate        DateTime? // LEAVE 전용 (휴가 종료일)
+  isAnnouncement Boolean   @default(false) // 체크 시 결재 없이 전결 처리 + 공지 배너 게시
+  status         String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  requesterId    Int
+  approverId     Int?      // 신청 시점의 담당 리더(User.managerId) 스냅샷
+  rejectReason   String?
+  decidedAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  requester      User          @relation("requestRequester", fields: [requesterId], references: [id])
+  approver       User?         @relation("requestApprover", fields: [approverId], references: [id])
+  announcement   Announcement?
+
+  @@index([requesterId])
+  @@index([approverId, status])
+  @@index([type, status, startDate])
+  @@map("requests")
 }

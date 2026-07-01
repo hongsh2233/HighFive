@@ -8,7 +8,7 @@ async function main() {
 
   // 샘플 사용자 생성
   const adminPassword = await bcryptjs.hash('Admin@2024!', 12);
-  const plannerPassword = await bcryptjs.hash('Planner@2024!', 12);
+  const leaderPassword = await bcryptjs.hash('Leader@2024!', 12);
   const workerPassword = await bcryptjs.hash('Worker@2024!', 12);
 
   const admin = await prisma.user.upsert({
@@ -23,14 +23,14 @@ async function main() {
     },
   });
 
-  const planner = await prisma.user.upsert({
-    where: { email: 'planner@example.com' },
+  const leader = await prisma.user.upsert({
+    where: { email: 'leader@example.com' },
     update: {},
     create: {
-      email: 'planner@example.com',
-      name: '기획자 김철수',
-      role: 'PLANNER',
-      passwordHash: plannerPassword,
+      email: 'leader@example.com',
+      name: '리더 김철수',
+      role: 'LEADER',
+      passwordHash: leaderPassword,
       isActive: true,
     },
   });
@@ -59,14 +59,14 @@ async function main() {
     },
   });
 
-  console.log('✅ Users created:', [admin.id, planner.id, worker1.id, worker2.id]);
+  console.log('✅ Users created:', [admin.id, leader.id, worker1.id, worker2.id]);
 
   // 샘플 업무 생성
   const task1 = await prisma.task.create({
     data: {
       title: '[DCBGIT-39085] 구글 원 2TB 상품 정보 수정',
       rmsNo: 'DCBGIT-39085',
-      plannerId: planner.id,
+      plannerId: leader.id,
       workerId: worker1.id,
       status: 'PROGRESS',
       targetDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7일 후
@@ -78,7 +78,7 @@ async function main() {
     data: {
       title: '[DCBGIT-39086] 배너 이미지 최적화',
       rmsNo: 'DCBGIT-39086',
-      plannerId: planner.id,
+      plannerId: leader.id,
       workerId: worker2.id,
       status: 'ASSIGNED',
       targetDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5일 후
@@ -90,7 +90,7 @@ async function main() {
     data: {
       title: '[DCBGIT-39087] API 문서 작성',
       rmsNo: 'DCBGIT-39087',
-      plannerId: planner.id,
+      plannerId: leader.id,
       workerId: worker1.id,
       status: 'REVIEW',
       targetDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3일 후
@@ -105,7 +105,7 @@ async function main() {
     data: {
       name: '정기 배너 교체',
       defaultTitle: '배너 이미지 수정',
-      defaultPlannerId: planner.id,
+      defaultPlannerId: leader.id,
       guideText: '- 사이즈: 1920x1080\n- 형식: PNG 또는 JPG\n- 색상 모드: RGB',
     },
   });

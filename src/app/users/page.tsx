@@ -20,6 +20,8 @@ interface User {
   affiliation?: string | null;
   createdAt: string;
   lastLoginAt?: string;
+  managerId?: number | null;
+  manager?: { id: number; name: string } | null;
   projectMembers?: ProjectInfo[];
 }
 
@@ -42,6 +44,7 @@ export default function UsersPage() {
     role: 'WORKER',
     leaveDate: '',
     affiliation: '',
+    managerId: '',
     projectIds: [] as number[],
   });
   const [submitting, setSubmitting] = useState(false);
@@ -73,7 +76,7 @@ export default function UsersPage() {
     }
   }, [authLoading, currentUser]);
 
-  const resetForm = () => setFormData({ email: '', name: '', role: 'WORKER', leaveDate: '', affiliation: '', projectIds: [] });
+  const resetForm = () => setFormData({ email: '', name: '', role: 'WORKER', leaveDate: '', affiliation: '', managerId: '', projectIds: [] });
 
   const openCreateForm = () => {
     setEditingUser(null);
@@ -89,6 +92,7 @@ export default function UsersPage() {
       role: u.role,
       leaveDate: u.leaveDate ? u.leaveDate.slice(0, 10) : '',
       affiliation: u.affiliation || '',
+      managerId: u.managerId ? String(u.managerId) : '',
       projectIds: u.projectMembers?.map(pm => pm.project.id) || [],
     });
     setShowForm(true);
@@ -104,6 +108,7 @@ export default function UsersPage() {
         role: formData.role,
         leaveDate: formData.leaveDate || null,
         affiliation: formData.affiliation || null,
+        managerId: formData.managerId || null,
         projectIds: formData.projectIds,
       };
 
@@ -159,7 +164,9 @@ export default function UsersPage() {
     }));
   };
 
-  const roleLabel = (role: string) => role === 'ADMIN' ? '최고관리자' : role === 'MANAGER' ? '관리자' : '작업자';
+  const roleLabel = (role: string) => role === 'ADMIN' ? '최고관리자' : role === 'LEADER' ? '리더' : '작업자';
+
+  const leaderCandidates = users.filter(u => ['ADMIN', 'LEADER'].includes(u.role) && u.id !== editingUser?.id);
 
   if (authLoading || loading) {
     return <div className={styles.loadingPage}>로딩 중...</div>;
@@ -214,7 +221,7 @@ export default function UsersPage() {
                     setFormData(p => ({ ...p, role, projectIds: role === 'ADMIN' ? [] : p.projectIds }));
                   }} className={styles.input}>
                     <option value="WORKER">작업자</option>
-                    <option value="MANAGER">관리자</option>
+                    <option value="LEADER">리더</option>
                     <option value="ADMIN">최고관리자</option>
                   </select>
                 </div>
@@ -230,6 +237,15 @@ export default function UsersPage() {
                 <div>
                   <label className={styles.label}>철수일</label>
                   <input type="date" value={formData.leaveDate} onChange={e => setFormData(p => ({ ...p, leaveDate: e.target.value }))} className={styles.input} />
+                </div>
+                <div>
+                  <label className={styles.label}>담당 리더</label>
+                  <select value={formData.managerId} onChange={e => setFormData(p => ({ ...p, managerId: e.target.value }))} className={styles.input}>
+                    <option value="">지정 안함</option>
+                    {leaderCandidates.map(u => (
+                      <option key={u.id} value={u.id}>{u.name} ({roleLabel(u.role)})</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -273,7 +289,7 @@ export default function UsersPage() {
             <table className={styles.table}>
               <thead>
                 <tr>
-                  {['이름', '이메일', '역할', '소속', '상태', '철수일', '소속 프로젝트', '가입일', ''].map(h => (
+                  {['이름', '이메일', '역할', '소속', '담당 리더', '상태', '철수일', '소속 프로젝트', '가입일', ''].map(h => (
                     <th key={h} className={styles.th}>{h}</th>
                   ))}
                 </tr>
@@ -287,6 +303,7 @@ export default function UsersPage() {
                       <span className={styles.roleBadge} data-role={u.role}>{roleLabel(u.role)}</span>
                     </td>
                     <td className={styles.tdSecondary}>{u.affiliation || '-'}</td>
+                    <td className={styles.tdSecondary}>{u.manager?.name || '-'}</td>
                     <td className={styles.td}>
                       <span className={u.isActive ? styles.statusActive : styles.statusInactive} data-active={u.isActive ? 'true' : 'false'}>
                         {u.isActive ? '활성' : '비활성'}

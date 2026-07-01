@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     if (error) return error;
 
     const role = (session!.user as any).role;
-    if (!['ADMIN', 'MANAGER'].includes(role)) {
+    if (!['ADMIN', 'LEADER'].includes(role)) {
       return errorResponse('권한이 없습니다.', 403);
     }
 

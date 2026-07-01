@@ -1,6 +1,6 @@
 # High5 프로젝트 구조 문서
 
-> **최종 업데이트** 2026-06-30
+> **최종 업데이트** 2026-07-01
 > **스택** Next.js 15 · Prisma 5 · PostgreSQL · NextAuth.js 4 · Zustand · MUI
 >
 > 이 문서는 코드 변경 시 항상 최신 상태로 유지된다. 작업 절차는 `.claude/skills/dev-workflow/SKILL.md`, 작업 이력은 `docs/HISTORY.md` 참고.
@@ -12,7 +12,7 @@
 | 역할 | 코드 | 접근 가능 페이지 |
 |---|---|---|
 | 관리자 | `ADMIN` | 전체 |
-| 기획자 | `PLANNER` | `/users` 제외 전체 |
+| 리더 | `LEADER` | `/users` 제외 전체 (구 PLANNER/MANAGER — 2026-07-01 통일) |
 | 작업자 | `WORKER` | `/stats`, `/users` 제외 |
 
 ```
@@ -23,7 +23,9 @@
 /projects       → 인증 필요 (전 역할)
 /info           → 인증 필요 (전 역할)
 /profile/**     → 인증 필요 (전 역할)
-/stats          → ADMIN, PLANNER만
+/announcements  → 인증 필요 (전 역할 조회 가능, 작성/수정/삭제는 ADMIN/LEADER)
+/requests       → 인증 필요 (전 역할)
+/stats          → ADMIN, LEADER만
 /users          → ADMIN만
 ```
 
@@ -37,6 +39,9 @@ User (1) ──< InfoItem
 User (1) ──< TaskHistory
 User (1) ──< UserNotification
 User (M) ──< ProjectMember >── (M) Project (1) ──< Task
+User (1) ──< User [managerId 자기참조, 결재 라인]
+User (1) ──< Announcement
+User (1) ──< Request [requester / approver] (1) ──< Announcement (전결 시 자동 생성, 1:1)
 ```
 
 ### User
@@ -45,11 +50,12 @@ User (M) ──< ProjectMember >── (M) Project (1) ──< Task
 | id | Int PK | 자동 증가 |
 | email | String UNIQUE | 로그인 이메일 |
 | name | String | 표시명 |
-| role | String | ADMIN / PLANNER / WORKER (기본 WORKER) |
+| role | String | ADMIN / LEADER / WORKER (기본 WORKER, 2026-07-01 이전 PLANNER·MANAGER 혼용을 LEADER로 통일) |
 | passwordHash | String | bcryptjs |
 | isActive | Boolean | 계정 활성 여부 |
 | leaveDate | DateTime? | 퇴사일 |
 | affiliation | String? | 정규 / 프리 |
+| managerId | Int? | 결재 라인상의 담당 리더(User 자기참조). `/requests` 신청 시 결재자로 사용 |
 | createdAt / lastLoginAt | DateTime | |
 
 ### Task
@@ -104,6 +110,12 @@ User (M) ──< ProjectMember >── (M) Project (1) ──< Task
 ### InfoItem
 `/info` 페이지에 노출되는 FAQ형 콘텐츠. `question`, `answer`, `order`, `isActive`.
 
+### Announcement
+헤더 하단 배너로 노출되는 공지. `content`, `authorId`(ADMIN/LEADER), `isActive`, `requestId?`(신청서에서 '공지로 등록'으로 자동 생성된 경우 연결, 1:1 unique). 프론트에서는 X로 닫으면 `localStorage`에 dismiss 기록(서버 상태는 유지, 새로고침해도 다시 안 보임).
+
+### Request
+휴가/비품 신청. `type`(LEAVE/SUPPLY), `title`, `content`(SUPPLY 품목/사유), `startDate`/`endDate`(LEAVE 전용), `isAnnouncement`(체크 시 전결), `status`(PENDING/APPROVED/REJECTED), `requesterId`, `approverId`(신청 시점 `requester.managerId` 스냅샷), `rejectReason`, `decidedAt`.
+
 ---
 
 ## 3. 디렉터리 구조
@@ -129,7 +141,9 @@ high5/
 │   │   ├── calendar/page.tsx
 │   │   ├── projects/page.tsx
 │   │   ├── stats/page.tsx
-│   │   ├── users/page.tsx             # ADMIN 전용, "팀원관리" — 팀원 생성 시 임시 비밀번호를 모달로 안내, 소속 프로젝트는 체크박스로 선택
+│   │   ├── users/page.tsx             # ADMIN 전용, "팀원관리" — 팀원 생성 시 임시 비밀번호를 모달로 안내, 소속 프로젝트는 체크박스로 선택, 담당 리더(managerId) 지정
+│   │   ├── announcements/page.tsx     # ADMIN/LEADER 전용, 공지 등록/수정/게시중지/삭제 관리
+│   │   ├── requests/page.tsx          # 전 역할, 휴가/비품 신청 + 내 신청 목록 + (ADMIN/LEADER) 결재함
 │   │   ├── profile/password/page.tsx
 │   │   │
 │   │   ├── tasks/
@@ -167,6 +181,12 @@ high5/
 │   │       ├── info/
 │   │       │   ├── route.ts
 │   │       │   └── [id]/route.ts
+│   │       ├── announcements/
+│   │       │   ├── route.ts                    # GET(활성/?all=true 관리용) / POST(ADMIN·LEADER)
+│   │       │   └── [id]/route.ts               # PATCH / DELETE (작성자 본인 또는 ADMIN)
+│   │       ├── requests/
+│   │       │   ├── route.ts                    # GET(?scope=mine|approvals) / POST(휴가·비품 신청)
+│   │       │   └── [id]/decision/route.ts      # PATCH 승인/반려
 │   │       ├── notifications/
 │   │       │   ├── route.ts
 │   │       │   └── read-all/route.ts
@@ -181,7 +201,8 @@ high5/
 │   │           └── github/route.ts             # GitHub PR merge 연동
 │   │
 │   ├── components/
-│   │   ├── AppHeader.tsx              # 상단 GNB (메뉴, 프로필, 모바일 햄버거 토글) — 알림 벨 제거됨
+│   │   ├── AppHeader.tsx              # 상단 GNB (메뉴, 프로필, 모바일 햄버거 토글) — 알림 벨 제거됨. "신청" 링크, 관리 메뉴에 "공지사항" 포함
+│   │   ├── AnnouncementBanner.tsx     # 헤더 하단 공지 배너 — 활성 공지 조회, X로 닫으면 localStorage에 dismiss 기록
 │   │   ├── LayoutWrapper.tsx
 │   │   ├── Providers.tsx              # SessionProvider + AuthSync
 │   │   ├── common/
@@ -284,6 +305,19 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 - `GET /api/calendar/ical-url` → 사용자별 서명 토큰이 포함된 구독 URL 발급
 - `GET /api/calendar/ical?token=...` → 토큰 검증 후 본인 업무의 `targetDate` 기준 `.ics` 피드 생성
 
+### 공지 (`/announcements`, `AnnouncementBanner.tsx`)
+- ADMIN/LEADER가 `POST /api/announcements`로 공지를 등록하면 헤더 하단 배너(`AnnouncementBanner`, `LayoutWrapper`에 삽입)에 전 역할에게 노출된다.
+- X 클릭 시 서버 상태는 유지한 채 브라우저 `localStorage`(`dismissedAnnouncementIds`)에 기록하여 해당 브라우저에서만 다시 보이지 않는다.
+- `/announcements` 관리 페이지: ADMIN은 전체 공지를, LEADER는 본인이 작성한 공지만 조회/수정/게시중지/삭제할 수 있다.
+
+### 신청 & 결재 (`/requests`)
+- 전 역할이 휴가(`LEAVE`)/비품(`SUPPLY`) 신청을 등록할 수 있다 (`POST /api/requests`).
+  - `LEAVE`는 `startDate`/`endDate` 필수, `SUPPLY`는 `content`(품목/사유) 필수.
+- **전결**: ADMIN/LEADER만 신청 폼에서 "공지로 등록" 체크박스를 사용할 수 있다. 체크 시 결재 절차 없이 `status='APPROVED'`로 즉시 확정(`approverId`=본인)되고, 동시에 `Announcement`가 자동 생성되어 공지 배너에도 게시된다. WORKER가 API를 직접 호출해 `isAnnouncement:true`를 보내도 서버에서 무시하고 일반 결재 절차로 처리한다.
+- **일반 결재**: 체크하지 않으면 `status='PENDING'`, `approverId`는 신청자의 `User.managerId` 스냅샷으로 설정된다. 담당 리더가 지정되지 않은 경우(`managerId` null) ADMIN이 결재함에서 대신 처리할 수 있다.
+- 결재자는 `/requests` 페이지의 "결재 대기" 섹션에서 `PATCH /api/requests/[id]/decision`으로 승인/반려한다. 반려 시 사유 입력 필수.
+- **캘린더 반영**: `GET /api/tasks/calendar`가 해당 월과 겹치는 `status='APPROVED'`인 `LEAVE` 신청을 조회해 `leavesByDate`로 함께 반환하고, `/calendar` 페이지가 각 날짜 셀에 휴가자 이름을 표시한다(전결/일반 결재 승인 여부와 무관하게 APPROVED이면 모두 표시).
+
 ---
 
 ## 5. API 전체 목록
@@ -298,23 +332,29 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 | GET | `/api/users/me` | ALL | 내 정보 |
 | POST | `/api/users/invite` | ADMIN | 사용자 초대 |
 | GET | `/api/tasks` | ALL | 업무 목록 (필터+페이지네이션) |
-| POST | `/api/tasks` | PLANNER+ | 업무 생성 |
+| POST | `/api/tasks` | LEADER+ | 업무 생성 |
 | GET | `/api/tasks/calendar` | ALL | 월별 캘린더 데이터 |
-| GET | `/api/tasks/export` | PLANNER+ | CSV/xlsx 다운로드 |
-| GET/PATCH/DELETE | `/api/tasks/[id]` | ALL/PLANNER+/ADMIN | 업무 상세/수정/삭제 |
+| GET | `/api/tasks/export` | LEADER+ | CSV/xlsx 다운로드 |
+| GET/PATCH/DELETE | `/api/tasks/[id]` | ALL/LEADER+/ADMIN | 업무 상세/수정/삭제 |
 | PATCH | `/api/tasks/[id]/status` | ALL | 상태 변경 + 알림 트리거 |
 | GET | `/api/tasks/[id]/history` | ALL | 업무 히스토리 |
 | GET | `/api/tasks/[id]/timelogs` | ALL | 타임로그 조회 (자동 시작/종료는 status route에서 처리) |
 | PATCH | `/api/tasks/[id]/timelogs/[logId]/adjust` | ALL | 공수 보정 |
-| GET/POST | `/api/projects` | ALL/PLANNER+ | 프로젝트 목록/생성 |
-| GET/PATCH/DELETE | `/api/projects/[id]` | ALL/PLANNER+/ADMIN | 프로젝트 상세/수정/삭제 |
-| POST/DELETE | `/api/projects/[id]/members` | PLANNER+ | 프로젝트 멤버 관리 |
+| GET/POST | `/api/projects` | ALL/LEADER+ | 프로젝트 목록/생성 |
+| GET/PATCH/DELETE | `/api/projects/[id]` | ALL/LEADER+/ADMIN | 프로젝트 상세/수정/삭제 |
+| POST/DELETE | `/api/projects/[id]/members` | LEADER+ | 프로젝트 멤버 관리 |
 | GET/POST | `/api/info` | ALL/ADMIN | FAQ 목록/생성 |
 | PATCH/DELETE | `/api/info/[id]` | ADMIN | FAQ 수정/삭제 |
+| GET | `/api/announcements` | ALL (`?all=true`는 ADMIN/LEADER 전용, 비활성 포함) | 공지 목록 |
+| POST | `/api/announcements` | LEADER+ | 공지 등록 |
+| PATCH/DELETE | `/api/announcements/[id]` | 작성자 본인 또는 ADMIN | 공지 수정/삭제 |
+| GET | `/api/requests` | ALL (`?scope=mine`\|`approvals`) | 신청 목록 (내 신청 / 결재 대기) |
+| POST | `/api/requests` | ALL | 휴가/비품 신청 (`isAnnouncement`는 LEADER+ 만 유효) |
+| PATCH | `/api/requests/[id]/decision` | 지정된 결재자 또는 (결재자 미지정 시) ADMIN | 승인/반려 |
 | GET | `/api/notifications` | ALL | 인앱 알림 목록 |
 | PATCH | `/api/notifications/read-all` | ALL | 알림 전체 읽음 처리 |
-| GET | `/api/stats/summary` | PLANNER+ | 월간 요약 통계 |
-| GET | `/api/stats/workload` | PLANNER+ | 작업자별 부하량 |
+| GET | `/api/stats/summary` | LEADER+ | 월간 요약 통계 |
+| GET | `/api/stats/workload` | LEADER+ | 작업자별 부하량 |
 | GET | `/api/calendar/ical-url` | ALL | iCal 구독 URL 발급 |
 | GET | `/api/calendar/ical` | 토큰 인증 | iCal 피드 |
 | POST | `/api/webhooks/slack` | 내부 | Slack/잔디 알림 발송 |

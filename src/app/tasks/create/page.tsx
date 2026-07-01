@@ -85,7 +85,7 @@ function TaskCreateForm() {
   const assignableWorkers = workers.filter(w => w.role !== 'ADMIN');
 
   const isAdmin = user?.role === 'ADMIN';
-  const isManager = user?.role === 'MANAGER';
+  const isLeader = user?.role === 'LEADER';
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -127,7 +127,7 @@ function TaskCreateForm() {
       const res = await axios.get('/api/projects');
       const activeProjects = (res.data.data || []).filter((p: Project) => p.status === 'ACTIVE');
       setProjects(activeProjects);
-      if (isManager && activeProjects.length > 0) {
+      if (isLeader && activeProjects.length > 0) {
         const myProject = activeProjects.find((p: Project) =>
           p.members.some((m: { user: Worker }) => m.user.id === Number(user?.id))
         );
@@ -157,7 +157,7 @@ function TaskCreateForm() {
     try {
       if (!title.trim()) { setError('업무 제목을 입력해주세요.'); setLoading(false); return; }
       if (!workerId) { setError('담당자를 선택해주세요.'); setLoading(false); return; }
-      if (isManager && !projectId) { setError('프로젝트를 선택해주세요.'); setLoading(false); return; }
+      if (isLeader && !projectId) { setError('프로젝트를 선택해주세요.'); setLoading(false); return; }
 
       const validSubTasks = subTasks.filter(s => s.title.trim() && s.workerId);
 
@@ -190,7 +190,7 @@ function TaskCreateForm() {
 
   if (authLoading) return <div className={styles.loading}>로딩 중...</div>;
 
-  if (!user || !['ADMIN', 'MANAGER'].includes(user.role ?? '')) {
+  if (!user || !['ADMIN', 'LEADER'].includes(user.role ?? '')) {
     return (
       <div className={styles.noPermission}>
         <p className={styles.dangerText}>업무를 등록할 권한이 없습니다.</p>
@@ -225,7 +225,7 @@ function TaskCreateForm() {
             )}
 
             <div className={styles.fieldGroup}>
-              <label className={styles.label}>프로젝트 {isManager && <span className={styles.required}>*</span>}</label>
+              <label className={styles.label}>프로젝트 {isLeader && <span className={styles.required}>*</span>}</label>
               <select value={projectId} onChange={e => setProjectId(e.target.value)} className={styles.input} disabled={loading}>
                 <option value="">프로젝트 선택 {isAdmin ? '(선택사항)' : ''}</option>
                 {projects.map(p => (

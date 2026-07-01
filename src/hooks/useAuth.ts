@@ -10,9 +10,9 @@ export function useAuth(requiredRole?: string) {
     if (status === 'unauthenticated') {
       router.push('/login');
     } else if (requiredRole && session?.user?.role !== requiredRole) {
-      if (requiredRole === 'ADMIN' || requiredRole === 'PLANNER') {
-        // ADMIN, PLANNER 권한 필요하지만 없으면 대시보드로
-        if (session?.user?.role !== 'ADMIN' && session?.user?.role !== 'PLANNER') {
+      if (requiredRole === 'ADMIN' || requiredRole === 'LEADER') {
+        // ADMIN, LEADER 권한 필요하지만 없으면 대시보드로
+        if (session?.user?.role !== 'ADMIN' && session?.user?.role !== 'LEADER') {
           router.push('/dashboard');
         }
       }

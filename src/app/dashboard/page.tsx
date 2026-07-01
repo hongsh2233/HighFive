@@ -88,7 +88,7 @@ export default function DashboardPage() {
         </h1>
         <p className={styles.subtitle}>
           {user?.role === 'ADMIN' && '관리자'}
-          {user?.role === 'PLANNER' && '관리자'}
+          {user?.role === 'LEADER' && '리더'}
           {user?.role === 'WORKER' && '작업자'}
           {' '}계정입니다.
         </p>
@@ -105,9 +105,9 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {user?.role === 'PLANNER' && (
+      {user?.role === 'LEADER' && (
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>관리자 기능</h2>
+          <h2 className={styles.sectionTitle}>리더 기능</h2>
           <div className={styles.linkRow}>
             <Link href="/tasks" className={styles.actionLink}>
               📋 업무 배정

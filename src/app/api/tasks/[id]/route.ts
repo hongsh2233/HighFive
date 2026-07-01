@@ -50,7 +50,7 @@ export async function PATCH(
     if (error) return error;
 
     const userRole = (session?.user as any)?.role;
-    if (!['ADMIN', 'PLANNER'].includes(userRole)) {
+    if (!['ADMIN', 'LEADER'].includes(userRole)) {
       return errorResponse('업무를 수정할 권한이 없습니다.', 403, 'AUTH_403');
     }
 
@@ -140,7 +140,7 @@ export async function DELETE(
     if (error) return error;
 
     const userRole = (session?.user as any)?.role;
-    if (!['ADMIN', 'PLANNER'].includes(userRole)) {
+    if (!['ADMIN', 'LEADER'].includes(userRole)) {
       return errorResponse('업무를 삭제할 권한이 없습니다.', 403, 'AUTH_403');
     }
 

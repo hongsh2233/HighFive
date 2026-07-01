@@ -62,7 +62,7 @@ const calculateWorkHours = (timeLogs: any[]): string => {
 export default function TaskListPage() {
   const { user, isLoading: authLoading } = useAuth();
   const { tasks, loading, error, updateStatus, updateTask, deleteTask } = useTasks({ limit: 1000 });
-  const canEditTitle = ['ADMIN', 'PLANNER'].includes((user as any)?.role ?? '');
+  const canEditTitle = ['ADMIN', 'LEADER'].includes((user as any)?.role ?? '');
   const canDelete = canEditTitle;
 
   const [selectedStatus, setSelectedStatus] = useState('');

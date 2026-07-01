@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       return errorResponse('email, name, role은 필수입니다.', 400, 'VALID_400');
     }
 
-    if (!['ADMIN', 'PLANNER', 'WORKER'].includes(role)) {
+    if (!['ADMIN', 'LEADER', 'WORKER'].includes(role)) {
       return errorResponse('유효하지 않은 역할입니다.', 400, 'VALID_400');
     }
 

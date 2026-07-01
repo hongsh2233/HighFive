@@ -9,8 +9,8 @@ export async function GET(req: NextRequest) {
     const role = searchParams.get('role');
     const projectId = searchParams.get('projectId');
 
-    // WORKER 역할 필터 조회(업무 담당자 배정/필터용)는 전 역할 허용, 그 외 전체 목록은 ADMIN/MANAGER만 허용
-    const auth = role === 'WORKER' ? await requireAuth() : await requireRole(['ADMIN', 'MANAGER']);
+    // WORKER 역할 필터 조회(업무 담당자 배정/필터용)는 전 역할 허용, 그 외 전체 목록은 ADMIN/LEADER만 허용
+    const auth = role === 'WORKER' ? await requireAuth() : await requireRole(['ADMIN', 'LEADER']);
     if (auth.error) return auth.error;
     const { session } = auth;
 
@@ -19,8 +19,8 @@ export async function GET(req: NextRequest) {
 
     let where: any = role ? { role } : {};
 
-    if (sessionRole === 'MANAGER') {
-      // MANAGER는 자신이 속한 프로젝트의 멤버만 조회
+    if (sessionRole === 'LEADER') {
+      // LEADER는 자신이 속한 프로젝트의 멤버만 조회
       const myProjects = await prisma.projectMember.findMany({
         where: { userId: sessionUserId },
         select: { projectId: true },
@@ -46,6 +46,8 @@ export async function GET(req: NextRequest) {
         affiliation: true,
         createdAt: true,
         lastLoginAt: true,
+        managerId: true,
+        manager: { select: { id: true, name: true } },
         projectMembers: {
           select: { project: { select: { id: true, name: true, status: true } } },
         },
@@ -67,7 +69,7 @@ export async function POST(req: NextRequest) {
     if (error) return error;
 
     const body = await req.json();
-    const { email, name, role, leaveDate, affiliation, projectIds } = body;
+    const { email, name, role, leaveDate, affiliation, projectIds, managerId } = body;
 
     if (!email || !name) {
       return errorResponse('이메일과 이름은 필수입니다.', 400, 'VALID_400');
@@ -81,7 +83,7 @@ export async function POST(req: NextRequest) {
       return errorResponse('이름은 최소 2자 이상이어야 합니다.', 400, 'VALID_400');
     }
 
-    const validRoles = ['ADMIN', 'MANAGER', 'WORKER'];
+    const validRoles = ['ADMIN', 'LEADER', 'WORKER'];
     if (role && !validRoles.includes(role)) {
       return errorResponse('유효하지 않은 역할입니다.', 400, 'VALID_400');
     }
@@ -105,8 +107,9 @@ export async function POST(req: NextRequest) {
         isActive: true,
         leaveDate: leaveDate ? new Date(leaveDate) : null,
         affiliation: affiliation || null,
+        managerId: managerId ? parseInt(managerId) : null,
       },
-      select: { id: true, email: true, name: true, role: true, leaveDate: true, affiliation: true },
+      select: { id: true, email: true, name: true, role: true, leaveDate: true, affiliation: true, managerId: true },
     });
 
     if (projectIds?.length) {

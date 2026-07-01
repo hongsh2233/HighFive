@@ -27,7 +27,7 @@ const emptyForm = { name: '', projectManagerName: '', projectLeadName: '' };
 export default function ProjectsPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
-  const canManage = ['ADMIN', 'MANAGER'].includes(user?.role || '');
+  const canManage = ['ADMIN', 'LEADER'].includes(user?.role || '');
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -327,7 +327,7 @@ export default function ProjectsPage() {
                     <div className={styles.memberAvatar}>{m.user.name[0]}</div>
                     <div className={styles.memberInfo}>
                       <div className={styles.memberName}>{m.user.name}</div>
-                      <div className={styles.memberRole}>{m.user.role === 'ADMIN' ? '최고관리자' : m.user.role === 'MANAGER' ? '관리자' : '작업자'}</div>
+                      <div className={styles.memberRole}>{m.user.role === 'ADMIN' ? '최고관리자' : m.user.role === 'LEADER' ? '리더' : '작업자'}</div>
                     </div>
                     {isAdmin && (
                       <button onClick={() => handleRemoveMember(selectedProject.id, m.user.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-muted)', padding: 4 }}>✕</button>
@@ -345,7 +345,7 @@ export default function ProjectsPage() {
                   >
                     <option value="">사용자 선택...</option>
                     {nonMembers.map(u => (
-                      <option key={u.id} value={u.id}>{u.name} ({u.role === 'MANAGER' ? '관리자' : '작업자'})</option>
+                      <option key={u.id} value={u.id}>{u.name} ({u.role === 'LEADER' ? '리더' : '작업자'})</option>
                     ))}
                   </select>
                 </div>

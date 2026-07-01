@@ -145,3 +145,16 @@
   font-size: 11px;
   color: var(--color-gray-600);
 }
+
+.leaveItem {
+  font-size: 11px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: 3px;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background-color: #ECFDF5;
+  color: #065F46;
+  font-weight: 600;
+}

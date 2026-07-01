@@ -173,3 +173,22 @@
 
 - 로그인 페이지(`src/app/login/login.module.css`) 디자인을 앱 전체 디자인 시스템(`globals.css`의 라이트 배경 `--bg-base`/인디고 accent `--accent`/플랫 버튼 스타일)에 맞춰 전면 리스타일. 기존에는 골드·퍼플 그라디언트의 다크 테마(라디얼 그라디언트 배경, 그라디언트 로고/버튼, 강한 글로우 섀도우)라서 나머지 페이지(대시보드/업무/헤더 등)의 라이트+인디고 톤과 이질감이 컸음. 로고 아이콘을 `--header-bg` 단색으로, 브랜드 타이틀 텍스트 그라디언트를 `--text-primary` 단색으로, 제출 버튼을 `.btn-primary`와 동일한 `--accent` 단색 배경으로, 인풋/에러박스를 앱의 `field-input`/`errorBox` 톤(라이트 배경, `var(--border-strong)` 보더)으로 교체. JSX(`page.tsx`) 구조는 변경하지 않고 CSS만 수정.
 - 디버깅 체크: `node_modules`를 `--ignore-scripts`로 설치 후(Prisma 엔진 바이너리 다운로드는 환경 네트워크 제약으로 여전히 실패) `npx tsc --noEmit` 실행 — 로그인 페이지 관련 신규 오류 없음(남은 오류는 전부 Prisma 클라이언트 미생성으로 인한 기존 오류). `npm run dev`로 개발 서버를 직접 기동해 `/login`을 Playwright로 스크린샷 촬영, 라이트 배경+인디고 버튼으로 정상 렌더링되는 것을 시각적으로 확인함. `npm run lint`는 저장소에 ESLint 설정 파일이 없어 대화형 설정이 필요해 이번에도 실행하지 못함(기존부터 있던 제약, 이번 변경과 무관).
+
+## 2026-07-01 (24차)
+
+- **역할 코드 통일(PLANNER/MANAGER → LEADER)**: 코드베이스를 조사한 결과 같은 "중간 관리자" 역할을 가리키는 문자열이 `PLANNER`(업무/통계/대시보드 쪽 권한 체크)와 `MANAGER`(사용자/프로젝트/AppHeader 쪽 권한 체크)로 분열되어 있었음 — DB 시드는 `role: 'PLANNER'`로 사용자를 만드는데 `/users`·`/projects` 권한 체크는 `'MANAGER'`를 찾고 있어 실제로는 해당 역할 사용자가 프로젝트/팀원 관리 기능에 접근하지 못하는 기존 버그였음. 사용자 확인 후 두 값을 모두 `LEADER`로 통일하고 버그도 함께 해소.
+  - 스키마/타입/상수: `prisma/schema.prisma`(User.role 주석), `src/types/index.ts`(`UserRole`), `src/lib/constants.ts`(`USER_ROLE`/`USER_ROLE_LABEL`, 라벨 "리더").
+  - 권한 체크: `src/middleware.ts`, `src/hooks/useAuth.ts`, `src/store/authStore.ts`(`isPlanner` → `isLeader`), `src/components/AppHeader.tsx`(`isAdminOrManager` → `isAdminOrLeader`), `src/app/dashboard/page.tsx`, `src/app/users/page.tsx`(역할 셀렉트/라벨/뱃지), `src/app/projects/page.tsx`, `src/app/tasks/{page,create/page,[id]/page}.tsx`.
+  - API 라우트: `src/app/api/{users,users/invite,projects,projects/[id],projects/[id]/members,tasks,tasks/[id],tasks/[id]/timelogs/[logId]/adjust,tasks/export,stats/summary,stats/workload}/route.ts`.
+  - CSS: `src/components/common/Badge.module.css`, `src/app/users/users.module.css`의 `[data-role="..."]` 셀렉터.
+  - `prisma/seed.ts`: 샘플 리더 계정을 `leader@example.com` / `role: 'LEADER'`로 변경(기존 `planner@example.com`).
+  - **운영 DB 반영 필요**: 이 환경은 DB 연결이 없어 직접 실행 불가 — 실제 배포 DB에서 `UPDATE users SET role='LEADER' WHERE role IN ('PLANNER','MANAGER');` 실행 필요.
+- **공지 기능 추가**: `Announcement` 모델 신설(`content`, `authorId`, `isActive`, `requestId?`). `POST/GET /api/announcements`(작성은 ADMIN/LEADER, 조회는 전 역할), `PATCH/DELETE /api/announcements/[id]`(작성자 본인 또는 ADMIN). 헤더 하단에 `AnnouncementBanner.tsx`를 신설해 `LayoutWrapper.tsx`에서 `AppHeader` 바로 아래 렌더링, 활성 공지를 배너로 노출하고 X 클릭 시 `localStorage`(`dismissedAnnouncementIds`)에 기록해 해당 브라우저에서 다시 보이지 않도록 처리. 관리용 `/announcements` 페이지 신설(등록/수정/게시중지/삭제, ADMIN은 전체·LEADER는 본인 작성분만), `AppHeader`의 "관리" 드롭다운에 "공지사항" 메뉴 추가.
+- **신청(휴가/비품) 기능 추가**: `User.managerId`(자기참조, 담당 리더) 필드 신설 — `/users` 팀원 관리 폼에 "담당 리더" 셀렉트(ADMIN/LEADER 후보) 및 테이블 컬럼 추가, `PATCH/POST /api/users`가 `managerId`를 받아 저장. `Request` 모델 신설(`type` LEAVE/SUPPLY, `title`, `content`, `startDate`/`endDate`, `isAnnouncement`, `status` PENDING/APPROVED/REJECTED, `requesterId`, `approverId`, `rejectReason`, `decidedAt`).
+  - `POST /api/requests`: 신청 시 "공지로 등록" 체크(ADMIN/LEADER만 유효 — WORKER가 API를 직접 호출해 우회 시도해도 서버에서 무시)하면 결재 없이 즉시 `APPROVED`(전결, `approverId`=본인)로 확정하고 연결된 `Announcement`를 자동 생성해 공지 배너에도 게시. 체크하지 않으면 `PENDING` 상태로 `approverId`를 신청자의 `managerId` 스냅샷으로 설정.
+  - `PATCH /api/requests/[id]/decision`: 지정된 결재자(또는 `approverId`가 없을 때 ADMIN)가 승인/반려 처리, 반려 시 사유 필수.
+  - `GET /api/requests?scope=mine|approvals`: 내 신청 목록 / 결재 대기·처리 내역 조회.
+  - `/requests` 페이지 신설: 신청 폼(유형 토글, 기간/품목 입력, ADMIN·LEADER 전용 전결 체크박스) + 내 신청 목록 + (ADMIN/LEADER) 결재함. `AppHeader`에 "신청" 최상위 메뉴 추가.
+  - `GET /api/tasks/calendar`가 해당 월과 겹치는 승인된 `LEAVE` 신청을 `leavesByDate`로 함께 반환하도록 확장하고, `/calendar` 페이지 각 날짜 셀에 🌴 휴가자 이름을 표시하도록 수정.
+  - `middleware.ts`/`LayoutWrapper.tsx`에 `/announcements`, `/requests` 인증 필요 라우트로 추가.
+- 디버깅 체크: `npx tsc --noEmit` 결과 이번에 변경/추가한 파일에서 신규 타입 오류 없음(남은 오류는 전부 Prisma 클라이언트 미생성으로 인한 기존 오류, `npx prisma generate`는 이 환경의 네트워크 제약으로 계속 실패). `npm run dev`로 개발 서버를 기동해 `/login`이 정상 렌더링됨을 확인했고, `middleware.ts`의 `protectedRoutes`를 임시로 비운 뒤 `/requests`·`/announcements`·`/users`·`/calendar`·`/dashboard`·`/tasks`가 모두 200과 에러 없는 HTML을 반환함을 확인한 후 원래 상태로 되돌림(DB 미연결로 실제 로그인 세션을 발급할 수 없어 택한 임시 검증 방법). `npm run lint`는 ESLint 설정 파일 부재로 이번에도 실행하지 못함(기존 제약). **실제 개발/DB 연결 환경에서 로그인 후 공지 등록·닫기, 휴가/비품 신청·전결·결재, 캘린더 휴가자 표시 전체 플로우를 반드시 재확인 필요.**

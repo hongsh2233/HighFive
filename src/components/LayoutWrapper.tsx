@@ -3,8 +3,9 @@
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import AppHeader from './AppHeader';
+import AnnouncementBanner from './AnnouncementBanner';
 
-const AUTH_REQUIRED_PATHS = ['/dashboard', '/tasks', '/calendar', '/stats', '/users', '/profile', '/info', '/projects'];
+const AUTH_REQUIRED_PATHS = ['/dashboard', '/tasks', '/calendar', '/stats', '/users', '/profile', '/info', '/projects', '/announcements', '/requests'];
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -21,6 +22,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   return (
     <div>
       {!isLoginPage && <AppHeader />}
+      {!isLoginPage && <AnnouncementBanner />}
       {children}
     </div>
   );
