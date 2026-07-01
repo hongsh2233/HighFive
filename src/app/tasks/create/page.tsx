@@ -180,7 +180,8 @@ function TaskCreateForm() {
       });
 
       setSuccess(parentTask ? '하위 업무가 추가되었습니다.' : '업무가 등록되었습니다.');
-      setTimeout(() => router.push('/tasks'), 1000);
+      const redirectUrl = projectId ? `/tasks?projectId=${projectId}` : '/tasks';
+      setTimeout(() => router.push(redirectUrl), 1000);
     } catch (err: any) {
       setError(err.response?.data?.message || '업무 등록 중 오류가 발생했습니다.');
     } finally {

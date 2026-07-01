@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useTasks } from '@/hooks/useTask';
 import { useProjectStatuses } from '@/hooks/useProjectStatuses';
@@ -57,15 +58,25 @@ const calculateWorkHours = (timeLogs: any[]): string => {
 };
 
 export default function TaskListPage() {
+  return (
+    <Suspense fallback={<div className={styles.loadingPage}>로딩 중...</div>}>
+      <TaskListContent />
+    </Suspense>
+  );
+}
+
+function TaskListContent() {
   const { user, isLoading: authLoading } = useAuth();
   const { tasks, loading, error, updateStatus, updateTask, deleteTask } = useTasks({ limit: 1000 });
   const { getStatuses } = useProjectStatuses();
+  const searchParams = useSearchParams();
+  const initialProjectId = searchParams.get('projectId') || '';
   const canEditTitle = ['ADMIN', 'LEADER'].includes((user as any)?.role ?? '');
   const canDelete = canEditTitle;
 
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedWorker, setSelectedWorker] = useState('');
-  const [selectedProject, setSelectedProject] = useState('');
+  const [selectedProject, setSelectedProject] = useState(initialProjectId);
   const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
   const [editingTitleId, setEditingTitleId] = useState<number | null>(null);
@@ -320,18 +331,22 @@ export default function TaskListPage() {
           {calculateWorkHours(task.timeLogs || [])}
         </td>
         <td className={styles.td}>
-          <select
-            value={task.status}
-            onChange={(e) => updateStatus(task.id, e.target.value)}
-            className={styles.statusSelect}
-          >
-            {!taskStatuses.some((s) => s.code === task.status) && (
-              <option value={task.status}>{task.status} (기타)</option>
-            )}
-            {taskStatuses.map((s) => (
-              <option key={s.code} value={s.code}>{s.label}</option>
-            ))}
-          </select>
+          {isGroupRow ? (
+            '-'
+          ) : (
+            <select
+              value={task.status}
+              onChange={(e) => updateStatus(task.id, e.target.value)}
+              className={styles.statusSelect}
+            >
+              {!taskStatuses.some((s) => s.code === task.status) && (
+                <option value={task.status}>{task.status} (기타)</option>
+              )}
+              {taskStatuses.map((s) => (
+                <option key={s.code} value={s.code}>{s.label}</option>
+              ))}
+            </select>
+          )}
         </td>
       </tr>,
     ];
