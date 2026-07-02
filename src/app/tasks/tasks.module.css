@@ -76,7 +76,8 @@
   background-color: var(--bg-surface);
   border-radius: 8px;
   border: 1px solid var(--border);
-  overflow: hidden;
+  /* overflow: hidden을 쓰면 "+ 속성 추가" 팝오버(위치: absolute)가 테이블 경계에 잘려 보이므로
+     라운드 코너보다 팝오버 노출을 우선해 제거함 */
 }
 
 .th {
@@ -207,10 +208,26 @@
   line-height: 1.6;
 }
 
+.tableWrapper {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
 /* 커스텀 필드(속성) — 노션 스타일 자유 컬럼 */
 .fieldTh {
   position: relative;
   white-space: nowrap;
+  cursor: grab;
+}
+
+.fieldTh:active {
+  cursor: grabbing;
+}
+
+.fieldDragHandle {
+  color: var(--text-muted);
+  margin-right: 4px;
+  cursor: grab;
 }
 
 .fieldRemoveBtn {
@@ -270,4 +287,27 @@
   composes: field-input from global;
   padding: 4px 8px;
   font-size: 13px;
+}
+
+/* 프로젝트별 섹션 레이아웃 */
+.projectSection {
+  margin-bottom: var(--space-8);
+}
+
+.projectSectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--space-3);
+}
+
+.projectSectionTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.projectSectionCount {
+  font-size: 12px;
+  color: var(--text-muted);
 }

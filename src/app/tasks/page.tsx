@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useTasks } from '@/hooks/useTask';
 import { useProjectStatuses } from '@/hooks/useProjectStatuses';
@@ -16,10 +15,9 @@ interface Worker {
   name: string;
 }
 
-interface Project {
+interface ProjectMeta {
   id: number;
   name: string;
-  status: string;
 }
 
 // 작업시간 계산 함수
@@ -67,34 +65,215 @@ export default function TaskListPage() {
   );
 }
 
+interface SharedHandlers {
+  canEditTitle: boolean;
+  canDelete: boolean;
+  assignableWorkers: Worker[];
+  getStatuses: (projectId?: number | null) => ReturnType<ReturnType<typeof useProjectStatuses>['getStatuses']>;
+  updateStatus: (id: number, status: string) => Promise<any>;
+  updateTask: (id: number, data: any) => Promise<any>;
+  deleteTask: (id: number) => Promise<any>;
+}
+
 function TaskListContent() {
   const { user, isLoading: authLoading } = useAuth();
   const { tasks, loading, error, updateStatus, updateTask, deleteTask } = useTasks({ limit: 1000 });
   const { getStatuses } = useProjectStatuses();
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const canEditTitle = ['ADMIN', 'LEADER'].includes((user as any)?.role ?? '');
   const canDelete = canEditTitle;
 
-  const [selectedStatus, setSelectedStatus] = useState(searchParams.get('status') || '');
-  const [selectedWorker, setSelectedWorker] = useState(searchParams.get('workerId') || '');
-  const [selectedProject, setSelectedProject] = useState(searchParams.get('projectId') || '');
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedWorker, setSelectedWorker] = useState('');
+  const [assignableWorkers, setAssignableWorkers] = useState<Worker[]>([]);
+  const [myProjects, setMyProjects] = useState<ProjectMeta[]>([]);
+
+  useEffect(() => {
+    if (!canEditTitle) return;
+    const fetchWorkers = async () => {
+      try {
+        const res = await apiClient.get<{ data: Worker[] }>('/users?role=WORKER');
+        setAssignableWorkers(res.data.data || []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchWorkers();
+  }, [canEditTitle]);
+
+  // 프로젝트 목록: 소속(멤버) + 배정된 업무가 있는 프로젝트 모두 포함(GET /api/projects가 둘 다 조회)
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const res = await apiClient.get<{ data: (ProjectMeta & { status: string })[] }>('/projects');
+        setMyProjects((res.data.data || []).filter((p) => p.status === 'ACTIVE'));
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchProjects();
+  }, []);
+
+  // 담당자 필터 목록: role=WORKER로 한정하지 않고, 실제로 업무에 배정된 담당자를 모두 노출
+  const workers = Array.from(
+    new Map(tasks.filter((t) => t.worker).map((t: any) => [t.worker.id, t.worker])).values()
+  ).sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+  // 상태 필터 목록: 현재 선택된 담당자 필터를 반영한 업무 범위에서 실제로 사용 중인 상태만 모음
+  const tasksForStatusOptions = tasks.filter((t: any) => {
+    if (selectedWorker && t.workerId !== parseInt(selectedWorker)) return false;
+    return true;
+  });
+  const statusOptionMap = new Map<string, string>();
+  tasksForStatusOptions.forEach((t: any) => {
+    if (statusOptionMap.has(t.status)) return;
+    const def = getStatuses(t.projectId).find((s) => s.code === t.status);
+    statusOptionMap.set(t.status, def?.label ?? t.status);
+  });
+  const statusOptions = Array.from(statusOptionMap.entries());
+
+  if (authLoading) {
+    return <div className={styles.loadingPage}>로딩 중...</div>;
+  }
+
+  // 필터링 (상태/담당자만 — 프로젝트는 더 이상 필터가 아니라 섹션 구분 기준)
+  let filteredTasks = tasks;
+  if (selectedStatus) {
+    filteredTasks = filteredTasks.filter((task) => task.status === selectedStatus);
+  }
+  if (selectedWorker) {
+    filteredTasks = filteredTasks.filter((task: any) => task.workerId === parseInt(selectedWorker));
+  }
+
+  // 프로젝트별로 그룹핑 (프로젝트 미지정 업무는 별도 섹션)
+  const groupedByProject = new Map<number, any[]>();
+  const unassignedTasks: any[] = [];
+  filteredTasks.forEach((task: any) => {
+    if (task.projectId) {
+      const list = groupedByProject.get(task.projectId) || [];
+      list.push(task);
+      groupedByProject.set(task.projectId, list);
+    } else {
+      unassignedTasks.push(task);
+    }
+  });
+
+  // 노출 순서: 내 프로젝트 목록 순서 우선, 소속 외 프로젝트(배정 업무만 있는 경우)는 뒤에
+  const projectIdsInOrder = [
+    ...myProjects.map((p) => p.id).filter((id) => groupedByProject.has(id)),
+    ...Array.from(groupedByProject.keys()).filter((id) => !myProjects.some((p) => p.id === id)),
+  ];
+  const projectSections = projectIdsInOrder.map((pid) => {
+    const projTasks = groupedByProject.get(pid)!;
+    const meta: ProjectMeta = myProjects.find((p) => p.id === pid) || projTasks[0].project;
+    return { project: meta, tasks: projTasks };
+  });
+
+  const handlers: SharedHandlers = { canEditTitle, canDelete, assignableWorkers, getStatuses, updateStatus, updateTask, deleteTask };
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.pageHeader}>
+        <h1 className={styles.pageTitle}>업무 목록</h1>
+        <span className={styles.pageCount}>
+          총 {filteredTasks.length}건
+        </span>
+      </div>
+
+      {/* 필터 바 */}
+      <div className={styles.filterBar}>
+        <span className={styles.filterLabel}>
+          상태:
+        </span>
+        <select
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+          className={styles.statusFilterSelect}
+        >
+          <option value="">전체 상태</option>
+          {statusOptions.map(([code, label]) => (
+            <option key={code} value={code}>
+              {label}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={selectedWorker}
+          onChange={(e) => setSelectedWorker(e.target.value)}
+          className={styles.workerSelect}
+        >
+          <option value="">모든 담당자</option>
+          {workers.map((worker) => (
+            <option key={worker.id} value={worker.id}>
+              {worker.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {error && (
+        <div className={styles.errorBox}>
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div className={styles.tableWrapper}>
+          <div className={styles.tdCenter} style={{ padding: '24px' }}>로딩 중...</div>
+        </div>
+      ) : filteredTasks.length === 0 ? (
+        <div className={styles.tableWrapper}>
+          <div className={styles.tdCenter} style={{ padding: '24px' }}>
+            {tasks.length === 0 ? '등록된 업무가 없습니다.' : '필터 조건에 맞는 업무가 없습니다.'}
+          </div>
+        </div>
+      ) : (
+        <>
+          {projectSections.map(({ project, tasks: projTasks }) => (
+            <ProjectTaskSection
+              key={project.id}
+              project={project}
+              tasks={projTasks}
+              {...handlers}
+            />
+          ))}
+          {unassignedTasks.length > 0 && (
+            <ProjectTaskSection
+              project={null}
+              tasks={unassignedTasks}
+              {...handlers}
+            />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function ProjectTaskSection({
+  project,
+  tasks,
+  canEditTitle,
+  canDelete,
+  assignableWorkers,
+  getStatuses,
+  updateStatus,
+  updateTask,
+  deleteTask,
+}: SharedHandlers & { project: ProjectMeta | null; tasks: any[] }) {
   const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
   const [editingTitleId, setEditingTitleId] = useState<number | null>(null);
   const [titleDraft, setTitleDraft] = useState('');
-  const [assignableWorkers, setAssignableWorkers] = useState<Worker[]>([]);
-  const [myProjects, setMyProjects] = useState<Project[]>([]);
 
-  // 커스텀 필드(속성) — 노션식 자유 컬럼. 프로젝트가 선택된 경우에만 노출
-  const selectedProjectId = selectedProject ? parseInt(selectedProject) : null;
-  const { fields, saveFields, saveValue } = useProjectFields(selectedProjectId);
+  // 커스텀 필드(속성) — 노션식 자유 컬럼. 이 섹션의 프로젝트에 종속됨
+  const { fields, saveFields, saveValue } = useProjectFields(project?.id ?? null);
   const [fieldValueOverrides, setFieldValueOverrides] = useState<Record<string, string>>({});
   const [showAddField, setShowAddField] = useState(false);
   const [newFieldName, setNewFieldName] = useState('');
   const [newFieldType, setNewFieldType] = useState<FieldType>('TEXT');
   const [newFieldOptions, setNewFieldOptions] = useState('');
+  const [draggedFieldId, setDraggedFieldId] = useState<number | null>(null);
 
   const getFieldValue = (task: any, field: ProjectField): string => {
     const key = `${task.id}-${field.id}`;
@@ -136,42 +315,27 @@ function TaskListContent() {
     }
   };
 
-  // 필터 상태를 URL 쿼리에 반영 — 새로고침해도 필터가 유지되도록 함
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (selectedProject) params.set('projectId', selectedProject);
-    if (selectedStatus) params.set('status', selectedStatus);
-    if (selectedWorker) params.set('workerId', selectedWorker);
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedProject, selectedStatus, selectedWorker]);
-
-  useEffect(() => {
-    if (!canEditTitle) return;
-    const fetchWorkers = async () => {
-      try {
-        const res = await apiClient.get<{ data: Worker[] }>('/users?role=WORKER');
-        setAssignableWorkers(res.data.data || []);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchWorkers();
-  }, [canEditTitle]);
-
-  // 프로젝트 전환 드롭다운 목록: 소속(멤버) + 배정된 업무가 있는 프로젝트 모두 포함(GET /api/projects가 둘 다 조회)
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const res = await apiClient.get<{ data: Project[] }>('/projects');
-        setMyProjects((res.data.data || []).filter((p) => p.status === 'ACTIVE'));
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchProjects();
-  }, []);
+  // 노션처럼 속성(컬럼) 헤더를 드래그해서 순서 변경
+  const handleFieldReorder = async (targetFieldId: number) => {
+    if (draggedFieldId === null || draggedFieldId === targetFieldId) {
+      setDraggedFieldId(null);
+      return;
+    }
+    const order = fields.map((f) => f.id);
+    const from = order.indexOf(draggedFieldId);
+    const to = order.indexOf(targetFieldId);
+    if (from === -1 || to === -1) { setDraggedFieldId(null); return; }
+    order.splice(to, 0, order.splice(from, 1)[0]);
+    const next = order
+      .map((id) => fields.find((f) => f.id === id)!)
+      .map((f) => ({ name: f.name, type: f.type, options: f.options }));
+    setDraggedFieldId(null);
+    try {
+      await saveFields(next as any);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleDeleteTask = async (id: number) => {
     if (!confirm('이 업무를 삭제하시겠습니까? 삭제 후에는 되돌릴 수 없습니다.')) return;
@@ -221,52 +385,58 @@ function TaskListContent() {
     });
   };
 
-  // 담당자 필터 목록: role=WORKER로 한정하지 않고, 실제로 업무에 배정된 담당자를 모두 노출
-  const workers = Array.from(
-    new Map(tasks.filter((t) => t.worker).map((t: any) => [t.worker.id, t.worker])).values()
-  ).sort((a: any, b: any) => a.name.localeCompare(b.name));
-
-  // 상태 필터 목록: 현재 선택된 프로젝트/담당자 필터를 반영한 업무 범위에서 실제로 사용 중인 상태만 모음
-  // (프로젝트를 필터링했는데 상단 상태 목록에 다른 프로젝트의 상태가 섞여 나오지 않도록)
-  const tasksForStatusOptions = tasks.filter((t: any) => {
-    if (selectedProject && t.projectId !== parseInt(selectedProject)) return false;
-    if (selectedWorker && t.workerId !== parseInt(selectedWorker)) return false;
-    return true;
-  });
-  const statusOptionMap = new Map<string, string>();
-  tasksForStatusOptions.forEach((t: any) => {
-    if (statusOptionMap.has(t.status)) return;
-    const def = getStatuses(t.projectId).find((s) => s.code === t.status);
-    statusOptionMap.set(t.status, def?.label ?? t.status);
-  });
-  const statusOptions = Array.from(statusOptionMap.entries());
-
-  if (authLoading) {
-    return <div className={styles.loadingPage}>로딩 중...</div>;
-  }
-
-  // 필터링
-  let filteredTasks = tasks;
-  if (selectedStatus) {
-    filteredTasks = filteredTasks.filter((task) => task.status === selectedStatus);
-  }
-  if (selectedWorker) {
-    filteredTasks = filteredTasks.filter((task) => task.workerId === parseInt(selectedWorker));
-  }
-  if (selectedProject) {
-    filteredTasks = filteredTasks.filter((task) => task.projectId === parseInt(selectedProject));
-  }
-
   // 그룹/하위 업무 트리 구성: 최상위(부모 없는) 업무만 1차 행으로 노출, 하위 업무는 펼쳤을 때만 표시
   const childrenMap = new Map<number, any[]>();
-  filteredTasks.forEach((task) => {
+  tasks.forEach((task) => {
     if (task.parentTaskId) {
       const list = childrenMap.get(task.parentTaskId) || [];
       list.push(task);
       childrenMap.set(task.parentTaskId, list);
     }
   });
-  const topLevelTasks = filteredTasks.filter((task) => !task.parentTaskId);
+  const topLevelTasks = tasks.filter((task) => !task.parentTaskId);
+
+  const colCount = 8 + (project ? fields.length : 0);
+
+  const renderFieldCell = (task: any, field: ProjectField) => {
+    const value = getFieldValue(task, field);
+    if (!canEditTitle) {
+      if (field.type === 'CHECKBOX') return value === 'true' ? '✓' : '-';
+      return value || '-';
+    }
+    if (field.type === 'CHECKBOX') {
+      return (
+        <input
+          type="checkbox"
+          checked={value === 'true'}
+          onChange={(e) => handleFieldValueChange(task.id, field, e.target.checked ? 'true' : 'false')}
+        />
+      );
+    }
+    if (field.type === 'SELECT') {
+      const options = (field.options || '').split(',').map((o) => o.trim()).filter(Boolean);
+      return (
+        <select
+          value={value}
+          onChange={(e) => handleFieldValueChange(task.id, field, e.target.value)}
+          className={styles.fieldCellInput}
+        >
+          <option value="">-</option>
+          {options.map((o) => (
+            <option key={o} value={o}>{o}</option>
+          ))}
+        </select>
+      );
+    }
+    return (
+      <input
+        type={field.type === 'NUMBER' ? 'number' : field.type === 'DATE' ? 'date' : 'text'}
+        defaultValue={value}
+        onBlur={(e) => handleFieldValueChange(task.id, field, e.target.value)}
+        className={styles.fieldCellInput}
+      />
+    );
+  };
 
   const renderTaskRow = (
     task: any,
@@ -411,7 +581,7 @@ function TaskListContent() {
             </select>
           )}
         </td>
-        {selectedProjectId && fields.map((field) => (
+        {project && fields.map((field) => (
           <td key={field.id} className={styles.td}>
             {renderFieldCell(task, field)}
           </td>
@@ -433,114 +603,14 @@ function TaskListContent() {
     return rows;
   };
 
-  const renderFieldCell = (task: any, field: ProjectField) => {
-    const value = getFieldValue(task, field);
-    if (!canEditTitle) {
-      if (field.type === 'CHECKBOX') return value === 'true' ? '✓' : '-';
-      return value || '-';
-    }
-    if (field.type === 'CHECKBOX') {
-      return (
-        <input
-          type="checkbox"
-          checked={value === 'true'}
-          onChange={(e) => handleFieldValueChange(task.id, field, e.target.checked ? 'true' : 'false')}
-        />
-      );
-    }
-    if (field.type === 'SELECT') {
-      const options = (field.options || '').split(',').map((o) => o.trim()).filter(Boolean);
-      return (
-        <select
-          value={value}
-          onChange={(e) => handleFieldValueChange(task.id, field, e.target.value)}
-          className={styles.fieldCellInput}
-        >
-          <option value="">-</option>
-          {options.map((o) => (
-            <option key={o} value={o}>{o}</option>
-          ))}
-        </select>
-      );
-    }
-    return (
-      <input
-        type={field.type === 'NUMBER' ? 'number' : field.type === 'DATE' ? 'date' : 'text'}
-        defaultValue={value}
-        onBlur={(e) => handleFieldValueChange(task.id, field, e.target.value)}
-        className={styles.fieldCellInput}
-      />
-    );
-  };
-
-  const colCount = 8 + (selectedProjectId ? fields.length : 0);
-
   return (
-    <div className={styles.container}>
-      <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>업무 목록</h1>
-        <span className={styles.pageCount}>
-          총 {filteredTasks.length}건
-        </span>
+    <div className={styles.projectSection}>
+      <div className={styles.projectSectionHeader}>
+        <h2 className={styles.projectSectionTitle}>
+          {project ? `${project.name} 리스트` : '미지정 업무'}
+        </h2>
+        <span className={styles.projectSectionCount}>{tasks.length}건</span>
       </div>
-
-      {/* 필터 바 */}
-      <div className={styles.filterBar}>
-        {myProjects.length > 0 && (
-          <>
-            <span className={styles.filterLabel}>
-              프로젝트:
-            </span>
-            <select
-              value={selectedProject}
-              onChange={(e) => { setSelectedProject(e.target.value); setSelectedStatus(''); }}
-              className={styles.statusFilterSelect}
-            >
-              <option value="">전체 프로젝트</option>
-              {myProjects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-          </>
-        )}
-
-        <span className={styles.filterLabel}>
-          상태:
-        </span>
-        <select
-          value={selectedStatus}
-          onChange={(e) => setSelectedStatus(e.target.value)}
-          className={styles.statusFilterSelect}
-        >
-          <option value="">전체 상태</option>
-          {statusOptions.map(([code, label]) => (
-            <option key={code} value={code}>
-              {label}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={selectedWorker}
-          onChange={(e) => setSelectedWorker(e.target.value)}
-          className={styles.workerSelect}
-        >
-          <option value="">모든 담당자</option>
-          {workers.map((worker) => (
-            <option key={worker.id} value={worker.id}>
-              {worker.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {error && (
-        <div className={styles.errorBox}>
-          {error}
-        </div>
-      )}
 
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
@@ -554,8 +624,16 @@ function TaskListContent() {
               <th className={styles.th}>비고</th>
               <th className={`${styles.th} ${styles.thHours}`}>작업시간</th>
               <th className={`${styles.th} ${styles.thStatus}`}>상태</th>
-              {selectedProjectId && fields.map((field) => (
-                <th key={field.id} className={`${styles.th} ${styles.fieldTh}`}>
+              {project && fields.map((field) => (
+                <th
+                  key={field.id}
+                  className={`${styles.th} ${styles.fieldTh}`}
+                  draggable={canEditTitle}
+                  onDragStart={() => setDraggedFieldId(field.id)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => { e.preventDefault(); handleFieldReorder(field.id); }}
+                >
+                  {canEditTitle && <span className={styles.fieldDragHandle}>⠿</span>}
                   {field.name}
                   {canEditTitle && (
                     <button
@@ -569,7 +647,7 @@ function TaskListContent() {
                   )}
                 </th>
               ))}
-              {selectedProjectId && canEditTitle && (
+              {project && canEditTitle && (
                 <th className={`${styles.th} ${styles.addFieldWrap}`}>
                   <button
                     type="button"
@@ -623,36 +701,22 @@ function TaskListContent() {
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={colCount} className={styles.tdCenter}>
-                  로딩 중...
-                </td>
-              </tr>
-            ) : filteredTasks.length === 0 ? (
-              <tr>
-                <td colSpan={colCount} className={styles.tdCenter}>
-                  {tasks.length === 0 ? '등록된 업무가 없습니다.' : '필터 조건에 맞는 업무가 없습니다.'}
-                </td>
-              </tr>
-            ) : (
-              topLevelTasks.flatMap((task) => {
-                const children = childrenMap.get(task.id) || [];
-                const isGroupRow = task.isGroup || children.length > 0;
-                const isGroupExpanded = expandedGroups.has(task.id);
-                const rows = renderTaskRow(task, {
-                  isChild: false,
-                  isGroupRow,
-                  isGroupExpanded,
+            {topLevelTasks.flatMap((task) => {
+              const children = childrenMap.get(task.id) || [];
+              const isGroupRow = task.isGroup || children.length > 0;
+              const isGroupExpanded = expandedGroups.has(task.id);
+              const rows = renderTaskRow(task, {
+                isChild: false,
+                isGroupRow,
+                isGroupExpanded,
+              });
+              if (isGroupRow && isGroupExpanded) {
+                children.forEach((child) => {
+                  rows.push(...renderTaskRow(child, { isChild: true, isGroupRow: false, isGroupExpanded: false }));
                 });
-                if (isGroupRow && isGroupExpanded) {
-                  children.forEach((child) => {
-                    rows.push(...renderTaskRow(child, { isChild: true, isGroupRow: false, isGroupExpanded: false }));
-                  });
-                }
-                return rows;
-              })
-            )}
+              }
+              return rows;
+            })}
           </tbody>
         </table>
       </div>
