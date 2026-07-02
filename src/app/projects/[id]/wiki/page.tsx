@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './wiki.module.css';
+import Spinner from '@/components/common/Spinner';
 
 interface WikiPage {
   id: number;
@@ -202,7 +203,7 @@ export default function ProjectWikiPage({ params }: { params: Promise<{ id: stri
   };
 
   if (authLoading || loading) {
-    return <div className={styles.loading}>로딩 중...</div>;
+    return <div className={styles.loading}><Spinner /></div>;
   }
 
   if (accessDenied) {

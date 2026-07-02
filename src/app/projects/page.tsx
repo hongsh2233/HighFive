@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './projects.module.css';
+import Spinner from '@/components/common/Spinner';
 
 interface ProjectMember {
   user: { id: number; name: string; email: string; role: string };
@@ -268,7 +269,7 @@ export default function ProjectsPage() {
           {/* 프로젝트 목록 */}
           <div>
             {loading ? (
-              <div className={styles.loadingState}>로딩 중...</div>
+              <div className={styles.loadingState}><Spinner /></div>
             ) : projects.length === 0 ? (
               <div className={styles.emptyState}>등록된 프로젝트가 없습니다.</div>
             ) : (

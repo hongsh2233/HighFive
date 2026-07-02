@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import { Modal } from '@/components/common/Modal';
 import styles from './users.module.css';
+import Spinner from '@/components/common/Spinner';
 
 interface ProjectInfo {
   project: { id: number; name: string; status: string };
@@ -169,7 +170,7 @@ export default function UsersPage() {
   const leaderCandidates = users.filter(u => ['ADMIN', 'LEADER'].includes(u.role) && u.id !== editingUser?.id);
 
   if (authLoading || loading) {
-    return <div className={styles.loadingPage}>로딩 중...</div>;
+    return <div className={styles.loadingPage}><Spinner /></div>;
   }
 
   if (currentUser?.role !== 'ADMIN') {

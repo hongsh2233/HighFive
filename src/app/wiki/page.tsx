@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './wiki.module.css';
+import Spinner from '@/components/common/Spinner';
 
 interface Project {
   id: number;
@@ -136,7 +137,7 @@ export default function WikiHubPage() {
   }, {});
 
   if (authLoading || loading) {
-    return <div className={styles.loading}>로딩 중...</div>;
+    return <div className={styles.loading}><Spinner /></div>;
   }
 
   return (

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './requests.module.css';
+import Spinner from '@/components/common/Spinner';
 
 interface RequestItem {
   id: number;
@@ -111,7 +112,7 @@ export default function RequestsPage() {
   };
 
   if (authLoading || loading) {
-    return <div className={styles.loading}>로딩 중...</div>;
+    return <div className={styles.loading}><Spinner /></div>;
   }
 
   return (

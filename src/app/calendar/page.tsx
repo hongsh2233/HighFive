@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import { Task } from '@/types';
 import styles from './calendar.module.css';
+import Spinner from '@/components/common/Spinner';
 
 interface CalendarData {
   tasksByDate: { [key: string]: Task[] };
@@ -47,7 +48,7 @@ export default function CalendarPage() {
   }, [currentDate, authLoading]);
 
   if (authLoading || loading) {
-    return <div className={styles.loadingPage}>로딩 중...</div>;
+    return <div className={styles.loadingPage}><Spinner /></div>;
   }
 
   const statusColors: { [key: string]: string } = {

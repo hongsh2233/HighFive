@@ -10,6 +10,7 @@ import { useProjectFields } from '@/hooks/useProjectFields';
 import apiClient from '@/lib/api-client';
 import { ProjectField, FieldType } from '@/types';
 import styles from './tasks.module.css';
+import Spinner from '@/components/common/Spinner';
 
 interface Worker {
   id: number;
@@ -60,7 +61,7 @@ const calculateWorkHours = (timeLogs: any[]): string => {
 
 export default function TaskListPage() {
   return (
-    <Suspense fallback={<div className={styles.loadingPage}>로딩 중...</div>}>
+    <Suspense fallback={<div className={styles.loadingPage}><Spinner /></div>}>
       <TaskListContent />
     </Suspense>
   );
@@ -133,7 +134,7 @@ function TaskListContent() {
   const statusOptions = Array.from(statusOptionMap.entries());
 
   if (authLoading) {
-    return <div className={styles.loadingPage}>로딩 중...</div>;
+    return <div className={styles.loadingPage}><Spinner /></div>;
   }
 
   // 필터링 (상태/담당자만 — 프로젝트는 더 이상 필터가 아니라 섹션 구분 기준)
@@ -220,7 +221,7 @@ function TaskListContent() {
 
       {loading ? (
         <div className={styles.tableWrapper}>
-          <div className={styles.tdCenter} style={{ padding: '24px' }}>로딩 중...</div>
+          <div className={styles.tdCenter} style={{ padding: '24px' }}><Spinner /></div>
         </div>
       ) : filteredTasks.length === 0 ? (
         <div className={styles.tableWrapper}>

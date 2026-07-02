@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './announcements.module.css';
+import Spinner from '@/components/common/Spinner';
 
 interface Announcement {
   id: number;
@@ -94,7 +95,7 @@ export default function AnnouncementsPage() {
   };
 
   if (authLoading || loading) {
-    return <div className={styles.loading}>로딩 중...</div>;
+    return <div className={styles.loading}><Spinner /></div>;
   }
 
   if (!canManage) {

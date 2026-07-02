@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import axios from 'axios';
 import styles from './password.module.css';
+import Spinner from '@/components/common/Spinner';
 
 export default function PasswordChangePage() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function PasswordChangePage() {
   const [success, setSuccess] = useState('');
 
   if (authLoading) {
-    return <div className={styles.loadingPage}>로딩 중...</div>;
+    return <div className={styles.loadingPage}><Spinner /></div>;
   }
 
   if (!user) {

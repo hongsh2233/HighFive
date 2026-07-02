@@ -315,3 +315,9 @@
   - `tasks.module.css`: `.addFieldPopover`에서 `position/top/right`(테이블 기준 상대 위치) 제거 — 이제 인라인 style로 화면 좌표를 직접 지정하므로 불필요.
   - **버튼 라벨 정리**: "+ 속성 추가" 텍스트를 없애고 아이콘 버튼(`+`)만 노출하도록 변경(`aria-label`/`title`로 접근성 유지), 사용자 피드백 반영.
 - 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음. `npx next build`로 CSS/webpack 컴파일 통과 확인(이후 무관한 `sanitize-html` 미설치 오류로 중단되는 것은 이전 차수와 동일한 샌드박스 제약). **실제 배포 환경에서 페이지를 가로/세로로 스크롤한 상태에서도 팝오버가 버튼 근처에 온전히 보이는지, 바깥 클릭 시 잘 닫히는지 브라우저로 확인 필요.**
+
+## 2026-07-01 (38차)
+
+- **"로딩 중..." 텍스트를 회전 스피너로 교체**: 공용 `Spinner` 컴포넌트(`src/components/common/Spinner.tsx` + `Spinner.module.css`) 신설 — 옅은 회색 링 위에 accent 컬러(`var(--accent)`)만 회전하는 얇은 보더 스피너(sm/md/lg 사이즈), 아래에 작은 라벨(`role="status" aria-live="polite"`로 접근성 처리). 전역 디자인 토큰(`--accent`, `--border`, `--text-muted`)만 사용해 기존 톤과 자연스럽게 어울리도록 함.
+  - 앱 전체에서 `로딩 중...` 텍스트를 그대로 쓰던 19개 파일(`tasks/page.tsx`, `tasks/[id]/page.tsx`, `tasks/create/page.tsx`, `tasks/kanban/page.tsx`, `dashboard/page.tsx`, `calendar/page.tsx`, `info/page.tsx`, `profile/password/page.tsx`, `wiki/page.tsx`, `projects/page.tsx`, `projects/[id]/wiki/page.tsx`, `projects/[id]/statuses/page.tsx`, `users/page.tsx`, `stats/page.tsx`, `requests/page.tsx`, `announcements/page.tsx`, `settings/calendar-sync/page.tsx`, `settings/integrations/page.tsx`, `components/kanban/KanbanBoard.tsx`)에서 `<Spinner />`로 일괄 교체(로딩 상태를 감싸던 기존 wrapper `div`/`className`은 그대로 유지, 내부 텍스트만 컴포넌트로 치환).
+- 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음. `npx next build`로 CSS/webpack 컴파일 통과 확인(이후 무관한 `sanitize-html` 미설치 오류로 중단되는 것은 이전 차수와 동일한 샌드박스 제약).

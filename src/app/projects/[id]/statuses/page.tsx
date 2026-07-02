@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './statuses.module.css';
+import Spinner from '@/components/common/Spinner';
 
 interface StatusRow {
   code: string | null;
@@ -101,7 +102,7 @@ export default function ProjectStatusesPage({ params }: { params: Promise<{ id: 
   };
 
   if (authLoading || loading) {
-    return <div className={styles.loading}>로딩 중...</div>;
+    return <div className={styles.loading}><Spinner /></div>;
   }
 
   if (!canManage) {

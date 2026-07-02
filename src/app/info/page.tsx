@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './info.module.css';
+import Spinner from '@/components/common/Spinner';
 
 interface InfoItem {
   id: number;
@@ -298,9 +299,7 @@ export default function InfoPage() {
         )}
 
         {loading ? (
-          <div className={styles.loading}>
-            로딩 중...
-          </div>
+          <div className={styles.loading}><Spinner /></div>
         ) : items.length === 0 ? (
           <div className={styles.empty}>
             {isAdmin ? '+ 항목 추가 버튼으로 첫 번째 정보를 등록하세요.' : '등록된 정보가 없습니다.'}

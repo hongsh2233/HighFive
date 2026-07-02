@@ -9,6 +9,7 @@ import apiClient from '@/lib/api-client';
 import { Task, TimeLog, ProjectField } from '@/types';
 import styles from './detail.module.css';
 import { actionLabel } from '@/lib/task-history';
+import Spinner from '@/components/common/Spinner';
 
 interface Worker {
   id: number;
@@ -207,7 +208,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   };
 
   if (authLoading || loading) {
-    return <div className={styles.loading}>로딩 중...</div>;
+    return <div className={styles.loading}><Spinner /></div>;
   }
 
   if (error || !task) {

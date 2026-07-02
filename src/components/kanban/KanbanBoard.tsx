@@ -6,6 +6,7 @@ import { useProjectStatuses } from '@/hooks/useProjectStatuses';
 import KanbanColumn from './KanbanColumn';
 import apiClient from '@/lib/api-client';
 import styles from './KanbanBoard.module.css';
+import Spinner from '@/components/common/Spinner';
 
 interface Project {
   id: number;
@@ -120,7 +121,7 @@ export default function KanbanBoard({ onTaskClick }: KanbanBoardProps) {
   };
 
   if (loading || statusesLoading) {
-    return <div className={`${styles.container} ${styles.loading}`}>로딩 중...</div>;
+    return <div className={`${styles.container} ${styles.loading}`}><Spinner /></div>;
   }
 
   return (

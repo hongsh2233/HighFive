@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './calendar-sync.module.css';
+import Spinner from '@/components/common/Spinner';
 
 export default function CalendarSyncPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -38,7 +39,7 @@ export default function CalendarSyncPage() {
   };
 
   if (authLoading) {
-    return <div className={styles.loadingPage}>로딩 중...</div>;
+    return <div className={styles.loadingPage}><Spinner /></div>;
   }
 
   if (!user) {

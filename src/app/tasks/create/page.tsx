@@ -8,6 +8,7 @@ import axios from 'axios';
 import styles from './create.module.css';
 import { TASK_LABEL_LIST, TASK_LABEL_TEXT } from '@/lib/constants';
 import 'react-quill-new/dist/quill.snow.css';
+import Spinner from '@/components/common/Spinner';
 
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
@@ -43,7 +44,7 @@ const quillModules = {
 
 export default function TaskCreatePage() {
   return (
-    <Suspense fallback={<div className={styles.loading}>로딩 중...</div>}>
+    <Suspense fallback={<div className={styles.loading}><Spinner /></div>}>
       <TaskCreateForm />
     </Suspense>
   );
@@ -189,7 +190,7 @@ function TaskCreateForm() {
     }
   };
 
-  if (authLoading) return <div className={styles.loading}>로딩 중...</div>;
+  if (authLoading) return <div className={styles.loading}><Spinner /></div>;
 
   if (!user || !['ADMIN', 'LEADER'].includes(user.role ?? '')) {
     return (

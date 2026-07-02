@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Task } from '@/types';
 import KanbanBoard from '@/components/kanban/KanbanBoard';
 import styles from './kanban.module.css';
+import Spinner from '@/components/common/Spinner';
 
 export default function KanbanPage() {
   const { isLoading } = useAuth();
@@ -17,7 +18,7 @@ export default function KanbanPage() {
   };
 
   if (isLoading) {
-    return <div className={styles.loadingPage}>로딩 중...</div>;
+    return <div className={styles.loadingPage}><Spinner /></div>;
   }
 
   return (

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './stats.module.css';
+import Spinner from '@/components/common/Spinner';
 
 interface WorkloadData {
   id: number;
@@ -92,7 +93,7 @@ export default function StatsPage() {
   };
 
   if (authLoading || loading) {
-    return <div className={styles.loadingPage}>로딩 중...</div>;
+    return <div className={styles.loadingPage}><Spinner /></div>;
   }
 
   return (

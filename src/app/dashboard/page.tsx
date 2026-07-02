@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import { Task, PaginatedResponse } from '@/types';
 import styles from './dashboard.module.css';
+import Spinner from '@/components/common/Spinner';
 
 const statusLabels: { [key: string]: string } = {
   ASSIGNED: '배정됨',
@@ -77,7 +78,7 @@ export default function DashboardPage() {
   };
 
   if (isLoading) {
-    return <div className={styles.loading}>로딩 중...</div>;
+    return <div className={styles.loading}><Spinner /></div>;
   }
 
   return (
