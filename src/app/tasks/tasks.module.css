@@ -252,14 +252,17 @@
   composes: btn btn-sm btn-ghost from global;
   text-transform: none;
   letter-spacing: normal;
-  font-weight: 600;
+  font-weight: 700;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  justify-content: center;
 }
 
 .addFieldPopover {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  z-index: 20;
+  /* 위치(top/left)는 JS에서 버튼 위치 기준으로 계산해 인라인 style로 지정 —
+     document.body에 portal로 렌더링되어 테이블의 overflow에 잘리지 않음 */
+  z-index: 1000;
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: 8px;

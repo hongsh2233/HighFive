@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useTasks } from '@/hooks/useTask';
@@ -270,10 +271,50 @@ function ProjectTaskSection({
   const { fields, saveFields, saveValue } = useProjectFields(project?.id ?? null);
   const [fieldValueOverrides, setFieldValueOverrides] = useState<Record<string, string>>({});
   const [showAddField, setShowAddField] = useState(false);
+  const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
+  const addFieldBtnRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
   const [newFieldName, setNewFieldName] = useState('');
   const [newFieldType, setNewFieldType] = useState<FieldType>('TEXT');
   const [newFieldOptions, setNewFieldOptions] = useState('');
   const [draggedFieldId, setDraggedFieldId] = useState<number | null>(null);
+
+  // 팝오버는 document.body에 portal로 렌더링해 테이블/스크롤 영역의 overflow에 절대 가려지지 않도록 함(노션 방식)
+  const toggleAddField = () => {
+    if (showAddField) { setShowAddField(false); return; }
+    const rect = addFieldBtnRef.current?.getBoundingClientRect();
+    if (rect) {
+      const popoverWidth = 220;
+      setPopoverPos({
+        top: rect.bottom + 4,
+        left: Math.max(8, Math.min(rect.right - popoverWidth, window.innerWidth - popoverWidth - 8)),
+      });
+    }
+    setShowAddField(true);
+  };
+
+  useEffect(() => {
+    if (!showAddField) return;
+    const handlePointerDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (popoverRef.current?.contains(target) || addFieldBtnRef.current?.contains(target)) return;
+      setShowAddField(false);
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowAddField(false);
+    };
+    const handleReposition = () => setShowAddField(false);
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('scroll', handleReposition, true);
+    window.addEventListener('resize', handleReposition);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('scroll', handleReposition, true);
+      window.removeEventListener('resize', handleReposition);
+    };
+  }, [showAddField]);
 
   const getFieldValue = (task: any, field: ProjectField): string => {
     const key = `${task.id}-${field.id}`;
@@ -651,13 +692,20 @@ function ProjectTaskSection({
                 <th className={`${styles.th} ${styles.addFieldWrap}`}>
                   <button
                     type="button"
+                    ref={addFieldBtnRef}
                     className={styles.addFieldBtn}
-                    onClick={() => setShowAddField((v) => !v)}
+                    onClick={toggleAddField}
+                    aria-label="속성 추가"
+                    title="속성 추가"
                   >
-                    + 속성 추가
+                    +
                   </button>
-                  {showAddField && (
-                    <div className={styles.addFieldPopover}>
+                  {showAddField && popoverPos && typeof document !== 'undefined' && createPortal(
+                    <div
+                      ref={popoverRef}
+                      className={styles.addFieldPopover}
+                      style={{ position: 'fixed', top: popoverPos.top, left: popoverPos.left }}
+                    >
                       <input
                         type="text"
                         placeholder="속성 이름"
@@ -694,7 +742,8 @@ function ProjectTaskSection({
                           추가
                         </button>
                       </div>
-                    </div>
+                    </div>,
+                    document.body
                   )}
                 </th>
               )}

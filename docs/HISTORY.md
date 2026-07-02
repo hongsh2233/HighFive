@@ -307,3 +307,11 @@
   - `tasks.module.css`: `.fieldTh`에 `cursor: grab`, `.fieldDragHandle` 추가.
 - **버그 수정: "+ 속성 추가" 팝오버가 테이블에 가려지던 문제**. `.table`에 걸려있던 `overflow: hidden`(라운드 코너용) 때문에 `position: absolute`인 팝오버가 테이블 경계에서 잘려 보이지 않던 것을 확인 — `overflow: hidden` 제거(라운드 코너보다 팝오버 노출 우선). 참고로 `.table`을 감싸는 `.tableWrapper` 클래스가 CSS에 정의되어 있지 않아 실제로는 아무 오버플로우 스타일이 적용되지 않고 있었는데, 이번에 `overflow-x: auto; overflow-y: visible;`로 정의를 추가해 가로 스크롤은 유지하면서 세로로는 팝오버가 잘리지 않도록 함.
 - 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음. `npx next build`로 CSS 컴파일 통과 확인(이후 `sanitize-html` 미설치로 인한 무관한 오류로 중단되는 것은 35차와 동일한 샌드박스 제약). **실제 배포 환경에서 프로젝트별 섹션이 올바르게 나뉘어 보이는지, 각 섹션의 "+ 속성 추가"가 바로 보이는지, 필드 드래그 순서변경이 저장되는지 브라우저로 확인 필요.**
+
+## 2026-07-01 (37차)
+
+- **"+ 속성 추가" 팝오버가 여전히 가려지던 문제 근본 수정**: 36차에서 `.table`의 `overflow: hidden`을 제거하고 `.tableWrapper`에 `overflow-x: auto; overflow-y: visible;`을 추가했는데도 여전히 가려진다는 피드백. 원인은 CSS 스펙상 `overflow-x`가 `visible`이 아닌 값(`auto`)이면 `overflow-y: visible`도 브라우저가 강제로 `auto`처럼 취급해 결국 클리핑된다는 점 — 두 축을 독립적으로 제어할 수 없는 근본적 한계였음.
+  - `tasks/page.tsx`: 팝오버를 테이블 내부에 두는 대신 `react-dom`의 `createPortal`로 `document.body`에 직접 렌더링하도록 변경(노션/지라 등에서 쓰는 방식). "+ 속성 추가" 버튼의 `getBoundingClientRect()`로 화면 좌표를 계산해 `position: fixed`로 배치하므로 어떤 조상 요소의 `overflow`에도 영향받지 않음. 바깥 클릭/Escape/스크롤/리사이즈 시 자동으로 닫히도록 이벤트 리스너 추가(`toggleAddField`, 관련 `useEffect`).
+  - `tasks.module.css`: `.addFieldPopover`에서 `position/top/right`(테이블 기준 상대 위치) 제거 — 이제 인라인 style로 화면 좌표를 직접 지정하므로 불필요.
+  - **버튼 라벨 정리**: "+ 속성 추가" 텍스트를 없애고 아이콘 버튼(`+`)만 노출하도록 변경(`aria-label`/`title`로 접근성 유지), 사용자 피드백 반영.
+- 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음. `npx next build`로 CSS/webpack 컴파일 통과 확인(이후 무관한 `sanitize-html` 미설치 오류로 중단되는 것은 이전 차수와 동일한 샌드박스 제약). **실제 배포 환경에서 페이지를 가로/세로로 스크롤한 상태에서도 팝오버가 버튼 근처에 온전히 보이는지, 바깥 클릭 시 잘 닫히는지 브라우저로 확인 필요.**
