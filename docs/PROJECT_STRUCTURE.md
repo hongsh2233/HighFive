@@ -115,7 +115,7 @@ User (1) ──< Request [requester / approver] (1) ──< Announcement (전결
 외부 webhook(Slack/Jandi) 발송 기록. `channel`(SLACK/JANDI/EMAIL), `message`, `isSuccess`.
 
 ### UserNotification
-인앱 알림 벨에 표시되는 알림. `type`(WORKER_ASSIGNED / REVIEW_REQUESTED / WORKER_CHANGED), `isRead`.
+인앱 알림. `type`(WORKER_ASSIGNED / WORKER_CHANGED / STATUS_CHANGED / REVIEW_REQUESTED), `isRead`. 업무 상태가 **어떤 값으로든** 바뀌면(`src/lib/notify.ts`의 `notifyStatusChanged`) 상태를 변경한 사람 본인을 제외한 등록자(planner)·담당자(worker) 모두에게 생성되고, 담당자 변경 시에도(`notifyWorkerChange`) 새 담당자+등록자에게 생성된다. 현재는 상시 노출 UI(벨 아이콘)는 없고, `src/hooks/useNotifications.ts`가 30초 폴링으로 안읽음 개수 증가를 감지하면 `src/components/common/NotificationToast.tsx`가 화면 우하단에 토스트로 띄운다(`src/components/Providers.tsx`에 전역 배치, 로그인 상태에서만 동작).
 
 ### TaskHistory
 업무 활동 로그. `action`(CREATED / STATUS_CHANGED / WORKER_CHANGED / TIMER_START / TIMER_STOP / NOTE_UPDATED / TRANSFERRED), `detail`.
@@ -249,7 +249,9 @@ high5/
 │   │   ├── Providers.tsx              # SessionProvider + AuthSync
 │   │   ├── common/
 │   │   │   ├── Badge.tsx
-│   │   │   └── Modal.tsx
+│   │   │   ├── Modal.tsx
+│   │   │   ├── Spinner.tsx            # 회전 링 스피너 — "로딩 중..." 텍스트 대체
+│   │   │   └── NotificationToast.tsx  # useNotifications 폴링 결과로 우하단 토스트 표시(Providers.tsx에 전역 배치)
 │   │   ├── kanban/
 │   │   │   ├── KanbanBoard.tsx
 │   │   │   └── KanbanColumn.tsx
@@ -266,7 +268,8 @@ high5/
 │   │   ├── useTask.ts                 # 업무 CRUD
 │   │   ├── useFreeze.ts               # 배포 프리징 감지
 │   │   ├── useProjectStatuses.ts      # GET /api/projects/statuses 일괄 조회 + projectId별 조회 헬퍼(getStatuses), tasks/kanban 등에서 공용
-│   │   └── useProjectFields.ts        # GET /api/projects/[id]/fields 조회 + 필드정의 저장(saveFields)/값 저장(saveValue), 업무 목록의 커스텀 필드 컬럼에서 사용
+│   │   ├── useProjectFields.ts        # GET /api/projects/[id]/fields 조회 + 필드정의 저장(saveFields)/값 저장(saveValue), 업무 목록의 커스텀 필드 컬럼에서 사용
+│   │   └── useNotifications.ts        # GET /api/notifications 30초 폴링, unreadCount 증가 시 콜백(신규 알림 감지), markAllRead
 │   │
 │   ├── store/                         # Zustand 전역 상태
 │   │   ├── authStore.ts               # 인증 상태 (persist, hasRole, isAdmin, isLeader)

@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 import { notifyStatusChange } from '@/lib/webhook';
-import { notifyReviewRequest } from '@/lib/notify';
+import { notifyStatusChanged } from '@/lib/notify';
 import { addHistory } from '@/lib/task-history';
 import { getProjectStatuses } from '@/lib/task-status';
 
@@ -93,12 +93,17 @@ export async function PATCH(
       taskUrl: `${process.env.NEXTAUTH_URL}/tasks/${updatedTask.id}`,
     });
 
-    if (status === 'REVIEW') {
-      const taskUrl = `${process.env.NEXTAUTH_URL}/tasks/${updatedTask.id}`;
-      notifyReviewRequest(updatedTask.id, updatedTask.title, updatedTask.workerId, updatedTask.worker?.name || '', updatedTask.plannerId, updatedTask.planner?.name || '', taskUrl).catch(() => {});
+    const userId = parseInt((session!.user as any).id || '0');
+
+    // 상태가 실제로 바뀐 경우, 변경한 사람을 제외한 등록자(planner)/담당자(worker)에게 인앱 알림
+    if (task.status !== status) {
+      notifyStatusChanged(
+        updatedTask.id, updatedTask.title,
+        updatedTask.workerId, updatedTask.plannerId,
+        newStatusDef.label, userId
+      ).catch(() => {});
     }
 
-    const userId = parseInt((session!.user as any).id || '0');
     await addHistory(updatedTask.id, userId, 'STATUS_CHANGED',
       `${prevStatusDef?.label ?? task.status} → ${newStatusDef.label}`);
 

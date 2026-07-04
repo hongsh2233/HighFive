@@ -5,6 +5,7 @@ import { SessionProvider, useSession, signOut } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { UserRole } from '@/types';
+import NotificationToastManager from './common/NotificationToast';
 
 function AuthSync() {
   const { data: session, status } = useSession();
@@ -39,10 +40,17 @@ function AuthSync() {
   return null;
 }
 
+function NotificationToastGate() {
+  const { status } = useSession();
+  if (status !== 'authenticated') return null;
+  return <NotificationToastManager />;
+}
+
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider refetchInterval={60} refetchOnWindowFocus>
       <AuthSync />
+      <NotificationToastGate />
       {children}
     </SessionProvider>
   );

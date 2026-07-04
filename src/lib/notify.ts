@@ -34,20 +34,23 @@ export async function notifyWorkerChange(
     .catch(() => {});
 }
 
-export async function notifyReviewRequest(
+export async function notifyStatusChanged(
   taskId: number,
   taskTitle: string,
-  _workerId: number,
-  workerName: string,
+  workerId: number,
   plannerId: number,
-  plannerName: string,
-  taskUrl: string
+  newStatusLabel: string,
+  changedByUserId: number
 ) {
-  // 기획자에게 인앱 알림
-  await createUserNotification(plannerId, 'REVIEW_REQUESTED',
-    `'${taskTitle}' 검수를 요청했습니다. 담당자: ${workerName}`, taskId);
+  // 상태를 변경한 사람 본인에게는 알림을 만들지 않는다. 담당자==기획자인 업무는 중복 방지.
+  const recipients = new Set<number>();
+  if (workerId !== changedByUserId) recipients.add(workerId);
+  if (plannerId !== changedByUserId) recipients.add(plannerId);
 
-  // 기존 채널 웹훅
-  notifyStatusChange({ taskId, taskTitle, workerName, plannerName, status: 'REVIEW', taskUrl })
-    .catch(() => {});
+  await Promise.all(
+    Array.from(recipients).map((userId) =>
+      createUserNotification(userId, 'STATUS_CHANGED',
+        `'${taskTitle}' 업무 상태가 '${newStatusLabel}'(으)로 변경되었습니다.`, taskId)
+    )
+  );
 }

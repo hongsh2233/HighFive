@@ -136,3 +136,16 @@ export interface Notification {
   sentAt: string;
   isSuccess: boolean;
 }
+
+// 인앱 알림(헤더 벨/토스트에서 사용)
+export type UserNotificationType = "WORKER_ASSIGNED" | "WORKER_CHANGED" | "STATUS_CHANGED" | "REVIEW_REQUESTED";
+
+export interface UserNotification {
+  id: number;
+  userId: number;
+  taskId: number | null;
+  type: UserNotificationType;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+}

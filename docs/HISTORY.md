@@ -328,3 +328,14 @@
   - `src/app/globals.css`: 모션 토큰(`--motion-fast/standard/slow`, `--ease-enter/exit/standard`)과 라운드 사다리 토큰(`--radius-xs/sm/md/lg/full`) 추가. `prefers-reduced-motion: reduce` 지원(모든 트랜지션/애니메이션을 즉시 처리로 축소). `.btn`/`.field-input`/`.field-select` 프리미티브가 이 토큰을 사용하도록 갱신하고, 버튼에 `:active`(opacity 0.85)와 `:focus-visible`(액센트 2px 아웃라인) 상태, 인풋/셀렉트에 `:disabled`(opacity 0.5) 상태를 추가해 상태 커버리지를 정리.
   - `docs/DESIGN.md`(신규): Hackle DESIGN.md와 동일한 9섹션(Visual Theme, Color, Typography, Component Stylings, Layout, Depth & Elevation, Do's/Don'ts, Responsive, Agent Prompt Guide) 포맷을 따르되, 내용은 실제로 구현되어 있는 High5 코드(`globals.css` 토큰, `Badge`/`Spinner` 컴포넌트, `tasks.module.css`의 프로젝트별 섹션 구조 등)를 그대로 문서화 — 별도 조사 없이 코드와 항상 일치하도록 작성. Hackle 원문의 마케팅 보이스/퍼소나 섹션(10~13절)은 내부 도구 성격상 가져오지 않음.
 - 디버깅 체크: `npx tsc --noEmit` 결과 `globals.css` 관련 신규 오류 없음(잔존 오류는 Prisma 클라이언트 미생성 관련 기존 베이스라인). `npx next build`로 CSS/webpack 컴파일 통과 확인(이후 무관한 `sanitize-html` 미설치 오류로 중단되는 것은 이전 차수와 동일한 샌드박스 제약). **실제 배포 환경에서 버튼 hover/active/focus, 인풋 disabled 상태가 의도대로 보이는지 브라우저로 확인 필요.**
+
+## 2026-07-01 (40차)
+
+- **알림 범위 확장 + 실시간 토스트 팝업 추가**: 기존에는 업무 상태가 'REVIEW'로 바뀔 때만 기획자에게 인앱 알림이 갔는데, **어떤 상태로 바뀌든** 상태를 변경한 사람 본인을 제외한 등록자(planner)·담당자(worker) 모두에게 알림이 가도록 확장. 프론트엔드에는 이 알림을 실시간으로 알려주는 UI가 전혀 없었는데, 화면 우하단 토스트 팝업을 추가함(헤더 벨 아이콘은 이번 범위에서 제외 — 추후 AI 채팅 기능을 만들 때 함께 배치 예정).
+  - `src/lib/notify.ts`: 기획자 전용이던 `notifyReviewRequest`를 제거하고 범용 `notifyStatusChanged(taskId, taskTitle, workerId, plannerId, newStatusLabel, changedByUserId)`로 대체 — 변경한 사람 제외, 담당자==기획자인 업무는 중복 알림 방지.
+  - `src/app/api/tasks/[id]/status/route.ts`: `status === 'REVIEW'` 조건 분기를 제거하고, 상태가 실제로 바뀐 모든 경우에 `notifyStatusChanged`를 호출하도록 변경.
+  - `src/hooks/useNotifications.ts`(신규): `GET /api/notifications`를 30초마다 폴링해 `unreadCount`가 이전보다 늘면 새 알림 도착으로 판단하고 콜백 실행. `markAllRead()`도 제공(향후 벨 UI에서 재사용 가능).
+  - `src/components/common/NotificationToast.tsx` + 모듈 CSS(신규): 새 알림 도착 시 화면 우하단에 5초간 떠 있다 자동 소멸하는 토스트. 클릭 시 해당 업무 상세로 이동. 기존 `WikiSearchButton` 플로팅 버튼(같은 우하단, 52px)과 겹치지 않도록 `bottom: 92px`로 배치.
+  - `src/components/Providers.tsx`: 로그인 상태(`status === 'authenticated'`)에서만 `NotificationToastManager`를 전역 렌더링하도록 `NotificationToastGate` 추가.
+  - `src/types/index.ts`: `UserNotification`/`UserNotificationType` 타입 신규 추가(기존에 프론트 타입이 없었음).
+- 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 오류는 Prisma 클라이언트 미생성 관련 기존 베이스라인). `npx next build`로 CSS/webpack 컴파일 통과 확인(이후 무관한 `sanitize-html` 미설치 오류로 중단되는 것은 이전 차수와 동일한 샌드박스 제약). **실제 배포 환경에서 업무 상태를 바꿨을 때 변경자 본인이 아닌 등록자/담당자 화면에서 우하단 토스트가 뜨는지, 5초 후 자동으로 사라지는지, 클릭 시 해당 업무로 이동하는지 확인 필요.**
