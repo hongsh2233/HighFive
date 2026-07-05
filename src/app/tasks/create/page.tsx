@@ -165,7 +165,7 @@ function TaskCreateForm() {
       await axios.post('/api/tasks', {
         title: title.trim(),
         workerId: parseInt(workerId),
-        plannerId: user?.id,
+        registrantId: user?.id,
         targetDate: targetDate ? new Date(targetDate) : null,
         notes: (!parentTask && isGroup) ? '' : notes.trim(),
         projectId: projectId ? parseInt(projectId) : null,

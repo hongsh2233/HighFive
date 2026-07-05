@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
       include: {
         worker: { select: { name: true, email: true } },
-        planner: { select: { name: true, email: true } },
+        registrant: { select: { name: true, email: true } },
         timeLogs: true,
       },
     });
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
       제목: t.title,
       상태: t.status,
       작업자: t.worker?.name ?? '',
-      기획자: t.planner?.name ?? '',
+      등록자: t.registrant?.name ?? '',
       목표일: t.targetDate ? t.targetDate.toISOString().slice(0, 10) : '',
       프리징: t.isFreeze ? 'Y' : 'N',
       총공수: t.timeLogs.reduce((s, l) => s + (l.finalHours ?? 0), 0).toFixed(2),

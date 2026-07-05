@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
       },
       include: {
         worker: { select: { id: true, name: true } },
-        planner: { select: { id: true, name: true } },
+        registrant: { select: { id: true, name: true } },
       },
       orderBy: { targetDate: 'asc' },
     });

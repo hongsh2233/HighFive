@@ -45,7 +45,7 @@ export function useTasks(options?: { limit?: number }) {
     async (data: {
       title: string;
       workerId: number;
-      plannerId: number;
+      registrantId: number;
       targetDate?: string;
       notes?: string;
     }) => {

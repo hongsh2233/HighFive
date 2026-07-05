@@ -66,7 +66,7 @@ async function main() {
     data: {
       title: '[DCBGIT-39085] 구글 원 2TB 상품 정보 수정',
       rmsNo: 'DCBGIT-39085',
-      plannerId: leader.id,
+      registrantId: leader.id,
       workerId: worker1.id,
       status: 'PROGRESS',
       targetDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7일 후
@@ -78,7 +78,7 @@ async function main() {
     data: {
       title: '[DCBGIT-39086] 배너 이미지 최적화',
       rmsNo: 'DCBGIT-39086',
-      plannerId: leader.id,
+      registrantId: leader.id,
       workerId: worker2.id,
       status: 'ASSIGNED',
       targetDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5일 후
@@ -90,7 +90,7 @@ async function main() {
     data: {
       title: '[DCBGIT-39087] API 문서 작성',
       rmsNo: 'DCBGIT-39087',
-      plannerId: leader.id,
+      registrantId: leader.id,
       workerId: worker1.id,
       status: 'REVIEW',
       targetDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3일 후

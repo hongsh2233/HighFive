@@ -36,7 +36,7 @@ interface TaskState {
 interface CreateTaskInput {
   title: string;
   workerId: number;
-  plannerId: number;
+  registrantId: number;
   targetDate?: string;
   notes?: string;
 }

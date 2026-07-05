@@ -25,7 +25,7 @@ export interface Task {
   id: number;
   rmsNo: string | null;
   title: string;
-  plannerId: number;
+  registrantId: number;
   workerId: number;
   status: TaskStatus;
   targetDate: string | null;
@@ -45,7 +45,7 @@ export interface Task {
     name: string;
     email: string;
   };
-  planner?: {
+  registrant?: {
     id: number;
     name: string;
     email: string;

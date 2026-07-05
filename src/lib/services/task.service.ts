@@ -5,7 +5,7 @@ import { notifyStatusChange } from '@/lib/webhook';
 export interface CreateTaskInput {
   title: string;
   workerId: number;
-  plannerId: number;
+  registrantId: number;
   targetDate?: string | null;
   notes?: string | null;
   templateId?: number | null;
@@ -26,14 +26,14 @@ export async function createTask(input: CreateTaskInput) {
       title: cleanTitle,
       rmsNo,
       workerId: input.workerId,
-      plannerId: input.plannerId,
+      registrantId: input.registrantId,
       targetDate: input.targetDate ? new Date(input.targetDate) : null,
       notes: input.notes,
       templateId: input.templateId,
       status: 'ASSIGNED',
     },
     include: {
-      planner: { select: { id: true, name: true, email: true } },
+      registrant: { select: { id: true, name: true, email: true } },
       worker: { select: { id: true, name: true, email: true } },
     },
   });
@@ -44,7 +44,7 @@ export async function updateTaskStatus(taskId: number, status: string) {
     where: { id: taskId },
     data: { status },
     include: {
-      planner: { select: { id: true, name: true, email: true } },
+      registrant: { select: { id: true, name: true, email: true } },
       worker: { select: { id: true, name: true, email: true } },
     },
   });
@@ -55,7 +55,7 @@ export async function updateTaskStatus(taskId: number, status: string) {
       taskTitle: task.title,
       status,
       workerName: task.worker?.name ?? '',
-      plannerName: task.planner?.name ?? '',
+      registrantName: task.registrant?.name ?? '',
       taskUrl: `${process.env.NEXTAUTH_URL ?? ''}/tasks/${taskId}`,
     });
   }
@@ -67,7 +67,7 @@ export async function getTaskWithLogs(taskId: number) {
   return prisma.task.findUnique({
     where: { id: taskId },
     include: {
-      planner: { select: { id: true, name: true, email: true } },
+      registrant: { select: { id: true, name: true, email: true } },
       worker: { select: { id: true, name: true, email: true } },
       timeLogs: { orderBy: { startTime: 'desc' } },
     },

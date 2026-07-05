@@ -339,3 +339,12 @@
   - `src/components/Providers.tsx`: 로그인 상태(`status === 'authenticated'`)에서만 `NotificationToastManager`를 전역 렌더링하도록 `NotificationToastGate` 추가.
   - `src/types/index.ts`: `UserNotification`/`UserNotificationType` 타입 신규 추가(기존에 프론트 타입이 없었음).
 - 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 오류는 Prisma 클라이언트 미생성 관련 기존 베이스라인). `npx next build`로 CSS/webpack 컴파일 통과 확인(이후 무관한 `sanitize-html` 미설치 오류로 중단되는 것은 이전 차수와 동일한 샌드박스 제약). **실제 배포 환경에서 업무 상태를 바꿨을 때 변경자 본인이 아닌 등록자/담당자 화면에서 우하단 토스트가 뜨는지, 5초 후 자동으로 사라지는지, 클릭 시 해당 업무로 이동하는지 확인 필요.**
+
+## 2026-07-01 (41차)
+
+- **"기획자(planner)" 개념 폐기 → "등록자(registrant)"로 전면 리네이밍**: `Task.plannerId`/`planner` 관계는 이름만 "기획자"였을 뿐 실제로는 그 업무를 등록한 사람(로그인한 ADMIN/LEADER)일 뿐이었다. 역할 체계는 이미 ADMIN/LEADER/WORKER로 통일되어 있어 별도 "기획자" 역할이 존재하지 않으므로, "관리자 등급이 업무를 등록하면 그 사람이 등록자가 된다"는 실제 의미에 맞게 코드/화면 전반에서 "등록자"로 통일했다. **기능 변화는 없음** — 순수 리네이밍.
+  - `prisma/schema.prisma`: `Task.plannerId`→`registrantId`, 단 실제 DB 컬럼명은 `@map("plannerId")`로 그대로 유지해 무손실 리네이밍(단순 필드명 변경만 하면 `prisma db push`가 컬럼 삭제+재생성으로 오인해 기존 데이터가 날아갈 위험이 있었음). `Task.planner`→`registrant`, `User.plannedTasks`→`registeredTasks`, relation 이름 `"planner"`→`"registrant"`.
+  - 백엔드: `src/app/api/tasks/route.ts`, `[id]/route.ts`, `[id]/status/route.ts`, `calendar/route.ts`, `export/route.ts`(CSV 헤더 `기획자`→`등록자`), `projects/route.ts`, `projects/statuses/route.ts`, `users/[id]/route.ts`에서 `plannerId`→`registrantId`, `planner:` include→`registrant:` 일괄 치환. `src/lib/notify.ts`, `src/lib/webhook.ts`, `src/lib/services/webhook.service.ts`, `src/lib/services/task.service.ts`(미사용 레거시 파일이지만 함께 정리)의 파라미터명도 `registrantId`/`registrantName`으로 통일.
+  - 프론트: `src/app/tasks/[id]/page.tsx`의 "보고자" 라벨 → "등록자", `task.planner`→`task.registrant`. `src/app/tasks/create/page.tsx`의 등록 요청 바디 `plannerId`→`registrantId`. `src/types/index.ts`, `src/hooks/useTask.ts`, `src/store/taskStore.ts`의 타입도 함께 갱신.
+  - `Template.defaultPlannerId`(사용되지 않는 레거시 모델의 필드)는 이번 범위에서 제외 — Task와 무관한 별개 모델이라 건드리지 않음.
+- 디버깅 체크: `npx tsc --noEmit` 결과 신규 오류 없음(잔존 오류는 Prisma 클라이언트 미생성 관련 기존 베이스라인, 개수 동일하게 42개 유지 확인). `grep -rn "planner\|기획자\|보고자" src prisma`로 남은 참조가 `defaultPlannerId`(Template, 의도적 제외) 외에는 없음을 확인. `npx next build`는 CSS/webpack 컴파일 통과 확인(이후 무관한 `sanitize-html` 미설치 오류로 중단되는 것은 이전 차수와 동일한 샌드박스 제약). **실제 배포 환경에서 `prisma db push` 실행 시 스키마 diff를 확인해 `plannerId` 컬럼이 삭제되지 않고 `registrantId` 필드로 매핑만 바뀌는지, 업무 등록/조회/CSV 내보내기/알림이 모두 정상 동작하는지 확인 필요.**

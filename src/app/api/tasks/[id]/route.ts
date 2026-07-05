@@ -24,7 +24,7 @@ export async function GET(
     const task = await prisma.task.findUnique({
       where: { id: taskId },
       include: {
-        planner: { select: { id: true, name: true, email: true } },
+        registrant: { select: { id: true, name: true, email: true } },
         worker: { select: { id: true, name: true, email: true } },
         timeLogs: { orderBy: { createdAt: 'desc' } },
         fieldValues: true,
@@ -98,7 +98,7 @@ export async function PATCH(
       where: { id: taskId },
       data: updateData,
       include: {
-        planner: { select: { id: true, name: true, email: true } },
+        registrant: { select: { id: true, name: true, email: true } },
         worker: { select: { id: true, name: true, email: true } },
       },
     });
@@ -108,7 +108,7 @@ export async function PATCH(
       await addHistory(taskId, editorId, 'WORKER_CHANGED',
         `${prevTask.worker?.name} → ${task.worker?.name}`);
       const taskUrl = `${process.env.NEXTAUTH_URL}/tasks/${taskId}`;
-      notifyWorkerChange(taskId, task.title, task.workerId, task.worker?.name || '', task.plannerId, task.planner?.name || '', taskUrl).catch(() => {});
+      notifyWorkerChange(taskId, task.title, task.workerId, task.worker?.name || '', task.registrantId, task.registrant?.name || '', taskUrl).catch(() => {});
     }
     if (title && prevTask.title !== updateData.title) {
       await addHistory(taskId, editorId, 'TITLE_CHANGED', `${prevTask.title} → ${task.title}`);

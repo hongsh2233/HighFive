@@ -5,7 +5,7 @@ interface WebhookPayload {
   taskTitle: string;
   status: string;
   workerName: string;
-  plannerName: string;
+  registrantName: string;
   taskUrl: string;
 }
 
@@ -28,7 +28,7 @@ const statusText: { [key: string]: string } = {
 function buildMessage(payload: WebhookPayload): string {
   const emoji = statusEmoji[payload.status] || '📝';
   const label = statusText[payload.status] || payload.status;
-  return `${emoji} [${label}] ${payload.taskTitle}\n담당자: ${payload.workerName}\n기획자: ${payload.plannerName}`;
+  return `${emoji} [${label}] ${payload.taskTitle}\n담당자: ${payload.workerName}\n등록자: ${payload.registrantName}`;
 }
 
 // 상태 변경 시 연동된 외부 채널(Slack/Jandi/Teams/Telegram/카카오톡)에 동시 발송

@@ -45,7 +45,7 @@ export async function PATCH(
       where: { id: taskId },
       data: { status, updatedAt: new Date() },
       include: {
-        planner: { select: { id: true, name: true, email: true } },
+        registrant: { select: { id: true, name: true, email: true } },
         worker: { select: { id: true, name: true, email: true } },
       },
     });
@@ -89,17 +89,17 @@ export async function PATCH(
       taskTitle: updatedTask.title,
       status: status,
       workerName: updatedTask.worker?.name || '-',
-      plannerName: updatedTask.planner?.name || '-',
+      registrantName: updatedTask.registrant?.name || '-',
       taskUrl: `${process.env.NEXTAUTH_URL}/tasks/${updatedTask.id}`,
     });
 
     const userId = parseInt((session!.user as any).id || '0');
 
-    // 상태가 실제로 바뀐 경우, 변경한 사람을 제외한 등록자(planner)/담당자(worker)에게 인앱 알림
+    // 상태가 실제로 바뀐 경우, 변경한 사람을 제외한 등록자(registrant)/담당자(worker)에게 인앱 알림
     if (task.status !== status) {
       notifyStatusChanged(
         updatedTask.id, updatedTask.title,
-        updatedTask.workerId, updatedTask.plannerId,
+        updatedTask.workerId, updatedTask.registrantId,
         newStatusDef.label, userId
       ).catch(() => {});
     }

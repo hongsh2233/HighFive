@@ -19,18 +19,18 @@ export async function notifyWorkerChange(
   taskTitle: string,
   newWorkerId: number,
   newWorkerName: string,
-  plannerId: number,
-  plannerName: string,
+  registrantId: number,
+  registrantName: string,
   taskUrl: string
 ) {
-  // 새 담당자 + 기획자에게 인앱 알림
+  // 새 담당자 + 등록자에게 인앱 알림
   await createUserNotification(newWorkerId, 'WORKER_ASSIGNED',
     `'${taskTitle}' 업무가 나에게 배정되었습니다.`, taskId);
-  await createUserNotification(plannerId, 'WORKER_CHANGED',
+  await createUserNotification(registrantId, 'WORKER_CHANGED',
     `'${taskTitle}' 담당자가 ${newWorkerName}으로 변경되었습니다.`, taskId);
 
   // 기존 채널 웹훅
-  notifyStatusChange({ taskId, taskTitle, workerName: newWorkerName, plannerName, status: 'WORKER_CHANGED', taskUrl })
+  notifyStatusChange({ taskId, taskTitle, workerName: newWorkerName, registrantName, status: 'WORKER_CHANGED', taskUrl })
     .catch(() => {});
 }
 
@@ -38,14 +38,14 @@ export async function notifyStatusChanged(
   taskId: number,
   taskTitle: string,
   workerId: number,
-  plannerId: number,
+  registrantId: number,
   newStatusLabel: string,
   changedByUserId: number
 ) {
-  // 상태를 변경한 사람 본인에게는 알림을 만들지 않는다. 담당자==기획자인 업무는 중복 방지.
+  // 상태를 변경한 사람 본인에게는 알림을 만들지 않는다. 담당자==등록자인 업무는 중복 방지.
   const recipients = new Set<number>();
   if (workerId !== changedByUserId) recipients.add(workerId);
-  if (plannerId !== changedByUserId) recipients.add(plannerId);
+  if (registrantId !== changedByUserId) recipients.add(registrantId);
 
   await Promise.all(
     Array.from(recipients).map((userId) =>

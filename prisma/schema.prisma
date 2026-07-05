@@ -24,7 +24,7 @@ model User {
   lastLoginAt   DateTime?
 
   // Relations
-  plannedTasks    Task[]          @relation("planner")
+  registeredTasks Task[]          @relation("registrant")
   workerTasks     Task[]          @relation("worker")
   timeLogs        TimeLog[]
   infoItems       InfoItem[]
@@ -46,7 +46,7 @@ model Task {
   id            Int     @id @default(autoincrement())
   rmsNo         String?
   title         String
-  plannerId     Int
+  registrantId  Int     @map("plannerId") // 업무 등록자(관리자 등급이 등록하면 그 사람이 등록자가 됨) — 컬럼명은 기존 plannerId 유지(무손실 리네이밍)
   workerId      Int
   status        String  @default("ASSIGNED") // ASSIGNED, PROGRESS, REVIEW, QA, DONE
   targetDate    DateTime?
@@ -63,7 +63,7 @@ model Task {
   updatedAt     DateTime @updatedAt
 
   // Relations
-  planner       User     @relation("planner", fields: [plannerId], references: [id])
+  registrant    User     @relation("registrant", fields: [registrantId], references: [id])
   worker        User     @relation("worker", fields: [workerId], references: [id])
   project       Project? @relation(fields: [projectId], references: [id])
   timeLogs      TimeLog[]

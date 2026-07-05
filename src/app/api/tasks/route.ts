@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          planner: { select: { id: true, name: true, email: true } },
+          registrant: { select: { id: true, name: true, email: true } },
           worker: { select: { id: true, name: true, email: true } },
           project: { select: { id: true, name: true } },
           timeLogs: true,
@@ -80,12 +80,12 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, workerId, plannerId, targetDate, projectId, labels, subTasks, isGroup, parentTaskId, timeCounterEnabled } = body;
+    const { title, workerId, registrantId, targetDate, projectId, labels, subTasks, isGroup, parentTaskId, timeCounterEnabled } = body;
     const notes = sanitize(body.notes || '');
     const labelsStr: string | null = Array.isArray(labels) && labels.length > 0 ? labels.join(',') : null;
     const timeCounterEnabledReq = timeCounterEnabled !== false;
 
-    if (!title || !workerId || !plannerId) {
+    if (!title || !workerId || !registrantId) {
       return errorResponse('필수 항목이 누락되었습니다.', 400, 'VALID_400');
     }
 
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
           title: cleanTitle,
           rmsNo,
           workerId: parseInt(workerId),
-          plannerId: parseInt(plannerId),
+          registrantId: parseInt(registrantId),
           targetDate: targetDate ? new Date(targetDate) : null,
           notes,
           labels: labelsStr,
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
           timeCounterEnabled: timeCounterEnabledReq,
         },
         include: {
-          planner: { select: { id: true, name: true, email: true } },
+          registrant: { select: { id: true, name: true, email: true } },
           worker: { select: { id: true, name: true, email: true } },
           project: { select: { id: true, name: true } },
         },
@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
         title: cleanTitle,
         rmsNo,
         workerId: parseInt(workerId),
-        plannerId: parseInt(plannerId),
+        registrantId: parseInt(registrantId),
         targetDate: targetDate ? new Date(targetDate) : null,
         notes: isGroupReq ? null : notes,
         labels: labelsStr,
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
         timeCounterEnabled: timeCounterEnabledReq,
       },
       include: {
-        planner: { select: { id: true, name: true, email: true } },
+        registrant: { select: { id: true, name: true, email: true } },
         worker: { select: { id: true, name: true, email: true } },
         project: { select: { id: true, name: true } },
       },
@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
             title: subTitle,
             rmsNo: subRmsNo,
             workerId: parseInt(sub.workerId),
-            plannerId: parseInt(plannerId),
+            registrantId: parseInt(registrantId),
             targetDate: sub.targetDate ? new Date(sub.targetDate) : null,
             status: initialStatus.code,
             projectId: resolvedProjectId,
@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
     const result = await prisma.task.findUnique({
       where: { id: task.id },
       include: {
-        planner: { select: { id: true, name: true, email: true } },
+        registrant: { select: { id: true, name: true, email: true } },
         worker: { select: { id: true, name: true, email: true } },
         project: { select: { id: true, name: true } },
         subTasks: {

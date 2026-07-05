@@ -291,8 +291,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                 </select>
               </div>
               <div>
-                <p className={styles.fieldLabel}>보고자</p>
-                <p className={styles.fieldValue}>{task.planner?.name || '-'}</p>
+                <p className={styles.fieldLabel}>등록자</p>
+                <p className={styles.fieldValue}>{task.registrant?.name || '-'}</p>
               </div>
               <div>
                 <p className={styles.fieldLabel}>목표일</p>
@@ -337,8 +337,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
               <p className={styles.fieldValue}>{task.worker?.name || '-'}</p>
             </div>
             <div>
-              <p className={styles.fieldLabel}>보고자</p>
-              <p className={styles.fieldValue}>{task.planner?.name || '-'}</p>
+              <p className={styles.fieldLabel}>등록자</p>
+              <p className={styles.fieldValue}>{task.registrant?.name || '-'}</p>
             </div>
             <div>
               <p className={styles.fieldLabel}>목표일</p>

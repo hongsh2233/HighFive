@@ -21,7 +21,7 @@ export async function GET() {
       const [memberProjects, assignedTasks] = await Promise.all([
         prisma.projectMember.findMany({ where: { userId }, select: { projectId: true } }),
         prisma.task.findMany({
-          where: { OR: [{ workerId: userId }, { plannerId: userId }], projectId: { not: null } },
+          where: { OR: [{ workerId: userId }, { registrantId: userId }], projectId: { not: null } },
           select: { projectId: true },
           distinct: ['projectId'],
         }),

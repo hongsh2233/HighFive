@@ -5,7 +5,7 @@ export interface WebhookPayload {
   taskId: number;
   taskTitle: string;
   workerName: string;
-  plannerName?: string;
+  registrantName?: string;
   status: string;
   taskUrl?: string;
 }

@@ -63,7 +63,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
         return errorResponse('해당 권한이 없습니다.', 403);
       }
       const taskCount = await prisma.task.count({
-        where: { OR: [{ workerId: userId }, { plannerId: userId }] },
+        where: { OR: [{ workerId: userId }, { registrantId: userId }] },
       });
       if (taskCount > 0) {
         return errorResponse(`이 팀원에게 연결된 업무 ${taskCount}건이 있어 삭제할 수 없습니다. 먼저 업무를 재배정하세요.`, 409);
