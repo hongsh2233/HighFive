@@ -348,3 +348,19 @@
   - 프론트: `src/app/tasks/[id]/page.tsx`의 "보고자" 라벨 → "등록자", `task.planner`→`task.registrant`. `src/app/tasks/create/page.tsx`의 등록 요청 바디 `plannerId`→`registrantId`. `src/types/index.ts`, `src/hooks/useTask.ts`, `src/store/taskStore.ts`의 타입도 함께 갱신.
   - `Template.defaultPlannerId`(사용되지 않는 레거시 모델의 필드)는 이번 범위에서 제외 — Task와 무관한 별개 모델이라 건드리지 않음.
 - 디버깅 체크: `npx tsc --noEmit` 결과 신규 오류 없음(잔존 오류는 Prisma 클라이언트 미생성 관련 기존 베이스라인, 개수 동일하게 42개 유지 확인). `grep -rn "planner\|기획자\|보고자" src prisma`로 남은 참조가 `defaultPlannerId`(Template, 의도적 제외) 외에는 없음을 확인. `npx next build`는 CSS/webpack 컴파일 통과 확인(이후 무관한 `sanitize-html` 미설치 오류로 중단되는 것은 이전 차수와 동일한 샌드박스 제약). **실제 배포 환경에서 `prisma db push` 실행 시 스키마 diff를 확인해 `plannerId` 컬럼이 삭제되지 않고 `registrantId` 필드로 매핑만 바뀌는지, 업무 등록/조회/CSV 내보내기/알림이 모두 정상 동작하는지 확인 필요.**
+
+## 2026-07-01 (42차)
+
+- **개인 메모 스티커 패널 추가(최대 3개, 좌/우 고정)**: 화면 세로 가장자리 중앙에 "메모" 탭을 두고, 클릭하면 좌 또는 우측에서 슬라이드 인되는 패널이 열려 개인 메모 스티커를 관리할 수 있다.
+  - `prisma/schema.prisma`: `StickyNote` 모델 신규(`userId`, `content`, `color?`, `order`).
+  - `src/app/api/sticky-notes/route.ts`(GET 목록/POST 생성 — 개인당 최대 3개, PUT 순서 일괄 저장), `src/app/api/sticky-notes/[id]/route.ts`(PATCH 내용 수정/DELETE, 본인 소유만).
+  - `src/hooks/useStickyNotes.ts`(신규), `src/components/StickyNotesPanel.tsx` + 모듈 CSS(신규): 각 스티커는 textarea(blur 시 자동 저장), 삭제 버튼, 드래그 핸들(HTML5 drag&drop으로 `/tasks` 커스텀 필드 컬럼 재정렬과 동일한 패턴 재사용)로 순서 변경. 패널의 열림 상태와 좌/우 배치는 `localStorage`에 저장(`AnnouncementBanner`의 dismiss 기록 패턴 재사용) — 서버 왕복 불필요.
+  - `src/components/Providers.tsx`에 `StickyNotesGate`(로그인 상태에서만 렌더링) 추가.
+- **개인 자료 보관 페이지 추가(`/my-notes`, 최대 3개, 위키 방식)**: 개인이 제목+본문 문서를 여러 개(최대 3개) 만들고 아코디언 목록에서 열람/수정/삭제할 수 있다.
+  - `prisma/schema.prisma`: `UserPage` 모델 신규(`userId`, `title`, `content`).
+  - `src/app/api/my-pages/route.ts`(GET/POST — 개인당 최대 3개), `src/app/api/my-pages/[id]/route.ts`(PATCH/DELETE, 본인 소유만 — `WikiPage`의 `ProjectMember` 소속 체크와 달리 `userId` 일치만 확인하면 되므로 더 단순).
+  - `src/app/my-notes/page.tsx` + 모듈 CSS(신규): `projects/[id]/wiki/page.tsx`와 동일한 아코디언 목록 + 작성/수정 폼 레이아웃을 재사용, 문서 3개 도달 시 "+ 새 문서" 버튼 비활성화 + 안내 문구.
+  - `src/components/AppHeader.tsx` 계정 드롭다운에 "내 자료" 링크 추가, `src/middleware.ts`의 `protectedRoutes`에 `/my-notes` 추가.
+- **공용 리팩터: SimpleEditor 컴포넌트 추출**: `wiki/page.tsx`, `projects/[id]/wiki/page.tsx`, `info/page.tsx`에 각각 인라인으로 중복 정의되어 있던 경량 마크다운 에디터를 `src/components/common/SimpleEditor.tsx` + 모듈 CSS로 추출하고, `/my-notes`를 포함한 4곳 모두 이 공용 컴포넌트를 사용하도록 교체(동작 동일). 기존 3개 페이지의 CSS 모듈에서 중복 정의되어 있던 `.editorWrapper` 등 관련 스타일도 정리.
+  - `src/types/index.ts`: `StickyNote`, `UserPage` 타입 추가.
+- 디버깅 체크: `npx tsc --noEmit` 결과 신규 오류 없음(잔존 42개는 Prisma 클라이언트 미생성 관련 기존 베이스라인, 이전 차수와 동일). `npx next build`는 CSS/webpack 컴파일 통과 확인(이후 무관한 `sanitize-html` 미설치 오류로 중단되는 것은 이전 차수와 동일한 샌드박스 제약). **실제 배포 환경에서 메모 스티커 추가/수정/삭제/드래그 재정렬 및 좌우 배치 전환이 새로고침 후에도 유지되는지, `/my-notes`에서 문서 3개 제한이 정상 동작하고 다른 계정으로 로그인 시 본인 문서만 보이는지 브라우저로 확인 필요.**

@@ -149,3 +149,24 @@ export interface UserNotification {
   isRead: boolean;
   createdAt: string;
 }
+
+// 개인 메모 스티커
+export interface StickyNote {
+  id: number;
+  userId: number;
+  content: string;
+  color: string | null;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 개인 자료 보관 문서
+export interface UserPage {
+  id: number;
+  userId: number;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}

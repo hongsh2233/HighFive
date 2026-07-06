@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { UserRole } from '@/types';
 import NotificationToastManager from './common/NotificationToast';
+import StickyNotesPanel from './StickyNotesPanel';
 
 function AuthSync() {
   const { data: session, status } = useSession();
@@ -46,11 +47,18 @@ function NotificationToastGate() {
   return <NotificationToastManager />;
 }
 
+function StickyNotesGate() {
+  const { status } = useSession();
+  if (status !== 'authenticated') return null;
+  return <StickyNotesPanel />;
+}
+
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider refetchInterval={60} refetchOnWindowFocus>
       <AuthSync />
       <NotificationToastGate />
+      <StickyNotesGate />
       {children}
     </SessionProvider>
   );

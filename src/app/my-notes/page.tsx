@@ -1,19 +1,18 @@
 'use client';
 
-import React, { useEffect, useState, use } from 'react';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
-import styles from './wiki.module.css';
+import styles from './my-notes.module.css';
 import Spinner from '@/components/common/Spinner';
 import SimpleEditor from '@/components/common/SimpleEditor';
 
-interface WikiPage {
+const MAX_PAGES = 3;
+
+interface UserPageDoc {
   id: number;
   title: string;
   content: string;
-  author: { id: number; name: string };
   createdAt: string;
   updatedAt: string;
 }
@@ -61,21 +60,14 @@ function renderInline(text: string): React.ReactNode {
   });
 }
 
-export default function ProjectWikiPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const projectId = parseInt(id);
-  const searchParams = useSearchParams();
-  const openParam = searchParams.get('open');
-
-  const { user, isLoading: authLoading } = useAuth();
-  const [projectName, setProjectName] = useState('');
-  const [pages, setPages] = useState<WikiPage[]>([]);
+export default function MyNotesPage() {
+  const { isLoading: authLoading } = useAuth();
+  const [pages, setPages] = useState<UserPageDoc[]>([]);
   const [openIds, setOpenIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [accessDenied, setAccessDenied] = useState(false);
 
   const [showForm, setShowForm] = useState(false);
-  const [editingPage, setEditingPage] = useState<WikiPage | null>(null);
+  const [editingPage, setEditingPage] = useState<UserPageDoc | null>(null);
   const [formTitle, setFormTitle] = useState('');
   const [formContent, setFormContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -83,16 +75,10 @@ export default function ProjectWikiPage({ params }: { params: Promise<{ id: stri
 
   const fetchAll = async () => {
     try {
-      const [projectRes, wikiRes] = await Promise.all([
-        apiClient.get<{ data: { name: string } }>(`/projects/${projectId}`),
-        apiClient.get<{ data: WikiPage[] }>(`/projects/${projectId}/wiki`),
-      ]);
-      setProjectName(projectRes.data.data.name);
-      setPages(wikiRes.data.data);
-      setAccessDenied(false);
-    } catch (err: any) {
-      if (err.response?.status === 403) setAccessDenied(true);
-      else setMessage({ type: 'error', text: '위키 조회에 실패했습니다.' });
+      const res = await apiClient.get<{ data: UserPageDoc[] }>('/my-pages');
+      setPages(res.data.data);
+    } catch {
+      setMessage({ type: 'error', text: '문서 조회에 실패했습니다.' });
     } finally {
       setLoading(false);
     }
@@ -102,13 +88,6 @@ export default function ProjectWikiPage({ params }: { params: Promise<{ id: stri
     if (!authLoading) fetchAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading]);
-
-  useEffect(() => {
-    if (openParam) {
-      const openId = parseInt(openParam);
-      if (!isNaN(openId)) setOpenIds(prev => new Set(prev).add(openId));
-    }
-  }, [openParam]);
 
   const toggleAccordion = (pageId: number) => {
     setOpenIds(prev => {
@@ -123,13 +102,15 @@ export default function ProjectWikiPage({ params }: { params: Promise<{ id: stri
     setFormTitle('');
     setFormContent('');
     setShowForm(true);
+    setMessage(null);
   };
 
-  const openEditForm = (page: WikiPage) => {
+  const openEditForm = (page: UserPageDoc) => {
     setEditingPage(page);
     setFormTitle(page.title);
     setFormContent(page.content);
     setShowForm(true);
+    setMessage(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -138,11 +119,11 @@ export default function ProjectWikiPage({ params }: { params: Promise<{ id: stri
     setMessage(null);
     try {
       if (editingPage) {
-        await apiClient.patch(`/projects/${projectId}/wiki/${editingPage.id}`, { title: formTitle, content: formContent });
+        await apiClient.patch(`/my-pages/${editingPage.id}`, { title: formTitle, content: formContent });
         setMessage({ type: 'success', text: '수정되었습니다.' });
       } else {
-        await apiClient.post(`/projects/${projectId}/wiki`, { title: formTitle, content: formContent });
-        setMessage({ type: 'success', text: '위키 문서가 등록되었습니다.' });
+        await apiClient.post('/my-pages', { title: formTitle, content: formContent });
+        setMessage({ type: 'success', text: '문서가 등록되었습니다.' });
       }
       setShowForm(false);
       await fetchAll();
@@ -156,7 +137,7 @@ export default function ProjectWikiPage({ params }: { params: Promise<{ id: stri
   const handleDelete = async (pageId: number) => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
     try {
-      await apiClient.delete(`/projects/${projectId}/wiki/${pageId}`);
+      await apiClient.delete(`/my-pages/${pageId}`);
       await fetchAll();
     } catch (err: any) {
       setMessage({ type: 'error', text: err.response?.data?.message || '삭제 실패' });
@@ -167,27 +148,27 @@ export default function ProjectWikiPage({ params }: { params: Promise<{ id: stri
     return <div className={styles.loading}><Spinner /></div>;
   }
 
-  if (accessDenied) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.inner}>
-          <div className={styles.empty}>해당 프로젝트 멤버만 위키를 볼 수 있습니다.</div>
-        </div>
-      </div>
-    );
-  }
+  const atLimit = pages.length >= MAX_PAGES;
 
   return (
     <div className={styles.page}>
       <div className={styles.inner}>
         <div className={styles.pageHeader}>
           <div>
-            <Link href="/projects" className={styles.backLink}>← 프로젝트</Link>
-            <h1 className={styles.pageTitle}>{projectName} 위키</h1>
-            <p className={styles.pageSubtitle}>프로젝트 멤버만 열람/작성할 수 있는 문서 공간입니다.</p>
+            <h1 className={styles.pageTitle}>내 자료</h1>
+            <p className={styles.pageSubtitle}>
+              나만 보는 개인 자료 보관 공간입니다. <span className={styles.countBadge}>({pages.length}/{MAX_PAGES})</span>
+            </p>
           </div>
           {!showForm && (
-            <button onClick={openCreateForm} className={styles.btnPrimary}>+ 문서 작성</button>
+            <button
+              onClick={openCreateForm}
+              className={styles.btnPrimary}
+              disabled={atLimit}
+              title={atLimit ? `문서는 최대 ${MAX_PAGES}개까지 만들 수 있습니다.` : undefined}
+            >
+              + 새 문서
+            </button>
           )}
         </div>
 
@@ -197,13 +178,17 @@ export default function ProjectWikiPage({ params }: { params: Promise<{ id: stri
           </div>
         )}
 
+        {atLimit && !showForm && (
+          <div className={styles.message}>문서는 최대 {MAX_PAGES}개까지 만들 수 있습니다. 새 문서를 만들려면 기존 문서를 삭제하세요.</div>
+        )}
+
         {showForm && (
           <div className={styles.formCard}>
             <h2 className={styles.formTitle}>{editingPage ? '문서 수정' : '새 문서 작성'}</h2>
             <form onSubmit={handleSubmit}>
               <div className={styles.formGroup}>
                 <label className={styles.label}>제목</label>
-                <input type="text" value={formTitle} onChange={e => setFormTitle(e.target.value)} placeholder="예: 배포 절차" required className={styles.input} />
+                <input type="text" value={formTitle} onChange={e => setFormTitle(e.target.value)} placeholder="예: 참고 링크 모음" required className={styles.input} />
               </div>
               <div className={styles.formGroupLast}>
                 <label className={styles.label}>내용</label>
@@ -220,21 +205,18 @@ export default function ProjectWikiPage({ params }: { params: Promise<{ id: stri
         )}
 
         {pages.length === 0 ? (
-          <div className={styles.empty}>등록된 위키 문서가 없습니다. + 문서 작성으로 첫 문서를 만들어보세요.</div>
+          <div className={styles.empty}>등록된 문서가 없습니다. + 새 문서로 첫 자료를 만들어보세요.</div>
         ) : (
           <div className={styles.list}>
             {pages.map((page) => {
               const isOpen = openIds.has(page.id);
-              const canDelete = page.author.id === Number(user?.id) || user?.role === 'ADMIN';
               return (
                 <div key={page.id} className={styles.accordion} data-open={isOpen ? 'true' : 'false'}>
                   <div className={styles.accordionHeader} onClick={() => toggleAccordion(page.id)}>
                     <span className={styles.accordionTitle} data-open={isOpen ? 'true' : 'false'}>{page.title}</span>
                     <div className={styles.accordionControls}>
                       <button onClick={e => { e.stopPropagation(); openEditForm(page); }} className={styles.btnEdit}>수정</button>
-                      {canDelete && (
-                        <button onClick={e => { e.stopPropagation(); handleDelete(page.id); }} className={styles.btnDelete}>삭제</button>
-                      )}
+                      <button onClick={e => { e.stopPropagation(); handleDelete(page.id); }} className={styles.btnDelete}>삭제</button>
                       <span className={styles.chevron} data-open={isOpen ? 'true' : 'false'}>▾</span>
                     </div>
                   </div>
@@ -242,7 +224,7 @@ export default function ProjectWikiPage({ params }: { params: Promise<{ id: stri
                     <div className={styles.accordionBody}>
                       <div className={styles.contentText}>{renderContent(page.content)}</div>
                       <div className={styles.contentMeta}>
-                        {page.author.name} · {new Date(page.updatedAt).toLocaleString('ko-KR')}
+                        {new Date(page.updatedAt).toLocaleString('ko-KR')}
                       </div>
                     </div>
                   )}

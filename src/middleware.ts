@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 // 보호가 필요한 라우트
-const protectedRoutes = ['/dashboard', '/tasks', '/calendar', '/stats', '/users', '/announcements', '/requests'];
+const protectedRoutes = ['/dashboard', '/tasks', '/calendar', '/stats', '/users', '/announcements', '/requests', '/my-notes'];
 const adminRoutes = ['/users'];
 const leaderRoutes = ['/stats'];
 

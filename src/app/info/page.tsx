@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './info.module.css';
 import Spinner from '@/components/common/Spinner';
+import SimpleEditor from '@/components/common/SimpleEditor';
 
 interface InfoItem {
   id: number;
@@ -63,77 +64,6 @@ function renderInline(text: string): React.ReactNode {
     }
     return part;
   });
-}
-
-function SimpleEditor({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-}) {
-  const taRef = useRef<HTMLTextAreaElement>(null);
-
-  const insertFormat = (prefix: string, suffix: string, sample: string) => {
-    const ta = taRef.current;
-    if (!ta) return;
-    const start = ta.selectionStart;
-    const end = ta.selectionEnd;
-    const selected = value.slice(start, end) || sample;
-    const before = value.slice(0, start);
-    const after = value.slice(end);
-    const newVal = before + prefix + selected + suffix + after;
-    onChange(newVal);
-    requestAnimationFrame(() => {
-      ta.focus();
-      ta.setSelectionRange(start + prefix.length, start + prefix.length + selected.length);
-    });
-  };
-
-  const insertBullet = () => {
-    const ta = taRef.current;
-    if (!ta) return;
-    const start = ta.selectionStart;
-    const lineStart = value.lastIndexOf('\n', start - 1) + 1;
-    const before = value.slice(0, lineStart);
-    const after = value.slice(lineStart);
-    const newVal = before + '- ' + after;
-    onChange(newVal);
-    requestAnimationFrame(() => {
-      ta.focus();
-      ta.setSelectionRange(start + 2, start + 2);
-    });
-  };
-
-  return (
-    <div className={styles.editorWrapper}>
-      <div className={styles.editorToolbar}>
-        <button type="button" className={styles.editorBtn} title="굵게" onClick={() => insertFormat('**', '**', '굵은 텍스트')}>
-          <strong>B</strong>
-        </button>
-        <button type="button" className={styles.editorBtn} title="기울임" onClick={() => insertFormat('*', '*', '기울임 텍스트')}>
-          <em>I</em>
-        </button>
-        <button type="button" className={styles.editorBtn} title="목록" onClick={insertBullet}>
-          ≡
-        </button>
-        <span className={styles.editorHint}>
-          **굵게** *기울임* - 목록
-        </span>
-      </div>
-      <textarea
-        ref={taRef}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        required
-        rows={8}
-        className={styles.editorTextarea}
-      />
-    </div>
-  );
 }
 
 export default function InfoPage() {

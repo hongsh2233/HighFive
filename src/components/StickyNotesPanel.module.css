@@ -1,0 +1,161 @@
+.tab {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 45;
+  writing-mode: vertical-rl;
+  padding: 14px 6px;
+  background-color: var(--accent);
+  color: #FFFFFF;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(9, 9, 11, 0.2);
+  transition: background-color 0.15s;
+}
+
+.tab:hover {
+  background-color: var(--accent-hover);
+}
+
+.tabRight {
+  right: 0;
+  border-radius: 8px 0 0 8px;
+}
+
+.tabLeft {
+  left: 0;
+  border-radius: 0 8px 8px 0;
+  writing-mode: vertical-lr;
+}
+
+.panel {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 260px;
+  z-index: 44;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 12px;
+  animation: slide-in var(--motion-standard) var(--ease-enter);
+}
+
+.panelRight {
+  right: 0;
+  border-left: 1px solid var(--border);
+}
+
+.panelLeft {
+  left: 0;
+  border-right: 1px solid var(--border);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panelTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.panelHeaderActions {
+  display: flex;
+  gap: 4px;
+}
+
+.iconBtn {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px;
+}
+
+.iconBtn:hover {
+  color: var(--text-primary);
+}
+
+.noteList {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.noteCard {
+  background-color: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: grab;
+}
+
+.noteCard:active {
+  cursor: grabbing;
+}
+
+.noteCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.dragHandle {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.noteDeleteBtn {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px;
+}
+
+.noteDeleteBtn:hover {
+  color: var(--danger);
+}
+
+.noteTextarea {
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.addBtn {
+  composes: btn btn-secondary from global;
+  width: 100%;
+}
+
+@keyframes slide-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 640px) {
+  .panel {
+    width: 100%;
+  }
+}

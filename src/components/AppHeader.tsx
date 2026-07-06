@@ -143,6 +143,7 @@ export default function AppHeader() {
                   <div className={styles.accountName}>{user?.name}</div>
                   <div className={styles.accountEmail}>{user?.email}</div>
                 </div>
+                <Link href="/my-notes" className={styles.dropdownItem} onClick={closeAll}>내 자료</Link>
                 <Link href="/profile/password" className={styles.dropdownItem} onClick={closeAll}>비밀번호 변경</Link>
                 <button
                   onClick={handleLogout}

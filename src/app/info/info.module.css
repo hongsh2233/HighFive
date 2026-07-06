@@ -220,47 +220,6 @@
   color: var(--text-muted);
 }
 
-/* SimpleEditor */
-.editorWrapper {
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  overflow: hidden;
-}
-
-.editorToolbar {
-  display: flex;
-  gap: 6px;
-  padding: 6px 8px;
-  background-color: var(--bg-subtle);
-  border-bottom: 1px solid var(--border);
-}
-
-.editorBtn {
-  composes: btn btn-sm btn-ghost from global;
-  line-height: 1.5;
-}
-
-.editorHint {
-  margin-left: auto;
-  font-size: 11px;
-  color: var(--text-muted);
-  align-self: center;
-}
-
-.editorTextarea {
-  width: 100%;
-  padding: 10px 12px;
-  font-size: 13px;
-  border: none;
-  outline: none;
-  font-family: inherit;
-  resize: vertical;
-  line-height: 1.7;
-  box-sizing: border-box;
-  background-color: var(--bg-surface);
-  color: var(--text-primary);
-}
-
 /* renderAnswer helpers */
 .answerList {
   margin: 6px 0;

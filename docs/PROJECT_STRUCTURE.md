@@ -26,6 +26,7 @@
 /announcements  → 인증 필요 (전 역할 조회 가능, 작성/수정/삭제는 ADMIN/LEADER)
 /requests       → 인증 필요 (전 역할)
 /wiki           → 인증 필요 (전 역할, 소속 프로젝트 문서 모아보기 + 등록 허브)
+/my-notes       → 인증 필요 (전 역할, 개인 자료 보관 문서 최대 3개)
 /projects/[id]/wiki → 인증 필요 (해당 프로젝트 소속 멤버 또는 ADMIN만 조회 가능, middleware 레벨이 아닌 API `checkAccess`로 검증)
 /projects/[id]/statuses → 인증 필요, 페이지 자체는 ADMIN/LEADER 전용(프로젝트별 업무 상태 단계 관리)
 /settings/calendar-sync  → 인증 필요 (전 역할, 헤더 "설정" 메뉴는 ADMIN/LEADER에게만 노출되지만 URL 직접 접근은 인증만 요구)
@@ -135,6 +136,12 @@ User (1) ──< Request [requester / approver] (1) ──< Announcement (전결
 ### Integration
 채널별 외부연동(알림 발송) 설정. `channel`(SLACK/JANDI/TEAMS/TELEGRAM/KAKAO, unique), `webhookUrl`, `botToken`/`chatId`(TELEGRAM 전용), `isEnabled`. `src/lib/integrations.ts`가 DB에 저장된 값을 우선 사용하고, 해당 채널에 DB row가 아예 없을 때만 `.env`(`SLACK_WEBHOOK_URL` 등)로 폴백한다. `Notification` 모델(발송 로그)과는 별개로, 이 모델은 "어디로 보낼지"에 대한 설정만 저장한다.
 
+### StickyNote
+개인 메모 스티커. `userId`, `content`(Text), `color?`, `order`. **개인당 최대 3개**(`/api/sticky-notes` POST에서 `count`로 검증). 화면 좌/우 가장자리에 고정되는 `StickyNotesPanel`(`src/components/StickyNotesPanel.tsx`, `Providers.tsx`에 로그인 시 전역 렌더링)에서 추가/수정(blur 시 자동 저장)/삭제/드래그 재정렬(`/api/sticky-notes` PUT으로 순서 일괄 저장) 가능. 패널의 열림 상태와 좌/우 배치는 서버가 아니라 `localStorage`(`AnnouncementBanner`의 dismiss 기록과 같은 패턴)에 저장.
+
+### UserPage
+개인 자료 보관 문서(`/my-notes`). `userId`, `title`, `content`(WikiPage와 동일한 마크다운 라이트). **개인당 최대 3개**(`/api/my-pages` POST에서 검증). 다른 사람 문서에는 애초에 접근 경로가 없어(항상 `where: { userId: 본인 }`) `WikiPage`의 `ProjectMember` 소속 체크 같은 별도 접근 검증이 필요 없다. UI는 `WikiPage`의 아코디언 목록+`SimpleEditor` 패턴을 그대로 재사용.
+
 ---
 
 ## 3. 디렉터리 구조
@@ -242,16 +249,18 @@ high5/
 │   │           └── github/route.ts             # GitHub PR merge 연동
 │   │
 │   ├── components/
-│   │   ├── AppHeader.tsx              # 상단 GNB (메뉴, 프로필, 모바일 햄버거 토글) — 알림 벨 제거됨. "신청"/"위키" 링크, "설정" 드롭다운(구 "관리")에 프로젝트/공지사항/팀원관리/통계/구글캘린더연동/외부연동(ADMIN)
+│   │   ├── AppHeader.tsx              # 상단 GNB (메뉴, 프로필, 모바일 햄버거 토글) — 알림 벨 제거됨. "신청"/"위키" 링크, 계정 드롭다운에 "내 자료"(/my-notes), "설정" 드롭다운(구 "관리")에 프로젝트/공지사항/팀원관리/통계/구글캘린더연동/외부연동(ADMIN)
 │   │   ├── AnnouncementBanner.tsx     # 헤더 하단 공지 배너 — 활성 공지 조회, X로 닫으면 localStorage에 dismiss 기록
 │   │   ├── WikiSearchButton.tsx       # 우하단 플로팅 버튼 — 클릭 시 위키 검색 모달, 결과 클릭 시 해당 프로젝트 위키로 이동
+│   │   ├── StickyNotesPanel.tsx       # 화면 세로 중앙 가장자리 탭 → 좌/우 슬라이드 패널, 개인 메모 스티커(최대 3개) 추가/수정/삭제/드래그 재정렬. Providers.tsx에 로그인 시 전역 렌더링
 │   │   ├── LayoutWrapper.tsx
-│   │   ├── Providers.tsx              # SessionProvider + AuthSync
+│   │   ├── Providers.tsx              # SessionProvider + AuthSync + NotificationToastGate + StickyNotesGate
 │   │   ├── common/
 │   │   │   ├── Badge.tsx
 │   │   │   ├── Modal.tsx
 │   │   │   ├── Spinner.tsx            # 회전 링 스피너 — "로딩 중..." 텍스트 대체
-│   │   │   └── NotificationToast.tsx  # useNotifications 폴링 결과로 우하단 토스트 표시(Providers.tsx에 전역 배치)
+│   │   │   ├── NotificationToast.tsx  # useNotifications 폴링 결과로 우하단 토스트 표시(Providers.tsx에 전역 배치)
+│   │   │   └── SimpleEditor.tsx       # 경량 마크다운 에디터(굵게/기울임/목록 툴바) — wiki, 프로젝트 위키, /info, /my-notes에서 공용
 │   │   ├── kanban/
 │   │   │   ├── KanbanBoard.tsx
 │   │   │   └── KanbanColumn.tsx
@@ -269,7 +278,8 @@ high5/
 │   │   ├── useFreeze.ts               # 배포 프리징 감지
 │   │   ├── useProjectStatuses.ts      # GET /api/projects/statuses 일괄 조회 + projectId별 조회 헬퍼(getStatuses), tasks/kanban 등에서 공용
 │   │   ├── useProjectFields.ts        # GET /api/projects/[id]/fields 조회 + 필드정의 저장(saveFields)/값 저장(saveValue), 업무 목록의 커스텀 필드 컬럼에서 사용
-│   │   └── useNotifications.ts        # GET /api/notifications 30초 폴링, unreadCount 증가 시 콜백(신규 알림 감지), markAllRead
+│   │   ├── useNotifications.ts        # GET /api/notifications 30초 폴링, unreadCount 증가 시 콜백(신규 알림 감지), markAllRead
+│   │   └── useStickyNotes.ts          # GET/POST/PATCH/DELETE /api/sticky-notes CRUD + PUT 재정렬, StickyNotesPanel에서 사용
 │   │
 │   ├── store/                         # Zustand 전역 상태
 │   │   ├── authStore.ts               # 인증 상태 (persist, hasRole, isAdmin, isLeader)

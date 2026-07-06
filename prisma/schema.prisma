@@ -38,6 +38,8 @@ model User {
   requestsMade       Request[]      @relation("requestRequester")
   requestsToApprove  Request[]      @relation("requestApprover")
   wikiPages          WikiPage[]     @relation("wikiAuthor")
+  stickyNotes        StickyNote[]
+  userPages          UserPage[]
 
   @@map("users")
 }
@@ -313,4 +315,33 @@ model TaskFieldValue {
   @@unique([taskId, fieldId])
   @@index([taskId])
   @@map("task_field_values")
+}
+
+model StickyNote {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  content   String   @db.Text
+  color     String?  // 파스텔 hex, 선택
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, order])
+  @@map("sticky_notes")
+}
+
+model UserPage {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  title     String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_pages")
 }
