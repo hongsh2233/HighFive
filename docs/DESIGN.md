@@ -185,16 +185,30 @@ High5는 개발팀/운영팀이 하루 종일 켜두는 **내부 업무관리 �
 ### Breakpoints
 | 이름 | 폭 | 주요 변화 |
 |---|---|---|
-| Mobile | <768px | 헤더 네비게이션이 드로어로 접힘(`AppHeader`의 `mobileToggle`), 폼 그리드 1열 |
+| Mobile | <640px | **신규 미디어쿼리는 모두 이 기준을 따른다.** 페이지 여백이 `padding: 20px 14px`로 축소, 2열 그리드가 1열로, 업무 목록 테이블이 카드형으로 전환. |
+| Tablet | 640~768px | 헤더 네비게이션이 드로어로 접힘(`AppHeader`의 `mobileToggle`, 이 컴포넌트만 예외적으로 768px 기준). |
 | Desktop | ≥768px | 기본 레이아웃, 최대 폭 1460px 컨테이너 |
+
+기존 코드에는 480/640/768/900px가 파일마다 섞여 있었다(`AppHeader` 768px, `tasks/create`
+900px, `login` 480px 등) — 굳이 통일하지 않았고, **새로 추가하는 반응형 스타일만 640px로
+통일**해 앞으로의 예측 가능성을 확보했다.
 
 ### Touch Targets
 - 기본 버튼 높이 ~32px(padding 7px 14px + 13px 폰트), 테이블 인라인 버튼은 더 작음(`.btn-sm`,
   ~20px) — 데스크톱 중심 업무 도구라 모바일 우선순위는 낮지만 최소 클릭 영역은 유지.
 
 ### Collapsing Strategy
-- 좁은 화면에서는 폼의 2열 그리드(`grid-template-columns: repeat(2,1fr)`)가 1열로 전환.
-- 업무 목록의 프로젝트별 섹션은 가로 스크롤(`.tableWrapper { overflow-x: auto }`)로 대응.
+- 좁은 화면에서는 폼의 2열 그리드(`grid-template-columns: repeat(2,1fr)`)가 1열로 전환
+  (`/tasks/[id]` 기본정보·속성 카드, `/projects`의 목록+멤버패널 등).
+- **업무 목록(`/tasks`) 테이블 → 카드형 전환**: 640px 이하에서 `<table>`의 `display`를
+  `block`으로 바꾸고 각 `<tr>`을 카드처럼 보이게 하는 순수 CSS 기법을 사용한다. 헤더 행은
+  숨기고, 각 `<td>`에 이미 붙어 있는 `data-label` 속성을 `::before { content: attr(data-label) }`
+  로 라벨처럼 표시 — 별도의 카드 컴포넌트를 새로 만들지 않고 기존 테이블 마크업을 그대로
+  재사용한다(`tasks.module.css`).
+- `/calendar`의 7일 그리드는 열 구조를 유지하되(달력 구조상 열을 줄이면 의미가 없음) 640px
+  이하에서 셀 높이/패딩/폰트를 축소해 좁은 화면에서도 한 줄에 들어가도록 한다.
+- 커스텀 필드 컬럼이 있는 다른 넓은 표(위키 목록 등)는 여전히 가로 스크롤
+  (`.tableWrapper { overflow-x: auto }`)로 대응한다.
 
 ## 9. Agent Prompt Guide
 

@@ -364,3 +364,14 @@
 - **공용 리팩터: SimpleEditor 컴포넌트 추출**: `wiki/page.tsx`, `projects/[id]/wiki/page.tsx`, `info/page.tsx`에 각각 인라인으로 중복 정의되어 있던 경량 마크다운 에디터를 `src/components/common/SimpleEditor.tsx` + 모듈 CSS로 추출하고, `/my-notes`를 포함한 4곳 모두 이 공용 컴포넌트를 사용하도록 교체(동작 동일). 기존 3개 페이지의 CSS 모듈에서 중복 정의되어 있던 `.editorWrapper` 등 관련 스타일도 정리.
   - `src/types/index.ts`: `StickyNote`, `UserPage` 타입 추가.
 - 디버깅 체크: `npx tsc --noEmit` 결과 신규 오류 없음(잔존 42개는 Prisma 클라이언트 미생성 관련 기존 베이스라인, 이전 차수와 동일). `npx next build`는 CSS/webpack 컴파일 통과 확인(이후 무관한 `sanitize-html` 미설치 오류로 중단되는 것은 이전 차수와 동일한 샌드박스 제약). **실제 배포 환경에서 메모 스티커 추가/수정/삭제/드래그 재정렬 및 좌우 배치 전환이 새로고침 후에도 유지되는지, `/my-notes`에서 문서 3개 제한이 정상 동작하고 다른 계정으로 로그인 시 본인 문서만 보이는지 브라우저로 확인 필요.**
+
+## 2026-07-01 (43차)
+
+- **모바일 최적화 1차 적용**: 전체 CSS 검토 결과 반응형 처리가 있는 파일이 10개뿐이고 breakpoint도 파일마다 제각각(480/640/768/900px)이었으며, 가장 자주 쓰는 화면들(`/tasks`, `/tasks/[id]`, `/calendar`, `/projects`)에는 모바일 대응이 전혀 없던 것을 확인하고 개선.
+  - **신규 반응형 스타일은 640px로 통일**(기존 파일들의 480/768/900px는 그대로 둠 — `docs/DESIGN.md` §8에 기준 명시).
+  - **전역 페이지 여백 축소**: `padding: 32~40px` 고정 여백을 쓰던 11개 파일(`dashboard`, `wiki`, `info`, `announcements`, `my-notes`, `projects/[id]/wiki`, `settings/integrations`, `settings/calendar-sync`, `calendar`, `tasks/[id]/detail`, `tasks`, `projects`)에 640px 이하 `padding: 20px 14px` 미디어쿼리 추가.
+  - **`/tasks` 목록 테이블 → 카드형 전환**(가장 크고 가치 높은 항목): 640px 이하에서 `<table>`을 순수 CSS로 카드처럼 보이도록 전환(`display: block` + 헤더 숨김 + `data-label` 속성을 `::before`로 라벨 표시). 별도 카드 컴포넌트를 새로 만들지 않고 기존 테이블 마크업의 각 `<td>`에 `data-label`(ID/제목/담당자/등록일자/목표일/비고/작업시간/상태/커스텀 필드명)만 추가해 재사용(`src/app/tasks/page.tsx`, `tasks.module.css`).
+  - **`/tasks/[id]` 상세**: 기본정보/속성 카드의 2열 그리드가 640px 이하에서 1열로 전환.
+  - **`/calendar`**: 7일 그리드 구조는 유지하되 640px 이하에서 셀 패딩/최소높이/폰트를 축소(`.day`, `.dayLabel`, `.dayNumber`, `.taskItem`)해 좁은 화면에서도 한 줄에 들어가도록 함.
+  - **`/projects`**: `.layoutWithPanel`(목록+멤버패널 2열)이 640px 이하에서 1열로 전환, `sticky` 멤버패널도 `static`으로.
+- 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 42개는 Prisma 클라이언트 미생성 관련 기존 베이스라인, 이전 차수와 동일). `npx next build`는 CSS/webpack 컴파일 통과 확인(이후 무관한 `sanitize-html` 미설치 오류로 중단되는 것은 이전 차수와 동일한 샌드박스 제약). **실제 배포 환경에서 개발자도구 375px/390px/768px 폭으로 `/tasks`, `/tasks/[id]`, `/calendar`, `/projects`, `/dashboard`를 확인해 가로 스크롤 없이 핵심 정보가 잘리지 않는지, 카드형 업무 목록에서 담당자/상태 셀렉트와 버튼들이 정상 동작하는지 브라우저로 확인 필요.**

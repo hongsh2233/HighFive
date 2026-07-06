@@ -180,3 +180,9 @@
   font-size: 11px;
   color: var(--text-muted);
 }
+
+@media (max-width: 640px) {
+  .page {
+    padding: 20px 14px;
+  }
+}

@@ -158,3 +158,34 @@
   color: #065F46;
   font-weight: 600;
 }
+
+@media (max-width: 640px) {
+  .container {
+    padding: 20px 14px;
+  }
+
+  .dayHeaderGrid,
+  .calendarGrid {
+    gap: 2px;
+  }
+
+  .day {
+    padding: 4px;
+    min-height: 52px;
+  }
+
+  .dayLabel {
+    padding: 4px;
+    font-size: 10px;
+  }
+
+  .dayNumber {
+    font-size: 11px;
+    margin-bottom: 2px;
+  }
+
+  .taskItem {
+    font-size: 9px;
+    padding: 1px 2px;
+  }
+}

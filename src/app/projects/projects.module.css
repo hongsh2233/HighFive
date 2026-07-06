@@ -314,3 +314,17 @@
   width: 100%;
   font-size: 12px;
 }
+
+@media (max-width: 640px) {
+  .page {
+    padding: 20px 14px;
+  }
+
+  .layoutWithPanel {
+    grid-template-columns: 1fr;
+  }
+
+  .memberPanel {
+    position: static;
+  }
+}

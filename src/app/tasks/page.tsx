@@ -496,8 +496,8 @@ function ProjectTaskSection({
           backgroundColor: isTaskDone ? '#F9FAFB' : 'white',
         }}
       >
-        <td className={styles.tdId}>#{task.id}</td>
-        <td className={styles.td}>
+        <td className={styles.tdId} data-label="ID">#{task.id}</td>
+        <td className={styles.td} data-label="제목">
           <div className={styles.titleCell} style={isChild ? { paddingLeft: '24px' } : undefined}>
             {isGroupRow && (
               <button
@@ -534,7 +534,7 @@ function ProjectTaskSection({
             )}
           </div>
         </td>
-        <td className={styles.td}>
+        <td className={styles.td} data-label="담당자">
           {canEditTitle ? (
             <select
               value={task.workerId ?? ''}
@@ -552,17 +552,17 @@ function ProjectTaskSection({
             task.worker?.name || '-'
           )}
         </td>
-        <td className={styles.td}>
+        <td className={styles.td} data-label="등록일자">
           {task.createdAt
             ? new Date(task.createdAt).toLocaleDateString('ko-KR')
             : '-'}
         </td>
-        <td className={styles.td}>
+        <td className={styles.td} data-label="목표일">
           {task.targetDate
             ? new Date(task.targetDate).toLocaleDateString('ko-KR')
             : '-'}
         </td>
-        <td className={styles.tdNotes}>
+        <td className={styles.tdNotes} data-label="비고">
           <div className={styles.notesBtns}>
             {isGroupRow ? (
               <button
@@ -602,10 +602,10 @@ function ProjectTaskSection({
             )}
           </div>
         </td>
-        <td className={styles.tdHours}>
+        <td className={styles.tdHours} data-label="작업시간">
           {calculateWorkHours(task.timeLogs || [])}
         </td>
-        <td className={styles.td}>
+        <td className={styles.td} data-label="상태">
           {isGroupRow ? (
             '-'
           ) : (
@@ -624,7 +624,7 @@ function ProjectTaskSection({
           )}
         </td>
         {project && fields.map((field) => (
-          <td key={field.id} className={styles.td}>
+          <td key={field.id} className={styles.td} data-label={field.name}>
             {renderFieldCell(task, field)}
           </td>
         ))}
