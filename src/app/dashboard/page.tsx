@@ -20,6 +20,8 @@ export default function DashboardPage() {
   const { user, isLoading } = useAuth();
   const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
+  const [todayTasks, setTodayTasks] = useState<Task[]>([]);
+  const [isOnLeaveToday, setIsOnLeaveToday] = useState(false);
   const [parentMap, setParentMap] = useState<Map<number, Task>>(new Map());
   const [loadingTasks, setLoadingTasks] = useState(true);
 
@@ -57,6 +59,19 @@ export default function DashboardPage() {
           .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
           .slice(0, 5);
         setRecentTasks(recent);
+
+        const now = new Date();
+        const todayKey = now.toISOString().split('T')[0];
+        const calRes = await apiClient.get<{
+          data: {
+            tasksByDate: Record<string, Task[]>;
+            leavesByDate: Record<string, string[]>;
+          };
+        }>(`/tasks/calendar?year=${now.getFullYear()}&month=${now.getMonth() + 1}`);
+        const todayList = (calRes.data.data.tasksByDate[todayKey] || [])
+          .filter((t) => !isStandaloneGroup(t) && t.workerId === Number(user.id));
+        setTodayTasks(todayList);
+        setIsOnLeaveToday((calRes.data.data.leavesByDate[todayKey] || []).includes(user.name ?? ''));
       } catch (err) {
         console.error(err);
       } finally {
@@ -93,6 +108,34 @@ export default function DashboardPage() {
           {user?.role === 'WORKER' && '작업자'}
           {' '}계정입니다.
         </p>
+      </div>
+
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>
+          오늘의 일정
+          {isOnLeaveToday && <span className={styles.leaveBadge}>오늘 휴가</span>}
+        </h2>
+        {loadingTasks ? (
+          <div className={styles.emptyState}>
+            <p className={styles.emptyDesc}>불러오는 중...</p>
+          </div>
+        ) : todayTasks.length === 0 ? (
+          <div className={styles.emptyState}>
+            <p className={styles.emptyDesc}>오늘 예정된 업무가 없습니다.</p>
+          </div>
+        ) : (
+          <ul className={styles.taskList}>
+            {todayTasks.map((t) => (
+              <li key={t.id} className={styles.taskItem}>
+                {renderTaskGroup(t)}
+                <Link href={`/tasks/${t.id}`} className={styles.taskTitle}>
+                  {t.title}
+                </Link>
+                <span className={styles.taskStatus}>{statusLabels[t.status] ?? t.status}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {user?.role === 'ADMIN' && (

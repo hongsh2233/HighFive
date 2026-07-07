@@ -162,7 +162,7 @@ high5/
 │   ├── app/
 │   │   ├── layout.tsx / page.tsx / globals.css
 │   │   ├── login/page.tsx
-│   │   ├── dashboard/page.tsx
+│   │   ├── dashboard/page.tsx          # "오늘의 일정"(오늘 목표일인 내 업무 + 오늘 휴가 여부, `/api/tasks/calendar` 재사용) → "나의 업무" → "최근 활동" 순
 │   │   ├── info/page.tsx              # FAQ
 │   │   ├── calendar/page.tsx
 │   │   ├── stats/page.tsx

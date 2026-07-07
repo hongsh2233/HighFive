@@ -426,3 +426,10 @@
   - `src/components/Providers.tsx`: `SessionProvider` 안쪽을 `DialogProvider`로 감싸 전체 앱에서 `useDialog()`를 쓸 수 있게 함. 세션 만료 안내 `alert(...)`를 `alertDialog(...).then(() => signOut(...).finally(...))` 체이닝으로 교체해 "안내 확인 → 로그아웃 → /login 이동" 순서를 그대로 유지.
   - 나머지 `confirm(...)` 호출 11곳(`src/app/projects/[id]/wiki/page.tsx`, `src/app/projects/page.tsx`, `src/app/users/page.tsx`(2곳), `src/app/tasks/[id]/page.tsx`, `src/app/tasks/page.tsx`(3곳: 속성 삭제/업무 삭제/하위업무 그룹전환), `src/app/my-notes/page.tsx`, `src/app/announcements/page.tsx`, `src/app/info/page.tsx`)를 각 컴포넌트에서 `useDialog()`로 받은 `confirm`으로 교체(`if (!confirm(...))` → `if (!(await confirm(...)))`). `tasks/page.tsx`의 "+ 하위 업무" onClick만 동기 화살표 함수였어서 `async`로 변경.
 - 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 42개는 기존 베이스라인과 동일). **실제 배포 환경에서 업무/속성/위키/내 자료/공지/정보 삭제, 프로젝트 종료, 팀원 비활성화/삭제, 하위 업무 그룹전환 confirm이 전부 모달로 뜨는지, 취소/확인이 정상 동작하는지, 세션 만료 알림도 모달로 뜨고 확인 후 로그아웃되는지 브라우저로 확인 필요.**
+
+## 2026-07-07 (50차)
+
+- **대시보드에 "오늘의 일정" 섹션 추가**: 구글 캘린더 연동이 안 된다는 문의로 코드를 확인한 결과, 이 앱에는 애초에 OAuth 기반 양방향 구글 캘린더 연동이 구현돼 있지 않다는 것을 확인함(`src/lib/auth.ts`는 Credentials 프로바이더만 있고 `GOOGLE_CLIENT_ID`/`SECRET`, 토큰 저장 모델 모두 없음). 실제로 존재하는 건 `/settings/calendar-sync`가 발급하는 읽기 전용 iCal 구독 URL(`GET /api/calendar/ical`)뿐이며 "일정 등록/가져오기"는 원래 지원 범위가 아니었음 — 이 부분은 별도 작업으로 분리하고, 이번 차수에서는 사용자가 1순위로 요청한 "대시보드에 오늘 일정 노출"만 구현.
+  - `src/app/dashboard/page.tsx`: 기존 `/tasks?limit=300` 조회에 더해 캘린더 페이지가 쓰는 `GET /api/tasks/calendar?year=&month=`(`src/app/api/tasks/calendar/route.ts`, 이미 날짜별 `tasksByDate`/`leavesByDate`를 반환)를 현재 연/월로 한 번 더 호출해 오늘 날짜 키(`todayKey`)로 내가 담당자인 업무만 추려 "오늘의 일정" 섹션으로 표시(새 API 없이 기존 엔드포인트 재사용). 오늘 승인된 휴가가 있으면 제목 옆에 "오늘 휴가" 뱃지 표시. 헤더 바로 아래, "나의 업무" 섹션보다 먼저 배치.
+  - `src/app/dashboard/dashboard.module.css`: `.leaveBadge`(초록 pill) 추가, `.sectionTitle`에 `display: flex` 추가해 뱃지와 나란히 배치.
+- 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 42개는 기존 베이스라인과 동일). **실제 배포 환경에서 오늘 목표일인 업무가 "오늘의 일정"에 노출되는지, 없을 때 빈 상태 문구가 보이는지, 오늘 승인된 휴가가 있을 때 뱃지가 보이는지 브라우저로 확인 필요.**
