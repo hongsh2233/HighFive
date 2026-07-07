@@ -71,18 +71,20 @@ export default function TaskListPage() {
 interface SharedHandlers {
   canEditTitle: boolean;
   canDelete: boolean;
+  currentUserId: number;
   assignableWorkers: Worker[];
   getStatuses: (projectId?: number | null) => ReturnType<ReturnType<typeof useProjectStatuses>['getStatuses']>;
   updateStatus: (id: number, status: string) => Promise<any>;
   updateTask: (id: number, data: any) => Promise<any>;
   deleteTask: (id: number) => Promise<any>;
+  createTask: (data: any) => Promise<any>;
 }
 
 function TaskListContent() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { tasks, loading, error, updateStatus, updateTask, deleteTask } = useTasks({ limit: 1000 });
+  const { tasks, loading, error, createTask, updateStatus, updateTask, deleteTask } = useTasks({ limit: 1000 });
   const { getStatuses } = useProjectStatuses();
   const canEditTitle = ['ADMIN', 'LEADER'].includes((user as any)?.role ?? '');
   const canDelete = canEditTitle;
@@ -191,7 +193,7 @@ function TaskListContent() {
     projectSections = projectSections.filter(({ project }) => project.id === pid);
   }
 
-  const handlers: SharedHandlers = { canEditTitle, canDelete, assignableWorkers, getStatuses, updateStatus, updateTask, deleteTask };
+  const handlers: SharedHandlers = { canEditTitle, canDelete, currentUserId: parseInt((user as any)?.id || '0'), assignableWorkers, getStatuses, updateStatus, updateTask, deleteTask, createTask };
 
   return (
     <div className={styles.container}>
@@ -294,16 +296,20 @@ function ProjectTaskSection({
   tasks,
   canEditTitle,
   canDelete,
+  currentUserId,
   assignableWorkers,
   getStatuses,
   updateStatus,
   updateTask,
   deleteTask,
+  createTask,
 }: SharedHandlers & { project: ProjectMeta | null; tasks: any[] }) {
   const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
   const [editingTitleId, setEditingTitleId] = useState<number | null>(null);
   const [titleDraft, setTitleDraft] = useState('');
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
 
   // 커스텀 필드(속성) — 노션식 자유 컬럼. 이 섹션의 프로젝트에 종속됨
   const { fields, saveFields, saveValue } = useProjectFields(project?.id ?? null);
@@ -379,6 +385,34 @@ function ProjectTaskSection({
       setShowAddField(false);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const startAddTask = () => {
+    if (!project) return;
+    setIsAddingTask(true);
+    setNewTaskTitle('');
+  };
+
+  const cancelAddTask = () => {
+    setIsAddingTask(false);
+    setNewTaskTitle('');
+  };
+
+  const submitAddTask = async () => {
+    const trimmed = newTaskTitle.trim();
+    if (!trimmed || !project) { cancelAddTask(); return; }
+    try {
+      await createTask({
+        title: trimmed,
+        workerId: currentUserId,
+        registrantId: currentUserId,
+        projectId: project.id,
+      } as any);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      cancelAddTask();
     }
   };
 
@@ -689,16 +723,6 @@ function ProjectTaskSection({
           {project ? `${project.name} 리스트` : '미지정 업무'}
         </h2>
         <span className={styles.projectSectionCount}>{tasks.length}건</span>
-        {project && (
-          <Link
-            href={`/tasks/create?projectId=${project.id}`}
-            className={styles.addTaskBtn}
-            aria-label="업무 등록"
-            title="업무 등록"
-          >
-            +
-          </Link>
-        )}
       </div>
 
       <div className={styles.tableWrapper}>
@@ -814,6 +838,30 @@ function ProjectTaskSection({
               }
               return rows;
             })}
+            {project && canEditTitle && (
+              <tr>
+                <td colSpan={colCount} className={styles.addTaskCell}>
+                  {isAddingTask ? (
+                    <input
+                      autoFocus
+                      value={newTaskTitle}
+                      onChange={(e) => setNewTaskTitle(e.target.value)}
+                      onBlur={submitAddTask}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') { e.preventDefault(); submitAddTask(); }
+                        if (e.key === 'Escape') { e.preventDefault(); cancelAddTask(); }
+                      }}
+                      placeholder="업무 제목을 입력하고 Enter"
+                      className={styles.addTaskInput}
+                    />
+                  ) : (
+                    <button type="button" onClick={startAddTask} className={styles.addTaskRow}>
+                      + 새 업무
+                    </button>
+                  )}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

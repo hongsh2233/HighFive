@@ -384,3 +384,12 @@
   - `src/app/tasks/create/page.tsx`: `searchParams.get('projectId')`를 읽어 `projectId` state 초기값으로 prefill(기존 `parentTaskIdParam` 패턴과 동일).
   - `src/app/tasks/tasks.module.css`: `.projectFilterSelect`(기존 `.statusFilterSelect`와 동일한 스타일), `.addTaskBtn`(`.addFieldBtn`과 동일한 아이콘 버튼 스타일) 추가.
 - 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 42개는 Prisma 클라이언트 미생성 관련 기존 베이스라인, 이전 차수와 동일). **실제 배포 환경에서 프로젝트 필터 선택/해제, 섹션별 "+" 버튼 클릭 후 프로젝트 prefill, 생성 후 `/tasks?projectId=X`로 복귀 시 필터가 자동 적용되는지 브라우저로 확인 필요.**
+
+## 2026-07-07 (45차)
+
+- **`/tasks` 업무 등록을 노션 스타일 인라인 추가로 전환**: 44차에서 추가한 섹션 헤더의 "+" 버튼(페이지 이동 방식)이 사용자가 원했던 "빈 칸을 클릭해 바로 입력"하는 노션식 UX와 달라 방식을 교체.
+  - `src/app/tasks/page.tsx`: `ProjectTaskSection` 테이블 맨 아래에 `+ 새 업무` 행을 추가. 클릭하면 인라인 `<input>`으로 전환되어 제목만 입력하고 Enter(또는 blur)하면 즉시 생성, Escape로 취소. 페이지 이동 없이 `useTasks` 훅의 `createTask`(응답을 로컬 `tasks` 상태 맨 앞에 추가)를 그대로 재사용해 목록에 바로 반영.
+  - `POST /api/tasks`가 `workerId`/`registrantId`를 필수로 요구하므로(`src/app/api/tasks/route.ts`) 생성 시 둘 다 현재 로그인 사용자로 채우고, 담당자는 각 행에 이미 있는 인라인 담당자 셀렉트로 바로 재배정하도록 함. 프로젝트가 없는 "미지정 업무" 섹션에는 노출하지 않음.
+  - 섹션 헤더의 "+" 버튼(`.addTaskBtn`, `/tasks/create?projectId=...`로 이동하던 방식)은 제거. `.projectSectionHeader`는 기존 그대로(`display: flex; align-items: center; gap: 8px`)라 별도 CSS 수정 없이 제목/건수만 남음.
+  - `src/app/tasks/tasks.module.css`: `.addTaskBtn` 제거, `.addTaskCell`/`.addTaskRow`/`.addTaskInput` 추가.
+- 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 42개는 기존 베이스라인과 동일). **실제 배포 환경에서 "+ 새 업무" 클릭 → 제목 입력 → Enter로 생성되는지, 생성된 업무의 담당자가 본인으로 설정되고 인라인 셀렉트로 재배정이 되는지, 빈 제목/Escape 취소가 정상 동작하는지 브라우저로 확인 필요.**

@@ -323,15 +323,32 @@
   color: var(--text-muted);
 }
 
-.addTaskBtn {
-  composes: btn btn-sm btn-ghost from global;
-  text-transform: none;
-  letter-spacing: normal;
-  font-weight: 700;
-  width: 24px;
-  height: 24px;
+.addTaskCell {
   padding: 0;
-  justify-content: center;
+  border-bottom: none;
+}
+
+.addTaskRow {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: var(--space-3);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.addTaskRow:hover {
+  background-color: var(--bg-subtle);
+  color: var(--text-secondary);
+}
+
+.addTaskInput {
+  composes: field-input from global;
+  width: 100%;
+  font-size: 13px;
 }
 
 @media (max-width: 640px) {
