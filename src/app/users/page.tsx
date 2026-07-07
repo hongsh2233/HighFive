@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import { Modal } from '@/components/common/Modal';
+import { useDialog } from '@/components/common/DialogProvider';
 import styles from './users.module.css';
 import Spinner from '@/components/common/Spinner';
 
@@ -34,6 +35,7 @@ interface Project {
 
 export default function UsersPage() {
   const { user: currentUser, isLoading: authLoading } = useAuth();
+  const { confirm } = useDialog();
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,7 +138,7 @@ export default function UsersPage() {
   };
 
   const handleDeactivate = async (id: number) => {
-    if (!confirm('비활성화하시겠습니까?')) return;
+    if (!(await confirm('비활성화하시겠습니까?'))) return;
     try {
       await apiClient.delete(`/users/${id}`);
       await fetchUsers();
@@ -146,7 +148,7 @@ export default function UsersPage() {
   };
 
   const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`"${name}" 팀원을 완전히 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) return;
+    if (!(await confirm(`"${name}" 팀원을 완전히 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`))) return;
     try {
       await apiClient.delete(`/users/${id}?hard=true`);
       setMessage({ type: 'success', text: '삭제되었습니다.' });

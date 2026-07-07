@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 import { UserRole } from '@/types';
 import NotificationToastManager from './common/NotificationToast';
 import StickyNotesPanel from './StickyNotesPanel';
+import { DialogProvider, useDialog } from './common/DialogProvider';
 
 function AuthSync() {
   const { data: session, status } = useSession();
@@ -14,6 +15,7 @@ function AuthSync() {
   const router = useRouter();
   const pathname = usePathname();
   const wasAuthenticated = useRef(false);
+  const { alertDialog } = useDialog();
 
   useEffect(() => {
     if (session?.user) {
@@ -33,10 +35,11 @@ function AuthSync() {
   useEffect(() => {
     if (status === 'unauthenticated' && wasAuthenticated.current && pathname !== '/login') {
       wasAuthenticated.current = false;
-      alert('보안을 위해 30분 동안 활동이 없어 세션이 만료되었습니다. 다시 로그인해주세요.');
-      signOut({ redirect: false }).finally(() => router.push('/login'));
+      alertDialog('보안을 위해 30분 동안 활동이 없어 세션이 만료되었습니다. 다시 로그인해주세요.').then(() => {
+        signOut({ redirect: false }).finally(() => router.push('/login'));
+      });
     }
-  }, [status, pathname, router]);
+  }, [status, pathname, router, alertDialog]);
 
   return null;
 }
@@ -56,10 +59,12 @@ function StickyNotesGate() {
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider refetchInterval={60} refetchOnWindowFocus>
-      <AuthSync />
-      <NotificationToastGate />
-      <StickyNotesGate />
-      {children}
+      <DialogProvider>
+        <AuthSync />
+        <NotificationToastGate />
+        <StickyNotesGate />
+        {children}
+      </DialogProvider>
     </SessionProvider>
   );
 }

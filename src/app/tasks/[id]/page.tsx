@@ -10,6 +10,7 @@ import { Task, TimeLog, ProjectField } from '@/types';
 import styles from './detail.module.css';
 import { actionLabel } from '@/lib/task-history';
 import Spinner from '@/components/common/Spinner';
+import { useDialog } from '@/components/common/DialogProvider';
 
 interface Worker {
   id: number;
@@ -22,6 +23,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const { id } = use(params);
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
+  const { confirm } = useDialog();
   const { getStatuses } = useProjectStatuses();
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
@@ -180,7 +182,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
   const handleDelete = async () => {
     if (!task) return;
-    if (!confirm('이 업무를 삭제하시겠습니까? 삭제 후에는 되돌릴 수 없습니다.')) return;
+    if (!(await confirm('이 업무를 삭제하시겠습니까? 삭제 후에는 되돌릴 수 없습니다.'))) return;
     setDeleting(true);
     try {
       await apiClient.delete(`/tasks/${task.id}`);

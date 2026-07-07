@@ -418,3 +418,11 @@
   - `src/app/tasks/create/page.tsx`: `fetchParentTask`가 부모 업무의 `projectId`도 함께 읽어와 프로젝트 select를 자동으로 부모와 동일하게 선택하도록 함(기존엔 제목만 읽어와 "상위 그룹: 📁 {제목}" 표시에만 쓰고 프로젝트는 비어 있거나 LEADER의 경우 본인 소속 첫 프로젝트로 잘못 채워졌음). LEADER 자동 프로젝트 선택 로직은 `parentTaskIdParam`이 있을 때는 건너뛰도록 조건 추가해 경합 방지. 하위 업무 등록 모드에서는 프로젝트 select를 `disabled` 처리(부모와 다른 프로젝트로 변경 자체를 막음).
   - `src/app/tasks/page.tsx`: "+ 하위 업무" 버튼을 `<Link>`에서 `<button>`(클릭 시 `router.push`)으로 교체. 클릭 시 먼저 `confirm('하위 업무를 등록하면 이 업무는 그룹 업무로 전환됩니다. 계속하시겠습니까?')`로 확인받고 취소 시 이동하지 않음. 이미 비고(`hasNotes`)가 있는 업무는 버튼을 `disabled` 처리하고 툴팁으로 이유를 안내(전역 `.btn:disabled` 스타일 재사용, 별도 CSS 추가 없음).
 - 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 42개는 기존 베이스라인과 동일). **실제 배포 환경에서 특정 프로젝트 업무의 "+ 하위 업무" 클릭 시 확인 다이얼로그가 뜨고, 확인 후 이동한 등록 화면에서 프로젝트가 자동 선택+비활성화되어 있는지, 비고가 있는 업무는 버튼이 비활성화되는지 브라우저로 확인 필요.**
+
+## 2026-07-07 (49차)
+
+- **네이티브 alert/confirm을 전부 모달로 교체**: 브라우저 기본 `alert()`/`confirm()`은 앱의 Notion/Jira풍 디자인 시스템과 스타일이 완전히 달라 이질감이 컸음. 이미 있던 범용 `Modal` 컴포넌트(`src/components/common/Modal.tsx`)를 재사용해 Promise 기반 다이얼로그 시스템으로 교체.
+  - `src/components/common/DialogProvider.tsx`(신규), `DialogProvider.module.css`(신규): `useDialog()` 훅이 `confirm(message, options?): Promise<boolean>`과 `alertDialog(message): Promise<void>`를 제공. 대기 중인 다이얼로그 하나만 상태로 유지하고 `Modal`로 렌더링(취소/확인 버튼은 전역 `.btn btn-secondary`/`.btn btn-primary` 재사용, Escape/오버레이 클릭은 취소로 처리).
+  - `src/components/Providers.tsx`: `SessionProvider` 안쪽을 `DialogProvider`로 감싸 전체 앱에서 `useDialog()`를 쓸 수 있게 함. 세션 만료 안내 `alert(...)`를 `alertDialog(...).then(() => signOut(...).finally(...))` 체이닝으로 교체해 "안내 확인 → 로그아웃 → /login 이동" 순서를 그대로 유지.
+  - 나머지 `confirm(...)` 호출 11곳(`src/app/projects/[id]/wiki/page.tsx`, `src/app/projects/page.tsx`, `src/app/users/page.tsx`(2곳), `src/app/tasks/[id]/page.tsx`, `src/app/tasks/page.tsx`(3곳: 속성 삭제/업무 삭제/하위업무 그룹전환), `src/app/my-notes/page.tsx`, `src/app/announcements/page.tsx`, `src/app/info/page.tsx`)를 각 컴포넌트에서 `useDialog()`로 받은 `confirm`으로 교체(`if (!confirm(...))` → `if (!(await confirm(...)))`). `tasks/page.tsx`의 "+ 하위 업무" onClick만 동기 화살표 함수였어서 `async`로 변경.
+- 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 42개는 기존 베이스라인과 동일). **실제 배포 환경에서 업무/속성/위키/내 자료/공지/정보 삭제, 프로젝트 종료, 팀원 비활성화/삭제, 하위 업무 그룹전환 confirm이 전부 모달로 뜨는지, 취소/확인이 정상 동작하는지, 세션 만료 알림도 모달로 뜨고 확인 후 로그아웃되는지 브라우저로 확인 필요.**

@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './projects.module.css';
 import Spinner from '@/components/common/Spinner';
+import { useDialog } from '@/components/common/DialogProvider';
 
 interface ProjectMember {
   user: { id: number; name: string; email: string; role: string };
@@ -28,6 +29,7 @@ const emptyForm = { name: '', projectManagerName: '', projectLeadName: '' };
 
 export default function ProjectsPage() {
   const { user } = useAuth();
+  const { confirm } = useDialog();
   const isAdmin = user?.role === 'ADMIN';
   const canManage = ['ADMIN', 'LEADER'].includes(user?.role || '');
 
@@ -111,7 +113,7 @@ export default function ProjectsPage() {
   };
 
   const handleClose = async (projectId: number) => {
-    if (!confirm('프로젝트를 종료하시겠습니까?')) return;
+    if (!(await confirm('프로젝트를 종료하시겠습니까?'))) return;
     try {
       await apiClient.patch(`/projects/${projectId}`, { status: 'CLOSED' });
       setMessage({ type: 'success', text: '프로젝트가 종료되었습니다.' });

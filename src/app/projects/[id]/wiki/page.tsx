@@ -8,6 +8,7 @@ import apiClient from '@/lib/api-client';
 import styles from './wiki.module.css';
 import Spinner from '@/components/common/Spinner';
 import SimpleEditor from '@/components/common/SimpleEditor';
+import { useDialog } from '@/components/common/DialogProvider';
 
 interface WikiPage {
   id: number;
@@ -68,6 +69,7 @@ export default function ProjectWikiPage({ params }: { params: Promise<{ id: stri
   const openParam = searchParams.get('open');
 
   const { user, isLoading: authLoading } = useAuth();
+  const { confirm } = useDialog();
   const [projectName, setProjectName] = useState('');
   const [pages, setPages] = useState<WikiPage[]>([]);
   const [openIds, setOpenIds] = useState<Set<number>>(new Set());
@@ -154,7 +156,7 @@ export default function ProjectWikiPage({ params }: { params: Promise<{ id: stri
   };
 
   const handleDelete = async (pageId: number) => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
+    if (!(await confirm('정말 삭제하시겠습니까?'))) return;
     try {
       await apiClient.delete(`/projects/${projectId}/wiki/${pageId}`);
       await fetchAll();

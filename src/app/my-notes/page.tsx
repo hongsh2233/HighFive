@@ -6,6 +6,7 @@ import apiClient from '@/lib/api-client';
 import styles from './my-notes.module.css';
 import Spinner from '@/components/common/Spinner';
 import SimpleEditor from '@/components/common/SimpleEditor';
+import { useDialog } from '@/components/common/DialogProvider';
 
 const MAX_PAGES = 3;
 
@@ -62,6 +63,7 @@ function renderInline(text: string): React.ReactNode {
 
 export default function MyNotesPage() {
   const { isLoading: authLoading } = useAuth();
+  const { confirm } = useDialog();
   const [pages, setPages] = useState<UserPageDoc[]>([]);
   const [openIds, setOpenIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -135,7 +137,7 @@ export default function MyNotesPage() {
   };
 
   const handleDelete = async (pageId: number) => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
+    if (!(await confirm('정말 삭제하시겠습니까?'))) return;
     try {
       await apiClient.delete(`/my-pages/${pageId}`);
       await fetchAll();

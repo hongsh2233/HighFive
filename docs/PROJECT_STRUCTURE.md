@@ -254,10 +254,11 @@ high5/
 │   │   ├── WikiSearchButton.tsx       # 우하단 플로팅 버튼 — 클릭 시 위키 검색 모달, 결과 클릭 시 해당 프로젝트 위키로 이동
 │   │   ├── StickyNotesPanel.tsx       # 화면 세로 중앙 가장자리 탭 → 좌/우 슬라이드 패널, 개인 메모 스티커(최대 3개) 추가/수정/삭제/드래그 재정렬. Providers.tsx에 로그인 시 전역 렌더링
 │   │   ├── LayoutWrapper.tsx
-│   │   ├── Providers.tsx              # SessionProvider + AuthSync + NotificationToastGate + StickyNotesGate
+│   │   ├── Providers.tsx              # SessionProvider + DialogProvider + AuthSync + NotificationToastGate + StickyNotesGate
 │   │   ├── common/
 │   │   │   ├── Badge.tsx
 │   │   │   ├── Modal.tsx
+│   │   │   ├── DialogProvider.tsx     # 네이티브 alert/confirm 대체용 전역 다이얼로그. `useDialog()`가 `confirm(msg): Promise<boolean>`/`alertDialog(msg): Promise<void>` 제공(Modal 재사용). 삭제/전환 등 확인이 필요한 곳은 반드시 이걸 쓰고 네이티브 confirm/alert는 쓰지 않는다.
 │   │   │   ├── Spinner.tsx            # 회전 링 스피너 — "로딩 중..." 텍스트 대체
 │   │   │   ├── NotificationToast.tsx  # useNotifications 폴링 결과로 우하단 토스트 표시(Providers.tsx에 전역 배치)
 │   │   │   └── SimpleEditor.tsx       # 경량 마크다운 에디터(굵게/기울임/목록 툴바) — wiki, 프로젝트 위키, /info, /my-notes에서 공용

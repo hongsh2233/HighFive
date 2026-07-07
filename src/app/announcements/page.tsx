@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './announcements.module.css';
 import Spinner from '@/components/common/Spinner';
+import { useDialog } from '@/components/common/DialogProvider';
 
 interface Announcement {
   id: number;
@@ -16,6 +17,7 @@ interface Announcement {
 
 export default function AnnouncementsPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const { confirm } = useDialog();
   const canManage = ['ADMIN', 'LEADER'].includes(user?.role || '');
 
   const [items, setItems] = useState<Announcement[]>([]);
@@ -85,7 +87,7 @@ export default function AnnouncementsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
+    if (!(await confirm('정말 삭제하시겠습니까?'))) return;
     try {
       await apiClient.delete(`/announcements/${id}`);
       await fetchItems();

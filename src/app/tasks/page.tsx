@@ -12,6 +12,7 @@ import apiClient from '@/lib/api-client';
 import { ProjectField, FieldType } from '@/types';
 import styles from './tasks.module.css';
 import Spinner from '@/components/common/Spinner';
+import { useDialog } from '@/components/common/DialogProvider';
 
 interface Worker {
   id: number;
@@ -305,6 +306,7 @@ function ProjectTaskSection({
   createTask,
 }: SharedHandlers & { project: ProjectMeta | null; tasks: any[] }) {
   const router = useRouter();
+  const { confirm } = useDialog();
   const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
   const [editingTitleId, setEditingTitleId] = useState<number | null>(null);
@@ -425,7 +427,7 @@ function ProjectTaskSection({
   };
 
   const handleRemoveField = async (fieldId: number) => {
-    if (!confirm('이 속성을 삭제하시겠습니까? 저장된 값도 함께 삭제됩니다.')) return;
+    if (!(await confirm('이 속성을 삭제하시겠습니까? 저장된 값도 함께 삭제됩니다.'))) return;
     try {
       const next = fields
         .filter((f) => f.id !== fieldId)
@@ -459,7 +461,7 @@ function ProjectTaskSection({
   };
 
   const handleDeleteTask = async (id: number) => {
-    if (!confirm('이 업무를 삭제하시겠습니까? 삭제 후에는 되돌릴 수 없습니다.')) return;
+    if (!(await confirm('이 업무를 삭제하시겠습니까? 삭제 후에는 되돌릴 수 없습니다.'))) return;
     try {
       await deleteTask(id);
     } catch (err) {
@@ -680,8 +682,8 @@ function ProjectTaskSection({
                 className={styles.addSubBtnSmall}
                 disabled={hasNotes}
                 title={hasNotes ? '비고가 있는 업무는 하위 업무를 등록할 수 없습니다.' : undefined}
-                onClick={() => {
-                  if (!confirm('하위 업무를 등록하면 이 업무는 그룹 업무로 전환됩니다. 계속하시겠습니까?')) return;
+                onClick={async () => {
+                  if (!(await confirm('하위 업무를 등록하면 이 업무는 그룹 업무로 전환됩니다. 계속하시겠습니까?'))) return;
                   router.push(`/tasks/create?parentTaskId=${task.id}`);
                 }}
               >

@@ -6,6 +6,7 @@ import apiClient from '@/lib/api-client';
 import styles from './info.module.css';
 import Spinner from '@/components/common/Spinner';
 import SimpleEditor from '@/components/common/SimpleEditor';
+import { useDialog } from '@/components/common/DialogProvider';
 
 interface InfoItem {
   id: number;
@@ -68,6 +69,7 @@ function renderInline(text: string): React.ReactNode {
 
 export default function InfoPage() {
   const { user } = useAuth();
+  const { confirm } = useDialog();
   const isAdmin = user?.role === 'ADMIN';
 
   const [items, setItems] = useState<InfoItem[]>([]);
@@ -144,7 +146,7 @@ export default function InfoPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
+    if (!(await confirm('정말 삭제하시겠습니까?'))) return;
     try {
       await apiClient.delete(`/info/${id}`);
       await fetchItems();
