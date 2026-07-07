@@ -393,3 +393,11 @@
   - 섹션 헤더의 "+" 버튼(`.addTaskBtn`, `/tasks/create?projectId=...`로 이동하던 방식)은 제거. `.projectSectionHeader`는 기존 그대로(`display: flex; align-items: center; gap: 8px`)라 별도 CSS 수정 없이 제목/건수만 남음.
   - `src/app/tasks/tasks.module.css`: `.addTaskBtn` 제거, `.addTaskCell`/`.addTaskRow`/`.addTaskInput` 추가.
 - 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 42개는 기존 베이스라인과 동일). **실제 배포 환경에서 "+ 새 업무" 클릭 → 제목 입력 → Enter로 생성되는지, 생성된 업무의 담당자가 본인으로 설정되고 인라인 셀렉트로 재배정이 되는지, 빈 제목/Escape 취소가 정상 동작하는지 브라우저로 확인 필요.**
+
+## 2026-07-07 (46차)
+
+- **`/tasks` 인라인 업무 등록에 담당자/목표일 선택 추가**: 45차에서 만든 "+ 새 업무" 인라인 행이 제목만 입력하면 담당자/등록자가 항상 본인으로 고정 생성되던 것을, 생성 시점에 담당자와 목표일도 바로 고를 수 있도록 확장(링크는 기존처럼 등록 후 `/tasks/[id]` 상세에서 연결).
+  - `src/app/tasks/page.tsx`: 인라인 추가 행을 제목 `<input>` 하나에서 제목 + 담당자 `<select>`(`assignableWorkers` 기준, 본인이 목록에 없으면 "나(본인)"으로 맨 앞에 추가 — 기존 행별 담당자 셀렉트의 폴백 패턴과 동일) + 목표일 `<input type="date">` + 추가/취소 버튼으로 구성된 한 줄짜리 `<form>`으로 확장.
+  - 기존 `onBlur` 자동 제출/취소 로직은 제거 — 담당자 select를 조작하면 제목 input이 blur되어 조기 제출되는 문제가 있었기 때문에, 이제는 `Enter`(폼 submit)/취소 버튼/`Escape`로만 명시적으로 확정·취소한다.
+  - `src/app/tasks/tasks.module.css`: `.addTaskForm`, `.addTaskWorkerSelect`, `.addTaskDateInput`, `.addTaskSubmitBtn`, `.addTaskCancelBtn` 추가, `.addTaskInput`은 `flex: 1`로 변경.
+- 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 42개는 기존 베이스라인과 동일). **실제 배포 환경에서 담당자 select 변경 중 폼이 의도치 않게 닫히지 않는지, 목표일 지정 후 Enter로 생성 시 값이 반영되는지, ✕ 버튼/Escape 취소가 정상 동작하는지 브라우저로 확인 필요.**

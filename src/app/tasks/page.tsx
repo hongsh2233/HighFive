@@ -310,6 +310,8 @@ function ProjectTaskSection({
   const [titleDraft, setTitleDraft] = useState('');
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskWorkerId, setNewTaskWorkerId] = useState(String(currentUserId));
+  const [newTaskTargetDate, setNewTaskTargetDate] = useState('');
 
   // 커스텀 필드(속성) — 노션식 자유 컬럼. 이 섹션의 프로젝트에 종속됨
   const { fields, saveFields, saveValue } = useProjectFields(project?.id ?? null);
@@ -392,22 +394,27 @@ function ProjectTaskSection({
     if (!project) return;
     setIsAddingTask(true);
     setNewTaskTitle('');
+    setNewTaskWorkerId(String(currentUserId));
+    setNewTaskTargetDate('');
   };
 
   const cancelAddTask = () => {
     setIsAddingTask(false);
     setNewTaskTitle('');
+    setNewTaskWorkerId(String(currentUserId));
+    setNewTaskTargetDate('');
   };
 
   const submitAddTask = async () => {
     const trimmed = newTaskTitle.trim();
-    if (!trimmed || !project) { cancelAddTask(); return; }
+    if (!trimmed || !project) return;
     try {
       await createTask({
         title: trimmed,
-        workerId: currentUserId,
+        workerId: newTaskWorkerId ? parseInt(newTaskWorkerId) : currentUserId,
         registrantId: currentUserId,
         projectId: project.id,
+        targetDate: newTaskTargetDate || undefined,
       } as any);
     } catch (err) {
       console.error(err);
@@ -842,18 +849,43 @@ function ProjectTaskSection({
               <tr>
                 <td colSpan={colCount} className={styles.addTaskCell}>
                   {isAddingTask ? (
-                    <input
-                      autoFocus
-                      value={newTaskTitle}
-                      onChange={(e) => setNewTaskTitle(e.target.value)}
-                      onBlur={submitAddTask}
+                    <form
+                      className={styles.addTaskForm}
+                      onSubmit={(e) => { e.preventDefault(); submitAddTask(); }}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') { e.preventDefault(); submitAddTask(); }
                         if (e.key === 'Escape') { e.preventDefault(); cancelAddTask(); }
                       }}
-                      placeholder="업무 제목을 입력하고 Enter"
-                      className={styles.addTaskInput}
-                    />
+                    >
+                      <input
+                        autoFocus
+                        value={newTaskTitle}
+                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                        placeholder="업무 제목을 입력하고 Enter"
+                        className={styles.addTaskInput}
+                      />
+                      <select
+                        value={newTaskWorkerId}
+                        onChange={(e) => setNewTaskWorkerId(e.target.value)}
+                        className={styles.addTaskWorkerSelect}
+                      >
+                        {(!assignableWorkers.find(w => w.id === currentUserId)
+                          ? [{ id: currentUserId, name: '나(본인)' } as Worker, ...assignableWorkers]
+                          : assignableWorkers
+                        ).map((w) => (
+                          <option key={w.id} value={w.id}>{w.name}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="date"
+                        value={newTaskTargetDate}
+                        onChange={(e) => setNewTaskTargetDate(e.target.value)}
+                        className={styles.addTaskDateInput}
+                      />
+                      <button type="submit" className={styles.addTaskSubmitBtn}>추가</button>
+                      <button type="button" onClick={cancelAddTask} className={styles.addTaskCancelBtn} aria-label="취소" title="취소">
+                        ✕
+                      </button>
+                    </form>
                   ) : (
                     <button type="button" onClick={startAddTask} className={styles.addTaskRow}>
                       + 새 업무

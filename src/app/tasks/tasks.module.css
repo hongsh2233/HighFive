@@ -345,10 +345,50 @@
   color: var(--text-secondary);
 }
 
+.addTaskForm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--space-2) var(--space-3);
+}
+
 .addTaskInput {
   composes: field-input from global;
-  width: 100%;
+  flex: 1;
   font-size: 13px;
+}
+
+.addTaskWorkerSelect {
+  composes: field-select from global;
+  width: 120px;
+  flex-shrink: 0;
+  font-size: 13px;
+}
+
+.addTaskDateInput {
+  composes: field-input from global;
+  width: 140px;
+  flex-shrink: 0;
+  font-size: 13px;
+}
+
+.addTaskSubmitBtn {
+  composes: btn btn-sm btn-primary from global;
+  flex-shrink: 0;
+}
+
+.addTaskCancelBtn {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.addTaskCancelBtn:hover {
+  color: var(--danger);
 }
 
 @media (max-width: 640px) {
