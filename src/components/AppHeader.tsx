@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { signOut } from 'next-auth/react';
 import { useState, useRef } from 'react';
+import { markManualLogout } from '@/lib/logout-flag';
 import styles from './AppHeader.module.css';
 
 type MenuName = 'task' | 'settings' | 'account' | null;
@@ -27,6 +28,7 @@ export default function AppHeader() {
   };
 
   const handleLogout = async () => {
+    markManualLogout();
     await signOut({ redirect: false });
     router.push('/login');
   };

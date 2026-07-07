@@ -433,3 +433,8 @@
   - `src/app/dashboard/page.tsx`: 기존 `/tasks?limit=300` 조회에 더해 캘린더 페이지가 쓰는 `GET /api/tasks/calendar?year=&month=`(`src/app/api/tasks/calendar/route.ts`, 이미 날짜별 `tasksByDate`/`leavesByDate`를 반환)를 현재 연/월로 한 번 더 호출해 오늘 날짜 키(`todayKey`)로 내가 담당자인 업무만 추려 "오늘의 일정" 섹션으로 표시(새 API 없이 기존 엔드포인트 재사용). 오늘 승인된 휴가가 있으면 제목 옆에 "오늘 휴가" 뱃지 표시. 헤더 바로 아래, "나의 업무" 섹션보다 먼저 배치.
   - `src/app/dashboard/dashboard.module.css`: `.leaveBadge`(초록 pill) 추가, `.sectionTitle`에 `display: flex` 추가해 뱃지와 나란히 배치.
 - 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 42개는 기존 베이스라인과 동일). **실제 배포 환경에서 오늘 목표일인 업무가 "오늘의 일정"에 노출되는지, 없을 때 빈 상태 문구가 보이는지, 오늘 승인된 휴가가 있을 때 뱃지가 보이는지 브라우저로 확인 필요.**
+- **버그 수정: 로그아웃 클릭 시에도 "세션 만료" 안내가 잘못 뜨던 문제**: `AppHeader`의 로그아웃 버튼이 `signOut()`을 호출하면 세션 상태가 `unauthenticated`로 바뀌는데, `Providers.tsx`의 `AuthSync`가 이를 30분 미활동 세션 만료와 구분하지 못해 매번 "보안을 위해..." 모달이 잘못 떴음.
+  - `src/lib/logout-flag.ts`(신규): `markManualLogout()`/`consumeManualLogout()`로 "방금 사용자가 직접 로그아웃했다"를 표시하는 모듈 스코프 플래그.
+  - `src/components/AppHeader.tsx`의 `handleLogout`에서 `signOut()` 호출 직전에 `markManualLogout()` 호출.
+  - `src/components/Providers.tsx`의 `AuthSync`: 세션 만료 감지 분기에서 `consumeManualLogout()`이 `true`면 안내 없이 조용히 종료(자동 만료일 때만 안내 모달 표시).
+- 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 42개는 기존 베이스라인과 동일). **실제 배포 환경에서 헤더 로그아웃 클릭 시 안내 모달 없이 바로 `/login`으로 이동하는지, 반대로 30분 미활동 후 자동 로그아웃 시에는 여전히 안내 모달이 뜨는지 브라우저로 확인 필요.**

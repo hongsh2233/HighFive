@@ -8,6 +8,7 @@ import { UserRole } from '@/types';
 import NotificationToastManager from './common/NotificationToast';
 import StickyNotesPanel from './StickyNotesPanel';
 import { DialogProvider, useDialog } from './common/DialogProvider';
+import { consumeManualLogout } from '@/lib/logout-flag';
 
 function AuthSync() {
   const { data: session, status } = useSession();
@@ -35,6 +36,7 @@ function AuthSync() {
   useEffect(() => {
     if (status === 'unauthenticated' && wasAuthenticated.current && pathname !== '/login') {
       wasAuthenticated.current = false;
+      if (consumeManualLogout()) return; // 사용자가 직접 로그아웃한 경우는 만료 안내를 띄우지 않음
       alertDialog('보안을 위해 30분 동안 활동이 없어 세션이 만료되었습니다. 다시 로그인해주세요.').then(() => {
         signOut({ redirect: false }).finally(() => router.push('/login'));
       });
