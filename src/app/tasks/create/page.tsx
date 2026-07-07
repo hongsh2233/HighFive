@@ -105,6 +105,9 @@ function TaskCreateForm() {
     try {
       const res = await axios.get(`/api/tasks/${id}`);
       setParentTask({ id: res.data.data.id, title: res.data.data.title });
+      if (res.data.data.projectId) {
+        setProjectId(String(res.data.data.projectId));
+      }
     } catch (err) {
       console.error(err);
     }
@@ -129,7 +132,7 @@ function TaskCreateForm() {
       const res = await axios.get('/api/projects');
       const activeProjects = (res.data.data || []).filter((p: Project) => p.status === 'ACTIVE');
       setProjects(activeProjects);
-      if (isLeader && activeProjects.length > 0) {
+      if (isLeader && !parentTaskIdParam && activeProjects.length > 0) {
         const myProject = activeProjects.find((p: Project) =>
           p.members.some((m: { user: Worker }) => m.user.id === Number(user?.id))
         );
@@ -229,7 +232,7 @@ function TaskCreateForm() {
 
             <div className={styles.fieldGroup}>
               <label className={styles.label}>프로젝트 {isLeader && <span className={styles.required}>*</span>}</label>
-              <select value={projectId} onChange={e => setProjectId(e.target.value)} className={styles.input} disabled={loading}>
+              <select value={projectId} onChange={e => setProjectId(e.target.value)} className={styles.input} disabled={loading || !!parentTask}>
                 <option value="">프로젝트 선택 {isAdmin ? '(선택사항)' : ''}</option>
                 {projects.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>

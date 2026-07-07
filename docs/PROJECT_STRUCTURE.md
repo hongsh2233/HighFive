@@ -324,9 +324,9 @@ high5/
 ### 그룹 업무 / 하위 업무
 - **등록 (`/tasks/create`)**: "그룹 업무로 등록" 체크 시 비고(Quill 에디터) 입력란이 사라지고 하위 업무(제목/담당자/목표일) 행을 여러 개 추가할 수 있다. 하위 업무를 0건만 등록해도(체크만 하고 비워둠) 그룹으로 생성된다(`Task.isGroup = true`).
   - `POST /api/tasks`에 `subTasks: [{ title, workerId, targetDate }]` 배열을 함께 보내면 부모 Task 생성 후 각 항목을 `parentTaskId`로 연결된 자식 Task로 생성한다. 라벨은 부모/자식 모두 동일하게 적용된다.
-- **이후 하위 업무 추가**: `/tasks/create?parentTaskId={groupId}` 형태로 접속하면 등록 폼이 "하위 업무 등록" 모드로 전환된다. 그룹/비고 UI 대신 상단에 "상위 그룹: {부모 업무명}" 고정 표시가 나타나고, 단일 업무 등록 시 `POST /api/tasks`에 `parentTaskId`만 함께 전달해 해당 그룹의 자식 Task 1건으로 생성한다.
+- **이후 하위 업무 추가**: `/tasks/create?parentTaskId={groupId}` 형태로 접속하면 등록 폼이 "하위 업무 등록" 모드로 전환된다. 그룹/비고 UI 대신 상단에 "상위 그룹: {부모 업무명}" 고정 표시가 나타나고, 단일 업무 등록 시 `POST /api/tasks`에 `parentTaskId`만 함께 전달해 해당 그룹의 자식 Task 1건으로 생성한다. 이때 프로젝트 select는 부모 업무의 `projectId`를 자동으로 읽어와 이미 선택된 채로 비활성화된다(부모와 다른 프로젝트로 등록되는 것을 방지).
   - `POST /api/tasks`는 요청 바디에 `parentTaskId`가 있으면 위 단일 자식 생성 경로로, 없으면 기존 그룹+`subTasks` 일괄 생성 경로로 분기한다.
-- **목록 (`/tasks`)**: 부모가 없는(최상위) 업무만 1차 행으로 표시되고, `isGroup === true`이거나 하위 업무가 있는 행은 구글시트처럼 ▶/▼ 토글로 하위 업무를 펼치고 접을 수 있다. `isGroup === true`인 행에는 "+ 하위 업무" 버튼이 노출되며 `/tasks/create?parentTaskId=...`로 이동한다.
+- **목록 (`/tasks`)**: 부모가 없는(최상위) 업무만 1차 행으로 표시되고, `isGroup === true`이거나 하위 업무가 있는 행은 구글시트처럼 ▶/▼ 토글로 하위 업무를 펼치고 접을 수 있다. 최상위 업무 행에는 항상 "+ 하위 업무" 버튼이 노출되며, 클릭 시 "하위 업무를 등록하면 이 업무는 그룹 업무로 전환됩니다" confirm 다이얼로그를 거쳐 `/tasks/create?parentTaskId=...`로 이동한다(취소하면 이동하지 않음). 이미 비고가 채워진 업무는 이 버튼이 비활성화된다(그룹 전환 시 목록에서 비고 토글을 더 이상 볼 수 없게 되는 것을 방지).
 
 ### 업무 라벨 (`긴급`/`주말대응`/`비상`)
 - `src/lib/constants.ts`의 `TASK_LABEL_LIST`/`TASK_LABEL_TEXT`/`TASK_LABEL_COLOR`로 정의.

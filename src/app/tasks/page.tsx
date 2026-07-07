@@ -304,6 +304,7 @@ function ProjectTaskSection({
   deleteTask,
   createTask,
 }: SharedHandlers & { project: ProjectMeta | null; tasks: any[] }) {
+  const router = useRouter();
   const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
   const [editingTitleId, setEditingTitleId] = useState<number | null>(null);
@@ -674,9 +675,18 @@ function ProjectTaskSection({
               </Link>
             )}
             {!isChild && (
-              <Link href={`/tasks/create?parentTaskId=${task.id}`} className={styles.addSubBtnSmall}>
+              <button
+                type="button"
+                className={styles.addSubBtnSmall}
+                disabled={hasNotes}
+                title={hasNotes ? '비고가 있는 업무는 하위 업무를 등록할 수 없습니다.' : undefined}
+                onClick={() => {
+                  if (!confirm('하위 업무를 등록하면 이 업무는 그룹 업무로 전환됩니다. 계속하시겠습니까?')) return;
+                  router.push(`/tasks/create?parentTaskId=${task.id}`);
+                }}
+              >
                 + 하위 업무
-              </Link>
+              </button>
             )}
             {canDelete && (
               <button
