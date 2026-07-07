@@ -54,6 +54,7 @@ function TaskCreateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const parentTaskIdParam = searchParams.get('parentTaskId');
+  const projectIdParam = searchParams.get('projectId');
   const { user, isLoading: authLoading } = useAuth();
 
   const [parentTask, setParentTask] = useState<{ id: number; title: string } | null>(null);
@@ -61,7 +62,7 @@ function TaskCreateForm() {
   const [workerId, setWorkerId] = useState('');
   const [targetDate, setTargetDate] = useState('');
   const [notes, setNotes] = useState('');
-  const [projectId, setProjectId] = useState('');
+  const [projectId, setProjectId] = useState(projectIdParam || '');
   const [projects, setProjects] = useState<Project[]>([]);
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [loading, setLoading] = useState(false);

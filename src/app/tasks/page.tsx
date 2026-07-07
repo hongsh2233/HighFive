@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useTasks } from '@/hooks/useTask';
 import { useProjectStatuses } from '@/hooks/useProjectStatuses';
@@ -79,6 +80,8 @@ interface SharedHandlers {
 
 function TaskListContent() {
   const { user, isLoading: authLoading } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { tasks, loading, error, updateStatus, updateTask, deleteTask } = useTasks({ limit: 1000 });
   const { getStatuses } = useProjectStatuses();
   const canEditTitle = ['ADMIN', 'LEADER'].includes((user as any)?.role ?? '');
@@ -86,8 +89,20 @@ function TaskListContent() {
 
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedWorker, setSelectedWorker] = useState('');
+  const [selectedProject, setSelectedProject] = useState(searchParams.get('projectId') || '');
   const [assignableWorkers, setAssignableWorkers] = useState<Worker[]>([]);
   const [myProjects, setMyProjects] = useState<ProjectMeta[]>([]);
+
+  const handleProjectFilterChange = (value: string) => {
+    setSelectedProject(value);
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set('projectId', value);
+    } else {
+      params.delete('projectId');
+    }
+    router.replace(params.toString() ? `/tasks?${params.toString()}` : '/tasks');
+  };
 
   useEffect(() => {
     if (!canEditTitle) return;
@@ -164,11 +179,17 @@ function TaskListContent() {
     ...myProjects.map((p) => p.id).filter((id) => groupedByProject.has(id)),
     ...Array.from(groupedByProject.keys()).filter((id) => !myProjects.some((p) => p.id === id)),
   ];
-  const projectSections = projectIdsInOrder.map((pid) => {
+  let projectSections = projectIdsInOrder.map((pid) => {
     const projTasks = groupedByProject.get(pid)!;
     const meta: ProjectMeta = myProjects.find((p) => p.id === pid) || projTasks[0].project;
     return { project: meta, tasks: projTasks };
   });
+
+  // 프로젝트 필터가 선택된 경우: 해당 프로젝트 섹션만 노출, 미지정 업무 섹션은 숨김
+  if (selectedProject) {
+    const pid = parseInt(selectedProject);
+    projectSections = projectSections.filter(({ project }) => project.id === pid);
+  }
 
   const handlers: SharedHandlers = { canEditTitle, canDelete, assignableWorkers, getStatuses, updateStatus, updateTask, deleteTask };
 
@@ -183,6 +204,22 @@ function TaskListContent() {
 
       {/* 필터 바 */}
       <div className={styles.filterBar}>
+        <span className={styles.filterLabel}>
+          프로젝트:
+        </span>
+        <select
+          value={selectedProject}
+          onChange={(e) => handleProjectFilterChange(e.target.value)}
+          className={styles.projectFilterSelect}
+        >
+          <option value="">전체 프로젝트</option>
+          {myProjects.map((project) => (
+            <option key={project.id} value={project.id}>
+              {project.name}
+            </option>
+          ))}
+        </select>
+
         <span className={styles.filterLabel}>
           상태:
         </span>
@@ -239,7 +276,7 @@ function TaskListContent() {
               {...handlers}
             />
           ))}
-          {unassignedTasks.length > 0 && (
+          {!selectedProject && unassignedTasks.length > 0 && (
             <ProjectTaskSection
               project={null}
               tasks={unassignedTasks}
@@ -652,6 +689,16 @@ function ProjectTaskSection({
           {project ? `${project.name} 리스트` : '미지정 업무'}
         </h2>
         <span className={styles.projectSectionCount}>{tasks.length}건</span>
+        {project && (
+          <Link
+            href={`/tasks/create?projectId=${project.id}`}
+            className={styles.addTaskBtn}
+            aria-label="업무 등록"
+            title="업무 등록"
+          >
+            +
+          </Link>
+        )}
       </div>
 
       <div className={styles.tableWrapper}>

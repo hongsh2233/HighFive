@@ -375,3 +375,12 @@
   - **`/calendar`**: 7일 그리드 구조는 유지하되 640px 이하에서 셀 패딩/최소높이/폰트를 축소(`.day`, `.dayLabel`, `.dayNumber`, `.taskItem`)해 좁은 화면에서도 한 줄에 들어가도록 함.
   - **`/projects`**: `.layoutWithPanel`(목록+멤버패널 2열)이 640px 이하에서 1열로 전환, `sticky` 멤버패널도 `static`으로.
 - 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 42개는 Prisma 클라이언트 미생성 관련 기존 베이스라인, 이전 차수와 동일). `npx next build`는 CSS/webpack 컴파일 통과 확인(이후 무관한 `sanitize-html` 미설치 오류로 중단되는 것은 이전 차수와 동일한 샌드박스 제약). **실제 배포 환경에서 개발자도구 375px/390px/768px 폭으로 `/tasks`, `/tasks/[id]`, `/calendar`, `/projects`, `/dashboard`를 확인해 가로 스크롤 없이 핵심 정보가 잘리지 않는지, 카드형 업무 목록에서 담당자/상태 셀렉트와 버튼들이 정상 동작하는지 브라우저로 확인 필요.**
+
+## 2026-07-07 (44차)
+
+- **`/tasks` 목록 프로젝트 필터 복원 + 업무 등록 접근성 개선**: 이전 프로젝트별 섹션 리팩터링에서 상단 프로젝트 필터 드랍다운이 완전히 제거되어 특정 프로젝트만 보기 어려웠고, 새 업무 등록도 `/tasks/create`로 이동해야만 가능해 접근성이 낮았던 문제를 개선.
+  - `src/app/tasks/page.tsx`: 필터 바에 "프로젝트" `<select>` 추가(`selectedProject` state, `useSearchParams()`로 `?projectId=` 쿼리와 동기화 — 기존에 `/tasks/create` 생성 완료 후 `router.push(`/tasks?projectId=...`)`가 사용하던 죽은 쿼리 파라미터를 실제로 활용). 프로젝트 선택 시 해당 프로젝트 섹션만 노출하고 "미지정 업무" 섹션은 숨김, "전체 프로젝트" 선택 시 원복.
+  - 각 프로젝트 섹션 헤더에 아이콘 전용 `+` 버튼(`.addTaskBtn`, 기존 "+ 속성 추가" 버튼과 동일한 아이콘 버튼 컨벤션 재사용) 추가 — 클릭 시 `/tasks/create?projectId={project.id}`로 이동해 프로젝트가 미리 선택된 채 등록 폼이 열림. 프로젝트 미지정 섹션에는 노출하지 않음.
+  - `src/app/tasks/create/page.tsx`: `searchParams.get('projectId')`를 읽어 `projectId` state 초기값으로 prefill(기존 `parentTaskIdParam` 패턴과 동일).
+  - `src/app/tasks/tasks.module.css`: `.projectFilterSelect`(기존 `.statusFilterSelect`와 동일한 스타일), `.addTaskBtn`(`.addFieldBtn`과 동일한 아이콘 버튼 스타일) 추가.
+- 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 42개는 Prisma 클라이언트 미생성 관련 기존 베이스라인, 이전 차수와 동일). **실제 배포 환경에서 프로젝트 필터 선택/해제, 섹션별 "+" 버튼 클릭 후 프로젝트 prefill, 생성 후 `/tasks?projectId=X`로 복귀 시 필터가 자동 적용되는지 브라우저로 확인 필요.**
