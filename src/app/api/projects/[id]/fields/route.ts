@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db';
 import { requireAuth, requireRole, successResponse, errorResponse } from '@/lib/utils';
 
 const MAX_FIELDS = 10;
-const VALID_TYPES = ['TEXT', 'NUMBER', 'DATE', 'SELECT', 'CHECKBOX'];
+const VALID_TYPES = ['TEXT', 'NUMBER', 'DATE', 'SELECT', 'CHECKBOX', 'LINK'];
 
 // GET /api/projects/[id]/fields - 프로젝트 커스텀 필드 정의 조회
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

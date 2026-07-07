@@ -61,7 +61,7 @@ export interface Task {
 }
 
 // 프로젝트별 커스텀 필드 (노션식 자유 속성)
-export type FieldType = 'TEXT' | 'NUMBER' | 'DATE' | 'SELECT' | 'CHECKBOX';
+export type FieldType = 'TEXT' | 'NUMBER' | 'DATE' | 'SELECT' | 'CHECKBOX' | 'LINK';
 
 export interface ProjectField {
   id: number;

@@ -401,3 +401,13 @@
   - 기존 `onBlur` 자동 제출/취소 로직은 제거 — 담당자 select를 조작하면 제목 input이 blur되어 조기 제출되는 문제가 있었기 때문에, 이제는 `Enter`(폼 submit)/취소 버튼/`Escape`로만 명시적으로 확정·취소한다.
   - `src/app/tasks/tasks.module.css`: `.addTaskForm`, `.addTaskWorkerSelect`, `.addTaskDateInput`, `.addTaskSubmitBtn`, `.addTaskCancelBtn` 추가, `.addTaskInput`은 `flex: 1`로 변경.
 - 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 42개는 기존 베이스라인과 동일). **실제 배포 환경에서 담당자 select 변경 중 폼이 의도치 않게 닫히지 않는지, 목표일 지정 후 Enter로 생성 시 값이 반영되는지, ✕ 버튼/Escape 취소가 정상 동작하는지 브라우저로 확인 필요.**
+
+## 2026-07-07 (47차)
+
+- **프로젝트 커스텀 필드(속성)에 "링크" 타입 추가**: 노션식 자유 속성(`ProjectField`)의 타입 목록(TEXT/NUMBER/DATE/SELECT/CHECKBOX)에 `LINK`를 추가. "+ 속성 추가" 팝오버에서 "링크"를 선택할 수 있고, 값 입력은 `type="url"` input으로 받으며, 조회 시(수정 권한 없는 사용자 또는 값 표시)에는 `<a target="_blank">`로 클릭 가능한 링크로 렌더링된다.
+  - `src/types/index.ts`: `FieldType`에 `'LINK'` 추가.
+  - `src/app/api/projects/[id]/fields/route.ts`: `VALID_TYPES`에 `'LINK'` 추가(서버 검증 통과하도록).
+  - `src/app/tasks/page.tsx`, `src/app/tasks/[id]/page.tsx`: 필드 렌더링 함수(`renderFieldCell`/`renderFieldValue`)에 `LINK` 분기 추가(뷰 전용은 앵커 태그, 편집 가능은 `url` input).
+  - `src/app/tasks/tasks.module.css`: `.fieldLink`(파란색, 말줄임) 추가.
+- **업무 목록에서 완료(DONE) 상태 행 스타일 강화**: 기존에는 완료 행 배경색이 `#F9FAFB`로 거의 티가 안 났음. `.rowDone` 클래스로 교체해 배경을 `var(--color-gray-300)`(`#E4E4E7`)로 더 진하게 하고, `.rowDone td { opacity: 0.6 }`로 텍스트/버튼 전체를 옅게 처리해 완료된 업무가 시각적으로 뚜렷이 구분되도록 함(`src/app/tasks/page.tsx`의 인라인 `style` 대신 `className` 사용으로 변경).
+- 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 42개는 기존 베이스라인과 동일). **실제 배포 환경에서 "링크" 속성 추가 후 값 입력/저장, 새 탭에서 열림, 완료 상태 업무 행의 배경/opacity가 의도대로 보이는지 브라우저로 확인 필요.**

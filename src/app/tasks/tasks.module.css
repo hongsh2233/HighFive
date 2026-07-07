@@ -300,6 +300,21 @@
   font-size: 13px;
 }
 
+.fieldLink {
+  color: #2563EB;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.rowDone {
+  background-color: var(--color-gray-300);
+}
+
+.rowDone td {
+  opacity: 0.6;
+}
+
 /* 프로젝트별 섹션 레이아웃 */
 .projectSection {
   margin-bottom: var(--space-8);

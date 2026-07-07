@@ -65,6 +65,13 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     const value = getFieldValue(field);
     if (!canEdit) {
       if (field.type === 'CHECKBOX') return value === 'true' ? '✓' : '-';
+      if (field.type === 'LINK') {
+        return value ? (
+          <a href={value} target="_blank" rel="noopener noreferrer" style={{ color: '#2563EB', wordBreak: 'break-all' }}>
+            {value}
+          </a>
+        ) : '-';
+      }
       return value || '-';
     }
     if (field.type === 'CHECKBOX') {
@@ -93,8 +100,9 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     }
     return (
       <input
-        type={field.type === 'NUMBER' ? 'number' : field.type === 'DATE' ? 'date' : 'text'}
+        type={field.type === 'NUMBER' ? 'number' : field.type === 'DATE' ? 'date' : field.type === 'LINK' ? 'url' : 'text'}
         defaultValue={value}
+        placeholder={field.type === 'LINK' ? 'https://...' : undefined}
         onBlur={(e) => handleFieldValueChange(field, e.target.value)}
         className={styles.input}
       />

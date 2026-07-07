@@ -522,6 +522,13 @@ function ProjectTaskSection({
     const value = getFieldValue(task, field);
     if (!canEditTitle) {
       if (field.type === 'CHECKBOX') return value === 'true' ? '✓' : '-';
+      if (field.type === 'LINK') {
+        return value ? (
+          <a href={value} target="_blank" rel="noopener noreferrer" className={styles.fieldLink}>
+            {value}
+          </a>
+        ) : '-';
+      }
       return value || '-';
     }
     if (field.type === 'CHECKBOX') {
@@ -550,8 +557,9 @@ function ProjectTaskSection({
     }
     return (
       <input
-        type={field.type === 'NUMBER' ? 'number' : field.type === 'DATE' ? 'date' : 'text'}
+        type={field.type === 'NUMBER' ? 'number' : field.type === 'DATE' ? 'date' : field.type === 'LINK' ? 'url' : 'text'}
         defaultValue={value}
+        placeholder={field.type === 'LINK' ? 'https://...' : undefined}
         onBlur={(e) => handleFieldValueChange(task.id, field, e.target.value)}
         className={styles.fieldCellInput}
       />
@@ -570,8 +578,9 @@ function ProjectTaskSection({
     const rows: React.ReactElement[] = [
       <tr
         key={task.id}
+        className={isTaskDone ? styles.rowDone : undefined}
         style={{
-          backgroundColor: isTaskDone ? '#F9FAFB' : 'white',
+          backgroundColor: isTaskDone ? undefined : 'white',
         }}
       >
         <td className={styles.tdId} data-label="ID">#{task.id}</td>
@@ -803,6 +812,7 @@ function ProjectTaskSection({
                         <option value="DATE">날짜</option>
                         <option value="SELECT">선택</option>
                         <option value="CHECKBOX">체크박스</option>
+                        <option value="LINK">링크</option>
                       </select>
                       {newFieldType === 'SELECT' && (
                         <input
