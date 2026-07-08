@@ -438,3 +438,11 @@
   - `src/components/AppHeader.tsx`의 `handleLogout`에서 `signOut()` 호출 직전에 `markManualLogout()` 호출.
   - `src/components/Providers.tsx`의 `AuthSync`: 세션 만료 감지 분기에서 `consumeManualLogout()`이 `true`면 안내 없이 조용히 종료(자동 만료일 때만 안내 모달 표시).
 - 디버깅 체크: `npx tsc --noEmit` 신규 오류 없음(잔존 42개는 기존 베이스라인과 동일). **실제 배포 환경에서 헤더 로그아웃 클릭 시 안내 모달 없이 바로 `/login`으로 이동하는지, 반대로 30분 미활동 후 자동 로그아웃 시에는 여전히 안내 모달이 뜨는지 브라우저로 확인 필요.**
+
+## 2026-07-07 (51차)
+
+- **문서: AI/자동화 로드맵 현황 분석 작성**: 사용자가 제시한 4가지 향후 방향(주간보고 AI 자동생성 / 작업자별 분석 후 AI 자동배정 / 외부연동·자동화 확장 / 구글시트 연동)에 대해, 코드 구현 없이 현재 코드베이스에서 재사용 가능한 부분과 없는 인프라를 조사해 `docs/ROADMAP_AI_AUTOMATION.md`(신규)로 정리. 즉시 착수 대상이 아니라 향후 참고용 계획 문서임을 명시.
+  - 핵심 진단: LLM API 연동, cron/스케줄러, Google OAuth 인프라가 모두 전무 — 이 3가지가 여러 항목이 공유하는 공통 갭. 기존 재사용 가능 자산도 함께 정리(주간보고는 `stats.service.ts`의 월별 집계, 자동배정은 `GET /api/stats/workload`, 외부연동은 `src/lib/integrations.ts`의 `dispatch()`, 구글시트는 `tasks/export`의 xlsx 생성 로직).
+  - 권장 착수 순서(난이도/의존관계 기준): 외부연동 확장 → 주간보고(LLM 최초 도입) → 자동배정(LLM+워크로드 결합) → 구글시트(독립 트랙, 병렬 가능).
+  - `docs/PROJECT_STRUCTURE.md` 상단 안내 문구에 이 문서 참조 추가.
+- 코드 변경 없음(문서만 추가) — `tsc`/빌드 검증 해당 없음.
