@@ -446,3 +446,13 @@
   - 권장 착수 순서(난이도/의존관계 기준): 외부연동 확장 → 주간보고(LLM 최초 도입) → 자동배정(LLM+워크로드 결합) → 구글시트(독립 트랙, 병렬 가능).
   - `docs/PROJECT_STRUCTURE.md` 상단 안내 문구에 이 문서 참조 추가.
 - 코드 변경 없음(문서만 추가) — `tsc`/빌드 검증 해당 없음.
+
+## 2026-07-09 (52차)
+
+- **문서: 외부 연동/자동화 상세 설계 작성**: `docs/ROADMAP_AI_AUTOMATION.md` 3번 항목("외부 연동 및 자동화")에 대한 구체적 개발 설계를 `docs/AUTOMATION_DESIGN.md`(신규)로 분리 정리. 코드 구현 없음, 실제 착수 시 참고할 설계 문서.
+  - **Phase 1(하드코딩 트리거 확장, 낮은 리스크)**: 라벨 부착 트리거(URGENT 라벨이 새로 붙을 때, `POST /api/tasks`/`PATCH /api/tasks/[id]`에서 감지) + 목표일 임박/경과 트리거(`Task.lastDueReminderAt` 신규 컬럼으로 중복 발송 방지, `POST /api/automation/due-date-check` 배치 엔드포인트를 외부 크론이 호출하는 구조 — 이 앱엔 스케줄러 인프라가 없어 Railway Cron Schedule 또는 GitHub Actions 등 배포 설정으로 트리거해야 함을 명시). 기존 `notifyStatusChange()` 패턴을 그대로 복제해 `src/lib/webhook.ts`에 `notifyLabelAttached()`/`notifyDueDate()` 추가하는 안.
+  - **Phase 2(일반화된 규칙 엔진, 선택적 후속)**: `AutomationRule` Prisma 모델(트리거 타입/조건 JSON 문자열/채널/메시지 템플릿), `src/lib/automation-engine.ts`의 `evaluateRules()`, `/api/automation-rules` CRUD, `/settings/automation` 설정 UI까지 스키마·API·파일 단위로 설계.
+  - 조사 중 `src/lib/services/webhook.service.ts` + `src/app/api/webhooks/slack/route.ts`가 실제 상태변경 흐름에서 호출되지 않는 레거시 중복 코드로 보인다는 점을 발견해 "정리 대상"으로 문서에 기록(이번엔 삭제하지 않음, 재확인 필요 항목으로만 남김).
+  - 인바운드 웹훅은 구체 요구사항이 없어 스코프 밖으로 명시.
+  - `docs/ROADMAP_AI_AUTOMATION.md`·`docs/PROJECT_STRUCTURE.md`에 상호 참조 링크 추가.
+- 코드 변경 없음(문서만 추가) — `tsc`/빌드 검증 해당 없음.

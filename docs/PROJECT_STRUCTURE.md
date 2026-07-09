@@ -3,7 +3,7 @@
 > **최종 업데이트** 2026-07-01
 > **스택** Next.js 15 · Prisma 5 · PostgreSQL · NextAuth.js 4 · Zustand · MUI
 >
-> 이 문서는 코드 변경 시 항상 최신 상태로 유지된다. 작업 절차는 `.claude/skills/dev-workflow/SKILL.md`, 작업 이력은 `docs/HISTORY.md` 참고. 디자인 시스템은 `docs/DESIGN.md`, 향후 AI/자동화 기능(주간보고 자동생성/AI 자동배정/외부연동 확장/구글시트 연동) 현황 분석 및 로드맵은 `docs/ROADMAP_AI_AUTOMATION.md` 참고.
+> 이 문서는 코드 변경 시 항상 최신 상태로 유지된다. 작업 절차는 `.claude/skills/dev-workflow/SKILL.md`, 작업 이력은 `docs/HISTORY.md` 참고. 디자인 시스템은 `docs/DESIGN.md`, 향후 AI/자동화 기능(주간보고 자동생성/AI 자동배정/외부연동 확장/구글시트 연동) 현황 분석 및 로드맵은 `docs/ROADMAP_AI_AUTOMATION.md`, 외부연동/자동화 확장의 구체 설계(스키마·API·파일 단위)는 `docs/AUTOMATION_DESIGN.md` 참고.
 
 ---
 
