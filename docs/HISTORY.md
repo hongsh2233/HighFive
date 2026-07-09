@@ -480,6 +480,25 @@
   - 팀원 목록은 컴포넌트 마운트 시 1회 prefetch(`GET /api/users?role=WORKER`).
 - 디버깅 체크: `npx tsc --noEmit` 결과 오류 0개(Prisma client 생성 완료 상태).
 
+## 2026-07-09 (56차)
+
+- **Phase 2: SUPERADMIN 역할 + 조직 공개 가입**
+  - `UserRole`에 `SUPERADMIN` 추가 (`src/types/index.ts`, `src/store/authStore.ts`)
+  - `prisma/init.ts`: `admin@admin.co.kr`을 `SUPERADMIN`으로 upsert (update에도 role 적용)
+  - `src/lib/utils.ts`: `requireSuperAdmin()` 헬퍼 추가 — 조직 격리 없이 전체 접근, SUPERADMIN 아니면 403
+  - `src/middleware.ts`: `/register` 공개 경로 추가, `/superadmin` 보호 경로 추가, SUPERADMIN 토큰 보유 시 모든 보호 라우트 통과
+  - `src/hooks/useAuth.ts`: `isSuperAdmin` 플래그 추가
+  - `src/components/AppHeader.tsx`: SUPERADMIN에게만 "슈퍼관리자" 링크 표시
+  - `POST /api/organizations` (공개, 인증 불필요): 조직명/slug/adminEmail/adminName/password → Organization + ADMIN 계정 동시 생성, slug·이메일 중복 검증
+  - `GET /api/superadmin/organizations`: 전체 조직 목록 + `_count.users`
+  - `PATCH /api/superadmin/organizations/[id]`: plan/isActive 수정
+  - `GET /api/superadmin/organizations/[id]/users`: 특정 조직 사용자 전체
+  - `/register` 페이지: 회사명/slug/관리자 이름·이메일·비밀번호 폼, 성공 시 `/login?registered=1` 리다이렉트
+  - `/login` 페이지: `?registered=1` 쿼리 시 "가입 완료" 안내 문구 표시, "새 조직 등록" 링크 추가
+  - `/superadmin` 페이지: 전체 조직 목록 테이블 (ID/조직명/slug/플랜/사용자수/상태/가입일)
+  - `/superadmin/[id]` 페이지: 조직 사용자 목록 + plan 변경 + 비활성화/활성화 버튼
+  - 디버깅 체크: `npx tsc --noEmit` 오류 0개. DB 미연결로 `npm run build` 의 `prisma db push` 단계는 Railway 파이프라인에서 자동 반영됨.
+
 ## 2026-07-09 (55차)
 
 - **대댓글(답글) 기능 추가**:
