@@ -470,3 +470,12 @@
   - `GlobalSearchModal.tsx`/`GlobalSearchModal.module.css` 신규 — 오버레이 모달, 300ms 디바운스, 업무/위키 섹션 구분 표시, 클릭 시 해당 상세 페이지로 이동.
   - `AppHeader.tsx`에 🔍 버튼 추가(계정 메뉴 앞). `Ctrl+K`/`Cmd+K` 단축키로 언제든 모달 열기.
 - 디버깅 체크: `npx tsc --noEmit` 결과 변경 전후 비교 — 신규 타입 오류 없음. DB 미연결로 `prisma db push`는 Railway 빌드 파이프라인에서 자동 반영됨.
+
+## 2026-07-09 (54차)
+
+- **댓글 @멘션 + 인앱 알림 기능 추가**:
+  - 댓글 내용에서 `@[이름](userId)` 형태 멘션 파싱 — `POST /api/tasks/[id]/comments`에 `parseMentionIds()` 헬퍼 추가. 멘션된 사용자에게 `createUserNotification(uid, 'COMMENT_MENTION', ...)` 비동기 발송(실패해도 댓글 등록은 완료).
+  - 댓글 입력 textarea에서 `@` 입력 감지 → 팀원 자동완성 드롭다운(최대 6명). 클릭 또는 Enter/Tab으로 `@[이름](id) ` 삽입. Escape로 닫힘.
+  - 댓글 렌더링 시 멘션 강조: `@[이름](id)` → `<span class="mention">@이름</span>`, 자기 자신 멘션은 `.mentionSelf`(노란 배경)로 구분.
+  - 팀원 목록은 컴포넌트 마운트 시 1회 prefetch(`GET /api/users?role=WORKER`).
+- 디버깅 체크: `npx tsc --noEmit` 결과 오류 0개(Prisma client 생성 완료 상태).

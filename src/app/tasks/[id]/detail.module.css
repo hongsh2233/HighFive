@@ -331,11 +331,84 @@
   margin-top: 4px;
 }
 
+.commentInputWrapper {
+  flex: 1;
+  position: relative;
+}
+
 .commentTextarea {
   composes: field-input from global;
-  flex: 1;
+  width: 100%;
   resize: none;
   font-size: 14px;
+}
+
+.mentionDropdown {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  list-style: none;
+  padding: 4px;
+  margin: 0;
+  z-index: 200;
+}
+
+.mentionItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--color-text);
+  text-align: left;
+}
+
+.mentionItem:hover {
+  background: var(--accent-light);
+}
+
+.mentionAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.mention {
+  display: inline;
+  background: #EFF6FF;
+  color: #2563EB;
+  border-radius: 4px;
+  padding: 0 3px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.mentionSelf {
+  display: inline;
+  background: #FEF3C7;
+  color: #D97706;
+  border-radius: 4px;
+  padding: 0 3px;
+  font-weight: 600;
+  font-size: 13px;
 }
 
 @media (max-width: 640px) {

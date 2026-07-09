@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjectStatuses } from '@/hooks/useProjectStatuses';
@@ -47,6 +47,12 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [comments, setComments] = useState<any[]>([]);
   const [commentInput, setCommentInput] = useState('');
   const [commentSaving, setCommentSaving] = useState(false);
+
+  // @멘션 자동완성
+  const [allUsers, setAllUsers] = useState<Worker[]>([]);
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null); // null이면 드롭다운 닫힘
+  const [mentionAnchor, setMentionAnchor] = useState(0); // content 내 @ 위치
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const userRole = (user as any)?.role;
   const canEdit = userRole === 'ADMIN' || userRole === 'LEADER';
@@ -166,6 +172,66 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     fetchWorkers();
   }, [canEdit]);
 
+  // 멘션용 전체 사용자 목록 (로그인 후 1회 prefetch)
+  useEffect(() => {
+    if (authLoading) return;
+    apiClient.get<{ data: Worker[] }>('/users?role=WORKER').then((res) => {
+      setAllUsers(res.data.data || []);
+    }).catch(() => {});
+  }, [authLoading]);
+
+  const handleCommentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setCommentInput(val);
+    const pos = e.target.selectionStart ?? val.length;
+    // @ 뒤 커서 위치까지 텍스트에서 멘션 감지
+    const before = val.slice(0, pos);
+    const match = before.match(/@([^@\s]*)$/);
+    if (match) {
+      setMentionQuery(match[1]);
+      setMentionAnchor(pos - match[0].length);
+    } else {
+      setMentionQuery(null);
+    }
+  }, []);
+
+  const mentionFiltered = mentionQuery !== null
+    ? allUsers.filter((u) => u.name.toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 6)
+    : [];
+
+  const insertMention = useCallback((u: Worker) => {
+    const before = commentInput.slice(0, mentionAnchor);
+    const after = commentInput.slice(mentionAnchor + 1 + (mentionQuery?.length ?? 0));
+    const inserted = `@[${u.name}](${u.id}) `;
+    const next = before + inserted + after;
+    setCommentInput(next);
+    setMentionQuery(null);
+    setTimeout(() => {
+      const ta = commentTextareaRef.current;
+      if (ta) {
+        const cursor = before.length + inserted.length;
+        ta.focus();
+        ta.setSelectionRange(cursor, cursor);
+      }
+    }, 0);
+  }, [commentInput, mentionAnchor, mentionQuery]);
+
+  const renderCommentContent = useCallback((content: string) => {
+    const parts = content.split(/(@\[[^\]]+\]\(\d+\))/g);
+    return parts.map((part, i) => {
+      const m = part.match(/^@\[([^\]]+)\]\((\d+)\)$/);
+      if (m) {
+        const isSelf = parseInt(m[2]) === (user as any)?.id;
+        return (
+          <span key={i} className={isSelf ? styles.mentionSelf : styles.mention}>
+            @{m[1]}
+          </span>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
+  }, [user]);
+
   const handleInfoSave = async () => {
     if (!task) return;
     setInfoError(null);
@@ -238,7 +304,11 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   };
 
   const handleCommentKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (mentionQuery !== null && mentionFiltered.length > 0) {
+      if (e.key === 'Escape') { e.preventDefault(); setMentionQuery(null); return; }
+      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); insertMention(mentionFiltered[0]); return; }
+    }
+    if (e.key === 'Enter' && !e.shiftKey && mentionQuery === null) {
       e.preventDefault();
       handleCommentSubmit();
     }
@@ -553,21 +623,40 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                       </button>
                     )}
                   </div>
-                  <p className={styles.commentContent}>{c.content}</p>
+                  <p className={styles.commentContent}>{renderCommentContent(c.content)}</p>
                 </div>
               </li>
             ))}
           </ul>
         )}
         <div className={styles.commentInputArea}>
-          <textarea
-            value={commentInput}
-            onChange={(e) => setCommentInput(e.target.value)}
-            onKeyDown={handleCommentKeyDown}
-            placeholder="댓글을 입력하세요... (Enter로 등록, Shift+Enter로 줄바꿈)"
-            className={styles.commentTextarea}
-            rows={2}
-          />
+          <div className={styles.commentInputWrapper}>
+            {mentionQuery !== null && mentionFiltered.length > 0 && (
+              <ul className={styles.mentionDropdown}>
+                {mentionFiltered.map((u) => (
+                  <li key={u.id}>
+                    <button
+                      type="button"
+                      className={styles.mentionItem}
+                      onMouseDown={(e) => { e.preventDefault(); insertMention(u); }}
+                    >
+                      <span className={styles.mentionAvatar}>{u.name[0]}</span>
+                      {u.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <textarea
+              ref={commentTextareaRef}
+              value={commentInput}
+              onChange={handleCommentChange}
+              onKeyDown={handleCommentKeyDown}
+              placeholder="댓글을 입력하세요... (@이름으로 멘션, Enter로 등록)"
+              className={styles.commentTextarea}
+              rows={2}
+            />
+          </div>
           <button
             onClick={handleCommentSubmit}
             disabled={commentSaving || !commentInput.trim()}

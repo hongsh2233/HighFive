@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/utils';
 import { prisma } from '@/lib/db';
+import { createUserNotification } from '@/lib/notify';
+
+function parseMentionIds(content: string): number[] {
+  const re = /@\[[^\]]+\]\((\d+)\)/g;
+  const ids: number[] = [];
+  let m;
+  while ((m = re.exec(content)) !== null) {
+    const id = parseInt(m[1]);
+    if (!ids.includes(id)) ids.push(id);
+  }
+  return ids;
+}
 
 export async function GET(
   _req: NextRequest,
@@ -45,6 +57,22 @@ export async function POST(
     data: { taskId, authorId, content },
     include: { author: { select: { id: true, name: true } } },
   });
+
+  // 멘션 알림 발송 (비동기, 실패해도 댓글 등록 완료)
+  const mentionIds = parseMentionIds(content).filter((uid) => uid !== authorId);
+  if (mentionIds.length > 0) {
+    const authorName = (session!.user as any).name || '누군가';
+    Promise.all(
+      mentionIds.map((uid) =>
+        createUserNotification(
+          uid,
+          'COMMENT_MENTION',
+          `'${task.title}' 업무 댓글에서 ${authorName}님이 회원님을 멘션했습니다.`,
+          taskId
+        )
+      )
+    ).catch(() => {});
+  }
 
   return NextResponse.json({ data: comment }, { status: 201 });
 }
