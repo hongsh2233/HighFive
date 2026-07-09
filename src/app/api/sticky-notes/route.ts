@@ -4,19 +4,16 @@ import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 
 const MAX_NOTES = 3;
 
-// GET /api/sticky-notes - 내 메모 스티커 목록
 export async function GET() {
   try {
     const { session, error } = await requireAuth();
     if (error) return error;
-
     const userId = parseInt((session!.user as any).id || '0');
 
     const notes = await prisma.stickyNote.findMany({
       where: { userId },
       orderBy: { order: 'asc' },
     });
-
     return successResponse(notes, '메모 목록 조회 완료');
   } catch (err) {
     console.error(err);
@@ -24,12 +21,10 @@ export async function GET() {
   }
 }
 
-// POST /api/sticky-notes - 새 메모 스티커 생성 (최대 3개)
 export async function POST() {
   try {
-    const { session, error } = await requireAuth();
+    const { session, error, organizationId } = await requireAuth();
     if (error) return error;
-
     const userId = parseInt((session!.user as any).id || '0');
 
     const count = await prisma.stickyNote.count({ where: { userId } });
@@ -38,9 +33,8 @@ export async function POST() {
     }
 
     const note = await prisma.stickyNote.create({
-      data: { userId, content: '', order: count },
+      data: { userId, content: '', order: count, organizationId },
     });
-
     return successResponse(note, '메모가 추가되었습니다.', 201);
   } catch (err) {
     console.error(err);
@@ -48,12 +42,10 @@ export async function POST() {
   }
 }
 
-// PUT /api/sticky-notes - 순서 일괄 저장 (드래그 재정렬)
 export async function PUT(req: NextRequest) {
   try {
     const { session, error } = await requireAuth();
     if (error) return error;
-
     const userId = parseInt((session!.user as any).id || '0');
     const body = await req.json();
     const { ids } = body;
@@ -64,10 +56,7 @@ export async function PUT(req: NextRequest) {
 
     await prisma.$transaction(
       ids.map((id: number, index: number) =>
-        prisma.stickyNote.updateMany({
-          where: { id, userId },
-          data: { order: index },
-        })
+        prisma.stickyNote.updateMany({ where: { id, userId }, data: { order: index } })
       )
     );
 

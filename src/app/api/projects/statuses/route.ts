@@ -5,7 +5,7 @@ import { DEFAULT_STATUSES } from '@/lib/task-status';
 // GET /api/projects/statuses - 내가 접근 가능한 전체 프로젝트의 상태 단계 일괄 조회 (N+1 방지용)
 export async function GET() {
   try {
-    const { session, error } = await requireAuth();
+    const { session, error, organizationId } = await requireAuth();
     if (error) return error;
 
     const userId = parseInt((session!.user as any).id || '0');
@@ -13,7 +13,7 @@ export async function GET() {
 
     let projectIds: number[];
     if (role === 'ADMIN') {
-      const projects = await prisma.project.findMany({ select: { id: true } });
+      const projects = await prisma.project.findMany({ where: { organizationId }, select: { id: true } });
       projectIds = projects.map((p) => p.id);
     } else {
       // 프로젝트 멤버 소속뿐 아니라, 소속과 무관하게 배정/등록된 업무가 있는 프로젝트도 포함
@@ -21,7 +21,7 @@ export async function GET() {
       const [memberProjects, assignedTasks] = await Promise.all([
         prisma.projectMember.findMany({ where: { userId }, select: { projectId: true } }),
         prisma.task.findMany({
-          where: { OR: [{ workerId: userId }, { registrantId: userId }], projectId: { not: null } },
+          where: { organizationId, OR: [{ workerId: userId }, { registrantId: userId }], projectId: { not: null } },
           select: { projectId: true },
           distinct: ['projectId'],
         }),

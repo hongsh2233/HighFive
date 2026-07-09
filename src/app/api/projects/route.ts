@@ -13,18 +13,16 @@ const projectInclude = {
 export async function GET() {
   try {
     await ensureProjectsSchema();
-    const { session, error } = await requireAuth();
+    const { session, error, organizationId } = await requireAuth();
     if (error) return error;
 
     const userId = parseInt((session!.user as any).id || '0');
     const role = (session!.user as any).role;
 
-    // 소속(ProjectMember)뿐 아니라 배정된 업무(workerId/registrantId)가 있는 프로젝트도 포함
-    // — WORKER는 프로젝트 멤버로 등록되지 않았어도 업무만 배정받는 경우가 있어,
-    //   멤버 여부만 보면 실제로 관련 있는 프로젝트가 누락되는 문제가 있었음
-    const where = role === 'ADMIN'
-      ? {}
+    const baseWhere = role === 'ADMIN'
+      ? { organizationId }
       : {
+          organizationId,
           OR: [
             { members: { some: { userId } } },
             { tasks: { some: { OR: [{ workerId: userId }, { registrantId: userId }] } } },
@@ -32,7 +30,7 @@ export async function GET() {
         };
 
     const projects = await prisma.project.findMany({
-      where,
+      where: baseWhere,
       include: projectInclude,
       orderBy: { createdAt: 'desc' },
     });
@@ -48,7 +46,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     await ensureProjectsSchema();
-    const { session, error } = await requireAuth();
+    const { session, error, organizationId } = await requireAuth();
     if (error) return error;
 
     const role = (session!.user as any).role;
@@ -63,26 +61,23 @@ export async function POST(req: NextRequest) {
       return errorResponse('프로젝트 이름을 입력해주세요.', 400);
     }
 
-    // Raw SQL로 생성 (Prisma 스키마/DB 컬럼 불일치 우회)
-    // status 컬럼은 DEFAULT 'ACTIVE' 이므로 INSERT에서 제외 (컬럼 부재 방어)
-    const rows = await prisma.$queryRawUnsafe<{ id: number }[]>(
-      `INSERT INTO projects (name, "createdBy", "projectManagerName", "projectLeadName", "createdAt", "updatedAt")
-       VALUES ($1, $2, $3, $4, NOW(), NOW())
-       RETURNING id`,
-      name.trim(), userId,
-      projectManagerName?.trim() || null,
-      projectLeadName?.trim() || null,
-    );
-    const projectId = rows[0].id;
+    const project = await prisma.project.create({
+      data: {
+        name: name.trim(),
+        createdBy: userId,
+        organizationId,
+        projectManagerName: projectManagerName?.trim() || null,
+        projectLeadName: projectLeadName?.trim() || null,
+      },
+    });
 
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO project_members ("projectId", "userId", "joinedAt")
-       VALUES ($1, $2, NOW()) ON CONFLICT DO NOTHING`,
-      projectId, userId,
-    );
+    await prisma.projectMember.createMany({
+      data: [{ projectId: project.id, userId }],
+      skipDuplicates: true,
+    });
 
     const result = await prisma.project.findUnique({
-      where: { id: projectId },
+      where: { id: project.id },
       include: projectInclude,
     });
 

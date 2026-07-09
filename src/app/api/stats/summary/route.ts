@@ -6,7 +6,7 @@ import { getProjectStatuses } from '@/lib/task-status';
 // GET /api/stats/summary - 월간 요약 통계
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireRole(['ADMIN', 'LEADER']);
+    const { error, organizationId } = await requireRole(['ADMIN', 'LEADER']);
     if (error) return error;
 
     const { searchParams } = new URL(req.url);
@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
     // 월간 업무 통계
     const tasks = await prisma.task.findMany({
       where: {
+        organizationId,
         createdAt: {
           gte: startDate,
           lte: endDate,
@@ -30,6 +31,7 @@ export async function GET(req: NextRequest) {
     // 월간 타임로그 통계
     const timeLogs = await prisma.timeLog.findMany({
       where: {
+        task: { organizationId },
         createdAt: {
           gte: startDate,
           lte: endDate,

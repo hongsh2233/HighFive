@@ -5,7 +5,7 @@ import { inviteUser } from '@/lib/services/user.service';
 // POST /api/users/invite — ADMIN 전용
 export async function POST(req: NextRequest) {
   try {
-    const { error } = await requireRole(['ADMIN']);
+    const { error, organizationId } = await requireRole(['ADMIN']);
     if (error) return error;
 
     const body = await req.json();
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
       return errorResponse('유효하지 않은 역할입니다.', 400, 'VALID_400');
     }
 
-    const { user, tempPassword } = await inviteUser(email, name, role);
+    const { user, tempPassword } = await inviteUser(email, name, role, organizationId);
     return successResponse({ user, tempPassword }, '사용자가 초대되었습니다.', 201);
   } catch (err: any) {
     if (err.code === 'P2002') {

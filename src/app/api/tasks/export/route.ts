@@ -7,7 +7,7 @@ import * as XLSX from 'xlsx';
 // GET /api/tasks/export?format=csv|xlsx&from=&to=
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireRole(['ADMIN', 'LEADER']);
+    const { error, organizationId } = await requireRole(['ADMIN', 'LEADER']);
     if (error) return error;
 
     const { searchParams } = new URL(req.url);
@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
 
     const tasks = await prisma.task.findMany({
       where: {
+        organizationId,
         ...(from && to
           ? { createdAt: { gte: new Date(from), lte: new Date(to) } }
           : {}),

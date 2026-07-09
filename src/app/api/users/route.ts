@@ -9,18 +9,17 @@ export async function GET(req: NextRequest) {
     const role = searchParams.get('role');
     const projectId = searchParams.get('projectId');
 
-    // WORKER 역할 필터 조회(업무 담당자 배정/필터용)는 전 역할 허용, 그 외 전체 목록은 ADMIN/LEADER만 허용
     const auth = role === 'WORKER' ? await requireAuth() : await requireRole(['ADMIN', 'LEADER']);
     if (auth.error) return auth.error;
-    const { session } = auth;
+    const { session, organizationId } = auth;
 
     const sessionRole = (session!.user as any).role;
     const sessionUserId = parseInt((session!.user as any).id || '0');
 
-    let where: any = role ? { role } : {};
+    let where: any = { organizationId };
+    if (role) where.role = role;
 
     if (sessionRole === 'LEADER') {
-      // LEADER는 자신이 속한 프로젝트의 멤버만 조회
       const myProjects = await prisma.projectMember.findMany({
         where: { userId: sessionUserId },
         select: { projectId: true },
@@ -65,7 +64,7 @@ export async function GET(req: NextRequest) {
 // POST /api/users - 사용자 생성
 export async function POST(req: NextRequest) {
   try {
-    const { error } = await requireRole(['ADMIN']);
+    const { error, organizationId } = await requireRole(['ADMIN']);
     if (error) return error;
 
     const body = await req.json();
@@ -74,11 +73,9 @@ export async function POST(req: NextRequest) {
     if (!email || !name) {
       return errorResponse('이메일과 이름은 필수입니다.', 400, 'VALID_400');
     }
-
     if (!email.includes('@')) {
       return errorResponse('유효한 이메일 형식이 아닙니다.', 400, 'VALID_400');
     }
-
     if (name.trim().length < 2) {
       return errorResponse('이름은 최소 2자 이상이어야 합니다.', 400, 'VALID_400');
     }
@@ -108,6 +105,7 @@ export async function POST(req: NextRequest) {
         leaveDate: leaveDate ? new Date(leaveDate) : null,
         affiliation: affiliation || null,
         managerId: managerId ? parseInt(managerId) : null,
+        organizationId,
       },
       select: { id: true, email: true, name: true, role: true, leaveDate: true, affiliation: true, managerId: true },
     });

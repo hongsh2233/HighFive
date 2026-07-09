@@ -23,7 +23,8 @@ export async function requireAuth() {
   if (!session?.user) {
     return { error: errorResponse('인증이 필요합니다.', 401, 'AUTH_401') };
   }
-  return { session };
+  const organizationId = (session.user as any).organizationId as number | undefined;
+  return { session, organizationId };
 }
 
 export async function requireRole(requiredRoles: string[]) {
@@ -35,7 +36,8 @@ export async function requireRole(requiredRoles: string[]) {
   if (!requiredRoles.includes(userRole)) {
     return { error: errorResponse('권한이 없습니다.', 403, 'AUTH_403') };
   }
-  return { session };
+  const organizationId = (session.user as any).organizationId as number | undefined;
+  return { session, organizationId };
 }
 
 export function parseRmsNo(title: string): { cleanTitle: string; rmsNo: string | null } {

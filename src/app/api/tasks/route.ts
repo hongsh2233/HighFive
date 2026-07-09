@@ -20,8 +20,9 @@ export async function GET(req: NextRequest) {
 
     const userId = parseInt((session!.user as any).id || '0');
     const role = (session!.user as any).role;
+    const organizationId = (session!.user as any).organizationId as number | undefined;
 
-    const where: any = {};
+    const where: any = { organizationId };
     if (status) where.status = status;
     if (workerId) where.workerId = parseInt(workerId);
     if (projectId) where.projectId = parseInt(projectId);
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
     if (error) return error;
 
     const userRole = (session?.user as any)?.role;
+    const organizationId = (session?.user as any)?.organizationId as number | undefined;
     if (!['ADMIN', 'LEADER'].includes(userRole)) {
       return errorResponse('업무를 생성할 권한이 없습니다.', 403, 'AUTH_403');
     }
@@ -114,6 +116,7 @@ export async function POST(req: NextRequest) {
           projectId: resolvedProjectId,
           parentTaskId: parent.id,
           timeCounterEnabled: timeCounterEnabledReq,
+          organizationId,
         },
         include: {
           registrant: { select: { id: true, name: true, email: true } },
@@ -142,6 +145,7 @@ export async function POST(req: NextRequest) {
         status: initialStatus.code,
         projectId: resolvedProjectId,
         timeCounterEnabled: timeCounterEnabledReq,
+        organizationId,
       },
       include: {
         registrant: { select: { id: true, name: true, email: true } },
@@ -168,6 +172,7 @@ export async function POST(req: NextRequest) {
             labels: labelsStr,
             parentTaskId: task.id,
             timeCounterEnabled: timeCounterEnabledReq,
+            organizationId,
           },
         });
         await addHistory(subTask.id, creatorId, 'CREATED', `그룹 업무 "${task.title}"의 하위 업무로 생성`);

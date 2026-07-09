@@ -5,11 +5,15 @@ import { requireRole, successResponse, errorResponse } from '@/lib/utils';
 // PATCH /api/users/[id]
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { error } = await requireRole(['ADMIN']);
+    const { error, organizationId } = await requireRole(['ADMIN']);
     if (error) return error;
 
     const { id } = await params;
     const userId = parseInt(id);
+
+    // 같은 조직의 사용자만 수정 가능
+    const target = await prisma.user.findFirst({ where: { id: userId, organizationId } });
+    if (!target) return errorResponse('사용자를 찾을 수 없습니다.', 404);
     const body = await req.json();
     const { name, role, isActive, leaveDate, affiliation, projectIds, managerId } = body;
 
@@ -47,15 +51,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 }
 
-// DELETE /api/users/[id] - 비활성화 (기본) 또는 완전삭제 (?hard=true, admin@admin.co.kr 전용)
+// DELETE /api/users/[id]
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { error, session } = await requireRole(['ADMIN']);
+    const { error, session, organizationId } = await requireRole(['ADMIN']);
     if (error) return error;
 
     const { id } = await params;
     const userId = parseInt(id);
     const hard = new URL(req.url).searchParams.get('hard') === 'true';
+
+    const target = await prisma.user.findFirst({ where: { id: userId, organizationId } });
+    if (!target) return errorResponse('사용자를 찾을 수 없습니다.', 404);
 
     if (hard) {
       const callerRole = (session!.user as any).role;

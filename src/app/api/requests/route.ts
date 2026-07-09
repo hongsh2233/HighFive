@@ -9,10 +9,10 @@ const requesterInclude = {
   approver: { select: { id: true, name: true } },
 } as const;
 
-// GET /api/requests?scope=mine|approvals - 신청 목록
+// GET /api/requests
 export async function GET(req: NextRequest) {
   try {
-    const { session, error } = await requireAuth();
+    const { session, error, organizationId } = await requireAuth();
     if (error) return error;
 
     const userId = parseInt((session!.user as any).id || '0');
@@ -22,9 +22,9 @@ export async function GET(req: NextRequest) {
     const where =
       scope === 'approvals'
         ? role === 'ADMIN'
-          ? { OR: [{ approverId: userId }, { approverId: null }] }
-          : { approverId: userId }
-        : { requesterId: userId };
+          ? { organizationId, OR: [{ approverId: userId }, { approverId: null }] }
+          : { organizationId, approverId: userId }
+        : { organizationId, requesterId: userId };
 
     const requests = await prisma.request.findMany({
       where,
@@ -39,10 +39,10 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/requests - 휴가/비품 신청
+// POST /api/requests
 export async function POST(req: NextRequest) {
   try {
-    const { session, error } = await requireAuth();
+    const { session, error, organizationId } = await requireAuth();
     if (error) return error;
 
     const requesterId = parseInt((session!.user as any).id || '0');
@@ -72,7 +72,6 @@ export async function POST(req: NextRequest) {
       return errorResponse('사용자를 찾을 수 없습니다.', 404);
     }
 
-    // '공지로 등록(전결)'은 ADMIN/LEADER만 사용 가능 — WORKER가 임의로 보내도 서버에서 무시
     const announce = !!isAnnouncement && ['ADMIN', 'LEADER'].includes(requester.role);
 
     const request = await prisma.request.create({
@@ -87,6 +86,7 @@ export async function POST(req: NextRequest) {
         approverId: announce ? requesterId : requester.managerId,
         status: announce ? 'APPROVED' : 'PENDING',
         decidedAt: announce ? new Date() : null,
+        organizationId,
       },
       include: requesterInclude,
     });
@@ -102,6 +102,7 @@ export async function POST(req: NextRequest) {
           content: `[${typeLabel} 공지] ${requester.name}: ${title.trim()}${period}`,
           authorId: requesterId,
           requestId: request.id,
+          organizationId,
         },
       });
     }

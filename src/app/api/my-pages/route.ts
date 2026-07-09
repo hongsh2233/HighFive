@@ -44,8 +44,9 @@ export async function POST(req: NextRequest) {
       return errorResponse(`문서는 최대 ${MAX_PAGES}개까지 만들 수 있습니다.`, 400, 'VALID_400');
     }
 
+    const organizationId = (session!.user as any).organizationId as number | undefined;
     const page = await prisma.userPage.create({
-      data: { userId, title: title.trim(), content: content?.trim() || '' },
+      data: { userId, title: title.trim(), content: content?.trim() || '', organizationId },
     });
 
     return successResponse(page, '문서가 생성되었습니다.', 201);

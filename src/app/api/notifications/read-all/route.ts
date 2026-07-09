@@ -8,9 +8,10 @@ export async function PATCH() {
     if (error) return error;
 
     const userId = parseInt((session!.user as any).id || '0');
+    const organizationId = (session!.user as any).organizationId as number | undefined;
 
     await prisma.userNotification.updateMany({
-      where: { userId, isRead: false },
+      where: { userId, organizationId, isRead: false },
       data: { isRead: true },
     });
 

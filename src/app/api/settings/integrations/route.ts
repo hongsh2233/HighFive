@@ -5,10 +5,10 @@ import { INTEGRATION_CHANNELS } from '@/lib/integrations';
 // GET /api/settings/integrations - 외부연동 채널 설정 목록 (ADMIN 전용)
 export async function GET() {
   try {
-    const { error } = await requireRole(['ADMIN']);
+    const { error, organizationId } = await requireRole(['ADMIN']);
     if (error) return error;
 
-    const rows = await prisma.integration.findMany();
+    const rows = await prisma.integration.findMany({ where: { organizationId } });
     const byChannel = new Map(rows.map((r) => [r.channel, r]));
 
     const result = INTEGRATION_CHANNELS.map((channel) => {

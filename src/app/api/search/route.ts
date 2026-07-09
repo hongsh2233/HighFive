@@ -3,7 +3,7 @@ import { requireAuth } from '@/lib/utils';
 import { prisma } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
+  const { error, organizationId } = await requireAuth();
   if (error) return error;
 
   const q = req.nextUrl.searchParams.get('q')?.trim() || '';
@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
   const [tasks, fieldMatches, wiki] = await Promise.all([
     prisma.task.findMany({
       where: {
+        organizationId,
         OR: [
           { title: { contains: q, mode: 'insensitive' } },
           { notes: { contains: q, mode: 'insensitive' } },
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
       orderBy: { updatedAt: 'desc' },
     }),
     prisma.taskFieldValue.findMany({
-      where: { value: { contains: q, mode: 'insensitive' } },
+      where: { value: { contains: q, mode: 'insensitive' }, task: { organizationId } },
       select: {
         task: {
           select: {
@@ -46,6 +47,7 @@ export async function GET(req: NextRequest) {
     }),
     prisma.wikiPage.findMany({
       where: {
+        project: { organizationId },
         OR: [
           { title: { contains: q, mode: 'insensitive' } },
           { content: { contains: q, mode: 'insensitive' } },

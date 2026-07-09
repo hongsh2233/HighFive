@@ -9,11 +9,11 @@ export async function getUserList(role?: string) {
   });
 }
 
-export async function inviteUser(email: string, name: string, role: string) {
+export async function inviteUser(email: string, name: string, role: string, organizationId?: number) {
   const tempPassword = generateTempPassword();
   const passwordHash = await hashPassword(tempPassword);
   const user = await prisma.user.create({
-    data: { email: email.toLowerCase(), name, role, passwordHash },
+    data: { email: email.toLowerCase(), name, role, passwordHash, organizationId },
     select: { id: true, email: true, name: true, role: true },
   });
   return { user, tempPassword };

@@ -5,10 +5,11 @@ export async function createUserNotification(
   userId: number,
   type: string,
   message: string,
-  taskId?: number
+  taskId?: number,
+  organizationId?: number
 ) {
   try {
-    await prisma.userNotification.create({ data: { userId, type, message, taskId } });
+    await prisma.userNotification.create({ data: { userId, type, message, taskId, organizationId } });
   } catch (e) {
     console.error('[notify] failed:', e);
   }

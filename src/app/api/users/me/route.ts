@@ -27,8 +27,9 @@ export async function GET() {
       return errorResponse('사용자를 찾을 수 없습니다.', 404, 'USER_404');
     }
 
+    const organizationId = (session.user as any).organizationId as number | undefined;
     const tasks = await prisma.task.findMany({
-      where: { workerId: userId, status: { in: ['ASSIGNED', 'PROGRESS', 'REVIEW', 'QA'] } },
+      where: { workerId: userId, organizationId, status: { in: ['ASSIGNED', 'PROGRESS', 'REVIEW', 'QA'] } },
       take: 5,
       orderBy: { createdAt: 'desc' },
     });

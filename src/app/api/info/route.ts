@@ -2,18 +2,16 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, requireRole, successResponse, errorResponse } from '@/lib/utils';
 
-// GET /api/info - 전체 FAQ 목록 조회 (인증 사용자 모두)
+// GET /api/info
 export async function GET() {
   try {
-    const { error } = await requireAuth();
+    const { error, organizationId } = await requireAuth();
     if (error) return error;
 
     const items = await prisma.infoItem.findMany({
-      where: { isActive: true },
+      where: { organizationId, isActive: true },
       orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
-      include: {
-        author: { select: { id: true, name: true } },
-      },
+      include: { author: { select: { id: true, name: true } } },
     });
 
     return successResponse(items);
@@ -23,10 +21,10 @@ export async function GET() {
   }
 }
 
-// POST /api/info - FAQ 항목 생성 (관리자만)
+// POST /api/info
 export async function POST(req: NextRequest) {
   try {
-    const { session, error } = await requireRole(['ADMIN']);
+    const { session, error, organizationId } = await requireRole(['ADMIN']);
     if (error) return error;
 
     const body = await req.json();
@@ -42,10 +40,9 @@ export async function POST(req: NextRequest) {
         answer: answer.trim(),
         order: order ?? 0,
         createdBy: parseInt((session!.user as any).id || '0'),
+        organizationId,
       },
-      include: {
-        author: { select: { id: true, name: true } },
-      },
+      include: { author: { select: { id: true, name: true } } },
     });
 
     return successResponse(item, '생성되었습니다.', 201);

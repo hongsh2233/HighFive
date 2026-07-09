@@ -12,7 +12,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await requireAuth();
+    const { error, organizationId } = await requireAuth();
     if (error) return error;
 
     const { id } = await params;
@@ -21,8 +21,8 @@ export async function GET(
       return errorResponse('유효하지 않은 업무 ID입니다.', 400, 'VALID_400');
     }
 
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
+    const task = await prisma.task.findFirst({
+      where: { id: taskId, organizationId },
       include: {
         registrant: { select: { id: true, name: true, email: true } },
         worker: { select: { id: true, name: true, email: true } },
@@ -48,7 +48,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error, session } = await requireAuth();
+    const { error, session, organizationId } = await requireAuth();
     if (error) return error;
 
     const userRole = (session?.user as any)?.role;
@@ -66,8 +66,8 @@ export async function PATCH(
     const { title, targetDate, notes, status, workerId: newWorkerId, externalLink } = body;
 
     // 담당자/제목 변경 감지를 위해 수정 전 상태 조회
-    const prevTask = await prisma.task.findUnique({
-      where: { id: taskId },
+    const prevTask = await prisma.task.findFirst({
+      where: { id: taskId, organizationId },
       include: { worker: { select: { name: true } } },
     });
     if (!prevTask) {

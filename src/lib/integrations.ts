@@ -18,8 +18,10 @@ const ENV_WEBHOOK_URL: Partial<Record<IntegrationChannel, string | undefined>> =
 };
 
 // DB에 저장된 설정을 우선 사용하고, 저장된 적이 없는 채널은 .env 값으로 폴백한다.
-async function resolveConfig(channel: IntegrationChannel): Promise<ResolvedConfig | null> {
-  const row = await prisma.integration.findUnique({ where: { channel } });
+async function resolveConfig(channel: IntegrationChannel, organizationId?: number): Promise<ResolvedConfig | null> {
+  const row = organizationId
+    ? await prisma.integration.findUnique({ where: { organizationId_channel: { organizationId, channel } } })
+    : await prisma.integration.findFirst({ where: { channel } });
 
   if (row) {
     if (!row.isEnabled) return null;
@@ -39,8 +41,8 @@ async function resolveConfig(channel: IntegrationChannel): Promise<ResolvedConfi
   return null;
 }
 
-export async function getWebhookUrl(channel: IntegrationChannel): Promise<string | null> {
-  const cfg = await resolveConfig(channel);
+export async function getWebhookUrl(channel: IntegrationChannel, organizationId?: number): Promise<string | null> {
+  const cfg = await resolveConfig(channel, organizationId);
   return cfg?.webhookUrl ?? null;
 }
 
@@ -83,8 +85,8 @@ async function dispatch(channel: IntegrationChannel, cfg: ResolvedConfig, text: 
   }
 }
 
-export async function sendToChannel(channel: IntegrationChannel, text: string, taskUrl?: string): Promise<boolean> {
-  const cfg = await resolveConfig(channel);
+export async function sendToChannel(channel: IntegrationChannel, text: string, taskUrl?: string, organizationId?: number): Promise<boolean> {
+  const cfg = await resolveConfig(channel, organizationId);
   if (!cfg) return false;
   try {
     return await dispatch(channel, cfg, text, taskUrl);
@@ -94,12 +96,12 @@ export async function sendToChannel(channel: IntegrationChannel, text: string, t
   }
 }
 
-export async function broadcastNotification(text: string, taskUrl?: string) {
+export async function broadcastNotification(text: string, taskUrl?: string, organizationId?: number) {
   const message = taskUrl ? `${text}\n${taskUrl}` : text;
   const results = await Promise.all(
     INTEGRATION_CHANNELS.map(async (channel) => ({
       channel,
-      success: await sendToChannel(channel, message, taskUrl),
+      success: await sendToChannel(channel, message, taskUrl, organizationId),
     }))
   );
   return results;

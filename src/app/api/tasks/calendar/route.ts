@@ -5,7 +5,7 @@ import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 // GET /api/tasks/calendar - 캘린더용 업무 데이터
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireAuth();
+    const { error, organizationId } = await requireAuth();
     if (error) return error;
 
     const { searchParams } = new URL(req.url);
@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
     // 해당 월의 업무 조회
     const tasks = await prisma.task.findMany({
       where: {
+        organizationId,
         targetDate: {
           gte: startDate,
           lte: endDate,
@@ -46,6 +47,7 @@ export async function GET(req: NextRequest) {
     // 해당 월과 겹치는 승인된 휴가 신청 조회
     const leaves = await prisma.request.findMany({
       where: {
+        organizationId,
         type: 'LEAVE',
         status: 'APPROVED',
         startDate: { lte: endDate },

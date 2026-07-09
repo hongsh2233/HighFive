@@ -5,7 +5,7 @@ import { requireRole, successResponse, errorResponse } from '@/lib/utils';
 // GET /api/stats/workload - 작업자별 부하량 통계
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireRole(['ADMIN', 'LEADER']);
+    const { error, organizationId } = await requireRole(['ADMIN', 'LEADER']);
     if (error) return error;
 
     const { searchParams } = new URL(req.url);
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
     // 작업자별 업무 집계
     const workers = await prisma.user.findMany({
-      where: { role: 'WORKER', isActive: true },
+      where: { role: 'WORKER', isActive: true, organizationId },
       include: {
         workerTasks: {
           where: {

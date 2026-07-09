@@ -10,93 +10,150 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ──────────────────────────────────────────────
+// 멀티테넌시 루트 모델
+// ──────────────────────────────────────────────
+
+model Organization {
+  id        Int      @id @default(autoincrement())
+  name      String
+  slug      String   @unique  // URL 식별자 (예: acme, my-company)
+  plan      String   @default("FREE")  // FREE, PRO, ENTERPRISE
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users          User[]
+  projects       Project[]
+  tasks          Task[]
+  infoItems      InfoItem[]
+  announcements  Announcement[]
+  requests       Request[]
+  stickyNotes    StickyNote[]
+  userPages      UserPage[]
+  userNotifications UserNotification[]
+  integrations   Integration[]
+  templates      Template[]
+  inviteTokens   InviteToken[]
+
+  @@map("organizations")
+}
+
+model InviteToken {
+  id             Int       @id @default(autoincrement())
+  token          String    @unique
+  email          String
+  organizationId Int
+  role           String    @default("WORKER")
+  expiresAt      DateTime
+  usedAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("invite_tokens")
+}
+
+// ──────────────────────────────────────────────
+// 사용자
+// ──────────────────────────────────────────────
+
 model User {
-  id            Int     @id @default(autoincrement())
-  email         String  @unique
-  name          String
-  role          String  @default("WORKER") // ADMIN, LEADER, WORKER
-  passwordHash  String
-  isActive      Boolean @default(true)
-  leaveDate     DateTime?
-  affiliation   String?  // 정규 | 프리
-  managerId     Int?     // 결재 라인상의 담당 리더(상급자)
-  createdAt     DateTime @default(now())
-  lastLoginAt   DateTime?
+  id             Int       @id @default(autoincrement())
+  organizationId Int?
+  email          String    @unique
+  name           String
+  role           String    @default("WORKER") // ADMIN, LEADER, WORKER
+  passwordHash   String
+  isActive       Boolean   @default(true)
+  leaveDate      DateTime?
+  affiliation    String?   // 정규 | 프리
+  managerId      Int?      // 결재 라인상의 담당 리더(상급자)
+  createdAt      DateTime  @default(now())
+  lastLoginAt    DateTime?
 
   // Relations
-  registeredTasks Task[]          @relation("registrant")
-  workerTasks     Task[]          @relation("worker")
-  timeLogs        TimeLog[]
-  infoItems       InfoItem[]
-  projectMembers  ProjectMember[]
-  createdProjects Project[]       @relation("projectCreator")
-  taskHistories   TaskHistory[]
+  organization      Organization?   @relation(fields: [organizationId], references: [id])
+  registeredTasks   Task[]          @relation("registrant")
+  workerTasks       Task[]          @relation("worker")
+  timeLogs          TimeLog[]
+  infoItems         InfoItem[]
+  projectMembers    ProjectMember[]
+  createdProjects   Project[]       @relation("projectCreator")
+  taskHistories     TaskHistory[]
   userNotifications UserNotification[]
-  manager           User?          @relation("userManager", fields: [managerId], references: [id])
-  subordinates       User[]        @relation("userManager")
-  announcements      Announcement[] @relation("announcementAuthor")
-  requestsMade       Request[]      @relation("requestRequester")
-  requestsToApprove  Request[]      @relation("requestApprover")
-  wikiPages          WikiPage[]     @relation("wikiAuthor")
-  stickyNotes        StickyNote[]
-  userPages          UserPage[]
-  taskComments       TaskComment[]
+  manager           User?           @relation("userManager", fields: [managerId], references: [id])
+  subordinates      User[]          @relation("userManager")
+  announcements     Announcement[]  @relation("announcementAuthor")
+  requestsMade      Request[]       @relation("requestRequester")
+  requestsToApprove Request[]       @relation("requestApprover")
+  wikiPages         WikiPage[]      @relation("wikiAuthor")
+  stickyNotes       StickyNote[]
+  userPages         UserPage[]
+  taskComments      TaskComment[]
 
+  @@index([organizationId])
   @@map("users")
 }
 
+// ──────────────────────────────────────────────
+// 업무
+// ──────────────────────────────────────────────
+
 model Task {
-  id            Int     @id @default(autoincrement())
-  rmsNo         String?
-  title         String
-  registrantId  Int     @map("plannerId") // 업무 등록자(관리자 등급이 등록하면 그 사람이 등록자가 됨) — 컬럼명은 기존 plannerId 유지(무손실 리네이밍)
-  workerId      Int
-  status        String  @default("ASSIGNED") // ASSIGNED, PROGRESS, REVIEW, QA, DONE
-  targetDate    DateTime?
-  isFreeze      Boolean @default(false)
-  templateId    Int?
-  notes         String?
-  externalLink  String?
-  projectId     Int?
-  labels        String?   // 콤마 구분 라벨 코드 ex) "URGENT,WEEKEND"
-  isGroup       Boolean  @default(false) // 그룹 업무 여부 (하위 업무를 나중에 추가할 수 있는 부모 업무)
-  timeCounterEnabled Boolean @default(true) // 상태 변경에 따른 자동 시간 카운트 사용 여부
-  parentTaskId  Int?      // 그룹 업무의 하위 업무인 경우 부모 업무 id
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                 Int       @id @default(autoincrement())
+  organizationId     Int?
+  rmsNo              String?
+  title              String
+  registrantId       Int       @map("plannerId")
+  workerId           Int
+  status             String    @default("ASSIGNED")
+  targetDate         DateTime?
+  isFreeze           Boolean   @default(false)
+  templateId         Int?
+  notes              String?
+  externalLink       String?
+  projectId          Int?
+  labels             String?
+  isGroup            Boolean   @default(false)
+  timeCounterEnabled Boolean   @default(true)
+  parentTaskId       Int?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   // Relations
-  registrant    User     @relation("registrant", fields: [registrantId], references: [id])
-  worker        User     @relation("worker", fields: [workerId], references: [id])
-  project       Project? @relation(fields: [projectId], references: [id])
+  organization  Organization? @relation(fields: [organizationId], references: [id])
+  registrant    User          @relation("registrant", fields: [registrantId], references: [id])
+  worker        User          @relation("worker", fields: [workerId], references: [id])
+  project       Project?      @relation(fields: [projectId], references: [id])
   timeLogs      TimeLog[]
   histories     TaskHistory[]
-  parentTask    Task?    @relation("subTasks", fields: [parentTaskId], references: [id])
-  subTasks      Task[]   @relation("subTasks")
+  parentTask    Task?         @relation("subTasks", fields: [parentTaskId], references: [id])
+  subTasks      Task[]        @relation("subTasks")
   fieldValues   TaskFieldValue[]
   comments      TaskComment[]
 
-  @@index([workerId, status])
-  @@index([targetDate])
+  @@index([organizationId, workerId, status])
+  @@index([organizationId, targetDate])
   @@index([rmsNo])
   @@index([parentTaskId])
   @@map("tasks")
 }
 
 model TimeLog {
-  id            Int     @id @default(autoincrement())
+  id            Int      @id @default(autoincrement())
   taskId        Int
   workerId      Int
   startTime     DateTime
   endTime       DateTime?
   durationHours Float?
-  adjustedHours Float   @default(0)
+  adjustedHours Float    @default(0)
   finalHours    Float?
   createdAt     DateTime @default(now())
 
-  // Relations
-  task          Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  worker        User    @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  worker User @relation(fields: [workerId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
   @@index([workerId])
@@ -104,70 +161,89 @@ model TimeLog {
 }
 
 model Template {
-  id                Int     @id @default(autoincrement())
-  name              String
-  defaultTitle      String
-  defaultPlannerId  Int?
-  guideText         String?
-  createdAt         DateTime @default(now())
+  id               Int      @id @default(autoincrement())
+  organizationId   Int?
+  name             String
+  defaultTitle     String
+  defaultPlannerId Int?
+  guideText        String?
+  createdAt        DateTime @default(now())
 
+  organization Organization? @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
   @@map("templates")
 }
 
 model Notification {
-  id        Int     @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   taskId    Int
-  channel   String  // SLACK, JANDI, EMAIL
+  channel   String
   message   String
   sentAt    DateTime @default(now())
-  isSuccess Boolean @default(false)
+  isSuccess Boolean  @default(false)
 
   @@index([taskId])
   @@map("notifications")
 }
 
+// ──────────────────────────────────────────────
+// 프로젝트
+// ──────────────────────────────────────────────
+
 model Project {
   id                 Int      @id @default(autoincrement())
+  organizationId     Int?
   name               String
-  status             String   @default("ACTIVE") // ACTIVE, CLOSED
+  status             String   @default("ACTIVE")
   createdBy          Int?
   projectManagerName String?
   projectLeadName    String?
-  creator            User?    @relation("projectCreator", fields: [createdBy], references: [id])
-  members            ProjectMember[]
-  tasks            Task[]
-  wikiPages        WikiPage[]
-  statuses         ProjectStatus[]
-  fields           ProjectField[]
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
 
+  organization Organization?   @relation(fields: [organizationId], references: [id])
+  creator      User?           @relation("projectCreator", fields: [createdBy], references: [id])
+  members      ProjectMember[]
+  tasks        Task[]
+  wikiPages    WikiPage[]
+  statuses     ProjectStatus[]
+  fields       ProjectField[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([organizationId])
   @@map("projects")
 }
 
 model ProjectMember {
   projectId Int
   userId    Int
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   joinedAt  DateTime @default(now())
 
   @@id([projectId, userId])
   @@map("project_members")
 }
 
-model InfoItem {
-  id        Int      @id @default(autoincrement())
-  question  String
-  answer    String   @db.Text
-  order     Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdBy Int
-  author    User     @relation(fields: [createdBy], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ──────────────────────────────────────────────
+// 정보 / 공지 / 신청
+// ──────────────────────────────────────────────
 
-  @@index([order])
+model InfoItem {
+  id             Int      @id @default(autoincrement())
+  organizationId Int?
+  question       String
+  answer         String   @db.Text
+  order          Int      @default(0)
+  isActive       Boolean  @default(true)
+  createdBy      Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  author       User          @relation(fields: [createdBy], references: [id])
+
+  @@index([organizationId, order])
   @@map("info_items")
 }
 
@@ -175,71 +251,82 @@ model TaskHistory {
   id        Int      @id @default(autoincrement())
   taskId    Int
   userId    Int
-  action    String   // CREATED, STATUS_CHANGED, WORKER_CHANGED, TIMER_START, TIMER_STOP, NOTE_UPDATED, TRANSFERRED
+  action    String
   detail    String?
   createdAt DateTime @default(now())
 
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id])
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
 
   @@index([taskId])
   @@map("task_histories")
 }
 
 model UserNotification {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  taskId    Int?
-  type      String   // WORKER_ASSIGNED, REVIEW_REQUESTED, WORKER_CHANGED
-  message   String
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id             Int      @id @default(autoincrement())
+  organizationId Int?
+  userId         Int
+  taskId         Int?
+  type           String
+  message        String
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
+  @@index([organizationId])
   @@map("user_notifications")
 }
 
 model Announcement {
-  id        Int      @id @default(autoincrement())
-  content   String   @db.Text
-  authorId  Int
-  isActive  Boolean  @default(true)
-  requestId Int?     @unique // 신청서에서 '공지로 등록'(전결)으로 자동 생성된 경우 연결
-  createdAt DateTime @default(now())
+  id             Int      @id @default(autoincrement())
+  organizationId Int?
+  content        String   @db.Text
+  authorId       Int
+  isActive       Boolean  @default(true)
+  requestId      Int?     @unique
+  createdAt      DateTime @default(now())
 
-  author    User     @relation("announcementAuthor", fields: [authorId], references: [id])
-  request   Request? @relation(fields: [requestId], references: [id])
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  author       User          @relation("announcementAuthor", fields: [authorId], references: [id])
+  request      Request?      @relation(fields: [requestId], references: [id])
 
-  @@index([isActive])
+  @@index([organizationId, isActive])
   @@map("announcements")
 }
 
 model Request {
   id             Int       @id @default(autoincrement())
-  type           String    // LEAVE, SUPPLY
+  organizationId Int?
+  type           String
   title          String
   content        String?   @db.Text
-  startDate      DateTime? // LEAVE 전용 (휴가 시작일)
-  endDate        DateTime? // LEAVE 전용 (휴가 종료일)
-  isAnnouncement Boolean   @default(false) // 체크 시 결재 없이 전결 처리 + 공지 배너 게시
-  status         String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  startDate      DateTime?
+  endDate        DateTime?
+  isAnnouncement Boolean   @default(false)
+  status         String    @default("PENDING")
   requesterId    Int
-  approverId     Int?      // 신청 시점의 담당 리더(User.managerId) 스냅샷
+  approverId     Int?
   rejectReason   String?
   decidedAt      DateTime?
   createdAt      DateTime  @default(now())
 
-  requester      User          @relation("requestRequester", fields: [requesterId], references: [id])
-  approver       User?         @relation("requestApprover", fields: [approverId], references: [id])
-  announcement   Announcement?
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  requester    User          @relation("requestRequester", fields: [requesterId], references: [id])
+  approver     User?         @relation("requestApprover", fields: [approverId], references: [id])
+  announcement Announcement?
 
-  @@index([requesterId])
+  @@index([organizationId, requesterId])
   @@index([approverId, status])
   @@index([type, status, startDate])
   @@map("requests")
 }
+
+// ──────────────────────────────────────────────
+// 위키
+// ──────────────────────────────────────────────
 
 model WikiPage {
   id        Int      @id @default(autoincrement())
@@ -250,38 +337,50 @@ model WikiPage {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  author    User     @relation("wikiAuthor", fields: [authorId], references: [id])
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author  User    @relation("wikiAuthor", fields: [authorId], references: [id])
 
   @@index([projectId])
   @@map("wiki_pages")
 }
 
-model Integration {
-  id         Int      @id @default(autoincrement())
-  channel    String   @unique // SLACK, JANDI, TEAMS, TELEGRAM, KAKAO
-  webhookUrl String?
-  botToken   String?  // TELEGRAM 봇 토큰
-  chatId     String?  // TELEGRAM chat id
-  isEnabled  Boolean  @default(false)
-  updatedAt  DateTime @updatedAt
+// ──────────────────────────────────────────────
+// 외부 연동 (조직별)
+// ──────────────────────────────────────────────
 
+model Integration {
+  id             Int      @id @default(autoincrement())
+  organizationId Int?
+  channel        String   // SLACK, JANDI, TEAMS, TELEGRAM, KAKAO
+  webhookUrl     String?
+  botToken       String?
+  chatId         String?
+  isEnabled      Boolean  @default(false)
+  updatedAt      DateTime @updatedAt
+
+  organization Organization? @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, channel])
   @@map("integrations")
 }
+
+// ──────────────────────────────────────────────
+// 프로젝트 커스텀 상태 / 필드
+// ──────────────────────────────────────────────
 
 model ProjectStatus {
   id         Int      @id @default(autoincrement())
   projectId  Int
-  code       String   // Task.status에 저장되는 값
+  code       String
   label      String
-  color      String?  // hex, 미지정 시 프론트 기본색 사용
+  color      String?
   order      Int      @default(0)
-  isProgress Boolean  @default(false) // 이 상태로 들어오면 자동 시간카운터 시작(빠지면 종료)
-  isDone     Boolean  @default(false) // 완료로 집계(통계 등)
+  isProgress Boolean  @default(false)
+  isDone     Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, code])
   @@index([projectId, order])
@@ -291,14 +390,14 @@ model ProjectStatus {
 model ProjectField {
   id        Int      @id @default(autoincrement())
   projectId Int
-  name      String              // 노출 라벨 (예: "고객사", "예상공수")
-  type      String              // TEXT | NUMBER | DATE | SELECT | CHECKBOX
-  options   String?             // SELECT 타입일 때 콤마구분 선택지
+  name      String
+  type      String
+  options   String?
   order     Int      @default(0)
   createdAt DateTime @default(now())
 
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  values    TaskFieldValue[]
+  project Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  values  TaskFieldValue[]
 
   @@unique([projectId, name])
   @@index([projectId, order])
@@ -306,29 +405,35 @@ model ProjectField {
 }
 
 model TaskFieldValue {
-  id      Int          @id @default(autoincrement())
+  id      Int    @id @default(autoincrement())
   taskId  Int
   fieldId Int
   value   String?
 
-  task    Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  field   ProjectField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  task  Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  field ProjectField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
 
   @@unique([taskId, fieldId])
   @@index([taskId])
   @@map("task_field_values")
 }
 
-model StickyNote {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  content   String   @db.Text
-  color     String?  // 파스텔 hex, 선택
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ──────────────────────────────────────────────
+// 개인 메모 / 페이지
+// ──────────────────────────────────────────────
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model StickyNote {
+  id             Int      @id @default(autoincrement())
+  organizationId Int?
+  userId         Int
+  content        String   @db.Text
+  color          String?
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, order])
   @@map("sticky_notes")
@@ -338,15 +443,15 @@ model TaskComment {
   id        Int      @id @default(autoincrement())
   taskId    Int
   authorId  Int
-  parentId  Int?     // 대댓글인 경우 부모 댓글 id
+  parentId  Int?
   content   String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  task      Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  author    User          @relation(fields: [authorId], references: [id])
-  parent    TaskComment?  @relation("replies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   TaskComment[] @relation("replies")
+  task    Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author  User          @relation(fields: [authorId], references: [id])
+  parent  TaskComment?  @relation("replies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies TaskComment[] @relation("replies")
 
   @@index([taskId])
   @@index([parentId])
@@ -354,14 +459,16 @@ model TaskComment {
 }
 
 model UserPage {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  title     String
-  content   String   @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             Int      @id @default(autoincrement())
+  organizationId Int?
+  userId         Int
+  title          String
+  content        String   @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("user_pages")

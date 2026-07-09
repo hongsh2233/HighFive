@@ -8,9 +8,10 @@ export async function GET() {
     if (error) return error;
 
     const userId = parseInt((session!.user as any).id || '0');
+    const organizationId = (session!.user as any).organizationId as number | undefined;
 
     const notifications = await prisma.userNotification.findMany({
-      where: { userId },
+      where: { userId, organizationId },
       orderBy: { createdAt: 'desc' },
       take: 30,
     });

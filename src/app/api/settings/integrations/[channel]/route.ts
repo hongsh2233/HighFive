@@ -10,7 +10,7 @@ function isValidChannel(channel: string): channel is IntegrationChannel {
 // PUT /api/settings/integrations/[channel] - 채널 설정 저장 (ADMIN 전용)
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ channel: string }> }) {
   try {
-    const { error } = await requireRole(['ADMIN']);
+    const { error, organizationId } = await requireRole(['ADMIN']);
     if (error) return error;
 
     const { channel } = await params;
@@ -22,7 +22,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ chan
     const { webhookUrl, botToken, chatId, isEnabled } = body;
 
     const row = await prisma.integration.upsert({
-      where: { channel },
+      where: { organizationId_channel: { organizationId: organizationId ?? 0, channel } },
       update: {
         webhookUrl: webhookUrl ?? null,
         botToken: botToken ?? null,
@@ -31,6 +31,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ chan
       },
       create: {
         channel,
+        organizationId,
         webhookUrl: webhookUrl ?? null,
         botToken: botToken ?? null,
         chatId: chatId ?? null,

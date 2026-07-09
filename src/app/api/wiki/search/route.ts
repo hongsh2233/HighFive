@@ -5,7 +5,7 @@ import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 // GET /api/wiki/search?q=... - 내가 소속된 프로젝트(ADMIN은 전체)의 위키 문서 검색
 export async function GET(req: NextRequest) {
   try {
-    const { session, error } = await requireAuth();
+    const { session, error, organizationId } = await requireAuth();
     if (error) return error;
 
     const userId = parseInt((session!.user as any).id || '0');
@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
     }
 
     const where: any = {
+      project: { organizationId },
       ...(accessibleProjectIds !== null && { projectId: { in: accessibleProjectIds } }),
       ...(q && {
         OR: [
