@@ -147,9 +147,8 @@ export default function AppHeader() {
             className={styles.navLink}
             onClick={() => setSearchOpen(true)}
             title="전역 검색 (Ctrl+K)"
-            aria-label="전역 검색"
           >
-            🔍
+            검색
           </button>
 
           {/* 계정 메뉴 */}

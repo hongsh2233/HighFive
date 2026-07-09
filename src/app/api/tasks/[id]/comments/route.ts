@@ -3,6 +3,8 @@ import { requireAuth } from '@/lib/utils';
 import { prisma } from '@/lib/db';
 import { createUserNotification } from '@/lib/notify';
 
+const AUTHOR_SELECT = { select: { id: true, name: true } };
+
 function parseMentionIds(content: string): number[] {
   const re = /@\[[^\]]+\]\((\d+)\)/g;
   const ids: number[] = [];
@@ -25,9 +27,16 @@ export async function GET(
   const taskId = parseInt(id);
   if (isNaN(taskId)) return NextResponse.json({ message: '잘못된 요청' }, { status: 400 });
 
+  // 최상위 댓글만 조회하고 replies를 중첩 포함
   const comments = await prisma.taskComment.findMany({
-    where: { taskId },
-    include: { author: { select: { id: true, name: true } } },
+    where: { taskId, parentId: null },
+    include: {
+      author: AUTHOR_SELECT,
+      replies: {
+        include: { author: AUTHOR_SELECT },
+        orderBy: { createdAt: 'asc' },
+      },
+    },
     orderBy: { createdAt: 'asc' },
   });
 
@@ -49,16 +58,25 @@ export async function POST(
   const content = (body.content || '').trim();
   if (!content) return NextResponse.json({ message: '내용을 입력해주세요.' }, { status: 400 });
 
+  const parentId: number | null = body.parentId ? parseInt(body.parentId) : null;
+
   const task = await prisma.task.findUnique({ where: { id: taskId } });
   if (!task) return NextResponse.json({ message: '업무를 찾을 수 없습니다.' }, { status: 404 });
 
+  if (parentId) {
+    const parent = await prisma.taskComment.findUnique({ where: { id: parentId } });
+    if (!parent || parent.taskId !== taskId) {
+      return NextResponse.json({ message: '잘못된 부모 댓글입니다.' }, { status: 400 });
+    }
+  }
+
   const authorId = parseInt((session!.user as any).id || '0');
   const comment = await prisma.taskComment.create({
-    data: { taskId, authorId, content },
-    include: { author: { select: { id: true, name: true } } },
+    data: { taskId, authorId, content, parentId },
+    include: { author: AUTHOR_SELECT },
   });
 
-  // 멘션 알림 발송 (비동기, 실패해도 댓글 등록 완료)
+  // 멘션 알림 발송 (비동기)
   const mentionIds = parseMentionIds(content).filter((uid) => uid !== authorId);
   if (mentionIds.length > 0) {
     const authorName = (session!.user as any).name || '누군가';

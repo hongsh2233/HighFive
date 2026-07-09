@@ -479,3 +479,20 @@
   - 댓글 렌더링 시 멘션 강조: `@[이름](id)` → `<span class="mention">@이름</span>`, 자기 자신 멘션은 `.mentionSelf`(노란 배경)로 구분.
   - 팀원 목록은 컴포넌트 마운트 시 1회 prefetch(`GET /api/users?role=WORKER`).
 - 디버깅 체크: `npx tsc --noEmit` 결과 오류 0개(Prisma client 생성 완료 상태).
+
+## 2026-07-09 (55차)
+
+- **대댓글(답글) 기능 추가**:
+  - `prisma/schema.prisma`의 `TaskComment` 모델에 `parentId Int?` 추가 — 자기참조 `"replies"` 관계, `onDelete: Cascade`.
+  - `GET /api/tasks/[id]/comments` — 최상위 댓글만 조회 + `replies` 중첩 포함으로 변경.
+  - `POST /api/tasks/[id]/comments` — `parentId` 옵션 지원, 부모 댓글 존재/taskId 일치 검증 추가.
+  - 업무 상세 페이지 댓글 UI: 각 댓글에 "답글" 버튼 추가, 클릭 시 해당 댓글 아래 인라인 답글 입력창 표시. 대댓글은 들여쓰기 + 좌측 보더선으로 구분. 삭제 시 부모/대댓글 구분해서 state 업데이트.
+
+- **@ 멘션 수정**:
+  - `allUsers` 조회 시 `role=WORKER` 필터 제거 → ADMIN/LEADER 포함 전체 사용자 대상으로 변경.
+  - `mentionAnchor`를 `useState` 대신 `useRef`로 관리해 stale closure 문제 해소.
+  - `detectMention()` 헬퍼 분리, 댓글·답글 textarea 공용 사용.
+  - 멘션 드롭다운이 댓글 입력 중일 때와 답글 입력 중일 때 각각 올바른 textarea에 삽입되도록 수정.
+
+- **헤더 검색 버튼**: 🔍 아이콘 → "검색" 텍스트로 변경(디자인 밸런스 개선).
+- 디버깅 체크: `npx tsc --noEmit` 오류 0개.

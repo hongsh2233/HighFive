@@ -47,12 +47,18 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [comments, setComments] = useState<any[]>([]);
   const [commentInput, setCommentInput] = useState('');
   const [commentSaving, setCommentSaving] = useState(false);
+  // 대댓글: replyTo = { commentId, authorName }
+  const [replyTo, setReplyTo] = useState<{ commentId: number; authorName: string } | null>(null);
+  const [replyInput, setReplyInput] = useState('');
+  const [replySaving, setReplySaving] = useState(false);
 
   // @멘션 자동완성
   const [allUsers, setAllUsers] = useState<Worker[]>([]);
-  const [mentionQuery, setMentionQuery] = useState<string | null>(null); // null이면 드롭다운 닫힘
-  const [mentionAnchor, setMentionAnchor] = useState(0); // content 내 @ 위치
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const mentionAnchorRef = useRef(0); // ref로 스테일 클로저 방지
+  const mentionQueryRef = useRef<string | null>(null);
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const userRole = (user as any)?.role;
   const canEdit = userRole === 'ADMIN' || userRole === 'LEADER';
@@ -172,49 +178,67 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     fetchWorkers();
   }, [canEdit]);
 
-  // 멘션용 전체 사용자 목록 (로그인 후 1회 prefetch)
+  // 멘션용 전체 사용자 목록 (모든 역할 포함, 1회 prefetch)
   useEffect(() => {
     if (authLoading) return;
-    apiClient.get<{ data: Worker[] }>('/users?role=WORKER').then((res) => {
+    apiClient.get<{ data: Worker[] }>('/users').then((res) => {
       setAllUsers(res.data.data || []);
     }).catch(() => {});
   }, [authLoading]);
 
+  const detectMention = (val: string, pos: number) => {
+    const before = val.slice(0, pos);
+    const match = before.match(/@([^@\n]*)$/);
+    if (match) {
+      mentionAnchorRef.current = pos - match[0].length;
+      const q = match[1];
+      mentionQueryRef.current = q;
+      setMentionQuery(q);
+    } else {
+      mentionQueryRef.current = null;
+      setMentionQuery(null);
+    }
+  };
+
   const handleCommentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     setCommentInput(val);
-    const pos = e.target.selectionStart ?? val.length;
-    // @ 뒤 커서 위치까지 텍스트에서 멘션 감지
-    const before = val.slice(0, pos);
-    const match = before.match(/@([^@\s]*)$/);
-    if (match) {
-      setMentionQuery(match[1]);
-      setMentionAnchor(pos - match[0].length);
-    } else {
-      setMentionQuery(null);
-    }
+    detectMention(val, e.target.selectionStart ?? val.length);
+  }, []);
+
+  const handleReplyChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setReplyInput(val);
+    detectMention(val, e.target.selectionStart ?? val.length);
   }, []);
 
   const mentionFiltered = mentionQuery !== null
     ? allUsers.filter((u) => u.name.toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 6)
     : [];
 
-  const insertMention = useCallback((u: Worker) => {
-    const before = commentInput.slice(0, mentionAnchor);
-    const after = commentInput.slice(mentionAnchor + 1 + (mentionQuery?.length ?? 0));
+  const insertMentionInto = (
+    current: string,
+    setter: (v: string) => void,
+    taRef: React.RefObject<HTMLTextAreaElement | null>,
+    u: Worker
+  ) => {
+    const anchor = mentionAnchorRef.current;
+    const q = mentionQueryRef.current ?? '';
+    const before = current.slice(0, anchor);
+    const after = current.slice(anchor + 1 + q.length);
     const inserted = `@[${u.name}](${u.id}) `;
-    const next = before + inserted + after;
-    setCommentInput(next);
+    setter(before + inserted + after);
     setMentionQuery(null);
+    mentionQueryRef.current = null;
     setTimeout(() => {
-      const ta = commentTextareaRef.current;
+      const ta = taRef.current;
       if (ta) {
         const cursor = before.length + inserted.length;
         ta.focus();
         ta.setSelectionRange(cursor, cursor);
       }
     }, 0);
-  }, [commentInput, mentionAnchor, mentionQuery]);
+  };
 
   const renderCommentContent = useCallback((content: string) => {
     const parts = content.split(/(@\[[^\]]+\]\(\d+\))/g);
@@ -284,8 +308,9 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     setCommentSaving(true);
     try {
       const res = await apiClient.post<{ data: any }>(`/tasks/${id}/comments`, { content });
-      setComments((prev) => [...prev, res.data.data]);
+      setComments((prev) => [...prev, { ...res.data.data, replies: [] }]);
       setCommentInput('');
+      setMentionQuery(null);
     } catch (err: any) {
       setInfoError(err.response?.data?.message || '댓글 작성 실패');
     } finally {
@@ -293,24 +318,74 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     }
   };
 
-  const handleCommentDelete = async (commentId: number) => {
+  const handleReplySubmit = async () => {
+    if (!replyTo) return;
+    const content = replyInput.trim();
+    if (!content || replySaving) return;
+    setReplySaving(true);
+    try {
+      const res = await apiClient.post<{ data: any }>(`/tasks/${id}/comments`, {
+        content,
+        parentId: replyTo.commentId,
+      });
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id === replyTo.commentId
+            ? { ...c, replies: [...(c.replies || []), res.data.data] }
+            : c
+        )
+      );
+      setReplyInput('');
+      setReplyTo(null);
+      setMentionQuery(null);
+    } catch (err: any) {
+      setInfoError(err.response?.data?.message || '답글 작성 실패');
+    } finally {
+      setReplySaving(false);
+    }
+  };
+
+  const handleCommentDelete = async (commentId: number, parentId?: number) => {
     if (!(await confirm('댓글을 삭제하시겠습니까?'))) return;
     try {
       await apiClient.delete(`/tasks/${id}/comments/${commentId}`);
-      setComments((prev) => prev.filter((c) => c.id !== commentId));
+      if (parentId) {
+        setComments((prev) =>
+          prev.map((c) =>
+            c.id === parentId
+              ? { ...c, replies: (c.replies || []).filter((r: any) => r.id !== commentId) }
+              : c
+          )
+        );
+      } else {
+        setComments((prev) => prev.filter((c) => c.id !== commentId));
+      }
     } catch (err: any) {
       setInfoError(err.response?.data?.message || '댓글 삭제 실패');
     }
   };
 
-  const handleCommentKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const buildKeyDown = (
+    submitFn: () => void,
+    taRef: React.RefObject<HTMLTextAreaElement | null>,
+    valueFn: () => string,
+    setterFn: (v: string) => void
+  ) => (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (mentionQuery !== null && mentionFiltered.length > 0) {
       if (e.key === 'Escape') { e.preventDefault(); setMentionQuery(null); return; }
-      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); insertMention(mentionFiltered[0]); return; }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        insertMentionInto(valueFn(), setterFn, taRef, mentionFiltered[0]);
+        return;
+      }
     }
     if (e.key === 'Enter' && !e.shiftKey && mentionQuery === null) {
       e.preventDefault();
-      handleCommentSubmit();
+      submitFn();
+    }
+    if (e.key === 'Escape' && replyTo) {
+      setReplyTo(null);
+      setReplyInput('');
     }
   };
 
@@ -603,6 +678,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       {/* 댓글 */}
       <div className={styles.card}>
         <h2 className={styles.cardTitle}>댓글</h2>
+
         {comments.length === 0 ? (
           <p className={styles.emptyLogs}>아직 댓글이 없습니다.</p>
         ) : (
@@ -614,31 +690,105 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                   <div className={styles.commentMeta}>
                     <span className={styles.commentAuthor}>{c.author?.name}</span>
                     <span className={styles.commentDate}>{new Date(c.createdAt).toLocaleString('ko-KR')}</span>
-                    {(user?.id === c.author?.id || (user as any)?.role === 'ADMIN' || (user as any)?.role === 'LEADER') && (
-                      <button
-                        className={styles.commentDeleteBtn}
-                        onClick={() => handleCommentDelete(c.id)}
-                      >
+                    <button
+                      className={styles.commentReplyBtn}
+                      onClick={() => {
+                        setReplyTo({ commentId: c.id, authorName: c.author?.name || '' });
+                        setReplyInput('');
+                        setMentionQuery(null);
+                        setTimeout(() => replyTextareaRef.current?.focus(), 50);
+                      }}
+                    >
+                      답글
+                    </button>
+                    {(user?.id === c.author?.id || userRole === 'ADMIN' || userRole === 'LEADER') && (
+                      <button className={styles.commentDeleteBtn} onClick={() => handleCommentDelete(c.id)}>
                         삭제
                       </button>
                     )}
                   </div>
                   <p className={styles.commentContent}>{renderCommentContent(c.content)}</p>
+
+                  {/* 대댓글 */}
+                  {c.replies && c.replies.length > 0 && (
+                    <ul className={styles.replyList}>
+                      {c.replies.map((r: any) => (
+                        <li key={r.id} className={styles.replyItem}>
+                          <div className={styles.replyAvatar}>{(r.author?.name || '?')[0]}</div>
+                          <div className={styles.commentBody}>
+                            <div className={styles.commentMeta}>
+                              <span className={styles.commentAuthor}>{r.author?.name}</span>
+                              <span className={styles.commentDate}>{new Date(r.createdAt).toLocaleString('ko-KR')}</span>
+                              {(user?.id === r.author?.id || userRole === 'ADMIN' || userRole === 'LEADER') && (
+                                <button className={styles.commentDeleteBtn} onClick={() => handleCommentDelete(r.id, c.id)}>
+                                  삭제
+                                </button>
+                              )}
+                            </div>
+                            <p className={styles.commentContent}>{renderCommentContent(r.content)}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {/* 답글 입력창 */}
+                  {replyTo?.commentId === c.id && (
+                    <div className={styles.replyInputArea}>
+                      <div className={styles.commentInputWrapper}>
+                        {mentionQuery !== null && mentionFiltered.length > 0 && (
+                          <ul className={styles.mentionDropdown}>
+                            {mentionFiltered.map((u) => (
+                              <li key={u.id}>
+                                <button
+                                  type="button"
+                                  className={styles.mentionItem}
+                                  onMouseDown={(e) => { e.preventDefault(); insertMentionInto(replyInput, setReplyInput, replyTextareaRef, u); }}
+                                >
+                                  <span className={styles.mentionAvatar}>{u.name[0]}</span>
+                                  {u.name}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        <textarea
+                          ref={replyTextareaRef}
+                          value={replyInput}
+                          onChange={handleReplyChange}
+                          onKeyDown={buildKeyDown(handleReplySubmit, replyTextareaRef, () => replyInput, setReplyInput)}
+                          placeholder={`@${c.author?.name}에게 답글... (Enter로 등록)`}
+                          className={styles.commentTextarea}
+                          rows={2}
+                        />
+                      </div>
+                      <div className={styles.replyActions}>
+                        <button onClick={handleReplySubmit} disabled={replySaving || !replyInput.trim()} className={styles.btn}>
+                          {replySaving ? '등록 중...' : '등록'}
+                        </button>
+                        <button onClick={() => { setReplyTo(null); setReplyInput(''); setMentionQuery(null); }} className={styles.btnSecondary}>
+                          취소
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </li>
             ))}
           </ul>
         )}
+
+        {/* 새 댓글 입력 */}
         <div className={styles.commentInputArea}>
           <div className={styles.commentInputWrapper}>
-            {mentionQuery !== null && mentionFiltered.length > 0 && (
+            {mentionQuery !== null && mentionFiltered.length > 0 && replyTo === null && (
               <ul className={styles.mentionDropdown}>
                 {mentionFiltered.map((u) => (
                   <li key={u.id}>
                     <button
                       type="button"
                       className={styles.mentionItem}
-                      onMouseDown={(e) => { e.preventDefault(); insertMention(u); }}
+                      onMouseDown={(e) => { e.preventDefault(); insertMentionInto(commentInput, setCommentInput, commentTextareaRef, u); }}
                     >
                       <span className={styles.mentionAvatar}>{u.name[0]}</span>
                       {u.name}
@@ -651,7 +801,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
               ref={commentTextareaRef}
               value={commentInput}
               onChange={handleCommentChange}
-              onKeyDown={handleCommentKeyDown}
+              onKeyDown={buildKeyDown(handleCommentSubmit, commentTextareaRef, () => commentInput, setCommentInput)}
               placeholder="댓글을 입력하세요... (@이름으로 멘션, Enter로 등록)"
               className={styles.commentTextarea}
               rows={2}
