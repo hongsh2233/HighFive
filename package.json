@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma db push --skip-generate && next build",
+    "build": "prisma generate && prisma db push --skip-generate --accept-data-loss && next build",
     "postbuild": "ts-node prisma/init.ts || true",
     "start": "next start -p ${PORT:-3000}",
     "lint": "next lint",
