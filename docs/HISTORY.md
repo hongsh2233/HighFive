@@ -456,3 +456,17 @@
   - 인바운드 웹훅은 구체 요구사항이 없어 스코프 밖으로 명시.
   - `docs/ROADMAP_AI_AUTOMATION.md`·`docs/PROJECT_STRUCTURE.md`에 상호 참조 링크 추가.
 - 코드 변경 없음(문서만 추가) — `tsc`/빌드 검증 해당 없음.
+
+## 2026-07-09 (53차)
+
+- **업무 댓글/스레드 기능 추가**: 담당자-등록자 간 협업을 위한 스레드형 댓글 기능 구현.
+  - `prisma/schema.prisma`에 `TaskComment` 모델 추가(`task_comments` 테이블, `taskId`/`authorId`/`content`/타임스탬프, Cascade 삭제). `Task`·`User` 모델에 역참조 필드 추가.
+  - `GET /api/tasks/[id]/comments` — 댓글 목록(createdAt 오름차순, author 포함). `POST /api/tasks/[id]/comments` — 로그인 사용자 누구나 작성 가능. `DELETE /api/tasks/[id]/comments/[commentId]` — 본인 또는 ADMIN/LEADER만 삭제 가능.
+  - 업무 상세 페이지(`/tasks/[id]`)에 "댓글" 섹션 추가: 이니셜 아바타·이름·날짜 표시, 본인 댓글에 삭제 버튼, `textarea`에서 Enter로 등록(Shift+Enter 줄바꿈), 빈 값 방지.
+  - `detail.module.css`에 댓글 UI 스타일 추가.
+
+- **전역 검색 기능 추가**: 업무 제목·메모·커스텀필드값 + 위키 페이지 통합 검색.
+  - `GET /api/search?q=` — 업무(`title`/`notes` ILIKE + `TaskFieldValue.value` 매치 통합), 위키(`title`/`content` ILIKE) 검색. 각 20건 제한, 중복 제거, 스니펫 생성.
+  - `GlobalSearchModal.tsx`/`GlobalSearchModal.module.css` 신규 — 오버레이 모달, 300ms 디바운스, 업무/위키 섹션 구분 표시, 클릭 시 해당 상세 페이지로 이동.
+  - `AppHeader.tsx`에 🔍 버튼 추가(계정 메뉴 앞). `Ctrl+K`/`Cmd+K` 단축키로 언제든 모달 열기.
+- 디버깅 체크: `npx tsc --noEmit` 결과 변경 전후 비교 — 신규 타입 오류 없음. DB 미연결로 `prisma db push`는 Railway 빌드 파이프라인에서 자동 반영됨.

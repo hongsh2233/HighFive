@@ -44,6 +44,10 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [deleting, setDeleting] = useState(false);
   const [infoError, setInfoError] = useState<string | null>(null);
 
+  const [comments, setComments] = useState<any[]>([]);
+  const [commentInput, setCommentInput] = useState('');
+  const [commentSaving, setCommentSaving] = useState(false);
+
   const userRole = (user as any)?.role;
   const canEdit = userRole === 'ADMIN' || userRole === 'LEADER';
   const canDelete = userRole === 'ADMIN' || userRole === 'LEADER';
@@ -133,6 +137,9 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
       const historyRes = await apiClient.get<{ data: any[] }>(`/tasks/${id}/history`);
       setHistories(historyRes.data.data);
+
+      const commentsRes = await apiClient.get<{ data: any[] }>(`/tasks/${id}/comments`);
+      setComments(commentsRes.data.data);
     } catch (err: any) {
       setError(err.message || '업무 조회 실패');
     } finally {
@@ -202,6 +209,38 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     } catch (err) {
       setError('저장 실패');
       console.error(err);
+    }
+  };
+
+  const handleCommentSubmit = async () => {
+    const content = commentInput.trim();
+    if (!content || commentSaving) return;
+    setCommentSaving(true);
+    try {
+      const res = await apiClient.post<{ data: any }>(`/tasks/${id}/comments`, { content });
+      setComments((prev) => [...prev, res.data.data]);
+      setCommentInput('');
+    } catch (err: any) {
+      setInfoError(err.response?.data?.message || '댓글 작성 실패');
+    } finally {
+      setCommentSaving(false);
+    }
+  };
+
+  const handleCommentDelete = async (commentId: number) => {
+    if (!(await confirm('댓글을 삭제하시겠습니까?'))) return;
+    try {
+      await apiClient.delete(`/tasks/${id}/comments/${commentId}`);
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+    } catch (err: any) {
+      setInfoError(err.response?.data?.message || '댓글 삭제 실패');
+    }
+  };
+
+  const handleCommentKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleCommentSubmit();
     }
   };
 
@@ -489,6 +528,54 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             </table>
           </div>
         )}
+      </div>
+
+      {/* 댓글 */}
+      <div className={styles.card}>
+        <h2 className={styles.cardTitle}>댓글</h2>
+        {comments.length === 0 ? (
+          <p className={styles.emptyLogs}>아직 댓글이 없습니다.</p>
+        ) : (
+          <ul className={styles.commentList}>
+            {comments.map((c) => (
+              <li key={c.id} className={styles.commentItem}>
+                <div className={styles.commentAvatar}>{(c.author?.name || '?')[0]}</div>
+                <div className={styles.commentBody}>
+                  <div className={styles.commentMeta}>
+                    <span className={styles.commentAuthor}>{c.author?.name}</span>
+                    <span className={styles.commentDate}>{new Date(c.createdAt).toLocaleString('ko-KR')}</span>
+                    {(user?.id === c.author?.id || (user as any)?.role === 'ADMIN' || (user as any)?.role === 'LEADER') && (
+                      <button
+                        className={styles.commentDeleteBtn}
+                        onClick={() => handleCommentDelete(c.id)}
+                      >
+                        삭제
+                      </button>
+                    )}
+                  </div>
+                  <p className={styles.commentContent}>{c.content}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className={styles.commentInputArea}>
+          <textarea
+            value={commentInput}
+            onChange={(e) => setCommentInput(e.target.value)}
+            onKeyDown={handleCommentKeyDown}
+            placeholder="댓글을 입력하세요... (Enter로 등록, Shift+Enter로 줄바꿈)"
+            className={styles.commentTextarea}
+            rows={2}
+          />
+          <button
+            onClick={handleCommentSubmit}
+            disabled={commentSaving || !commentInput.trim()}
+            className={styles.btn}
+          >
+            {commentSaving ? '등록 중...' : '등록'}
+          </button>
+        </div>
       </div>
 
       {/* 히스토리 */}

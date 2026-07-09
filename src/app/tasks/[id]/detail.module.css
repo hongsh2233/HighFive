@@ -248,6 +248,96 @@
   color: #9CA3AF;
 }
 
+/* 댓글 */
+.commentList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.commentItem {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.commentAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.commentBody {
+  flex: 1;
+  background: var(--bg-subtle);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.commentMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.commentAuthor {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.commentDate {
+  font-size: 11px;
+  color: var(--color-gray-500);
+}
+
+.commentDeleteBtn {
+  font-size: 11px;
+  color: var(--color-gray-500);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-left: auto;
+}
+
+.commentDeleteBtn:hover {
+  color: var(--color-danger);
+}
+
+.commentContent {
+  font-size: 14px;
+  color: var(--color-text);
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.commentInputArea {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  margin-top: 4px;
+}
+
+.commentTextarea {
+  composes: field-input from global;
+  flex: 1;
+  resize: none;
+  font-size: 14px;
+}
+
 @media (max-width: 640px) {
   .container {
     padding: 20px 14px;

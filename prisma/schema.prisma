@@ -40,6 +40,7 @@ model User {
   wikiPages          WikiPage[]     @relation("wikiAuthor")
   stickyNotes        StickyNote[]
   userPages          UserPage[]
+  taskComments       TaskComment[]
 
   @@map("users")
 }
@@ -73,6 +74,7 @@ model Task {
   parentTask    Task?    @relation("subTasks", fields: [parentTaskId], references: [id])
   subTasks      Task[]   @relation("subTasks")
   fieldValues   TaskFieldValue[]
+  comments      TaskComment[]
 
   @@index([workerId, status])
   @@index([targetDate])
@@ -330,6 +332,21 @@ model StickyNote {
 
   @@index([userId, order])
   @@map("sticky_notes")
+}
+
+model TaskComment {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  authorId  Int
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id])
+
+  @@index([taskId])
+  @@map("task_comments")
 }
 
 model UserPage {

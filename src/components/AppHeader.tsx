@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { signOut } from 'next-auth/react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { markManualLogout } from '@/lib/logout-flag';
+import GlobalSearchModal from './GlobalSearchModal';
 import styles from './AppHeader.module.css';
 
 type MenuName = 'task' | 'settings' | 'account' | null;
@@ -16,7 +17,19 @@ export default function AppHeader() {
   const { user } = useAuth();
   const [openMenu, setOpenMenu] = useState<MenuName>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const handleMenuEnter = (menu: MenuName) => {
     if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
@@ -55,6 +68,8 @@ export default function AppHeader() {
           <span className={styles.mobileToggleBar} />
           <span className={styles.mobileToggleBar} />
         </button>
+
+        {searchOpen && <GlobalSearchModal onClose={() => setSearchOpen(false)} />}
 
         <nav className={`${styles.nav} ${mobileOpen ? styles.navOpen : ''}`}>
           <Link href="/info" className={navClass(pathname === '/info')} onClick={closeAll}>
@@ -126,6 +141,16 @@ export default function AppHeader() {
               )}
             </div>
           )}
+
+          {/* 검색 */}
+          <button
+            className={styles.navLink}
+            onClick={() => setSearchOpen(true)}
+            title="전역 검색 (Ctrl+K)"
+            aria-label="전역 검색"
+          >
+            🔍
+          </button>
 
           {/* 계정 메뉴 */}
           <div
