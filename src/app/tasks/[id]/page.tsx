@@ -11,6 +11,20 @@ import styles from './detail.module.css';
 import { actionLabel } from '@/lib/task-history';
 import Spinner from '@/components/common/Spinner';
 import { useDialog } from '@/components/common/DialogProvider';
+import dynamic from 'next/dynamic';
+import 'react-quill-new/dist/quill.snow.css';
+
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['link', 'blockquote', 'code-block'],
+    ['clean'],
+  ],
+};
 
 interface Worker {
   id: number;
@@ -35,6 +49,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [linkInput, setLinkInput] = useState('');
   const [timeLogs, setTimeLogs] = useState<TimeLog[]>([]);
   const [totalHours, setTotalHours] = useState(0);
+  const [showTimeLogs, setShowTimeLogs] = useState(false);
   const [histories, setHistories] = useState<any[]>([]);
 
   const [infoEditing, setInfoEditing] = useState(false);
@@ -521,24 +536,24 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
         ) : (
-          <div className={styles.grid}>
-            <div>
-              <p className={styles.fieldLabel}>상태</p>
-              <div style={badgeStyle}>{currentStatusDef?.label ?? task.status}</div>
+          <div className={styles.infoRow}>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>상태</span>
+              <span style={badgeStyle}>{currentStatusDef?.label ?? task.status}</span>
             </div>
-            <div>
-              <p className={styles.fieldLabel}>담당자</p>
-              <p className={styles.fieldValue}>{task.worker?.name || '-'}</p>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>담당자</span>
+              <span className={styles.infoVal}>{task.worker?.name || '-'}</span>
             </div>
-            <div>
-              <p className={styles.fieldLabel}>등록자</p>
-              <p className={styles.fieldValue}>{task.registrant?.name || '-'}</p>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>등록자</span>
+              <span className={styles.infoVal}>{task.registrant?.name || '-'}</span>
             </div>
-            <div>
-              <p className={styles.fieldLabel}>목표일</p>
-              <p className={styles.fieldValue}>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>목표일</span>
+              <span className={styles.infoVal}>
                 {task.targetDate ? new Date(task.targetDate).toLocaleDateString('ko-KR') : '-'}
-              </p>
+              </span>
             </div>
           </div>
         )}
@@ -595,10 +610,10 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         )}
       </div>
 
-      {/* 메모 */}
+      {/* 상세내용 */}
       <div className={styles.card}>
         <div className={styles.cardHeader}>
-          <h2 className={`${styles.cardTitle} ${styles.noMargin}`}>메모</h2>
+          <h2 className={`${styles.cardTitle} ${styles.noMargin}`}>상세내용</h2>
           {!editing && (
             <button onClick={() => setEditing(true)} className={styles.btnSecondary}>
               수정
@@ -608,12 +623,16 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
         {editing ? (
           <div>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className={styles.textarea}
-              placeholder="메모를 입력하세요..."
-            />
+            <div className={styles.editorWrap}>
+              <ReactQuill
+                theme="snow"
+                value={formData.notes}
+                onChange={(val) => setFormData({ ...formData, notes: val })}
+                modules={quillModules}
+                className={styles.editor}
+                placeholder="상세내용을 입력하세요..."
+              />
+            </div>
             <div className={styles.editActions}>
               <button onClick={handleSave} className={styles.btn}>저장</button>
               <button
@@ -624,39 +643,37 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
               </button>
             </div>
           </div>
+        ) : task.notes ? (
+          <div className={styles.notesContent} dangerouslySetInnerHTML={{ __html: task.notes }} />
         ) : (
-          <p className={styles.noteText}>{task.notes || '메모가 없습니다.'}</p>
+          <p className={styles.emptyLogs}>상세내용이 없습니다.</p>
         )}
       </div>
 
       {/* 타임로그 */}
       <div className={styles.card}>
-        <div className={styles.cardHeader}>
-          <h2 className={`${styles.cardTitle} ${styles.noMargin}`}>타임로그</h2>
-        </div>
-        <p className={styles.emptyLogs} style={{ marginTop: '-8px' }}>
-          {task.timeCounterEnabled
-            ? '상태가 "진행중"으로 바뀌면 자동으로 시간이 누적되고, 다른 상태로 바뀌면 자동 종료됩니다.'
-            : '이 업무는 시간카운터가 꺼져 있어 자동으로 시간이 계산되지 않습니다.'}
-        </p>
-
-        <div className={styles.totalTimeBox}>
-          <span className={styles.totalTimeLabel}>총 소요 시간</span>
-          <span className={styles.totalTimeValue}>{totalHours.toFixed(2)} 시간</span>
+        <div className={styles.timelogHeader}>
+          <div className={styles.totalTimeBox}>
+            <span className={styles.totalTimeLabel}>총 소요 시간</span>
+            <span className={styles.totalTimeValue}>{totalHours.toFixed(2)} 시간</span>
+          </div>
+          {timeLogs.length > 0 && (
+            <button className={styles.timelogToggle} onClick={() => setShowTimeLogs((v) => !v)}>
+              상세 {showTimeLogs ? '▲' : '▼'}
+            </button>
+          )}
         </div>
 
-        {timeLogs.length === 0 ? (
-          <p className={styles.emptyLogs}>아직 타이머 기록이 없습니다.</p>
-        ) : (
+        {showTimeLogs && timeLogs.length > 0 && (
           <div className={styles.tableWrapper}>
             <table className={styles.table}>
               <thead className={styles.tableHead}>
                 <tr>
-                  <th className={styles.th}>시작 시간</th>
-                  <th className={styles.th}>종료 시간</th>
-                  <th className={styles.th}>소요 시간</th>
+                  <th className={styles.th}>시작</th>
+                  <th className={styles.th}>종료</th>
+                  <th className={styles.th}>소요</th>
                   <th className={styles.th}>보정</th>
-                  <th className={styles.th}>최종 시간</th>
+                  <th className={styles.th}>최종</th>
                 </tr>
               </thead>
               <tbody>
