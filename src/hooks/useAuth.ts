@@ -23,6 +23,7 @@ export function useAuth(requiredRole?: string) {
     user: session?.user || null,
     isLoading: status === 'loading',
     isAuthenticated: status === 'authenticated',
+    isSuperAdmin: (session?.user as any)?.role === 'SUPERADMIN',
     logout: () => signOut({ redirect: true, callbackUrl: '/login' }),
   };
 }

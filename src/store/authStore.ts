@@ -18,6 +18,7 @@ interface AuthState {
   hasRole: (roles: UserRole[]) => boolean;
   isAdmin: () => boolean;
   isLeader: () => boolean;
+  isSuperAdmin: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -39,6 +40,8 @@ export const useAuthStore = create<AuthState>()(
         const role = get().user?.role;
         return role === 'ADMIN' || role === 'LEADER';
       },
+
+      isSuperAdmin: () => get().user?.role === 'SUPERADMIN',
     }),
     {
       name: 'tms-auth',

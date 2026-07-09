@@ -53,6 +53,7 @@ export default function AppHeader() {
 
   const navClass = (active: boolean) => active ? styles.navLinkActive : styles.navLink;
   const isAdminOrLeader = ['ADMIN', 'LEADER'].includes(user?.role || '');
+  const isSuperAdmin = (user as any)?.role === 'SUPERADMIN';
 
   return (
     <header className={styles.header}>
@@ -111,6 +112,13 @@ export default function AppHeader() {
               </div>
             )}
           </div>
+
+          {/* 슈퍼관리자 메뉴 */}
+          {isSuperAdmin && (
+            <Link href="/superadmin" className={navClass(pathname.startsWith('/superadmin'))} onClick={closeAll}>
+              슈퍼관리자
+            </Link>
+          )}
 
           {/* 설정 메뉴 */}
           {isAdminOrLeader && (

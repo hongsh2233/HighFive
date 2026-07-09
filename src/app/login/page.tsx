@@ -1,12 +1,14 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { FormEvent, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { FormEvent, useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import styles from './login.module.css';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const registered = searchParams.get('registered');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -64,6 +66,10 @@ export default function LoginPage() {
             <h2 className={styles.formTitle}>로그인</h2>
             <p className={styles.formSubtitle}>High5 계정으로 로그인하세요</p>
           </div>
+
+          {registered && (
+            <div className={styles.successBox}>가입이 완료되었습니다. 로그인해주세요.</div>
+          )}
 
           {error && (
             <div className={styles.errorBox}>{error}</div>
@@ -133,8 +139,19 @@ export default function LoginPage() {
           <p className={styles.formFooter}>
             계정 문의는 시스템 관리자에게 연락하세요
           </p>
+          <p className={styles.formFooter}>
+            새 조직 등록은 <a href="/register">여기</a>에서
+          </p>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

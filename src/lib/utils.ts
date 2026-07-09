@@ -40,6 +40,17 @@ export async function requireRole(requiredRoles: string[]) {
   return { session, organizationId };
 }
 
+export async function requireSuperAdmin() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return { error: errorResponse('인증이 필요합니다.', 401, 'AUTH_401') };
+  }
+  if ((session.user as any).role !== 'SUPERADMIN') {
+    return { error: errorResponse('슈퍼관리자 권한이 필요합니다.', 403, 'AUTH_403') };
+  }
+  return { session };
+}
+
 export function parseRmsNo(title: string): { cleanTitle: string; rmsNo: string | null } {
   const rmsPattern = /\[([A-Z]+-\d+)\]/;
   const match = title.match(rmsPattern);
