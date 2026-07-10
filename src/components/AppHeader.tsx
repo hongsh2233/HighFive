@@ -73,91 +73,92 @@ export default function AppHeader() {
         {searchOpen && <GlobalSearchModal onClose={() => setSearchOpen(false)} />}
 
         <nav className={`${styles.nav} ${mobileOpen ? styles.navOpen : ''}`}>
-          <Link href="/info" className={navClass(pathname === '/info')} onClick={closeAll}>
-            정보
-          </Link>
-
-          <Link href="/requests" className={navClass(pathname.startsWith('/requests'))} onClick={closeAll}>
-            신청
-          </Link>
-
-          <Link href="/wiki" className={navClass(pathname === '/wiki' || pathname.startsWith('/projects/'))} onClick={closeAll}>
-            위키
-          </Link>
-
-          {/* 업무 메뉴 */}
-          <div
-            className={styles.menuWrapper}
-            onMouseEnter={() => handleMenuEnter('task')}
-            onMouseLeave={handleMenuLeave}
-          >
-            <button
-              className={navClass(openMenu === 'task' || pathname.startsWith('/tasks') || pathname.startsWith('/calendar'))}
-              onClick={() => setOpenMenu(openMenu === 'task' ? null : 'task')}
-            >
-              업무
-            </button>
-            {openMenu === 'task' && (
-              <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
-                {[
-                  { href: '/tasks/create', label: '업무 등록' },
-                  { href: '/tasks', label: '업무 목록' },
-                  { href: '/tasks/kanban', label: '칸반 보드' },
-                  { href: '/calendar', label: '캘린더' },
-                ].map((item) => (
-                  <Link key={item.href} href={item.href} className={styles.dropdownItem} onClick={closeAll}>
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 슈퍼관리자 메뉴 */}
-          {isSuperAdmin && (
+          {isSuperAdmin ? (
             <Link href="/superadmin" className={navClass(pathname.startsWith('/superadmin'))} onClick={closeAll}>
               슈퍼관리자
             </Link>
-          )}
+          ) : (
+            <>
+              <Link href="/info" className={navClass(pathname === '/info')} onClick={closeAll}>
+                정보
+              </Link>
 
-          {/* 설정 메뉴 */}
-          {isAdminOrLeader && (
-            <div
-              className={styles.menuWrapper}
-              onMouseEnter={() => handleMenuEnter('settings')}
-              onMouseLeave={handleMenuLeave}
-            >
-              <button
-                className={navClass(openMenu === 'settings' || pathname.startsWith('/users') || pathname.startsWith('/stats') || pathname.startsWith('/projects') || pathname.startsWith('/announcements') || pathname.startsWith('/settings'))}
-                onClick={() => setOpenMenu(openMenu === 'settings' ? null : 'settings')}
+              <Link href="/requests" className={navClass(pathname.startsWith('/requests'))} onClick={closeAll}>
+                신청
+              </Link>
+
+              <Link href="/wiki" className={navClass(pathname === '/wiki' || pathname.startsWith('/projects/'))} onClick={closeAll}>
+                위키
+              </Link>
+
+              {/* 업무 메뉴 */}
+              <div
+                className={styles.menuWrapper}
+                onMouseEnter={() => handleMenuEnter('task')}
+                onMouseLeave={handleMenuLeave}
               >
-                설정
-              </button>
-              {openMenu === 'settings' && (
-                <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
-                  <Link href="/projects" className={styles.dropdownItem} onClick={closeAll}>프로젝트</Link>
-                  <Link href="/announcements" className={styles.dropdownItem} onClick={closeAll}>공지사항</Link>
-                  {user?.role === 'ADMIN' && (
-                    <Link href="/users" className={styles.dropdownItem} onClick={closeAll}>팀원관리</Link>
-                  )}
-                  <Link href="/stats" className={styles.dropdownItem} onClick={closeAll}>통계</Link>
-                  <Link href="/settings/calendar-sync" className={styles.dropdownItem} onClick={closeAll}>구글 캘린더 연동</Link>
-                  {user?.role === 'ADMIN' && (
-                    <Link href="/settings/integrations" className={styles.dropdownItem} onClick={closeAll}>외부연동</Link>
+                <button
+                  className={navClass(openMenu === 'task' || pathname.startsWith('/tasks') || pathname.startsWith('/calendar'))}
+                  onClick={() => setOpenMenu(openMenu === 'task' ? null : 'task')}
+                >
+                  업무
+                </button>
+                {openMenu === 'task' && (
+                  <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
+                    {[
+                      { href: '/tasks/create', label: '업무 등록' },
+                      { href: '/tasks', label: '업무 목록' },
+                      { href: '/tasks/kanban', label: '칸반 보드' },
+                      { href: '/calendar', label: '캘린더' },
+                    ].map((item) => (
+                      <Link key={item.href} href={item.href} className={styles.dropdownItem} onClick={closeAll}>
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 설정 메뉴 */}
+              {isAdminOrLeader && (
+                <div
+                  className={styles.menuWrapper}
+                  onMouseEnter={() => handleMenuEnter('settings')}
+                  onMouseLeave={handleMenuLeave}
+                >
+                  <button
+                    className={navClass(openMenu === 'settings' || pathname.startsWith('/users') || pathname.startsWith('/stats') || pathname.startsWith('/projects') || pathname.startsWith('/announcements') || pathname.startsWith('/settings'))}
+                    onClick={() => setOpenMenu(openMenu === 'settings' ? null : 'settings')}
+                  >
+                    설정
+                  </button>
+                  {openMenu === 'settings' && (
+                    <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
+                      <Link href="/projects" className={styles.dropdownItem} onClick={closeAll}>프로젝트</Link>
+                      <Link href="/announcements" className={styles.dropdownItem} onClick={closeAll}>공지사항</Link>
+                      {user?.role === 'ADMIN' && (
+                        <Link href="/users" className={styles.dropdownItem} onClick={closeAll}>팀원관리</Link>
+                      )}
+                      <Link href="/stats" className={styles.dropdownItem} onClick={closeAll}>통계</Link>
+                      <Link href="/settings/calendar-sync" className={styles.dropdownItem} onClick={closeAll}>구글 캘린더 연동</Link>
+                      {user?.role === 'ADMIN' && (
+                        <Link href="/settings/integrations" className={styles.dropdownItem} onClick={closeAll}>외부연동</Link>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
-            </div>
-          )}
 
-          {/* 검색 */}
-          <button
-            className={styles.navLink}
-            onClick={() => setSearchOpen(true)}
-            title="전역 검색 (Ctrl+K)"
-          >
-            검색
-          </button>
+              {/* 검색 */}
+              <button
+                className={styles.navLink}
+                onClick={() => setSearchOpen(true)}
+                title="전역 검색 (Ctrl+K)"
+              >
+                검색
+              </button>
+            </>
+          )}
 
           {/* 계정 메뉴 */}
           <div

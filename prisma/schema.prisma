@@ -20,6 +20,9 @@ model Organization {
   slug      String   @unique  // URL 식별자 (예: acme, my-company)
   plan      String   @default("FREE")  // FREE, PRO, ENTERPRISE
   isActive  Boolean  @default(true)
+  bizNo     String?
+  phone     String?
+  ceoName   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
