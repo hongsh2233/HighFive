@@ -189,6 +189,10 @@ export default function AppHeader() {
                       {user?.role === 'ADMIN' && has('integrations') && (
                         <Link href="/settings/integrations" className={styles.dropdownItem} onClick={closeAll}>외부연동</Link>
                       )}
+                      {user?.role === 'ADMIN' && (
+                        <Link href="/settings/audit" className={styles.dropdownItem} onClick={closeAll}>감사 로그</Link>
+                      )}
+                      <Link href="/settings/security" className={styles.dropdownItem} onClick={closeAll}>보안 설정</Link>
                     </div>
                   )}
                 </div>

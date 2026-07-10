@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, requireRole, successResponse, errorResponse, hashPassword, generateTempPassword } from '@/lib/utils';
+import { createAuditLog } from '@/lib/audit';
 
 // GET /api/users
 export async function GET(req: NextRequest) {
@@ -64,7 +65,7 @@ export async function GET(req: NextRequest) {
 // POST /api/users - 사용자 생성
 export async function POST(req: NextRequest) {
   try {
-    const { error, organizationId } = await requireRole(['ADMIN']);
+    const { error, organizationId, session } = await requireRole(['ADMIN']);
     if (error) return error;
 
     const body = await req.json();
@@ -123,6 +124,16 @@ export async function POST(req: NextRequest) {
         id: true, email: true, name: true, role: true, leaveDate: true, affiliation: true,
         projectMembers: { select: { project: { select: { id: true, name: true } } } },
       },
+    });
+
+    await createAuditLog({
+      organizationId,
+      userId: parseInt((session!.user as any).id),
+      userEmail: session!.user?.email,
+      action: 'USER_CREATED',
+      targetType: 'User',
+      targetId: user.id,
+      detail: { email: user.email, role: user.role },
     });
 
     console.log(`[USER CREATE] 임시 비밀번호 - ${email}: ${tempPassword}`);

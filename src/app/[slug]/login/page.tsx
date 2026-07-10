@@ -14,6 +14,8 @@ export default function OrgLoginPage() {
   const [notFound, setNotFound] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [totp, setTotp] = useState('');
+  const [totpRequired, setTotpRequired] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -27,6 +29,12 @@ export default function OrgLoginPage() {
       .catch(() => setNotFound(true));
   }, [slug]);
 
+  const checkTotp = async (val: string) => {
+    if (!val) { setTotpRequired(false); return; }
+    const res = await fetch(`/api/auth/2fa/check?email=${encodeURIComponent(val)}`).then(r => r.json());
+    setTotpRequired(res.data?.totpEnabled ?? false);
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
@@ -37,11 +45,12 @@ export default function OrgLoginPage() {
         email,
         password,
         slug,
+        totp,
         redirect: false,
       });
 
       if (result?.error) {
-        setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+        setError(totpRequired ? '이메일, 비밀번호 또는 OTP 코드가 올바르지 않습니다.' : '이메일 또는 비밀번호가 올바르지 않습니다.');
       } else if (result?.ok) {
         router.push('/dashboard');
       }
@@ -83,9 +92,7 @@ export default function OrgLoginPage() {
             <span className={styles.logoIconText}>H</span>
           </div>
           <h1 className={styles.brandTitle}>High5</h1>
-          <p className={styles.brandDesc}>
-            {orgName || slug}
-          </p>
+          <p className={styles.brandDesc}>{orgName || slug}</p>
         </div>
       </div>
 
@@ -96,9 +103,7 @@ export default function OrgLoginPage() {
             <p className={styles.formSubtitle}>조직 계정으로 로그인하세요</p>
           </div>
 
-          {error && (
-            <div className={styles.errorBox}>{error}</div>
-          )}
+          {error && <div className={styles.errorBox}>{error}</div>}
 
           <form onSubmit={handleSubmit}>
             <div className={styles.fieldGroup}>
@@ -108,26 +113,19 @@ export default function OrgLoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onBlur={(e) => checkTotp(e.target.value)}
                   placeholder="name@company.com"
                   className={styles.input}
                   disabled={loading}
                   required
                 />
                 {email && (
-                  <button
-                    type="button"
-                    className={styles.clearBtn}
-                    aria-label="이메일 지우기"
-                    onClick={() => setEmail('')}
-                    tabIndex={-1}
-                  >
-                    ✕
-                  </button>
+                  <button type="button" className={styles.clearBtn} onClick={() => { setEmail(''); setTotpRequired(false); }} tabIndex={-1}>✕</button>
                 )}
               </div>
             </div>
 
-            <div className={styles.fieldGroupLast}>
+            <div className={totpRequired ? styles.fieldGroup : styles.fieldGroupLast}>
               <label className={styles.label}>비밀번호</label>
               <div className={styles.inputWrap}>
                 <input
@@ -140,32 +138,37 @@ export default function OrgLoginPage() {
                   required
                 />
                 {password && (
-                  <button
-                    type="button"
-                    className={styles.clearBtn}
-                    aria-label="비밀번호 지우기"
-                    onClick={() => setPassword('')}
-                    tabIndex={-1}
-                  >
-                    ✕
-                  </button>
+                  <button type="button" className={styles.clearBtn} onClick={() => setPassword('')} tabIndex={-1}>✕</button>
                 )}
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              data-loading={loading}
-              className={styles.submitBtn}
-            >
+            {totpRequired && (
+              <div className={styles.fieldGroupLast}>
+                <label className={styles.label}>OTP 코드 (2단계 인증)</label>
+                <div className={styles.inputWrap}>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={totp}
+                    onChange={(e) => setTotp(e.target.value.replace(/\D/g, ''))}
+                    placeholder="6자리 코드"
+                    className={styles.input}
+                    disabled={loading}
+                    required
+                    autoComplete="one-time-code"
+                  />
+                </div>
+              </div>
+            )}
+
+            <button type="submit" disabled={loading} data-loading={loading} className={styles.submitBtn}>
               {loading ? '로그인 중...' : '로그인'}
             </button>
           </form>
 
-          <p className={styles.formFooter}>
-            계정 문의는 조직 관리자에게 연락하세요
-          </p>
+          <p className={styles.formFooter}>계정 문의는 조직 관리자에게 연락하세요</p>
         </div>
       </div>
     </div>

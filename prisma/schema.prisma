@@ -73,6 +73,8 @@ model User {
   leaveDate      DateTime?
   affiliation    String?   // 정규 | 프리
   managerId      Int?      // 결재 라인상의 담당 리더(상급자)
+  totpSecret     String?
+  totpEnabled    Boolean   @default(false)
   createdAt      DateTime  @default(now())
   lastLoginAt    DateTime?
 
@@ -95,6 +97,7 @@ model User {
   stickyNotes       StickyNote[]
   userPages         UserPage[]
   taskComments      TaskComment[]
+  userSessions      UserSession[]
 
   @@index([organizationId])
   @@map("users")
@@ -475,6 +478,37 @@ model UserPage {
 
   @@index([userId])
   @@map("user_pages")
+}
+
+model UserSession {
+  id           String   @id @default(cuid())
+  userId       Int
+  deviceName   String?
+  ipAddress    String?
+  lastActiveAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_sessions")
+}
+
+model AuditLog {
+  id             Int      @id @default(autoincrement())
+  organizationId Int?
+  userId         Int?
+  userEmail      String?
+  action         String
+  targetType     String?
+  targetId       Int?
+  detail         Json?
+  ipAddress      String?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([userId])
+  @@map("audit_logs")
 }
 
 model SystemConfig {

@@ -2,6 +2,16 @@ import { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./db";
 import bcryptjs from "bcryptjs";
+import * as OTPAuth from "otpauth";
+
+function parseDeviceName(ua: string | undefined): string {
+  if (!ua) return '알 수 없는 기기';
+  if (/mobile/i.test(ua)) return '모바일';
+  if (/tablet|ipad/i.test(ua)) return '태블릿';
+  const browsers = ['Chrome', 'Firefox', 'Safari', 'Edge'];
+  const matched = browsers.find((b) => ua.includes(b));
+  return matched ? `${matched} (데스크톱)` : '데스크톱';
+}
 
 export const authOptions: NextAuthOptions = {
   pages: {
@@ -15,8 +25,9 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
         slug: { label: "Org Slug", type: "text" },
+        totp: { label: "OTP Code", type: "text" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
@@ -37,30 +48,54 @@ export const authOptions: NextAuthOptions = {
         const slug = credentials.slug?.trim() || '';
 
         if (!slug) {
-          // SUPERADMIN 전용 로그인 (/login 페이지)
-          if (user.role !== 'SUPERADMIN') {
-            return null;
-          }
+          if (user.role !== 'SUPERADMIN') return null;
         } else {
-          // 조직별 로그인 (/{slug}/login 페이지)
-          if (user.organization?.slug !== slug) {
-            return null;
-          }
+          if (user.organization?.slug !== slug) return null;
         }
 
-        const isPasswordValid = await bcryptjs.compare(
-          credentials.password,
-          user.passwordHash
-        );
+        const isPasswordValid = await bcryptjs.compare(credentials.password, user.passwordHash);
+        if (!isPasswordValid) return null;
 
-        if (!isPasswordValid) {
-          return null;
+        // TOTP check
+        if (user.totpEnabled && user.totpSecret) {
+          const rawToken = (credentials.totp || '').replace(/\s/g, '');
+          if (!rawToken) return null;
+          const totp = new OTPAuth.TOTP({
+            algorithm: 'SHA1',
+            digits: 6,
+            period: 30,
+            secret: OTPAuth.Secret.fromBase32(user.totpSecret),
+          });
+          const delta = totp.validate({ token: rawToken, window: 1 });
+          if (delta === null) return null;
         }
 
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { lastLoginAt: new Date() },
-        });
+        const ip =
+          (req as any)?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
+          (req as any)?.headers?.['x-real-ip'] ||
+          undefined;
+        const ua = (req as any)?.headers?.['user-agent'];
+
+        // persist session record + lastLoginAt
+        await Promise.all([
+          prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }),
+          prisma.userSession.create({
+            data: {
+              userId: user.id,
+              deviceName: parseDeviceName(ua),
+              ipAddress: ip,
+            },
+          }),
+          prisma.auditLog.create({
+            data: {
+              organizationId: user.organizationId ?? null,
+              userId: user.id,
+              userEmail: user.email,
+              action: 'USER_LOGIN',
+              ipAddress: ip,
+            },
+          }),
+        ]);
 
         return {
           id: user.id.toString(),
@@ -98,7 +133,6 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
-    // 보안 정책: 로그인 후 활동 여부와 무관하게 30분 뒤 세션 절대 만료
     maxAge: 30 * 60,
     updateAge: 30 * 60,
   },
