@@ -53,6 +53,19 @@ export async function register() {
       migrate(prisma.integration),
     ]);
 
+    await prisma.systemConfig.upsert({
+      where: { id: 1 },
+      update: {},
+      create: {
+        id: 1,
+        planFeatures: {
+          FREE: ['info', 'requests', 'wiki', 'tasks', 'search'],
+          PRO: ['info', 'requests', 'wiki', 'tasks', 'search', 'stats', 'calendar_sync'],
+          ENTERPRISE: ['info', 'requests', 'wiki', 'tasks', 'search', 'stats', 'calendar_sync', 'integrations'],
+        },
+      },
+    });
+
     console.log('✅ Instrumentation init complete');
   } catch (e) {
     console.error('⚠️ Instrumentation init error:', e);
