@@ -18,7 +18,8 @@ interface Announcement {
 export default function AnnouncementsPage() {
   const { user, isLoading: authLoading } = useAuth();
   const { confirm } = useDialog();
-  const canManage = ['ADMIN', 'LEADER'].includes(user?.role || '');
+  const isSuperAdmin = (user as any)?.role === 'SUPERADMIN';
+  const canManage = isSuperAdmin || ['ADMIN', 'LEADER'].includes(user?.role || '');
 
   const [items, setItems] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,7 +111,7 @@ export default function AnnouncementsPage() {
         <div className={styles.pageHeader}>
           <div>
             <h1 className={styles.pageTitle}>공지사항</h1>
-            <p className={styles.pageSubtitle}>헤더 하단에 노출되는 공지를 관리합니다.</p>
+            <p className={styles.pageSubtitle}>{isSuperAdmin ? '전체 사용자에게 노출되는 시스템 공지를 관리합니다.' : '헤더 하단에 노출되는 공지를 관리합니다.'}</p>
           </div>
           {!showForm && (
             <button onClick={openCreateForm} className={styles.btnPrimary}>
