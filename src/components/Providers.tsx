@@ -48,13 +48,17 @@ function AuthSync() {
 
 function NotificationToastGate() {
   const { status } = useSession();
+  const pathname = usePathname();
   if (status !== 'authenticated') return null;
+  if (pathname === '/login' || pathname === '/' || pathname.endsWith('/login')) return null;
   return <NotificationToastManager />;
 }
 
 function StickyNotesGate() {
   const { status } = useSession();
+  const pathname = usePathname();
   if (status !== 'authenticated') return null;
+  if (pathname === '/login' || pathname === '/' || pathname.endsWith('/login')) return null;
   return <StickyNotesPanel />;
 }
 
