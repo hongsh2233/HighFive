@@ -11,8 +11,11 @@ const publicRoutes = ['/login', '/register'];
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // 공개 경로는 항상 접근 가능
+  // 공개 경로는 항상 접근 가능 (/login, /register, /{slug}/login)
   if (publicRoutes.some((route) => pathname === route || pathname.startsWith(route + '/'))) {
+    return NextResponse.next();
+  }
+  if (pathname.endsWith('/login')) {
     return NextResponse.next();
   }
 

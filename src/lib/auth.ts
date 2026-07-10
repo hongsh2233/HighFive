@@ -14,6 +14,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        slug: { label: "Org Slug", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -29,9 +30,22 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // 조직이 비활성화된 경우 로그인 불가
         if (user.organization && !user.organization.isActive) {
           return null;
+        }
+
+        const slug = credentials.slug?.trim() || '';
+
+        if (!slug) {
+          // SUPERADMIN 전용 로그인 (/login 페이지)
+          if (user.role !== 'SUPERADMIN') {
+            return null;
+          }
+        } else {
+          // 조직별 로그인 (/{slug}/login 페이지)
+          if (user.organization?.slug !== slug) {
+            return null;
+          }
         }
 
         const isPasswordValid = await bcryptjs.compare(
