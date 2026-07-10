@@ -10,11 +10,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { id } = await params;
     const orgId = parseInt(id);
     const body = await req.json();
-    const { plan, isActive } = body;
 
-    const data: { plan?: string; isActive?: boolean } = {};
+    const { plan, isActive, bizNo, phone, ceoName } = body;
+
+    const data: { plan?: string; isActive?: boolean; bizNo?: string | null; phone?: string | null; ceoName?: string | null } = {};
     if (plan !== undefined) data.plan = plan;
     if (isActive !== undefined) data.isActive = isActive;
+    if (bizNo !== undefined) data.bizNo = bizNo || null;
+    if (phone !== undefined) data.phone = phone || null;
+    if (ceoName !== undefined) data.ceoName = ceoName || null;
 
     const org = await prisma.organization.update({
       where: { id: orgId },
