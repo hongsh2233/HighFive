@@ -1,19 +1,31 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { FormEvent, useState, Suspense } from 'react';
+import { useEffect, FormEvent, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
-import styles from './login.module.css';
+import styles from '@/app/login/login.module.css';
 
-function LoginForm() {
+export default function OrgLoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const registered = searchParams.get('registered');
+  const params = useParams();
+  const slug = params.slug as string;
+
+  const [orgName, setOrgName] = useState('');
+  const [notFound, setNotFound] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [orgSlug, setOrgSlug] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/organizations/${slug}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) setOrgName(d.data.name);
+        else setNotFound(true);
+      })
+      .catch(() => setNotFound(true));
+  }, [slug]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -24,13 +36,14 @@ function LoginForm() {
       const result = await signIn('credentials', {
         email,
         password,
+        slug,
         redirect: false,
       });
 
       if (result?.error) {
         setError('이메일 또는 비밀번호가 올바르지 않습니다.');
       } else if (result?.ok) {
-        router.push('/superadmin');
+        router.push('/dashboard');
       }
     } catch {
       setError('로그인 중 오류가 발생했습니다.');
@@ -39,11 +52,25 @@ function LoginForm() {
     }
   };
 
-  const handleOrgLogin = (e: FormEvent) => {
-    e.preventDefault();
-    const slug = orgSlug.trim();
-    if (slug) router.push(`/${slug}/login`);
-  };
+  if (notFound) {
+    return (
+      <div className={styles.wrapper}>
+        <div className={styles.formPanel}>
+          <div className={styles.formInner}>
+            <div className={styles.formHeader}>
+              <h2 className={styles.formTitle}>조직을 찾을 수 없습니다</h2>
+              <p className={styles.formSubtitle}>
+                <strong>{slug}</strong> 슬러그에 해당하는 조직이 없습니다.
+              </p>
+            </div>
+            <p className={styles.formFooter}>
+              <a href="/login" style={{ color: 'var(--accent)' }}>← 메인으로</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.wrapper}>
@@ -57,8 +84,7 @@ function LoginForm() {
           </div>
           <h1 className={styles.brandTitle}>High5</h1>
           <p className={styles.brandDesc}>
-            AI 웹 개발 비즈니스에 최적화된<br />
-            경량 업무 관리 플랫폼
+            {orgName || slug}
           </p>
         </div>
       </div>
@@ -66,13 +92,9 @@ function LoginForm() {
       <div className={styles.formPanel}>
         <div className={styles.formInner}>
           <div className={styles.formHeader}>
-            <h2 className={styles.formTitle}>슈퍼관리자 로그인</h2>
-            <p className={styles.formSubtitle}>플랫폼 운영자 전용입니다</p>
+            <h2 className={styles.formTitle}>{orgName || slug}</h2>
+            <p className={styles.formSubtitle}>조직 계정으로 로그인하세요</p>
           </div>
-
-          {registered && (
-            <div className={styles.successBox}>가입이 완료되었습니다. 조직 로그인 URL로 접속하세요.</div>
-          )}
 
           {error && (
             <div className={styles.errorBox}>{error}</div>
@@ -86,9 +108,10 @@ function LoginForm() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@admin.co.kr"
+                  placeholder="name@company.com"
                   className={styles.input}
                   disabled={loading}
+                  required
                 />
                 {email && (
                   <button
@@ -114,6 +137,7 @@ function LoginForm() {
                   placeholder="••••••••"
                   className={styles.input}
                   disabled={loading}
+                  required
                 />
                 {password && (
                   <button
@@ -139,37 +163,11 @@ function LoginForm() {
             </button>
           </form>
 
-          <div className={styles.divider} />
-
-          <p className={styles.orgLoginLabel}>조직 로그인</p>
-          <form onSubmit={handleOrgLogin} className={styles.orgLoginForm}>
-            <div className={styles.inputWrap} style={{ flex: 1 }}>
-              <input
-                type="text"
-                value={orgSlug}
-                onChange={(e) => setOrgSlug(e.target.value)}
-                placeholder="조직 슬러그 입력 (예: acme)"
-                className={styles.input}
-              />
-            </div>
-            <button type="submit" className={styles.orgLoginBtn}>
-              이동
-            </button>
-          </form>
-
           <p className={styles.formFooter}>
-            계정 문의는 시스템 관리자에게 연락하세요
+            계정 문의는 조직 관리자에게 연락하세요
           </p>
         </div>
       </div>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense>
-      <LoginForm />
-    </Suspense>
   );
 }

@@ -53,6 +53,7 @@ export default function SuperAdminPage() {
                 <th>ID</th>
                 <th>조직명</th>
                 <th>슬러그</th>
+                <th>로그인 URL</th>
                 <th>플랜</th>
                 <th>사용자 수</th>
                 <th>상태</th>
@@ -69,6 +70,17 @@ export default function SuperAdminPage() {
                   <td>{org.id}</td>
                   <td className={styles.orgName}>{org.name}</td>
                   <td><code>{org.slug}</code></td>
+                  <td>
+                    <a
+                      href={`/${org.slug}/login`}
+                      className={styles.loginLink}
+                      onClick={(e) => e.stopPropagation()}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      /{org.slug}/login
+                    </a>
+                  </td>
                   <td><span className={`${styles.planBadge} ${styles[`plan${org.plan}`]}`}>{org.plan}</span></td>
                   <td>{org._count.users}명</td>
                   <td>

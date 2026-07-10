@@ -110,6 +110,16 @@
   color: #6D28D9;
 }
 
+.loginLink {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.loginLink:hover {
+  text-decoration: underline;
+}
+
 .statusActive {
   color: #16A34A;
   font-weight: 600;
