@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, requireRole, requireSuperAdmin, successResponse, errorResponse } from '@/lib/utils';
+import { createUserNotification } from '@/lib/notify';
 
 // GET /api/announcements
 export async function GET(req: NextRequest) {
@@ -84,6 +85,17 @@ export async function POST(req: NextRequest) {
       data: { content: content.trim(), authorId, organizationId },
       include: { author: { select: { id: true, name: true } } },
     });
+
+    // 조직 전체 사용자에게 공지 알림 (작성자 제외)
+    if (organizationId) {
+      const members = await prisma.user.findMany({
+        where: { organizationId, isActive: true, id: { not: authorId } },
+        select: { id: true },
+      });
+      await Promise.all(members.map(m =>
+        createUserNotification(m.id, 'ANNOUNCEMENT', '새 공지사항이 등록되었습니다.', undefined, organizationId)
+      ));
+    }
 
     return successResponse(announcement, '공지가 등록되었습니다.', 201);
   } catch (err) {

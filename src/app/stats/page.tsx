@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './stats.module.css';
 import Spinner from '@/components/common/Spinner';
+import * as XLSX from 'xlsx';
 
 interface WorkloadData {
   id: number;
@@ -41,7 +42,7 @@ export default function StatsPage() {
   const [workload, setWorkload] = useState<WorkloadData[]>([]);
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedMonth] = useState(new Date());
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -67,29 +68,38 @@ export default function StatsPage() {
     }
   }, [selectedMonth, authLoading]);
 
-  const handleExportCSV = () => {
-    if (!workload) return;
+  const prevMonth = () => setSelectedMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+  const nextMonth = () => {
+    const next = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1);
+    if (next <= new Date()) setSelectedMonth(next);
+  };
+  const isCurrentMonth = selectedMonth.getFullYear() === new Date().getFullYear() && selectedMonth.getMonth() === new Date().getMonth();
 
-    const csv = [
+  const handleExportXlsx = () => {
+    const wb = XLSX.utils.book_new();
+
+    if (summary) {
+      const summaryRows = [
+        ['기간', `${summary.year}년 ${String(summary.month).padStart(2, '0')}월`],
+        ['총 업무', summary.tasks.total],
+        ['완료', summary.tasks.done],
+        ['완료율(%)', summary.tasks.completionRate],
+        ['총 공수(시간)', summary.timeLogs.totalHours],
+        ['배정됨', summary.tasks.assigned],
+        ['진행중', summary.tasks.progress],
+        ['검수', summary.tasks.review],
+        ['QA', summary.tasks.qa],
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryRows), '월간요약');
+    }
+
+    const workloadRows = [
       ['담당자', '총 업무', '완료', '진행중', '총 공수(시간)', '평균 공수'],
-      ...workload.map((w) => [
-        w.name,
-        w.totalTasks,
-        w.completedTasks,
-        w.inProgressTasks,
-        w.totalHours,
-        w.averageHoursPerTask,
-      ]),
-    ]
-      .map((row) => row.join(','))
-      .join('\n');
+      ...workload.map(w => [w.name, w.totalTasks, w.completedTasks, w.inProgressTasks, w.totalHours, w.averageHoursPerTask]),
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(workloadRows), '작업자별부하량');
 
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `tms-workload-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
+    XLSX.writeFile(wb, `high5-stats-${selectedMonth.getFullYear()}${String(selectedMonth.getMonth() + 1).padStart(2, '0')}.xlsx`);
   };
 
   if (authLoading || loading) {
@@ -100,9 +110,18 @@ export default function StatsPage() {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.title}>통계 &amp; 리포트</h1>
-        <button onClick={handleExportCSV} className={styles.btnExport}>
-          📥 CSV 다운로드
-        </button>
+        <div className={styles.headerRight}>
+          <div className={styles.monthNav}>
+            <button className={styles.monthNavBtn} onClick={prevMonth}>&#8249;</button>
+            <span className={styles.monthLabel}>
+              {selectedMonth.getFullYear()}년 {String(selectedMonth.getMonth() + 1).padStart(2, '0')}월
+            </span>
+            <button className={styles.monthNavBtn} onClick={nextMonth} disabled={isCurrentMonth}>&#8250;</button>
+          </div>
+          <button onClick={handleExportXlsx} className={styles.btnExport}>
+            📥 엑셀 다운로드
+          </button>
+        </div>
       </div>
 
       {/* 월간 요약 */}

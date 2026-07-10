@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
+import { createUserNotification } from '@/lib/notify';
 
 // PATCH /api/requests/[id]/decision - 결재(승인/반려)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -49,6 +50,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         approver: { select: { id: true, name: true } },
       },
     });
+
+    const orgId = (session!.user as any).organizationId as number | undefined;
+    const typeLabel = updated.type || '신청';
+    if (action === 'APPROVE') {
+      await createUserNotification(updated.requesterId, 'REQUEST_APPROVED',
+        `'${updated.title}' ${typeLabel}이 승인되었습니다.`, undefined, orgId);
+    } else {
+      await createUserNotification(updated.requesterId, 'REQUEST_REJECTED',
+        `'${updated.title}' ${typeLabel}이 반려되었습니다. 사유: ${rejectReason}`, undefined, orgId);
+    }
 
     return successResponse(updated, action === 'APPROVE' ? '승인되었습니다.' : '반려되었습니다.');
   } catch (err) {

@@ -25,6 +25,17 @@ interface ProjectMeta {
 }
 
 // 작업시간 계산 함수
+function getDday(targetDate: string | null | undefined, isDone: boolean): { label: string; urgent: boolean; overdue: boolean } | null {
+  if (!targetDate || isDone) return null;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const due = new Date(targetDate); due.setHours(0, 0, 0, 0);
+  const diff = Math.round((due.getTime() - today.getTime()) / 86400000);
+  if (diff === 0) return { label: 'D-Day', urgent: true, overdue: false };
+  if (diff < 0) return { label: `D+${Math.abs(diff)}`, urgent: true, overdue: true };
+  if (diff <= 3) return { label: `D-${diff}`, urgent: true, overdue: false };
+  return { label: `D-${diff}`, urgent: false, overdue: false };
+}
+
 const calculateWorkHours = (timeLogs: any[]): string => {
   if (!timeLogs || timeLogs.length === 0) return '-';
 
@@ -79,6 +90,9 @@ interface SharedHandlers {
   updateTask: (id: number, data: any) => Promise<any>;
   deleteTask: (id: number) => Promise<any>;
   createTask: (data: any) => Promise<any>;
+  selectedIds: Set<number>;
+  toggleSelect: (id: number) => void;
+  toggleSelectAll: (ids: number[]) => void;
 }
 
 function TaskListContent() {
@@ -194,16 +208,63 @@ function TaskListContent() {
     projectSections = projectSections.filter(({ project }) => project.id === pid);
   }
 
-  const handlers: SharedHandlers = { canEditTitle, canDelete, currentUserId: parseInt((user as any)?.id || '0'), assignableWorkers, getStatuses, updateStatus, updateTask, deleteTask, createTask };
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState('');
+  const [bulkWorker, setBulkWorker] = useState('');
+  const [bulkSaving, setBulkSaving] = useState(false);
+
+  const toggleSelect = (id: number) => setSelectedIds(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+  const toggleSelectAll = (ids: number[]) => setSelectedIds(prev => {
+    const allSelected = ids.every(id => prev.has(id));
+    if (allSelected) { const next = new Set(prev); ids.forEach(id => next.delete(id)); return next; }
+    return new Set([...prev, ...ids]);
+  });
+
+  const applyBulk = async () => {
+    if (!selectedIds.size) return;
+    setBulkSaving(true);
+    await Promise.all([...selectedIds].map(async (id) => {
+      if (bulkStatus) await updateStatus(id, bulkStatus);
+      if (bulkWorker) await updateTask(id, { workerId: parseInt(bulkWorker) });
+    }));
+    setSelectedIds(new Set());
+    setBulkStatus('');
+    setBulkWorker('');
+    setBulkSaving(false);
+  };
+
+  const handlers: SharedHandlers = { canEditTitle, canDelete, currentUserId: parseInt((user as any)?.id || '0'), assignableWorkers, getStatuses, updateStatus, updateTask, deleteTask, createTask, selectedIds, toggleSelect, toggleSelectAll };
 
   return (
     <div className={styles.container}>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>업무 목록</h1>
-        <span className={styles.pageCount}>
-          총 {filteredTasks.length}건
-        </span>
+        <span className={styles.pageCount}>총 {filteredTasks.length}건</span>
       </div>
+
+      {selectedIds.size > 0 && (
+        <div className={styles.bulkBar}>
+          <span className={styles.bulkCount}>{selectedIds.size}건 선택됨</span>
+          <select className={styles.bulkSelect} value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}>
+            <option value="">상태 변경...</option>
+            {statusOptions.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+          </select>
+          {canEditTitle && (
+            <select className={styles.bulkSelect} value={bulkWorker} onChange={e => setBulkWorker(e.target.value)}>
+              <option value="">담당자 변경...</option>
+              {assignableWorkers.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+            </select>
+          )}
+          <button className={styles.bulkApplyBtn} onClick={applyBulk} disabled={bulkSaving || (!bulkStatus && !bulkWorker)}>
+            {bulkSaving ? '적용 중...' : '적용'}
+          </button>
+          <button className={styles.bulkCancelBtn} onClick={() => setSelectedIds(new Set())}>취소</button>
+        </div>
+      )}
 
       {/* 필터 바 */}
       <div className={styles.filterBar}>
@@ -304,6 +365,9 @@ function ProjectTaskSection({
   updateTask,
   deleteTask,
   createTask,
+  selectedIds,
+  toggleSelect,
+  toggleSelectAll,
 }: SharedHandlers & { project: ProjectMeta | null; tasks: any[] }) {
   const router = useRouter();
   const { confirm } = useDialog();
@@ -578,14 +642,20 @@ function ProjectTaskSection({
     const isExpanded = expandedNotes.has(task.id);
     const taskStatuses = getStatuses(task.projectId);
     const isTaskDone = taskStatuses.find((s) => s.code === task.status)?.isDone ?? false;
+    const dday = getDday(task.targetDate ?? null, isTaskDone);
     const rows: React.ReactElement[] = [
       <tr
         key={task.id}
-        className={isTaskDone ? styles.rowDone : undefined}
+        className={isTaskDone ? styles.rowDone : dday?.overdue ? styles.rowOverdue : undefined}
         style={{
           backgroundColor: isTaskDone ? undefined : 'white',
         }}
       >
+        <td className={styles.thCheck}>
+          {!isGroupRow && (
+            <input type="checkbox" checked={selectedIds.has(task.id)} onChange={() => toggleSelect(task.id)} onClick={e => e.stopPropagation()} />
+          )}
+        </td>
         <td className={styles.tdId} data-label="ID">#{task.id}</td>
         <td className={styles.td} data-label="제목">
           <div className={styles.titleCell} style={isChild ? { paddingLeft: '24px' } : undefined}>
@@ -648,9 +718,16 @@ function ProjectTaskSection({
             : '-'}
         </td>
         <td className={styles.td} data-label="목표일">
-          {task.targetDate
-            ? new Date(task.targetDate).toLocaleDateString('ko-KR')
-            : '-'}
+          {task.targetDate ? (
+            <span className={styles.dateCell}>
+              <span>{new Date(task.targetDate).toLocaleDateString('ko-KR')}</span>
+              {dday && (
+                <span className={dday.overdue ? styles.ddayOverdue : dday.urgent ? styles.ddayUrgent : styles.dday}>
+                  {dday.label}
+                </span>
+              )}
+            </span>
+          ) : '-'}
         </td>
         <td className={styles.tdNotes} data-label="비고">
           <div className={styles.notesBtns}>
@@ -757,6 +834,13 @@ function ProjectTaskSection({
         <table className={styles.table}>
           <thead>
             <tr>
+              <th className={`${styles.th} ${styles.thCheck}`}>
+                <input
+                  type="checkbox"
+                  onChange={() => toggleSelectAll(tasks.filter(t => !t.isGroup).map(t => t.id))}
+                  checked={tasks.filter(t => !t.isGroup).every(t => selectedIds.has(t.id)) && tasks.filter(t => !t.isGroup).length > 0}
+                />
+              </th>
               <th className={`${styles.th} ${styles.thId}`}>ID</th>
               <th className={styles.th}>제목</th>
               <th className={`${styles.th} ${styles.thAssignee}`}>담당자</th>

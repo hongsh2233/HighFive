@@ -21,6 +21,65 @@
   color: var(--color-gray-600);
 }
 
+.bulkBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 8px;
+  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.bulkCount {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1D4ED8;
+  margin-right: var(--space-2);
+}
+
+.bulkSelect {
+  height: 32px;
+  padding: 0 8px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.bulkApplyBtn {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+.bulkApplyBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.bulkCancelBtn {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+  background: transparent;
+  color: var(--color-gray-500);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.thCheck {
+  width: 36px;
+  text-align: center;
+  padding: var(--space-2);
+}
+
 .filterBar {
   display: flex;
   flex-wrap: wrap;
@@ -313,6 +372,44 @@
 
 .rowDone td {
   opacity: 0.6;
+}
+
+.rowOverdue {
+  background-color: #FFF5F5 !important;
+}
+
+.dateCell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.dday {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: #EFF6FF;
+  color: #1D4ED8;
+}
+
+.ddayUrgent {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: #FEF3C7;
+  color: #B45309;
+}
+
+.ddayOverdue {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: #FEE2E2;
+  color: #DC2626;
 }
 
 /* 프로젝트별 섹션 레이아웃 */
