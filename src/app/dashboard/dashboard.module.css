@@ -144,8 +144,144 @@
   white-space: nowrap;
 }
 
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+.kpiCard {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: var(--space-5) var(--space-6);
+}
+
+.kpiValue {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.kpiLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+}
+
+.kpiSub {
+  font-size: 12px;
+  color: var(--color-gray-500);
+  margin-top: 4px;
+}
+
+.planRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.planBadgeFree {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: #F3F4F6;
+  color: #374151;
+}
+
+.planBadgePro {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: #EFF6FF;
+  color: #1D4ED8;
+}
+
+.planBadgeEnt {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: #FAF5FF;
+  color: #7C3AED;
+}
+
+.statsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.statsTable th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray-500);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-subtle, var(--color-gray-50));
+}
+
+.statsTable td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--color-gray-100);
+  color: var(--text-primary);
+}
+
+.statsTable tr:last-child td {
+  border-bottom: none;
+}
+
+.orgLink {
+  color: var(--text-primary);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.orgLink:hover {
+  text-decoration: underline;
+}
+
+.slug {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--color-gray-500);
+}
+
+.statusActive {
+  font-size: 12px;
+  font-weight: 600;
+  color: #065F46;
+  background: #ECFDF5;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.statusInactive {
+  font-size: 12px;
+  font-weight: 600;
+  color: #991B1B;
+  background: #FEF2F2;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+@media (max-width: 900px) {
+  .kpiGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 640px) {
   .container {
     padding: 20px 14px;
+  }
+  .kpiGrid {
+    grid-template-columns: 1fr;
   }
 }

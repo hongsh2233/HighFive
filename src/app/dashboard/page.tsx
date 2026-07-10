@@ -8,6 +8,120 @@ import { Task, PaginatedResponse } from '@/types';
 import styles from './dashboard.module.css';
 import Spinner from '@/components/common/Spinner';
 
+interface PlatformStats {
+  totalOrgs: number;
+  activeOrgs: number;
+  inactiveOrgs: number;
+  newOrgsThisMonth: number;
+  totalUsers: number;
+  newUsersThisMonth: number;
+  planDistribution: Record<string, number>;
+  recentOrgs: {
+    id: number;
+    name: string;
+    slug: string;
+    plan: string;
+    isActive: boolean;
+    createdAt: string;
+    _count: { users: number };
+  }[];
+}
+
+function SuperAdminDashboard({ userName }: { userName: string }) {
+  const [stats, setStats] = useState<PlatformStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/superadmin/stats')
+      .then((r) => r.json())
+      .then((d) => { if (d.success) setStats(d.data); })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className={styles.loading}><Spinner /></div>;
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h1 className={styles.title}>안녕하세요, {userName}님</h1>
+        <p className={styles.subtitle}>시스템관리자 계정입니다.</p>
+      </div>
+
+      {stats && (
+        <>
+          <div className={styles.kpiGrid}>
+            <div className={styles.kpiCard}>
+              <div className={styles.kpiValue}>{stats.totalOrgs}</div>
+              <div className={styles.kpiLabel}>전체 조직</div>
+              <div className={styles.kpiSub}>이번 달 +{stats.newOrgsThisMonth}개</div>
+            </div>
+            <div className={styles.kpiCard}>
+              <div className={styles.kpiValue}>{stats.activeOrgs}</div>
+              <div className={styles.kpiLabel}>활성 조직</div>
+              <div className={styles.kpiSub}>비활성 {stats.inactiveOrgs}개</div>
+            </div>
+            <div className={styles.kpiCard}>
+              <div className={styles.kpiValue}>{stats.totalUsers}</div>
+              <div className={styles.kpiLabel}>전체 사용자</div>
+              <div className={styles.kpiSub}>이번 달 +{stats.newUsersThisMonth}명</div>
+            </div>
+            <div className={styles.kpiCard}>
+              <div className={styles.kpiLabel} style={{ marginBottom: 12 }}>플랜 분포</div>
+              <div className={styles.planRow}>
+                <span className={styles.planBadgeFree}>FREE {stats.planDistribution.FREE ?? 0}</span>
+                <span className={styles.planBadgePro}>PRO {stats.planDistribution.PRO ?? 0}</span>
+                <span className={styles.planBadgeEnt}>ENT {stats.planDistribution.ENTERPRISE ?? 0}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>최근 가입 조직</h2>
+            <div className={styles.taskList}>
+              <table className={styles.statsTable}>
+                <thead>
+                  <tr>
+                    <th>조직명</th>
+                    <th>슬러그</th>
+                    <th>플랜</th>
+                    <th>사용자</th>
+                    <th>상태</th>
+                    <th>가입일</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.recentOrgs.map((org) => (
+                    <tr key={org.id}>
+                      <td>
+                        <Link href={`/superadmin/${org.id}`} className={styles.orgLink}>
+                          {org.name}
+                        </Link>
+                      </td>
+                      <td><code className={styles.slug}>{org.slug}</code></td>
+                      <td><span className={styles[`planBadge${org.plan.charAt(0) + org.plan.slice(1).toLowerCase().replace('rprise','')}`] || ''}>{org.plan}</span></td>
+                      <td>{org._count.users}명</td>
+                      <td>
+                        <span className={org.isActive ? styles.statusActive : styles.statusInactive}>
+                          {org.isActive ? '활성' : '비활성'}
+                        </span>
+                      </td>
+                      <td>{new Date(org.createdAt).toLocaleDateString('ko-KR')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className={styles.section}>
+            <Link href="/superadmin" className={styles.actionLink}>전체 조직 보기</Link>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 const statusLabels: { [key: string]: string } = {
   ASSIGNED: '배정됨',
   PROGRESS: '진행중',
@@ -94,6 +208,10 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return <div className={styles.loading}><Spinner /></div>;
+  }
+
+  if ((user as any)?.role === 'SUPERADMIN') {
+    return <SuperAdminDashboard userName={user?.name ?? ''} />;
   }
 
   return (
