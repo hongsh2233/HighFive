@@ -515,3 +515,33 @@
 
 - **헤더 검색 버튼**: 🔍 아이콘 → "검색" 텍스트로 변경(디자인 밸런스 개선).
 - 디버깅 체크: `npx tsc --noEmit` 오류 0개.
+
+## 2026-07-10 (56차)
+
+- **D-day 표시 + 마감 강조**:
+  - `src/app/tasks/page.tsx`: `getDday()` 헬퍼 추가 — 완료된 업무는 null, 마감 당일 D-Day(주황), 1~3일 이내 D-N(주황), 4일+ D-N(파랑), 초과 D+N(빨강).
+  - 마감 초과 행에 `rowOverdue` 클래스(배경 #FFF5F5) 적용.
+  - 날짜 셀에 날짜 + 뱃지 함께 표시.
+
+- **업무 일괄처리**:
+  - 업무 목록에 체크박스 열 추가(개별/전체 선택).
+  - 선택 시 bulkBar 표시 — 상태/담당자 일괄변경 후 적용 버튼.
+  - `selectedIds`, `bulkStatus`, `bulkWorker`, `applyBulk()` state/함수 추가.
+
+- **알림 유형 확대**:
+  - `src/app/api/requests/[id]/decision/route.ts`: 결재 승인/반려 시 신청자에게 `REQUEST_APPROVED` / `REQUEST_REJECTED` 알림 발송.
+  - `src/app/api/announcements/route.ts`: 조직 공지 등록 시 전체 멤버(작성자 제외)에게 `ANNOUNCEMENT` 알림 발송.
+
+- **통계 기간 필터 + 엑셀 내보내기**:
+  - `src/app/stats/page.tsx`: `selectedMonth` state에 setter 추가, 이전/다음 월 네비게이션 UI.
+  - CSV → xlsx 내보내기로 교체 (`xlsx` 패키지 사용), 월간요약·작업자별 시트 2개 출력.
+
+- **헤더 메뉴 순서 변경**:
+  - `src/components/AppHeader.tsx`: 검색 → 업무 → 신청 → 정보 → 위키 → 설정 → 마이페이지 순으로 재정렬.
+  - 계정 드롭다운 버튼 레이블 사용자명 → "마이페이지"로 변경.
+
+- **모바일 반응형 보완**:
+  - `src/app/stats/stats.module.css`: @media 640px — 헤더 세로 정렬, summaryGrid/statusGrid 2열.
+  - `src/app/settings/audit/audit.module.css`: @media 640px — 페이지 패딩, 헤더/필터 세로 정렬.
+
+- 디버깅 체크: `npx tsc --noEmit` 오류 0개.
