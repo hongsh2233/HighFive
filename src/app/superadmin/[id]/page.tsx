@@ -110,6 +110,19 @@ export default function SuperAdminOrgPage() {
     }
   };
 
+  const handleDeleteOrg = async () => {
+    if (!org) return;
+    if (!confirm(`"${org.name}" 조직과 모든 데이터를 영구 삭제합니다. 계속하시겠습니까?`)) return;
+    setSaving(true);
+    const res = await fetch(`/api/superadmin/organizations/${orgId}`, { method: 'DELETE' });
+    if (res.ok) {
+      router.push('/superadmin');
+    } else {
+      alert('삭제 중 오류가 발생했습니다.');
+      setSaving(false);
+    }
+  };
+
   if (loading) return <div className={styles.page}><p className={styles.empty}>불러오는 중...</p></div>;
   if (!org) return <div className={styles.page}><p className={styles.empty}>조직을 찾을 수 없습니다.</p></div>;
 
@@ -139,6 +152,13 @@ export default function SuperAdminOrgPage() {
             className={org.isActive ? styles.btnDanger : styles.btnPrimary}
           >
             {org.isActive ? '비활성화' : '활성화'}
+          </button>
+          <button
+            onClick={handleDeleteOrg}
+            disabled={saving}
+            className={styles.btnDanger}
+          >
+            조직 삭제
           </button>
         </div>
       </div>

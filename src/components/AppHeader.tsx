@@ -18,6 +18,9 @@ export default function AppHeader() {
   const [openMenu, setOpenMenu] = useState<MenuName>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [enabledFeatures, setEnabledFeatures] = useState<string[]>([
+    'info', 'requests', 'wiki', 'tasks', 'search', 'stats', 'calendar_sync', 'integrations',
+  ]);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -30,6 +33,18 @@ export default function AppHeader() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const role = (user as any)?.role;
+    if (role === 'SUPERADMIN') return; // 시스템관리자는 모든 메뉴 항상 표시
+    fetch('/api/plan-config')
+      .then((r) => r.json())
+      .then((d) => { if (d.success && d.data?.features) setEnabledFeatures(d.data.features); })
+      .catch(() => {}); // 실패 시 기본값(전체 허용) 유지
+  }, [user]);
+
+  const has = (key: string) => enabledFeatures.includes(key);
 
   const handleMenuEnter = (menu: MenuName) => {
     if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
@@ -75,56 +90,77 @@ export default function AppHeader() {
         <nav className={`${styles.nav} ${mobileOpen ? styles.navOpen : ''}`}>
           {isSuperAdmin ? (
             <>
-              <Link href="/superadmin" className={navClass(pathname.startsWith('/superadmin'))} onClick={closeAll}>
-                시스템관리자
-              </Link>
+              <div
+                className={styles.menuWrapper}
+                onMouseEnter={() => handleMenuEnter('settings')}
+                onMouseLeave={handleMenuLeave}
+              >
+                <button
+                  className={navClass(openMenu === 'settings' || pathname.startsWith('/superadmin'))}
+                  onClick={() => setOpenMenu(openMenu === 'settings' ? null : 'settings')}
+                >
+                  시스템관리자
+                </button>
+                {openMenu === 'settings' && (
+                  <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
+                    <Link href="/superadmin" className={styles.dropdownItem} onClick={closeAll}>가입 현황</Link>
+                    <Link href="/superadmin/plan-config" className={styles.dropdownItem} onClick={closeAll}>플랜 설정</Link>
+                  </div>
+                )}
+              </div>
               <Link href="/announcements" className={navClass(pathname.startsWith('/announcements'))} onClick={closeAll}>
                 공지사항
               </Link>
             </>
           ) : (
             <>
-              <Link href="/info" className={navClass(pathname === '/info')} onClick={closeAll}>
-                정보
-              </Link>
+              {has('info') && (
+                <Link href="/info" className={navClass(pathname === '/info')} onClick={closeAll}>
+                  정보
+                </Link>
+              )}
 
-              <Link href="/requests" className={navClass(pathname.startsWith('/requests'))} onClick={closeAll}>
-                신청
-              </Link>
+              {has('requests') && (
+                <Link href="/requests" className={navClass(pathname.startsWith('/requests'))} onClick={closeAll}>
+                  신청
+                </Link>
+              )}
 
-              <Link href="/wiki" className={navClass(pathname === '/wiki' || pathname.startsWith('/projects/'))} onClick={closeAll}>
-                위키
-              </Link>
+              {has('wiki') && (
+                <Link href="/wiki" className={navClass(pathname === '/wiki' || pathname.startsWith('/projects/'))} onClick={closeAll}>
+                  위키
+                </Link>
+              )}
 
-              {/* 업무 메뉴 */}
-              <div
-                className={styles.menuWrapper}
-                onMouseEnter={() => handleMenuEnter('task')}
-                onMouseLeave={handleMenuLeave}
-              >
-                <button
-                  className={navClass(openMenu === 'task' || pathname.startsWith('/tasks') || pathname.startsWith('/calendar'))}
-                  onClick={() => setOpenMenu(openMenu === 'task' ? null : 'task')}
+              {has('tasks') && (
+                <div
+                  className={styles.menuWrapper}
+                  onMouseEnter={() => handleMenuEnter('task')}
+                  onMouseLeave={handleMenuLeave}
                 >
-                  업무
-                </button>
-                {openMenu === 'task' && (
-                  <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
-                    {[
-                      { href: '/tasks/create', label: '업무 등록' },
-                      { href: '/tasks', label: '업무 목록' },
-                      { href: '/tasks/kanban', label: '칸반 보드' },
-                      { href: '/calendar', label: '캘린더' },
-                    ].map((item) => (
-                      <Link key={item.href} href={item.href} className={styles.dropdownItem} onClick={closeAll}>
-                        {item.label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
+                  <button
+                    className={navClass(openMenu === 'task' || pathname.startsWith('/tasks') || pathname.startsWith('/calendar'))}
+                    onClick={() => setOpenMenu(openMenu === 'task' ? null : 'task')}
+                  >
+                    업무
+                  </button>
+                  {openMenu === 'task' && (
+                    <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
+                      {[
+                        { href: '/tasks/create', label: '업무 등록' },
+                        { href: '/tasks', label: '업무 목록' },
+                        { href: '/tasks/kanban', label: '칸반 보드' },
+                        { href: '/calendar', label: '캘린더' },
+                      ].map((item) => (
+                        <Link key={item.href} href={item.href} className={styles.dropdownItem} onClick={closeAll}>
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
-              {/* 설정 메뉴 */}
               {isAdminOrLeader && (
                 <div
                   className={styles.menuWrapper}
@@ -144,9 +180,13 @@ export default function AppHeader() {
                       {user?.role === 'ADMIN' && (
                         <Link href="/users" className={styles.dropdownItem} onClick={closeAll}>팀원관리</Link>
                       )}
-                      <Link href="/stats" className={styles.dropdownItem} onClick={closeAll}>통계</Link>
-                      <Link href="/settings/calendar-sync" className={styles.dropdownItem} onClick={closeAll}>구글 캘린더 연동</Link>
-                      {user?.role === 'ADMIN' && (
+                      {has('stats') && (
+                        <Link href="/stats" className={styles.dropdownItem} onClick={closeAll}>통계</Link>
+                      )}
+                      {has('calendar_sync') && (
+                        <Link href="/settings/calendar-sync" className={styles.dropdownItem} onClick={closeAll}>구글 캘린더 연동</Link>
+                      )}
+                      {user?.role === 'ADMIN' && has('integrations') && (
                         <Link href="/settings/integrations" className={styles.dropdownItem} onClick={closeAll}>외부연동</Link>
                       )}
                     </div>
@@ -154,14 +194,15 @@ export default function AppHeader() {
                 </div>
               )}
 
-              {/* 검색 */}
-              <button
-                className={styles.navLink}
-                onClick={() => setSearchOpen(true)}
-                title="전역 검색 (Ctrl+K)"
-              >
-                검색
-              </button>
+              {has('search') && (
+                <button
+                  className={styles.navLink}
+                  onClick={() => setSearchOpen(true)}
+                  title="전역 검색 (Ctrl+K)"
+                >
+                  검색
+                </button>
+              )}
             </>
           )}
 

@@ -476,3 +476,11 @@ model UserPage {
   @@index([userId])
   @@map("user_pages")
 }
+
+model SystemConfig {
+  id           Int      @id @default(1)
+  planFeatures Json
+  updatedAt    DateTime @updatedAt
+
+  @@map("system_config")
+}
