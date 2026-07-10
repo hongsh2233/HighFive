@@ -74,9 +74,14 @@ export default function AppHeader() {
 
         <nav className={`${styles.nav} ${mobileOpen ? styles.navOpen : ''}`}>
           {isSuperAdmin ? (
-            <Link href="/superadmin" className={navClass(pathname.startsWith('/superadmin'))} onClick={closeAll}>
-              슈퍼관리자
-            </Link>
+            <>
+              <Link href="/superadmin" className={navClass(pathname.startsWith('/superadmin'))} onClick={closeAll}>
+                시스템관리자
+              </Link>
+              <Link href="/announcements" className={navClass(pathname.startsWith('/announcements'))} onClick={closeAll}>
+                공지사항
+              </Link>
+            </>
           ) : (
             <>
               <Link href="/info" className={navClass(pathname === '/info')} onClick={closeAll}>

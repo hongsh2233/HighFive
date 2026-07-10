@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 
 async function canManage(announcementId: number, role: string, userId: number) {
-  if (role === 'ADMIN') return true;
+  if (role === 'SUPERADMIN' || role === 'ADMIN') return true;
   if (role !== 'LEADER') return false;
   const announcement = await prisma.announcement.findUnique({ where: { id: announcementId } });
   return !!announcement && announcement.authorId === userId;

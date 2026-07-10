@@ -68,7 +68,7 @@ export default function SuperAdminPage() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className={styles.title}>가입 현황</h1>
+        <h1 className={styles.title}>시스템관리자 — 가입 현황</h1>
         <span className={styles.badge}>{orgs.length}개 조직</span>
         <button
           className={styles.btnPrimary}
