@@ -1,17 +1,14 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { FormEvent, useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import styles from './login.module.css';
 
 function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const registered = searchParams.get('registered');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [orgSlug, setOrgSlug] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -39,12 +36,6 @@ function LoginForm() {
     }
   };
 
-  const handleOrgLogin = (e: FormEvent) => {
-    e.preventDefault();
-    const slug = orgSlug.trim();
-    if (slug) router.push(`/${slug}/login`);
-  };
-
   return (
     <div className={styles.wrapper}>
       <div className={styles.brandPanel}>
@@ -66,13 +57,9 @@ function LoginForm() {
       <div className={styles.formPanel}>
         <div className={styles.formInner}>
           <div className={styles.formHeader}>
-            <h2 className={styles.formTitle}>슈퍼관리자 로그인</h2>
+            <h2 className={styles.formTitle}>관리자 로그인</h2>
             <p className={styles.formSubtitle}>플랫폼 운영자 전용입니다</p>
           </div>
-
-          {registered && (
-            <div className={styles.successBox}>가입이 완료되었습니다. 조직 로그인 URL로 접속하세요.</div>
-          )}
 
           {error && (
             <div className={styles.errorBox}>{error}</div>
@@ -138,28 +125,6 @@ function LoginForm() {
               {loading ? '로그인 중...' : '로그인'}
             </button>
           </form>
-
-          <div className={styles.divider} />
-
-          <p className={styles.orgLoginLabel}>조직 로그인</p>
-          <form onSubmit={handleOrgLogin} className={styles.orgLoginForm}>
-            <div className={styles.inputWrap} style={{ flex: 1 }}>
-              <input
-                type="text"
-                value={orgSlug}
-                onChange={(e) => setOrgSlug(e.target.value)}
-                placeholder="조직 슬러그 입력 (예: acme)"
-                className={styles.input}
-              />
-            </div>
-            <button type="submit" className={styles.orgLoginBtn}>
-              이동
-            </button>
-          </form>
-
-          <p className={styles.formFooter}>
-            계정 문의는 시스템 관리자에게 연락하세요
-          </p>
         </div>
       </div>
     </div>
