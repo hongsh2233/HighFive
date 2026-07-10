@@ -114,22 +114,14 @@ export default function AppHeader() {
             </>
           ) : (
             <>
-              {has('info') && (
-                <Link href="/info" className={navClass(pathname === '/info')} onClick={closeAll}>
-                  정보
-                </Link>
-              )}
-
-              {has('requests') && (
-                <Link href="/requests" className={navClass(pathname.startsWith('/requests'))} onClick={closeAll}>
-                  신청
-                </Link>
-              )}
-
-              {has('wiki') && (
-                <Link href="/wiki" className={navClass(pathname === '/wiki' || pathname.startsWith('/projects/'))} onClick={closeAll}>
-                  위키
-                </Link>
+              {has('search') && (
+                <button
+                  className={styles.navLink}
+                  onClick={() => setSearchOpen(true)}
+                  title="전역 검색 (Ctrl+K)"
+                >
+                  검색
+                </button>
               )}
 
               {has('tasks') && (
@@ -159,6 +151,24 @@ export default function AppHeader() {
                     </div>
                   )}
                 </div>
+              )}
+
+              {has('requests') && (
+                <Link href="/requests" className={navClass(pathname.startsWith('/requests'))} onClick={closeAll}>
+                  신청
+                </Link>
+              )}
+
+              {has('info') && (
+                <Link href="/info" className={navClass(pathname === '/info')} onClick={closeAll}>
+                  정보
+                </Link>
+              )}
+
+              {has('wiki') && (
+                <Link href="/wiki" className={navClass(pathname === '/wiki' || pathname.startsWith('/projects/'))} onClick={closeAll}>
+                  위키
+                </Link>
               )}
 
               {isAdminOrLeader && (
@@ -197,16 +207,6 @@ export default function AppHeader() {
                   )}
                 </div>
               )}
-
-              {has('search') && (
-                <button
-                  className={styles.navLink}
-                  onClick={() => setSearchOpen(true)}
-                  title="전역 검색 (Ctrl+K)"
-                >
-                  검색
-                </button>
-              )}
             </>
           )}
 
@@ -220,7 +220,7 @@ export default function AppHeader() {
               className={navClass(openMenu === 'account')}
               onClick={() => setOpenMenu(openMenu === 'account' ? null : 'account')}
             >
-              {user?.name}
+              마이페이지
             </button>
             {openMenu === 'account' && (
               <div className={`${styles.dropdown} ${styles.dropdownRight}`}>

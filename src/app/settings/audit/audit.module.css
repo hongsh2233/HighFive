@@ -165,3 +165,25 @@
   font-size: 13px;
   color: var(--color-gray-500);
 }
+
+@media (max-width: 640px) {
+  .page {
+    padding: 16px 14px;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+  }
+
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filterSelect,
+  .filterInput {
+    width: 100%;
+  }
+}
