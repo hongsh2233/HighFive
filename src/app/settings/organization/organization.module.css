@@ -1,0 +1,209 @@
+.loading {
+  padding: var(--space-8);
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-8);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.planBadge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: var(--accent-light);
+  color: var(--accent);
+  letter-spacing: 0.05em;
+}
+
+.errorBox {
+  padding: var(--space-3) var(--space-4);
+  background: #FEF2F2;
+  border: 1px solid var(--color-danger);
+  border-radius: 8px;
+  color: #7F1D1D;
+  margin-bottom: var(--space-4);
+  font-size: 14px;
+}
+
+.successBox {
+  padding: var(--space-3) var(--space-4);
+  background: #F0FDF4;
+  border: 1px solid #86EFAC;
+  border-radius: 8px;
+  color: #14532D;
+  margin-bottom: var(--space-4);
+  font-size: 14px;
+}
+
+.section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: var(--space-6);
+  margin-bottom: var(--space-5);
+}
+
+.sectionTitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: var(--space-4);
+  color: var(--text-primary);
+}
+
+/* 로고 */
+.logoArea {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-6);
+}
+
+.logoPreview {
+  flex-shrink: 0;
+  width: 88px;
+  height: 88px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-subtle);
+}
+
+.logoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.logoPlaceholder {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+.logoActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  justify-content: center;
+}
+
+.logoHint {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.logoBtns {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* 폼 */
+.formGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.formRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.input {
+  composes: field-input from global;
+  font-size: 14px;
+}
+
+.inputReadonly {
+  composes: field-input from global;
+  font-size: 14px;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.inputInline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.inputNum {
+  composes: field-input from global;
+  width: 72px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.unit {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* 버튼 */
+.btnPrimary {
+  composes: btn btn-primary from global;
+  padding: var(--space-2) var(--space-6);
+}
+
+.btnSecondary {
+  composes: btn btn-secondary from global;
+  padding: var(--space-2) var(--space-4);
+  font-size: 13px;
+}
+
+.btnDanger {
+  composes: btn btn-danger from global;
+  padding: var(--space-2) var(--space-4);
+  font-size: 13px;
+}
+
+.saveRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-2);
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 16px 14px;
+  }
+
+  .logoArea {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

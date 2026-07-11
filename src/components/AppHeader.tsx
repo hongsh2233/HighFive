@@ -8,6 +8,7 @@ import { useState, useRef, useEffect } from 'react';
 import { markManualLogout } from '@/lib/logout-flag';
 import GlobalSearchModal from './GlobalSearchModal';
 import styles from './AppHeader.module.css';
+import { useSession } from 'next-auth/react';
 
 type MenuName = 'task' | 'settings' | 'account' | null;
 
@@ -66,6 +67,10 @@ export default function AppHeader() {
     setMobileOpen(false);
   };
 
+  const { data: session } = useSession();
+  const orgName = (session?.user as any)?.organizationName || 'High5';
+  const orgLogo = (session?.user as any)?.organizationLogo || null;
+
   const navClass = (active: boolean) => active ? styles.navLinkActive : styles.navLink;
   const isAdminOrLeader = ['ADMIN', 'LEADER'].includes(user?.role || '');
   const isSuperAdmin = (user as any)?.role === 'SUPERADMIN';
@@ -73,7 +78,12 @@ export default function AppHeader() {
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
-        <Link href="/dashboard" className={styles.logo}>High5</Link>
+        <Link href="/dashboard" className={styles.logo}>
+          {orgLogo
+            ? <img src={orgLogo} alt={orgName} className={styles.logoImg} />
+            : <span>{isSuperAdmin ? 'High5' : orgName}</span>
+          }
+        </Link>
 
         <button
           className={styles.mobileToggle}
@@ -185,6 +195,9 @@ export default function AppHeader() {
                   </button>
                   {openMenu === 'settings' && (
                     <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
+                      {user?.role === 'ADMIN' && (
+                        <Link href="/settings/organization" className={styles.dropdownItem} onClick={closeAll}>조직 설정</Link>
+                      )}
                       <Link href="/projects" className={styles.dropdownItem} onClick={closeAll}>프로젝트</Link>
                       <Link href="/announcements" className={styles.dropdownItem} onClick={closeAll}>공지사항</Link>
                       {user?.role === 'ADMIN' && (
