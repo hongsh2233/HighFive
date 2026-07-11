@@ -545,3 +545,16 @@
   - `src/app/settings/audit/audit.module.css`: @media 640px — 페이지 패딩, 헤더/필터 세로 정렬.
 
 - 디버깅 체크: `npx tsc --noEmit` 오류 0개.
+
+## 2026-07-11 (57차)
+
+- **조직 설정 페이지 신규 (`/settings/organization`)**:
+  - `prisma/schema.prisma`: Organization에 `logoUrl String?`, `displayName String?`, `address String?`, `deadlineAlertDays Int @default(3)` 필드 추가.
+  - `src/lib/auth.ts`: `authorize()` include에 `displayName`, `logoUrl` 추가. JWT 콜백에 `organizationName`, `organizationLogo` 저장. 세션 콜백에 동일 필드 노출.
+  - `GET /api/settings/organization` (ADMIN/LEADER): 조직 설정 전체 조회.
+  - `PATCH /api/settings/organization` (ADMIN 전용): displayName, bizNo, phone, ceoName, address, deadlineAlertDays 수정.
+  - `POST /api/settings/organization/logo` (ADMIN): base64 로고 업로드 (200KB 제한, PNG/JPG/SVG/WebP/GIF).
+  - `DELETE /api/settings/organization/logo` (ADMIN): 로고 삭제.
+  - `src/app/settings/organization/page.tsx`: 로고 업로드/삭제 미리보기, 기본 정보(헤더표시명/사업자번호/대표자명/대표번호/주소), 마감 알림 기준일 설정.
+  - `src/components/AppHeader.tsx`: 로고 있으면 `<img>` 표시, 없으면 `organizationName`(displayName 우선) 텍스트 표시. 설정 드롭다운에 ADMIN에게 "조직 설정" 링크 추가.
+  - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
