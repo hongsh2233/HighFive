@@ -8,7 +8,6 @@ import { useState, useRef, useEffect } from 'react';
 import { markManualLogout } from '@/lib/logout-flag';
 import GlobalSearchModal from './GlobalSearchModal';
 import styles from './AppHeader.module.css';
-import { useSession } from 'next-auth/react';
 
 type MenuName = 'task' | 'settings' | 'account' | null;
 
@@ -67,9 +66,21 @@ export default function AppHeader() {
     setMobileOpen(false);
   };
 
-  const { data: session } = useSession();
-  const orgName = (session?.user as any)?.organizationName || 'High5';
-  const orgLogo = (session?.user as any)?.organizationLogo || null;
+  const [orgName, setOrgName] = useState<string>('High5');
+  const [orgLogo, setOrgLogo] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user || (user as any).role === 'SUPERADMIN') return;
+    fetch('/api/settings/organization')
+      .then(r => r.json())
+      .then(d => {
+        if (d.success && d.data) {
+          setOrgName(d.data.displayName || d.data.name || 'High5');
+          setOrgLogo(d.data.logoUrl || null);
+        }
+      })
+      .catch(() => {});
+  }, [user]);
 
   const navClass = (active: boolean) => active ? styles.navLinkActive : styles.navLink;
   const isAdminOrLeader = ['ADMIN', 'LEADER'].includes(user?.role || '');
