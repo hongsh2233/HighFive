@@ -28,6 +28,10 @@ export async function GET(
         worker: { select: { id: true, name: true, email: true } },
         timeLogs: { orderBy: { createdAt: 'desc' } },
         fieldValues: true,
+        attachments: {
+          select: { id: true, filename: true, mimeType: true, size: true, createdAt: true, uploadedBy: { select: { id: true, name: true } } },
+          orderBy: { createdAt: 'asc' },
+        },
       },
     });
 

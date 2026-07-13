@@ -5,6 +5,34 @@ import { sanitize } from '@/lib/sanitize';
 import { addHistory } from '@/lib/task-history';
 import { getProjectStatuses } from '@/lib/task-status';
 
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024; // 5MB per file
+const MAX_TOTAL_ATTACHMENT_BYTES = 20 * 1024 * 1024; // 20MB per task
+const MAX_ATTACHMENT_COUNT = 5;
+
+interface AttachmentInput { filename: string; mimeType: string; dataBase64: string }
+
+function parseAttachments(raw: unknown): { filename: string; mimeType: string; buffer: Buffer }[] | { error: string } {
+  if (!Array.isArray(raw) || raw.length === 0) return [];
+  if (raw.length > MAX_ATTACHMENT_COUNT) return { error: `첨부파일은 최대 ${MAX_ATTACHMENT_COUNT}개까지 가능합니다.` };
+
+  let total = 0;
+  const parsed: { filename: string; mimeType: string; buffer: Buffer }[] = [];
+  for (const item of raw as AttachmentInput[]) {
+    if (!item?.filename || !item?.dataBase64) continue;
+    const base64 = item.dataBase64.replace(/^data:[^;]+;base64,/, '');
+    const buffer = Buffer.from(base64, 'base64');
+    if (buffer.length > MAX_ATTACHMENT_BYTES) {
+      return { error: `${item.filename} 파일이 5MB를 초과합니다.` };
+    }
+    total += buffer.length;
+    if (total > MAX_TOTAL_ATTACHMENT_BYTES) {
+      return { error: '첨부파일 전체 용량은 20MB를 초과할 수 없습니다.' };
+    }
+    parsed.push({ filename: item.filename.slice(0, 200), mimeType: item.mimeType || 'application/octet-stream', buffer });
+  }
+  return parsed;
+}
+
 // GET /api/tasks
 export async function GET(req: NextRequest) {
   try {
@@ -82,13 +110,18 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, workerId, registrantId, targetDate, projectId, labels, subTasks, isGroup, parentTaskId, timeCounterEnabled } = body;
+    const { title, workerId, registrantId, targetDate, projectId, labels, subTasks, isGroup, parentTaskId, timeCounterEnabled, attachments } = body;
     const notes = sanitize(body.notes || '');
     const labelsStr: string | null = Array.isArray(labels) && labels.length > 0 ? labels.join(',') : null;
     const timeCounterEnabledReq = timeCounterEnabled !== false;
 
     if (!title || !workerId || !registrantId) {
       return errorResponse('필수 항목이 누락되었습니다.', 400, 'VALID_400');
+    }
+
+    const parsedAttachments = parseAttachments(attachments);
+    if ('error' in parsedAttachments) {
+      return errorResponse(parsedAttachments.error, 400, 'VALID_400');
     }
 
     const { cleanTitle, rmsNo } = parseRmsNo(title);
@@ -127,6 +160,19 @@ export async function POST(req: NextRequest) {
 
       await addHistory(subTask.id, creatorId, 'CREATED', `그룹 업무 "${parent.title}"의 하위 업무로 추가`);
 
+      if (parsedAttachments.length > 0) {
+        await prisma.taskAttachment.createMany({
+          data: parsedAttachments.map(a => ({
+            taskId: subTask.id,
+            filename: a.filename,
+            mimeType: a.mimeType,
+            size: a.buffer.length,
+            data: a.buffer,
+            uploadedById: creatorId,
+          })),
+        });
+      }
+
       return successResponse(subTask, '하위 업무가 추가되었습니다.', 201);
     }
 
@@ -155,6 +201,19 @@ export async function POST(req: NextRequest) {
     });
 
     await addHistory(task.id, creatorId, 'CREATED', `담당자: ${task.worker?.name}`);
+
+    if (!isGroupReq && parsedAttachments.length > 0) {
+      await prisma.taskAttachment.createMany({
+        data: parsedAttachments.map(a => ({
+          taskId: task.id,
+          filename: a.filename,
+          mimeType: a.mimeType,
+          size: a.buffer.length,
+          data: a.buffer,
+          uploadedById: creatorId,
+        })),
+      });
+    }
 
     if (isGroupReq && Array.isArray(subTasks) && subTasks.length > 0) {
       for (const sub of subTasks) {

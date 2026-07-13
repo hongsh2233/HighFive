@@ -162,7 +162,7 @@ export default function AppHeader() {
                   {openMenu === 'task' && (
                     <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
                       {[
-                        { href: '/tasks/create', label: '업무 등록' },
+                        ...(isAdminOrLeader ? [{ href: '/tasks/create', label: '업무 등록' }] : []),
                         { href: '/tasks', label: '업무 목록' },
                         { href: '/tasks/kanban', label: '칸반 보드' },
                         { href: '/calendar', label: '캘린더' },
@@ -228,7 +228,6 @@ export default function AppHeader() {
                       {user?.role === 'ADMIN' && (
                         <Link href="/settings/audit" className={styles.dropdownItem} onClick={closeAll}>감사 로그</Link>
                       )}
-                      <Link href="/settings/security" className={styles.dropdownItem} onClick={closeAll}>보안 설정</Link>
                     </div>
                   )}
                 </div>
@@ -256,6 +255,7 @@ export default function AppHeader() {
                 </div>
                 <Link href="/my-notes" className={styles.dropdownItem} onClick={closeAll}>내 자료</Link>
                 <Link href="/profile/password" className={styles.dropdownItem} onClick={closeAll}>비밀번호 변경</Link>
+                <Link href="/settings/security" className={styles.dropdownItem} onClick={closeAll}>보안 설정</Link>
                 <button
                   onClick={handleLogout}
                   className={`${styles.dropdownItem} ${styles.dropdownDanger}`}

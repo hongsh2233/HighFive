@@ -102,6 +102,7 @@ model User {
   userPages         UserPage[]
   taskComments      TaskComment[]
   userSessions      UserSession[]
+  taskAttachments   TaskAttachment[]
 
   @@index([organizationId])
   @@map("users")
@@ -143,6 +144,7 @@ model Task {
   subTasks      Task[]        @relation("subTasks")
   fieldValues   TaskFieldValue[]
   comments      TaskComment[]
+  attachments   TaskAttachment[]
 
   @@index([organizationId, workerId, status])
   @@index([organizationId, targetDate])
@@ -168,6 +170,23 @@ model TimeLog {
   @@index([taskId])
   @@index([workerId])
   @@map("timelogs")
+}
+
+model TaskAttachment {
+  id           Int      @id @default(autoincrement())
+  taskId       Int
+  filename     String
+  mimeType     String
+  size         Int
+  data         Bytes
+  uploadedById Int
+  createdAt    DateTime @default(now())
+
+  task       Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploadedBy User @relation(fields: [uploadedById], references: [id])
+
+  @@index([taskId])
+  @@map("task_attachments")
 }
 
 model Template {

@@ -32,6 +32,20 @@ interface SubTaskForm {
   targetDate: string;
 }
 
+interface StagedFile {
+  file: File;
+  dataBase64: string;
+}
+
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024; // 5MB
+const MAX_ATTACHMENT_COUNT = 5;
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+}
+
 const quillModules = {
   toolbar: [
     [{ header: [1, 2, 3, false] }],
@@ -73,6 +87,35 @@ function TaskCreateForm() {
   const [isGroup, setIsGroup] = useState(false);
   const [timeCounterEnabled, setTimeCounterEnabled] = useState(true);
   const [subTasks, setSubTasks] = useState<SubTaskForm[]>([{ title: '', workerId: '', targetDate: '' }]);
+  const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([]);
+  const [fileError, setFileError] = useState('');
+
+  const handleFilesSelected = (fileList: FileList | null) => {
+    if (!fileList) return;
+    setFileError('');
+    const incoming = Array.from(fileList);
+
+    if (stagedFiles.length + incoming.length > MAX_ATTACHMENT_COUNT) {
+      setFileError(`첨부파일은 최대 ${MAX_ATTACHMENT_COUNT}개까지 가능합니다.`);
+      return;
+    }
+
+    incoming.forEach((file) => {
+      if (file.size > MAX_ATTACHMENT_BYTES) {
+        setFileError(`${file.name} 파일이 5MB를 초과합니다.`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        setStagedFiles(prev => [...prev, { file, dataBase64: reader.result as string }]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeStagedFile = (idx: number) => {
+    setStagedFiles(prev => prev.filter((_, i) => i !== idx));
+  };
 
   const toggleLabel = (code: string) => {
     setLabels(prev => prev.includes(code) ? prev.filter(l => l !== code) : [...prev, code]);
@@ -182,6 +225,11 @@ function TaskCreateForm() {
           workerId: parseInt(s.workerId),
           targetDate: s.targetDate || null,
         })) : undefined,
+        attachments: (!isGroup || parentTask) ? stagedFiles.map(f => ({
+          filename: f.file.name,
+          mimeType: f.file.type,
+          dataBase64: f.dataBase64,
+        })) : undefined,
       });
 
       setSuccess(parentTask ? '하위 업무가 추가되었습니다.' : '업무가 등록되었습니다.');
@@ -214,109 +262,111 @@ function TaskCreateForm() {
       {success && <div className={styles.successBox}>{success}</div>}
 
       <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={styles.leftPane}>
+        <div className={styles.topPane}>
           <div className={styles.card}>
             <h2 className={styles.cardTitle}>기본 정보</h2>
 
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>등록일자</label>
-              <div className={styles.dateDisplay}>📅 {createdDate} (자동)</div>
-            </div>
-
-            {parentTask && (
+            <div className={styles.basicGrid}>
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>상위 그룹</label>
-                <div className={styles.dateDisplay}>📁 {parentTask.title}</div>
+                <label className={styles.label}>등록일자</label>
+                <div className={styles.dateDisplay}>📅 {createdDate} (자동)</div>
               </div>
-            )}
 
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>프로젝트 {isLeader && <span className={styles.required}>*</span>}</label>
-              <select value={projectId} onChange={e => setProjectId(e.target.value)} className={styles.input} disabled={loading || !!parentTask}>
-                <option value="">프로젝트 선택 {isAdmin ? '(선택사항)' : ''}</option>
-                {projects.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>업무 제목 <span className={styles.required}>*</span></label>
-              <input
-                type="text"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                placeholder="업무제목을 입력하세요."
-                className={styles.input}
-                disabled={loading}
-              />
-              <p className={styles.hint}>선택사항: [RMS-NO] 형식으로 입력하면 자동으로 분류됩니다.</p>
-            </div>
-
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>담당자 <span className={styles.required}>*</span></label>
-              <select value={workerId} onChange={e => setWorkerId(e.target.value)} className={styles.input} disabled={loading}>
-                <option value="">담당자를 선택해주세요.</option>
-                {assignableWorkers.map(w => (
-                  <option key={w.id} value={w.id}>{w.name}</option>
-                ))}
-              </select>
-              {projectId && assignableWorkers.length === 0 && (
-                <p className={styles.hintError}>선택한 프로젝트에 작업자가 없습니다.</p>
+              {parentTask && (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>상위 그룹</label>
+                  <div className={styles.dateDisplay}>📁 {parentTask.title}</div>
+                </div>
               )}
-            </div>
 
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>목표일</label>
-              <input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} className={styles.input} disabled={loading} />
-            </div>
-
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>라벨</label>
-              <div className={styles.labelRow}>
-                {TASK_LABEL_LIST.map(code => (
-                  <label key={code} className={styles.labelChip} data-checked={labels.includes(code) ? 'true' : 'false'} data-label={code}>
-                    <input
-                      type="checkbox"
-                      checked={labels.includes(code)}
-                      onChange={() => toggleLabel(code)}
-                      className={styles.labelCheckbox}
-                    />
-                    {TASK_LABEL_TEXT[code]}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className={styles.fieldGroup}>
-              <label className={styles.groupCheckLabel}>
-                <input
-                  type="checkbox"
-                  checked={timeCounterEnabled}
-                  onChange={e => setTimeCounterEnabled(e.target.checked)}
-                  className={styles.labelCheckbox}
-                />
-                시간카운터 사용 (상태 변경에 따라 작업 시간을 자동으로 계산합니다)
-              </label>
-            </div>
-
-            {!parentTask && (
               <div className={styles.fieldGroup}>
+                <label className={styles.label}>프로젝트 {isLeader && <span className={styles.required}>*</span>}</label>
+                <select value={projectId} onChange={e => setProjectId(e.target.value)} className={styles.input} disabled={loading || !!parentTask}>
+                  <option value="">프로젝트 선택 {isAdmin ? '(선택사항)' : ''}</option>
+                  {projects.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>담당자 <span className={styles.required}>*</span></label>
+                <select value={workerId} onChange={e => setWorkerId(e.target.value)} className={styles.input} disabled={loading}>
+                  <option value="">담당자를 선택해주세요.</option>
+                  {assignableWorkers.map(w => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+                {projectId && assignableWorkers.length === 0 && (
+                  <p className={styles.hintError}>선택한 프로젝트에 작업자가 없습니다.</p>
+                )}
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>목표일</label>
+                <input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} className={styles.input} disabled={loading} />
+              </div>
+
+              <div className={styles.fieldGroupWide}>
+                <label className={styles.label}>업무 제목 <span className={styles.required}>*</span></label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="업무제목을 입력하세요."
+                  className={styles.input}
+                  disabled={loading}
+                />
+                <p className={styles.hint}>선택사항: [RMS-NO] 형식으로 입력하면 자동으로 분류됩니다.</p>
+              </div>
+
+              <div className={styles.fieldGroupWide}>
+                <label className={styles.label}>라벨</label>
+                <div className={styles.labelRow}>
+                  {TASK_LABEL_LIST.map(code => (
+                    <label key={code} className={styles.labelChip} data-checked={labels.includes(code) ? 'true' : 'false'} data-label={code}>
+                      <input
+                        type="checkbox"
+                        checked={labels.includes(code)}
+                        onChange={() => toggleLabel(code)}
+                        className={styles.labelCheckbox}
+                      />
+                      {TASK_LABEL_TEXT[code]}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.fieldGroupWide}>
                 <label className={styles.groupCheckLabel}>
                   <input
                     type="checkbox"
-                    checked={isGroup}
-                    onChange={e => setIsGroup(e.target.checked)}
+                    checked={timeCounterEnabled}
+                    onChange={e => setTimeCounterEnabled(e.target.checked)}
                     className={styles.labelCheckbox}
                   />
-                  그룹 업무로 등록 (하위 업무는 지금 등록하거나, 나중에 그룹 업무 상세에서 추가할 수 있습니다)
+                  시간카운터 사용 (상태 변경에 따라 작업 시간을 자동으로 계산합니다)
                 </label>
               </div>
-            )}
+
+              {!parentTask && (
+                <div className={styles.fieldGroupWide}>
+                  <label className={styles.groupCheckLabel}>
+                    <input
+                      type="checkbox"
+                      checked={isGroup}
+                      onChange={e => setIsGroup(e.target.checked)}
+                      className={styles.labelCheckbox}
+                    />
+                    그룹 업무로 등록 (하위 업무는 지금 등록하거나, 나중에 그룹 업무 상세에서 추가할 수 있습니다)
+                  </label>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className={styles.rightPane}>
+        <div className={styles.bottomPane}>
           {!parentTask && isGroup ? (
             <div className={styles.card}>
               <h2 className={styles.cardTitle}>하위 업무</h2>
@@ -375,6 +425,32 @@ function TaskCreateForm() {
                   className={styles.editor}
                   placeholder="업무에 대한 상세 내용을 입력해주세요."
                 />
+              </div>
+
+              <div className={styles.attachSection}>
+                <label className={styles.label}>첨부파일</label>
+                <label className={styles.fileDropBtn}>
+                  📎 파일 선택 (최대 {MAX_ATTACHMENT_COUNT}개, 각 5MB 이하)
+                  <input
+                    type="file"
+                    multiple
+                    className={styles.fileInputHidden}
+                    onChange={e => { handleFilesSelected(e.target.files); e.target.value = ''; }}
+                    disabled={loading || stagedFiles.length >= MAX_ATTACHMENT_COUNT}
+                  />
+                </label>
+                {fileError && <p className={styles.hintError}>{fileError}</p>}
+                {stagedFiles.length > 0 && (
+                  <ul className={styles.fileList}>
+                    {stagedFiles.map((f, idx) => (
+                      <li key={idx} className={styles.fileItem}>
+                        <span className={styles.fileName}>{f.file.name}</span>
+                        <span className={styles.fileSize}>{formatFileSize(f.file.size)}</span>
+                        <button type="button" className={styles.fileRemoveBtn} onClick={() => removeStagedFile(idx)} disabled={loading}>✕</button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
           )}

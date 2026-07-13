@@ -1,6 +1,6 @@
 .page {
   padding: var(--space-8);
-  max-width: 1460px;
+  max-width: 1680px;
   margin: 0 auto;
 }
 
@@ -33,26 +33,28 @@
 }
 
 .form {
-  display: grid;
-  grid-template-columns: 380px 1fr;
-  grid-template-rows: 1fr auto;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-6);
-  align-items: start;
 }
 
-.leftPane {
-  grid-column: 1;
-  grid-row: 1;
+.topPane,
+.bottomPane {
+  width: 100%;
 }
 
-.rightPane {
-  grid-column: 2;
-  grid-row: 1;
+.basicGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-5) var(--space-6);
+}
+
+.fieldGroupWide {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
 }
 
 .btnRow {
-  grid-column: 1 / -1;
-  grid-row: 2;
   display: flex;
   gap: var(--space-3);
   justify-content: flex-end;
@@ -77,6 +79,11 @@
 }
 
 .fieldGroup:last-child {
+  margin-bottom: 0;
+}
+
+.basicGrid .fieldGroup,
+.basicGrid .fieldGroupWide {
   margin-bottom: 0;
 }
 
@@ -256,21 +263,89 @@
   color: var(--color-danger);
 }
 
+.attachSection {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+}
+
+.fileDropBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--space-2) var(--space-4);
+  border: 1px dashed var(--accent);
+  border-radius: 7px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: var(--accent-light);
+}
+
+.fileInputHidden {
+  display: none;
+}
+
+.fileList {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 6px 12px;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.fileName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.fileSize {
+  color: var(--text-muted);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.fileRemoveBtn {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.fileRemoveBtn:hover {
+  color: var(--color-danger);
+}
+
 @media (max-width: 900px) {
-  .form {
-    grid-template-columns: 1fr;
-  }
-
-  .rightPane {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  .btnRow {
-    grid-row: 3;
+  .basicGrid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .subTaskRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .basicGrid {
     grid-template-columns: 1fr;
   }
 }

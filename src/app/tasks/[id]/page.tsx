@@ -79,6 +79,57 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const canEdit = userRole === 'ADMIN' || userRole === 'LEADER';
   const canDelete = userRole === 'ADMIN' || userRole === 'LEADER';
 
+  const [attachUploading, setAttachUploading] = useState(false);
+  const [attachError, setAttachError] = useState('');
+
+  const handleAttachFiles = async (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0 || !task) return;
+    setAttachError('');
+    const MAX_BYTES = 5 * 1024 * 1024;
+    const files = Array.from(fileList);
+    const tooBig = files.find(f => f.size > MAX_BYTES);
+    if (tooBig) { setAttachError(`${tooBig.name} 파일이 5MB를 초과합니다.`); return; }
+
+    setAttachUploading(true);
+    try {
+      const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const attachments = await Promise.all(files.map(async f => ({
+        filename: f.name,
+        mimeType: f.type,
+        dataBase64: await toBase64(f),
+      })));
+      const res = await apiClient.post(`/tasks/${task.id}/attachments`, { attachments });
+      setTask(prev => prev ? { ...prev, attachments: res.data.data } : prev);
+    } catch (err: any) {
+      setAttachError(err?.response?.data?.message || '첨부파일 등록 중 오류가 발생했습니다.');
+    } finally {
+      setAttachUploading(false);
+    }
+  };
+
+  const handleAttachDelete = async (attachmentId: number) => {
+    if (!task) return;
+    const ok = await confirm('첨부파일을 삭제하시겠습니까?');
+    if (!ok) return;
+    try {
+      await apiClient.delete(`/tasks/${task.id}/attachments/${attachmentId}`);
+      setTask(prev => prev ? { ...prev, attachments: (prev.attachments || []).filter(a => a.id !== attachmentId) } : prev);
+    } catch {
+      setAttachError('첨부파일 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes}B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+  };
+
   // 커스텀 필드(속성) — /tasks 목록과 동일한 개념, 상세 페이지에서도 편집 가능
   const { fields, saveValue } = useProjectFields(task?.projectId ?? null);
   const [fieldValueOverrides, setFieldValueOverrides] = useState<Record<number, string>>({});
@@ -648,6 +699,38 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         ) : (
           <p className={styles.emptyLogs}>상세내용이 없습니다.</p>
         )}
+
+        <div className={styles.attachSection}>
+          <div className={styles.cardHeader}>
+            <h3 className={styles.attachTitle}>첨부파일</h3>
+            <label className={styles.fileDropBtn}>
+              {attachUploading ? '업로드 중...' : '📎 파일 추가'}
+              <input
+                type="file"
+                multiple
+                style={{ display: 'none' }}
+                onChange={e => { handleAttachFiles(e.target.files); e.target.value = ''; }}
+                disabled={attachUploading || (task.attachments?.length || 0) >= 5}
+              />
+            </label>
+          </div>
+          {attachError && <p className={styles.hintError}>{attachError}</p>}
+          {task.attachments && task.attachments.length > 0 ? (
+            <ul className={styles.fileList}>
+              {task.attachments.map(a => (
+                <li key={a.id} className={styles.fileItem}>
+                  <a href={`/api/tasks/${task.id}/attachments/${a.id}`} target="_blank" rel="noopener noreferrer" className={styles.fileName}>
+                    {a.filename}
+                  </a>
+                  <span className={styles.fileSize}>{formatFileSize(a.size)}</span>
+                  <button type="button" className={styles.fileRemoveBtn} onClick={() => handleAttachDelete(a.id)}>✕</button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.emptyLogs}>첨부파일이 없습니다.</p>
+          )}
+        </div>
       </div>
 
       {/* 타임로그 */}

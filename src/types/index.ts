@@ -57,7 +57,17 @@ export interface Task {
   timeLogs?: TimeLog[];
   subTasks?: Task[];
   fieldValues?: TaskFieldValue[];
+  attachments?: TaskAttachment[];
   _count?: { subTasks: number };
+}
+
+export interface TaskAttachment {
+  id: number;
+  filename: string;
+  mimeType: string;
+  size: number;
+  createdAt: string;
+  uploadedBy?: { id: number; name: string };
 }
 
 // 프로젝트별 커스텀 필드 (노션식 자유 속성)
