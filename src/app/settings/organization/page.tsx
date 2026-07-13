@@ -116,6 +116,28 @@ export default function OrganizationSettingsPage() {
     }
   };
 
+  const [backupDownloading, setBackupDownloading] = useState(false);
+
+  const handleBackupDownload = async () => {
+    setError('');
+    setBackupDownloading(true);
+    try {
+      const res = await apiClient.get('/settings/organization/backup', { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const dateStr = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `highfive-backup-${org?.slug || 'org'}-${dateStr}.json`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      setError('데이터 백업 다운로드 중 오류가 발생했습니다.');
+    } finally {
+      setBackupDownloading(false);
+    }
+  };
+
   const isAdmin = user?.role === 'ADMIN';
 
   if (authLoading || loading) return <div className={styles.loading}><Spinner /></div>;
@@ -258,6 +280,20 @@ export default function OrganizationSettingsPage() {
           </div>
         </div>
       </section>
+
+      {/* 데이터 백업 */}
+      {isAdmin && (
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>데이터 백업</h2>
+          <p className={styles.hint}>
+            업무, 프로젝트, 위키, 신청, 공지 등 조직의 전체 데이터를 JSON 파일로 내려받습니다.
+            (첨부파일 실제 내용은 용량 문제로 제외되며 목록만 포함됩니다.)
+          </p>
+          <button className={styles.btnSecondary} onClick={handleBackupDownload} disabled={backupDownloading} style={{ marginTop: 'var(--space-3)' }}>
+            {backupDownloading ? '백업 생성 중...' : '전체 데이터 백업 다운로드'}
+          </button>
+        </section>
+      )}
 
       {isAdmin && (
         <div className={styles.saveRow}>
