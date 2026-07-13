@@ -571,3 +571,17 @@
   - SUPERADMIN은 기존과 동일하게 `/superadmin` 등 슬러그 없이 사용.
   - `[slug]/login` 로그인 성공 시 `/{slug}/dashboard`로 이동.
   - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+
+## 2026-07-13 (59차)
+
+- **헤더 메뉴 권한 정리**:
+  - `AppHeader.tsx`: "업무 등록" 링크는 ADMIN/LEADER에게만 노출(WORKER는 `POST /api/tasks` 권한이 없어 클릭 시 항상 권한 없음 화면으로 막혀 있었음).
+  - "보안 설정"(2FA/세션 관리)은 전 역할이 API 권한을 갖고 있음에도 admin/leader 전용 "설정" 드롭다운에 있어 WORKER는 메뉴로 접근할 수 없었음 → 전 역할이 보는 "마이페이지"(계정) 드롭다운으로 이동.
+
+- **업무 등록 화면 레이아웃 개선 + 첨부파일**:
+  - `prisma/schema.prisma`: `TaskAttachment` 모델 추가(`data Bytes`로 DB 저장, 파일당 5MB/업무당 20MB/최대 5개 제한).
+  - `POST /api/tasks`(단일 업무·하위업무 추가 경로), `POST /api/tasks/[id]/attachments`(기존 업무에 추가), `GET/DELETE /api/tasks/[id]/attachments/[attachmentId]`(다운로드/삭제) 신규.
+  - `GET /api/tasks/[id]`에 `attachments` 메타데이터(파일명/크기/업로더) 포함.
+  - `/tasks/create`: 기본정보(좌)/비고(우) 2단 레이아웃 → 기본정보(상단, 4열 그리드로 넓게)/비고(하단) 상하 배치로 변경. 비고 카드 하단에 파일 선택 UI(최대 5개, 각 5MB) 추가, 선택한 파일은 업무 등록과 함께 제출.
+  - `/tasks/[id]`: 상세내용 카드 하단에 첨부파일 목록(다운로드 링크)/추가/삭제 UI 추가.
+  - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
