@@ -603,3 +603,12 @@
   - `GET /api/settings/organization/backup` (ADMIN 전용): 사용자(비밀번호/TOTP 시크릿 제외)·프로젝트·업무·타임로그·업무댓글·업무히스토리·정보(FAQ)·공지·신청·위키·스티키노트·개인자료·외부연동 설정을 JSON 한 파일로 묶어 다운로드. 첨부파일은 용량 문제로 실제 바이너리는 제외하고 파일명/크기 등 메타데이터만 포함. 다운로드 시 `AuditLog`에 `DATA_EXPORTED` 기록.
   - `/settings/organization` 페이지에 "데이터 백업" 섹션 추가 — 버튼 클릭 시 `highfive-backup-{slug}-{date}.json` 파일 다운로드.
   - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+
+## 2026-07-13 (62차)
+
+- **일정관리 기능 강화 (Phase 1+2-A+3-B)**:
+  - **마감일/휴가 알림 스케줄러**: `src/lib/scheduler.ts` 신규 — 상시 프로세스에서 30분 주기로 실행되는 인메모리 스케줄러(`src/instrumentation.ts`에서 서버 기동 시 1회 등록). 기존에 저장만 되고 실제로 쓰이지 않던 `Organization.deadlineAlertDays`를 기준으로 마감 임박/초과 업무 담당자에게 `DEADLINE_APPROACHING` 알림 발송(같은 업무·담당자 조합은 하루 1회만, `UserNotification` 조회로 중복 방지). 승인된 휴가 시작 하루 전에는 `LEAVE_REMINDER`로 신청자에게 알림.
+  - **구글 캘린더 iCal에 휴가 포함**: `GET /api/calendar/ical`이 기존엔 업무 목표일만 포함했는데, 본인의 승인된 휴가 일정도 종일 이벤트로 함께 포함하도록 확장. 캘린더 페이지엔 보이는데 구독 피드엔 빠져있던 불일치 해소. `/settings/calendar-sync` 안내 문구도 갱신.
+  - **AI 주간 캘린더 요약**: `src/lib/ai.ts` 신규 — Anthropic Claude API 클라이언트 래퍼(`ANTHROPIC_API_KEY` 필요, `@anthropic-ai/sdk` 의존성 추가). `GET /api/ai/calendar-summary`가 이번 주 업무 마감/휴가 데이터를 모아 Claude(`claude-haiku-4-5-20251001`)에 전달해 3~5문장 한국어 브리핑 생성. `/calendar` 페이지에 "✨ 이번 주 AI 요약" 버튼 추가.
+  - `.env.example`에 `ANTHROPIC_API_KEY` 안내 추가 — 미설정 시 AI 요약 API는 에러 응답 반환(기능 자체는 옵셔널).
+  - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
