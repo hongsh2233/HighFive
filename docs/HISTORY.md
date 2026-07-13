@@ -585,3 +585,14 @@
   - `/tasks/create`: 기본정보(좌)/비고(우) 2단 레이아웃 → 기본정보(상단, 4열 그리드로 넓게)/비고(하단) 상하 배치로 변경. 비고 카드 하단에 파일 선택 UI(최대 5개, 각 5MB) 추가, 선택한 파일은 업무 등록과 함께 제출.
   - `/tasks/[id]`: 상세내용 카드 하단에 첨부파일 목록(다운로드 링크)/추가/삭제 UI 추가.
   - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+
+## 2026-07-13 (60차)
+
+- **헤더 메뉴 재구성**: 업무 / 협업(신청·위키·정보·공지사항) / 관리(프로젝트·팀원관리·통계, ADMIN/LEADER) / 설정(조직설정·구글캘린더연동·외부연동·감사로그, ADMIN 위주) 4개 드롭다운으로 재편. 기존 "설정" 드롭다운 하나에 8개 항목이 섞여 있던 것을 도메인별로 분리. 공지사항이 admin/leader 전용 메뉴에 있어 WORKER는 조회 메뉴가 없던 문제를 "협업"으로 옮겨 해결(조회는 전 역할 허용이 원래 정책).
+
+- **보안 점검 및 개선**:
+  - `src/lib/rate-limit.ts` 신규: 로그인 브루트포스 방지용 인메모리 rate limiter. 이메일당 15분 내 5회 실패 시 15분 잠금.
+  - `src/lib/auth.ts`: `authorize()`의 모든 실패 분기(존재하지 않는 계정/비활성/조직불일치/비밀번호오류/TOTP오류)에서 `recordFailure` 호출, 성공 시 `recordSuccess`로 카운터 리셋.
+  - `src/middleware.ts`: `Content-Security-Policy`, `Permissions-Policy`, (운영환경 한정) `Strict-Transport-Security` 헤더 추가. 기존에는 `/login`, `/{slug}/login` 등 공개 경로에 보안 헤더가 아예 적용되지 않던 것도 수정.
+  - `src/app/api/users/route.ts`: 사용자 생성 시 임시 비밀번호를 평문으로 서버 로그에 남기던 `console.log` 제거(응답 바디로 생성자에게만 전달되는 기존 방식은 유지).
+  - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
