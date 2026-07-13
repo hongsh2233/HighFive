@@ -596,3 +596,10 @@
   - `src/middleware.ts`: `Content-Security-Policy`, `Permissions-Policy`, (운영환경 한정) `Strict-Transport-Security` 헤더 추가. 기존에는 `/login`, `/{slug}/login` 등 공개 경로에 보안 헤더가 아예 적용되지 않던 것도 수정.
   - `src/app/api/users/route.ts`: 사용자 생성 시 임시 비밀번호를 평문으로 서버 로그에 남기던 `console.log` 제거(응답 바디로 생성자에게만 전달되는 기존 방식은 유지).
   - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+
+## 2026-07-13 (61차)
+
+- **조직 데이터 백업(JSON 다운로드)**:
+  - `GET /api/settings/organization/backup` (ADMIN 전용): 사용자(비밀번호/TOTP 시크릿 제외)·프로젝트·업무·타임로그·업무댓글·업무히스토리·정보(FAQ)·공지·신청·위키·스티키노트·개인자료·외부연동 설정을 JSON 한 파일로 묶어 다운로드. 첨부파일은 용량 문제로 실제 바이너리는 제외하고 파일명/크기 등 메타데이터만 포함. 다운로드 시 `AuditLog`에 `DATA_EXPORTED` 기록.
+  - `/settings/organization` 페이지에 "데이터 백업" 섹션 추가 — 버튼 클릭 시 `highfive-backup-{slug}-{date}.json` 파일 다운로드.
+  - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
