@@ -617,3 +617,15 @@
 
 - **AI 캘린더 요약 버튼 → 준비중 안내로 전환**: `ANTHROPIC_API_KEY`를 당장 연결할 계획이 없어, `/calendar` 페이지의 "✨ 이번 주 AI 요약" 버튼이 `GET /api/ai/calendar-summary`를 호출하는 대신 클라이언트에서 바로 "AI 요약 기능은 준비 중입니다." 안내만 표시하도록 변경. 백엔드 API(`src/lib/ai.ts`, `/api/ai/calendar-summary`)는 그대로 남겨둬 이후 API 연결 시 프론트만 원복하면 바로 재사용 가능.
 - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+
+## 2026-07-13 (64차)
+
+- **구글 캘린더 OAuth 실시간 동기화 (Phase 2-C, High5 → Google 단방향)**:
+  - `prisma/schema.prisma`: `GoogleCalendarConnection`(사용자별 OAuth access/refresh 토큰, 캘린더ID), `GoogleCalendarEvent`(taskId/requestId ↔ 구글 이벤트ID 매핑, `@@unique([userId, sourceType, sourceId])`) 모델 추가.
+  - `src/lib/google-calendar.ts` 신규: `googleapis` 기반 OAuth 클라이언트, 인증 URL 생성/코드 교환/토큰 자동 갱신(`tokens` 이벤트 리스너로 갱신된 access token을 DB에 재저장), 업무·휴가 이벤트 upsert/삭제 헬퍼.
+  - `GET /api/auth/google/authorize`(동의화면 리다이렉트, state는 `ical-token.ts`의 서명 토큰 재사용으로 CSRF 방지) / `GET /api/auth/google/callback`(토큰 교환·저장) / `DELETE /api/auth/google/disconnect` / `GET /api/auth/google/status` 신규.
+  - 업무 생성(`POST /api/tasks`)·수정(`PATCH /api/tasks/[id]`, 목표일·담당자 변경 시 이전 담당자 캘린더에서 삭제 후 신규 담당자에 생성)·삭제(`DELETE /api/tasks/[id]`), 휴가 승인(`PATCH /api/requests/[id]/decision`) 시점에 동기화 훅 연결. 모두 fire-and-forget + 내부 try/catch로 실패해도 본 흐름은 막지 않음.
+  - `/settings/calendar-sync`: "실시간 연동(권장)" 섹션(Google 계정 연결/해제, 미설정 시 "준비 중" 안내) 추가, 기존 iCal 구독 URL 방식은 "대안" 섹션으로 유지. `useSearchParams` 사용으로 `Suspense` 경계 추가.
+  - 구글→High5 역방향 동기화는 웹훅 채널 관리 복잡도(공개 콜백 URL, 채널 갱신) 때문에 이번 범위에서 제외 — 필요 시 후속 작업으로 남김.
+  - `.env.example`에 `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` 안내 추가(Google Cloud Console에서 OAuth 클라이언트 발급, 리디렉션 URI `{NEXTAUTH_URL}/api/auth/google/callback` 등록 필요). `googleapis` 패키지 의존성 추가.
+  - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
