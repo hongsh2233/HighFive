@@ -52,7 +52,7 @@ export default function OrgLoginPage() {
       if (result?.error) {
         setError(totpRequired ? '이메일, 비밀번호 또는 OTP 코드가 올바르지 않습니다.' : '이메일 또는 비밀번호가 올바르지 않습니다.');
       } else if (result?.ok) {
-        router.push('/dashboard');
+        router.push(`/${slug}/dashboard`);
       }
     } catch {
       setError('로그인 중 오류가 발생했습니다.');
