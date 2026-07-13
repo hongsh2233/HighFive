@@ -558,3 +558,16 @@
   - `src/app/settings/organization/page.tsx`: 로고 업로드/삭제 미리보기, 기본 정보(헤더표시명/사업자번호/대표자명/대표번호/주소), 마감 알림 기준일 설정.
   - `src/components/AppHeader.tsx`: 로고 있으면 `<img>` 표시, 없으면 `organizationName`(displayName 우선) 텍스트 표시. 설정 드롭다운에 ADMIN에게 "조직 설정" 링크 추가.
   - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+
+## 2026-07-13 (58차)
+
+- **로그아웃 시 조직별 로그인 페이지로 이동**:
+  - `AppHeader.tsx`, `Providers.tsx`(세션만료), `useAuth.ts` 모두 `organizationSlug` 기준으로 `/{slug}/login`으로 리다이렉트(SUPERADMIN은 `/login` 유지).
+  - `authStore`에 `organizationSlug` 저장 — 세션 만료로 정보가 사라진 시점에도 마지막 조직 slug를 참조 가능.
+
+- **로그인 이후 페이지에도 조직 slug URL 프리픽스 적용**:
+  - `src/middleware.ts`: `dashboard/tasks/calendar/stats/users/announcements/requests/my-notes/info/wiki/projects/profile/settings`를 슬러그 유무에 따라 redirect(없음→있음)/rewrite(있음→내부적으로 슬러그 제거)로 연결. 실제 페이지 디렉터리는 변경 없이 기존 bare 경로(`app/dashboard` 등) 그대로 사용, URL만 `/exwave/dashboard`처럼 표시됨.
+  - 다른 조직 slug로 접근 시 토큰의 `organizationSlug`로 자동 교정.
+  - SUPERADMIN은 기존과 동일하게 `/superadmin` 등 슬러그 없이 사용.
+  - `[slug]/login` 로그인 성공 시 `/{slug}/dashboard`로 이동.
+  - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
