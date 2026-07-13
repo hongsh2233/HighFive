@@ -16,6 +16,7 @@ function AuthSync() {
   const router = useRouter();
   const pathname = usePathname();
   const wasAuthenticated = useRef(false);
+  const lastOrgSlug = useRef<string | null>(null);
   const { alertDialog } = useDialog();
 
   useEffect(() => {
@@ -25,8 +26,10 @@ function AuthSync() {
         email: session.user.email ?? '',
         name: session.user.name ?? '',
         role: (session.user as any).role as UserRole,
+        organizationSlug: (session.user as any).organizationSlug || undefined,
       });
       wasAuthenticated.current = true;
+      lastOrgSlug.current = (session.user as any).organizationSlug || null;
     } else {
       setUser(null);
     }
@@ -37,8 +40,10 @@ function AuthSync() {
     if (status === 'unauthenticated' && wasAuthenticated.current && pathname !== '/login') {
       wasAuthenticated.current = false;
       if (consumeManualLogout()) return; // 사용자가 직접 로그아웃한 경우는 만료 안내를 띄우지 않음
+      const slug = lastOrgSlug.current;
+      const loginUrl = slug ? `/${slug}/login` : '/login';
       alertDialog('보안을 위해 30분 동안 활동이 없어 세션이 만료되었습니다. 다시 로그인해주세요.').then(() => {
-        signOut({ redirect: false }).finally(() => router.push('/login'));
+        signOut({ redirect: false }).finally(() => router.push(loginUrl));
       });
     }
   }, [status, pathname, router, alertDialog]);

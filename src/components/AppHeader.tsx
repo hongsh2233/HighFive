@@ -57,8 +57,10 @@ export default function AppHeader() {
 
   const handleLogout = async () => {
     markManualLogout();
+    const slug = (user as any)?.organizationSlug;
+    const isSuperAdminUser = (user as any)?.role === 'SUPERADMIN';
     await signOut({ redirect: false });
-    router.push('/login');
+    router.push(isSuperAdminUser || !slug ? '/login' : `/${slug}/login`);
   };
 
   const closeAll = () => {
