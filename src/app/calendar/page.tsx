@@ -27,22 +27,10 @@ export default function CalendarPage() {
   const [data, setData] = useState<CalendarData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [aiSummary, setAiSummary] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState('');
+  const [aiNotice, setAiNotice] = useState(false);
 
-  const handleAiSummary = async () => {
-    setAiLoading(true);
-    setAiError('');
-    setAiSummary('');
-    try {
-      const res = await apiClient.get<{ data: { summary: string } }>('/ai/calendar-summary');
-      setAiSummary(res.data.data.summary);
-    } catch (err: any) {
-      setAiError(err?.response?.data?.message || 'AI 요약 생성 중 오류가 발생했습니다.');
-    } finally {
-      setAiLoading(false);
-    }
+  const handleAiSummary = () => {
+    setAiNotice(true);
   };
 
   useEffect(() => {
@@ -111,19 +99,15 @@ export default function CalendarPage() {
           >
             다음 →
           </button>
-          <button onClick={handleAiSummary} className={styles.aiSummaryBtn} disabled={aiLoading}>
-            {aiLoading ? '요약 생성 중...' : '✨ 이번 주 AI 요약'}
+          <button onClick={handleAiSummary} className={styles.aiSummaryBtn}>
+            ✨ 이번 주 AI 요약
           </button>
         </div>
       </div>
 
-      {(aiSummary || aiError) && (
+      {aiNotice && (
         <div className={styles.aiSummaryBox}>
-          {aiError ? (
-            <p className={styles.aiSummaryError}>{aiError}</p>
-          ) : (
-            <p className={styles.aiSummaryText}>{aiSummary}</p>
-          )}
+          <p className={styles.aiSummaryText}>AI 요약 기능은 준비 중입니다. 오픈 시 안내드리겠습니다.</p>
         </div>
       )}
 
