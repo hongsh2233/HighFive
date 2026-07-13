@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./db";
 import bcryptjs from "bcryptjs";
 import * as OTPAuth from "otpauth";
+import { isLocked, recordFailure, recordSuccess } from "./rate-limit";
 
 function parseDeviceName(ua: string | undefined): string {
   if (!ua) return '알 수 없는 기기';
@@ -32,34 +33,45 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        const identifier = credentials.email.toLowerCase();
+        const lockStatus = isLocked(identifier);
+        if (lockStatus.locked) {
+          return null;
+        }
+
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase() },
+          where: { email: identifier },
           include: { organization: { select: { id: true, slug: true, isActive: true, plan: true, name: true, displayName: true, logoUrl: true } } },
         });
 
         if (!user || !user.isActive) {
+          recordFailure(identifier);
           return null;
         }
 
         if (user.organization && !user.organization.isActive) {
+          recordFailure(identifier);
           return null;
         }
 
         const slug = credentials.slug?.trim() || '';
 
         if (!slug) {
-          if (user.role !== 'SUPERADMIN') return null;
+          if (user.role !== 'SUPERADMIN') { recordFailure(identifier); return null; }
         } else {
-          if (user.organization?.slug !== slug) return null;
+          if (user.organization?.slug !== slug) { recordFailure(identifier); return null; }
         }
 
         const isPasswordValid = await bcryptjs.compare(credentials.password, user.passwordHash);
-        if (!isPasswordValid) return null;
+        if (!isPasswordValid) {
+          recordFailure(identifier);
+          return null;
+        }
 
         // TOTP check
         if (user.totpEnabled && user.totpSecret) {
           const rawToken = (credentials.totp || '').replace(/\s/g, '');
-          if (!rawToken) return null;
+          if (!rawToken) { recordFailure(identifier); return null; }
           const totp = new OTPAuth.TOTP({
             algorithm: 'SHA1',
             digits: 6,
@@ -67,8 +79,10 @@ export const authOptions: NextAuthOptions = {
             secret: OTPAuth.Secret.fromBase32(user.totpSecret),
           });
           const delta = totp.validate({ token: rawToken, window: 1 });
-          if (delta === null) return null;
+          if (delta === null) { recordFailure(identifier); return null; }
         }
+
+        recordSuccess(identifier);
 
         const ip =
           (req as any)?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||

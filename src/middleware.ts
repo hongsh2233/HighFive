@@ -8,11 +8,28 @@ const adminRoutes = ['users'];
 const leaderRoutes = ['stats'];
 const publicRoutes = ['/login', '/register'];
 
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  "connect-src 'self'",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join('; ');
+
 function withSecurityHeaders(res: NextResponse) {
   res.headers.set('X-Content-Type-Options', 'nosniff');
   res.headers.set('X-Frame-Options', 'DENY');
   res.headers.set('X-XSS-Protection', '1; mode=block');
   res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.headers.set('Content-Security-Policy', CSP);
+  if (process.env.NODE_ENV === 'production') {
+    res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
   return res;
 }
 
@@ -21,10 +38,10 @@ export async function middleware(req: NextRequest) {
 
   // 공개 경로는 항상 접근 가능 (/login, /register, /{slug}/login)
   if (publicRoutes.some((route) => pathname === route || pathname.startsWith(route + '/'))) {
-    return NextResponse.next();
+    return withSecurityHeaders(NextResponse.next());
   }
   if (pathname.endsWith('/login')) {
-    return NextResponse.next();
+    return withSecurityHeaders(NextResponse.next());
   }
 
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });

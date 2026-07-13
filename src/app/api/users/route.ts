@@ -136,7 +136,6 @@ export async function POST(req: NextRequest) {
       detail: { email: user.email, role: user.role },
     });
 
-    console.log(`[USER CREATE] 임시 비밀번호 - ${email}: ${tempPassword}`);
     return successResponse(
       { ...userWithProjects, tempPassword },
       '사용자가 성공적으로 생성되었습니다.',

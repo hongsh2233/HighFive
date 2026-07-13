@@ -9,7 +9,7 @@ import { markManualLogout } from '@/lib/logout-flag';
 import GlobalSearchModal from './GlobalSearchModal';
 import styles from './AppHeader.module.css';
 
-type MenuName = 'task' | 'settings' | 'account' | null;
+type MenuName = 'task' | 'collab' | 'admin' | 'settings' | 'account' | null;
 
 export default function AppHeader() {
   const router = useRouter();
@@ -176,32 +176,69 @@ export default function AppHeader() {
                 </div>
               )}
 
-              {has('requests') && (
-                <Link href="/requests" className={navClass(pathname.startsWith('/requests'))} onClick={closeAll}>
-                  신청
-                </Link>
-              )}
-
-              {has('info') && (
-                <Link href="/info" className={navClass(pathname === '/info')} onClick={closeAll}>
-                  정보
-                </Link>
-              )}
-
-              {has('wiki') && (
-                <Link href="/wiki" className={navClass(pathname === '/wiki' || pathname.startsWith('/projects/'))} onClick={closeAll}>
-                  위키
-                </Link>
+              {(has('requests') || has('info') || has('wiki')) && (
+                <div
+                  className={styles.menuWrapper}
+                  onMouseEnter={() => handleMenuEnter('collab')}
+                  onMouseLeave={handleMenuLeave}
+                >
+                  <button
+                    className={navClass(openMenu === 'collab' || pathname.startsWith('/requests') || pathname === '/info' || pathname === '/wiki' || pathname.startsWith('/projects/'))}
+                    onClick={() => setOpenMenu(openMenu === 'collab' ? null : 'collab')}
+                  >
+                    협업
+                  </button>
+                  {openMenu === 'collab' && (
+                    <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
+                      {has('requests') && (
+                        <Link href="/requests" className={styles.dropdownItem} onClick={closeAll}>신청(전자결재)</Link>
+                      )}
+                      {has('wiki') && (
+                        <Link href="/wiki" className={styles.dropdownItem} onClick={closeAll}>위키</Link>
+                      )}
+                      {has('info') && (
+                        <Link href="/info" className={styles.dropdownItem} onClick={closeAll}>정보(FAQ)</Link>
+                      )}
+                      <Link href="/announcements" className={styles.dropdownItem} onClick={closeAll}>공지사항</Link>
+                    </div>
+                  )}
+                </div>
               )}
 
               {isAdminOrLeader && (
+                <div
+                  className={styles.menuWrapper}
+                  onMouseEnter={() => handleMenuEnter('admin')}
+                  onMouseLeave={handleMenuLeave}
+                >
+                  <button
+                    className={navClass(openMenu === 'admin' || pathname.startsWith('/users') || pathname.startsWith('/stats') || pathname.startsWith('/projects'))}
+                    onClick={() => setOpenMenu(openMenu === 'admin' ? null : 'admin')}
+                  >
+                    관리
+                  </button>
+                  {openMenu === 'admin' && (
+                    <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
+                      <Link href="/projects" className={styles.dropdownItem} onClick={closeAll}>프로젝트</Link>
+                      {user?.role === 'ADMIN' && (
+                        <Link href="/users" className={styles.dropdownItem} onClick={closeAll}>팀원관리</Link>
+                      )}
+                      {has('stats') && (
+                        <Link href="/stats" className={styles.dropdownItem} onClick={closeAll}>통계</Link>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {(user?.role === 'ADMIN' || has('calendar_sync')) && (
                 <div
                   className={styles.menuWrapper}
                   onMouseEnter={() => handleMenuEnter('settings')}
                   onMouseLeave={handleMenuLeave}
                 >
                   <button
-                    className={navClass(openMenu === 'settings' || pathname.startsWith('/users') || pathname.startsWith('/stats') || pathname.startsWith('/projects') || pathname.startsWith('/announcements') || pathname.startsWith('/settings'))}
+                    className={navClass(openMenu === 'settings' || pathname.startsWith('/settings'))}
                     onClick={() => setOpenMenu(openMenu === 'settings' ? null : 'settings')}
                   >
                     설정
@@ -210,14 +247,6 @@ export default function AppHeader() {
                     <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
                       {user?.role === 'ADMIN' && (
                         <Link href="/settings/organization" className={styles.dropdownItem} onClick={closeAll}>조직 설정</Link>
-                      )}
-                      <Link href="/projects" className={styles.dropdownItem} onClick={closeAll}>프로젝트</Link>
-                      <Link href="/announcements" className={styles.dropdownItem} onClick={closeAll}>공지사항</Link>
-                      {user?.role === 'ADMIN' && (
-                        <Link href="/users" className={styles.dropdownItem} onClick={closeAll}>팀원관리</Link>
-                      )}
-                      {has('stats') && (
-                        <Link href="/stats" className={styles.dropdownItem} onClick={closeAll}>통계</Link>
                       )}
                       {has('calendar_sync') && (
                         <Link href="/settings/calendar-sync" className={styles.dropdownItem} onClick={closeAll}>구글 캘린더 연동</Link>
