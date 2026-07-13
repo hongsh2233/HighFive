@@ -612,3 +612,8 @@
   - **AI 주간 캘린더 요약**: `src/lib/ai.ts` 신규 — Anthropic Claude API 클라이언트 래퍼(`ANTHROPIC_API_KEY` 필요, `@anthropic-ai/sdk` 의존성 추가). `GET /api/ai/calendar-summary`가 이번 주 업무 마감/휴가 데이터를 모아 Claude(`claude-haiku-4-5-20251001`)에 전달해 3~5문장 한국어 브리핑 생성. `/calendar` 페이지에 "✨ 이번 주 AI 요약" 버튼 추가.
   - `.env.example`에 `ANTHROPIC_API_KEY` 안내 추가 — 미설정 시 AI 요약 API는 에러 응답 반환(기능 자체는 옵셔널).
   - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+
+## 2026-07-13 (63차)
+
+- **AI 캘린더 요약 버튼 → 준비중 안내로 전환**: `ANTHROPIC_API_KEY`를 당장 연결할 계획이 없어, `/calendar` 페이지의 "✨ 이번 주 AI 요약" 버튼이 `GET /api/ai/calendar-summary`를 호출하는 대신 클라이언트에서 바로 "AI 요약 기능은 준비 중입니다." 안내만 표시하도록 변경. 백엔드 API(`src/lib/ai.ts`, `/api/ai/calendar-summary`)는 그대로 남겨둬 이후 API 연결 시 프론트만 원복하면 바로 재사용 가능.
+- 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
