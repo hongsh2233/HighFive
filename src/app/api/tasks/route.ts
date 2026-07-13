@@ -4,6 +4,7 @@ import { requireAuth, successResponse, errorResponse, parseRmsNo } from '@/lib/u
 import { sanitize } from '@/lib/sanitize';
 import { addHistory } from '@/lib/task-history';
 import { getProjectStatuses } from '@/lib/task-status';
+import { syncTaskCalendarEvent } from '@/lib/google-calendar';
 
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024; // 5MB per file
 const MAX_TOTAL_ATTACHMENT_BYTES = 20 * 1024 * 1024; // 20MB per task
@@ -160,6 +161,8 @@ export async function POST(req: NextRequest) {
 
       await addHistory(subTask.id, creatorId, 'CREATED', `그룹 업무 "${parent.title}"의 하위 업무로 추가`);
 
+      syncTaskCalendarEvent({ taskId: subTask.id, title: subTask.title, targetDate: subTask.targetDate, workerId: subTask.workerId }).catch(() => {});
+
       if (parsedAttachments.length > 0) {
         await prisma.taskAttachment.createMany({
           data: parsedAttachments.map(a => ({
@@ -201,6 +204,10 @@ export async function POST(req: NextRequest) {
     });
 
     await addHistory(task.id, creatorId, 'CREATED', `담당자: ${task.worker?.name}`);
+
+    if (!isGroupReq) {
+      syncTaskCalendarEvent({ taskId: task.id, title: task.title, targetDate: task.targetDate, workerId: task.workerId }).catch(() => {});
+    }
 
     if (!isGroupReq && parsedAttachments.length > 0) {
       await prisma.taskAttachment.createMany({

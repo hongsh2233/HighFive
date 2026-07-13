@@ -103,9 +103,38 @@ model User {
   taskComments      TaskComment[]
   userSessions      UserSession[]
   taskAttachments   TaskAttachment[]
+  googleCalendar    GoogleCalendarConnection?
 
   @@index([organizationId])
   @@map("users")
+}
+
+model GoogleCalendarConnection {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @unique
+  accessToken  String   @db.Text
+  refreshToken String   @db.Text
+  tokenExpiry  DateTime
+  calendarId   String   @default("primary")
+  connectedAt  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("google_calendar_connections")
+}
+
+model GoogleCalendarEvent {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  sourceType    String   // TASK | LEAVE
+  sourceId      Int
+  googleEventId String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, sourceType, sourceId])
+  @@map("google_calendar_events")
 }
 
 // ──────────────────────────────────────────────

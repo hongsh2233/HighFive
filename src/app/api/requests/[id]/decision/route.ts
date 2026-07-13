@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 import { createUserNotification } from '@/lib/notify';
+import { syncLeaveCalendarEvent } from '@/lib/google-calendar';
 
 // PATCH /api/requests/[id]/decision - 결재(승인/반려)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -56,6 +57,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (action === 'APPROVE') {
       await createUserNotification(updated.requesterId, 'REQUEST_APPROVED',
         `'${updated.title}' ${typeLabel}이 승인되었습니다.`, undefined, orgId);
+      if (updated.type === 'LEAVE' && updated.startDate) {
+        syncLeaveCalendarEvent({
+          requestId: updated.id,
+          requesterId: updated.requesterId,
+          title: updated.title,
+          startDate: updated.startDate,
+          endDate: updated.endDate ?? updated.startDate,
+        }).catch(() => {});
+      }
     } else {
       await createUserNotification(updated.requesterId, 'REQUEST_REJECTED',
         `'${updated.title}' ${typeLabel}이 반려되었습니다. 사유: ${rejectReason}`, undefined, orgId);

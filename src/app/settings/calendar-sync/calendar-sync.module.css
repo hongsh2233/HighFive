@@ -30,6 +30,38 @@
   margin-bottom: var(--space-4);
 }
 
+.successBox {
+  padding: var(--space-3);
+  background-color: #F0FDF4;
+  border: 1px solid #86EFAC;
+  border-radius: 6px;
+  color: #14532D;
+  margin-bottom: var(--space-4);
+}
+
+.hintMuted {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.connectedRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.connectedBadge {
+  font-size: 13px;
+  font-weight: 600;
+  color: #059669;
+}
+
+.btnDisconnect {
+  composes: btn btn-secondary from global;
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
 .card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border);

@@ -5,6 +5,7 @@ import { sanitize } from '@/lib/sanitize';
 import { addHistory } from '@/lib/task-history';
 import { notifyWorkerChange } from '@/lib/notify';
 import { isValidStatus } from '@/lib/task-status';
+import { syncTaskCalendarEvent, deleteGoogleCalendarEvent } from '@/lib/google-calendar';
 
 // GET /api/tasks/[id] - 업무 상세 조회
 export async function GET(
@@ -128,6 +129,17 @@ export async function PATCH(
       await addHistory(taskId, editorId, 'NOTE_UPDATED');
     }
 
+    if (targetDate !== undefined || newWorkerId !== undefined || title) {
+      const workerChanged = newWorkerId !== undefined && prevTask.workerId !== parseInt(newWorkerId);
+      syncTaskCalendarEvent({
+        taskId,
+        title: task.title,
+        targetDate: task.targetDate,
+        workerId: task.workerId,
+        previousWorkerId: workerChanged ? prevTask.workerId : undefined,
+      }).catch(() => {});
+    }
+
     return successResponse(task, '업무가 수정되었습니다.');
   } catch (err) {
     console.error(err);
@@ -155,6 +167,8 @@ export async function DELETE(
       return errorResponse('유효하지 않은 업무 ID입니다.', 400, 'VALID_400');
     }
 
+    const target = await prisma.task.findUnique({ where: { id: taskId }, select: { workerId: true } });
+
     // 관련 timelog 삭제
     await prisma.timeLog.deleteMany({
       where: { taskId },
@@ -164,6 +178,10 @@ export async function DELETE(
     await prisma.task.delete({
       where: { id: taskId },
     });
+
+    if (target) {
+      deleteGoogleCalendarEvent(target.workerId, 'TASK', taskId).catch(() => {});
+    }
 
     return successResponse({ message: '업무가 삭제되었습니다.' });
   } catch (err) {
