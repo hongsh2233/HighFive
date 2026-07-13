@@ -25,11 +25,18 @@ export async function GET(req: NextRequest) {
   const userId = verifyIcalToken(token);
   if (!userId) return new NextResponse('invalid token', { status: 401 });
 
-  const tasks = await prisma.task.findMany({
-    where: { workerId: userId, targetDate: { not: null } },
-    select: { id: true, title: true, rmsNo: true, status: true, targetDate: true },
-    orderBy: { targetDate: 'asc' },
-  });
+  const [tasks, leaves] = await Promise.all([
+    prisma.task.findMany({
+      where: { workerId: userId, targetDate: { not: null } },
+      select: { id: true, title: true, rmsNo: true, status: true, targetDate: true },
+      orderBy: { targetDate: 'asc' },
+    }),
+    prisma.request.findMany({
+      where: { requesterId: userId, type: 'LEAVE', status: 'APPROVED', startDate: { not: null } },
+      select: { id: true, title: true, startDate: true, endDate: true },
+      orderBy: { startDate: 'asc' },
+    }),
+  ]);
 
   const baseUrl = process.env.NEXTAUTH_URL || '';
   const statusLabel: Record<string, string> = {
@@ -37,7 +44,7 @@ export async function GET(req: NextRequest) {
     WAITING: '대기', DONE: '완료', HOLD: '보류',
   };
 
-  const events = tasks.map((t) => {
+  const taskEvents = tasks.map((t) => {
     const start = toIcalDate(t.targetDate!);
     const end = toIcalDate(nextDay(t.targetDate!));
     const summary = escapeIcal(`[${statusLabel[t.status] ?? t.status}] ${t.rmsNo ? t.rmsNo + ' ' : ''}${t.title}`);
@@ -52,15 +59,31 @@ export async function GET(req: NextRequest) {
     ].join('\r\n');
   }).join('\r\n');
 
+  const leaveEvents = leaves.map((r) => {
+    const start = toIcalDate(r.startDate!);
+    const end = toIcalDate(nextDay(r.endDate ?? r.startDate!));
+    const summary = escapeIcal(`[휴가] ${r.title}`);
+    return [
+      'BEGIN:VEVENT',
+      `UID:tms-leave-${r.id}@tms`,
+      `SUMMARY:${summary}`,
+      `DTSTART;VALUE=DATE:${start}`,
+      `DTEND;VALUE=DATE:${end}`,
+      `URL:${baseUrl}/requests`,
+      'END:VEVENT',
+    ].join('\r\n');
+  }).join('\r\n');
+
   const ics = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//High5//KO',
     'CALSCALE:GREGORIAN',
     'X-WR-CALNAME:High5 업무 일정',
-    events,
+    taskEvents,
+    leaveEvents,
     'END:VCALENDAR',
-  ].join('\r\n');
+  ].filter(Boolean).join('\r\n');
 
   return new NextResponse(ics, {
     headers: {

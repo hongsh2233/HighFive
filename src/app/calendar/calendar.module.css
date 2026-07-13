@@ -36,6 +36,36 @@
   font-weight: 600;
 }
 
+.aiSummaryBtn {
+  composes: btn btn-secondary from global;
+  padding: var(--space-2) var(--space-4);
+  margin-left: var(--space-3);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.aiSummaryBox {
+  background: var(--accent-light);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+
+.aiSummaryText {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.aiSummaryError {
+  font-size: 13px;
+  color: var(--color-danger);
+  margin: 0;
+}
+
 .summaryGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

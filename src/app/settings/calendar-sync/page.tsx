@@ -54,7 +54,7 @@ export default function CalendarSyncPage() {
     <div className={styles.container}>
       <h1 className={styles.title}>구글 캘린더 연동</h1>
       <p className={styles.subtitle}>
-        내 업무의 목표일을 iCal 구독 URL로 발급해 Google Calendar에서 실시간으로 확인할 수 있습니다.
+        내 업무의 목표일과 승인된 휴가 일정을 iCal 구독 URL로 발급해 Google Calendar에서 확인할 수 있습니다.
       </p>
 
       {error && <div className={styles.errorBox}>{error}</div>}
@@ -84,7 +84,7 @@ export default function CalendarSyncPage() {
           <li>Google Calendar 웹 화면 좌측의 <strong>다른 캘린더</strong> 옆 <strong>+</strong> 버튼을 클릭합니다.</li>
           <li><strong>URL로 추가</strong>를 선택합니다.</li>
           <li>위에서 복사한 구독 URL을 붙여넣고 <strong>캘린더 추가</strong>를 클릭합니다.</li>
-          <li>등록 후 목표일이 있는 업무가 Google Calendar에 자동으로 표시됩니다. (반영까지 최대 몇 시간 소요될 수 있습니다.)</li>
+          <li>등록 후 목표일이 있는 업무와 승인된 휴가가 Google Calendar에 자동으로 표시됩니다. (Google 쪽 캐싱 특성상 반영까지 최대 몇 시간 소요될 수 있습니다.)</li>
         </ol>
       </div>
     </div>

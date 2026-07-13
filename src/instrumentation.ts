@@ -72,4 +72,7 @@ export async function register() {
   } finally {
     await prisma.$disconnect();
   }
+
+  const { startScheduler } = await import('./lib/scheduler');
+  startScheduler();
 }

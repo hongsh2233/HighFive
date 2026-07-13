@@ -27,6 +27,23 @@ export default function CalendarPage() {
   const [data, setData] = useState<CalendarData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [aiSummary, setAiSummary] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+
+  const handleAiSummary = async () => {
+    setAiLoading(true);
+    setAiError('');
+    setAiSummary('');
+    try {
+      const res = await apiClient.get<{ data: { summary: string } }>('/ai/calendar-summary');
+      setAiSummary(res.data.data.summary);
+    } catch (err: any) {
+      setAiError(err?.response?.data?.message || 'AI 요약 생성 중 오류가 발생했습니다.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchCalendarData = async () => {
@@ -94,8 +111,21 @@ export default function CalendarPage() {
           >
             다음 →
           </button>
+          <button onClick={handleAiSummary} className={styles.aiSummaryBtn} disabled={aiLoading}>
+            {aiLoading ? '요약 생성 중...' : '✨ 이번 주 AI 요약'}
+          </button>
         </div>
       </div>
+
+      {(aiSummary || aiError) && (
+        <div className={styles.aiSummaryBox}>
+          {aiError ? (
+            <p className={styles.aiSummaryError}>{aiError}</p>
+          ) : (
+            <p className={styles.aiSummaryText}>{aiSummary}</p>
+          )}
+        </div>
+      )}
 
       {/* 통계 */}
       {data && (
