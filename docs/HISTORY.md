@@ -650,3 +650,9 @@
 - **WORKER 계정에서 @멘션 목록이 안 뜨던 버그 수정**: 업무 상세의 댓글 @멘션 자동완성이 `GET /api/users`(파라미터 없음)로 전체 사용자를 조회했는데, 이 API는 ADMIN/LEADER만 허용해 WORKER 계정은 403을 받고 `.catch(() => {})`로 조용히 실패 → `allUsers`가 항상 빈 배열로 남아 멘션 드롭다운이 절대 뜨지 않았음. `GET /api/users?minimal=true`(id/name만 반환, 전 역할 허용) 신규 추가하고 프론트에서 이걸 쓰도록 변경.
 - **답글에 답글을 달 수 없던 문제 수정**: 답글(대댓글) 항목에는 "답글" 버튼이 없어 답글 스레드를 이어갈 수 없었음(백엔드는 이미 전 역할 답글 작성을 허용). 답글 항목에도 "답글" 버튼을 추가하되, 스키마상 2단계 스레드 구조를 유지하기 위해 답글의 답글도 같은 최상위 댓글의 `parentId`로 귀속(평평한 2단 구조). 답글 입력창 placeholder도 실제 답글 대상자 이름을 반영하도록 수정.
 - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+
+## 2026-07-13 (68차)
+
+- **알림 토스트/벨 아이콘 상태 통합 + 위치 겹침 해소**: `NotificationToastManager`와 `NotificationBell`이 각자 독립적으로 `useNotifications()`를 호출해 30초 폴링을 두 번 돌리고 상태가 어긋날 수 있던 구조를 `src/components/NotificationsProvider.tsx`(Context)로 단일화. 인증/로그인 페이지 여부에 따라 빈 컨텍스트를 반환해 게이팅. 토스트 팝업 위치도 우하단(WikiSearchButton/NotificationBell FAB와 겹치던 자리)에서 우상단(헤더 아래)으로 이동.
+- **전체 기능 정리 문서 신규**: `docs/FEATURES.md` — 계정/조직 구조, 보안, 업무관리, 캘린더/일정관리, 알림, 협업, 조직관리(ADMIN), 플랫폼관리(SUPERADMIN), UI/UX 9개 영역으로 현재 구현된 모든 기능을 사용자/역할 관점에서 정리. 스코프 제외 영역(회계/CRM/인사평가/급여/결제/네이티브 앱)도 명시.
+- 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
