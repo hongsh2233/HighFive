@@ -636,3 +636,11 @@
 - **알림 벨 아이콘 추가**: `src/components/NotificationBell.tsx` 신규 — 위키검색 FAB 위에 배치, 안읽음 개수 뱃지 표시(9+는 "9+"로 표기). 클릭 시 최근 알림 30건 드롭다운(열람 시 자동 전체 읽음 처리), 항목 클릭 시 `taskId`가 있으면 해당 업무 상세로 이동. `LayoutWrapper`에 로그인 상태에서만 렌더링. `src/types/index.ts`의 `UserNotificationType`에 실제 서버에서 쓰는 타입(REQUEST_APPROVED/REJECTED, ANNOUNCEMENT, DEADLINE_APPROACHING, LEAVE_REMINDER 등) 반영.
 - **작업자도 비고 수정 가능**: `PATCH /api/tasks/[id]`에서 WORKER가 본인이 담당한 업무의 "비고"만 수정할 수 있도록 허용(요청 바디에 notes 외 필드가 섞이면 거부, 다른 필드는 여전히 ADMIN/LEADER 전용). `/tasks/[id]` 페이지의 상세내용 "수정" 버튼도 `canEdit`(ADMIN/LEADER) 대신 `canEditNotes`(ADMIN/LEADER 또는 담당 작업자)로 노출.
 - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+
+## 2026-07-13 (66차)
+
+- **멀티테넌시 전환 시 누락된 organizationId 전수 감사**: 이전 차수에서 발견한 `notifyWorkerChange`/`notifyStatusChanged`의 `organizationId` 누락 버그와 동일한 패턴이 더 있는지 전체 `create`/`createMany` 호출부와 `requireAuth`/`requireRole` 반환값 사용처를 감사.
+  - **확인된 버그**: `src/app/api/tasks/[id]/comments/route.ts`의 @멘션 댓글 알림(`COMMENT_MENTION`)이 `organizationId`를 넘기지 않아 동일하게 알림이 절대 노출되지 않던 문제 수정(`task.organizationId` 사용).
+  - **방어적 수정**: `src/lib/services/task.service.ts`의 `createTask()` 헬퍼가 `organizationId` 없이 Task를 생성하던 부분 수정(현재 호출부가 없는 미사용 코드이나, 향후 재사용 시 함정이 되는 것을 방지).
+  - **점검 후 이상 없음 확인**: `projects`, `users`, `tasks`(3개 생성 경로 모두), `requests`, `announcements`, `info`, `sticky-notes`, `settings/integrations`, `users/invite`, `requests/[id]/decision`, `scheduler.ts`, `instrumentation.ts`, `audit.ts` — 모두 organizationId가 정상 전달됨.
+  - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
