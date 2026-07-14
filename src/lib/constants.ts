@@ -56,6 +56,22 @@ export const TASK_LABEL_COLOR: Record<string, { bg: string; text: string; border
   EMERGENCY: { bg: 'rgba(124,58,237,0.08)', text: '#6D28D9', border: '#C4B5FD' },
 };
 
+export const TASK_PRIORITY_LIST = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
+
+export const TASK_PRIORITY_TEXT: Record<string, string> = {
+  LOW: '낮음',
+  NORMAL: '보통',
+  HIGH: '높음',
+  URGENT: '긴급',
+};
+
+export const TASK_PRIORITY_COLOR: Record<string, { bg: string; text: string; border: string }> = {
+  LOW: { bg: 'rgba(107,114,128,0.08)', text: '#4B5563', border: '#D1D5DB' },
+  NORMAL: { bg: 'rgba(37,99,235,0.08)', text: '#1D4ED8', border: '#93C5FD' },
+  HIGH: { bg: 'rgba(217,119,6,0.08)', text: '#B45309', border: '#FCD34D' },
+  URGENT: { bg: 'rgba(220,38,38,0.08)', text: '#DC2626', border: '#FCA5A5' },
+};
+
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
 
 export const PAGINATION = {

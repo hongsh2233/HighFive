@@ -11,6 +11,7 @@ import styles from './detail.module.css';
 import { actionLabel } from '@/lib/task-history';
 import Spinner from '@/components/common/Spinner';
 import { useDialog } from '@/components/common/DialogProvider';
+import { TASK_PRIORITY_LIST, TASK_PRIORITY_TEXT } from '@/lib/constants';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
 
@@ -54,7 +55,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
   const [infoEditing, setInfoEditing] = useState(false);
   const [workers, setWorkers] = useState<Worker[]>([]);
-  const [infoForm, setInfoForm] = useState({ title: '', workerId: '', targetDate: '' });
+  const [infoForm, setInfoForm] = useState({ title: '', workerId: '', targetDate: '', priority: 'NORMAL' });
   const [infoSaving, setInfoSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [infoError, setInfoError] = useState<string | null>(null);
@@ -207,6 +208,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         title: t.title,
         workerId: t.workerId ? String(t.workerId) : '',
         targetDate: t.targetDate ? new Date(t.targetDate).toISOString().slice(0, 10) : '',
+        priority: t.priority || 'NORMAL',
       });
 
       const logsResponse = await apiClient.get<{ data: { logs: TimeLog[]; totalHours: number } }>(
@@ -335,6 +337,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         title: infoForm.title.trim(),
         workerId: parseInt(infoForm.workerId),
         targetDate: infoForm.targetDate || null,
+        priority: infoForm.priority,
       });
       setInfoEditing(false);
       await fetchTask();
@@ -605,6 +608,19 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                   disabled={infoSaving}
                 />
               </div>
+              <div>
+                <p className={styles.fieldLabel}>우선순위</p>
+                <select
+                  value={infoForm.priority}
+                  onChange={(e) => setInfoForm({ ...infoForm, priority: e.target.value })}
+                  className={styles.input}
+                  disabled={infoSaving}
+                >
+                  {TASK_PRIORITY_LIST.map((code) => (
+                    <option key={code} value={code}>{TASK_PRIORITY_TEXT[code]}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className={styles.editActions}>
               <button onClick={handleInfoSave} className={styles.btn} disabled={infoSaving}>
@@ -618,6 +634,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                     title: task.title,
                     workerId: task.workerId ? String(task.workerId) : '',
                     targetDate: task.targetDate ? new Date(task.targetDate).toISOString().slice(0, 10) : '',
+                    priority: task.priority || 'NORMAL',
                   });
                 }}
                 className={styles.btnSecondary}
@@ -646,6 +663,10 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
               <span className={styles.infoVal}>
                 {task.targetDate ? new Date(task.targetDate).toLocaleDateString('ko-KR') : '-'}
               </span>
+            </div>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>우선순위</span>
+              <span className={styles.infoVal}>{TASK_PRIORITY_TEXT[task.priority] || task.priority}</span>
             </div>
           </div>
         )}

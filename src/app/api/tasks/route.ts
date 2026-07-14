@@ -111,10 +111,11 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, workerId, registrantId, targetDate, projectId, labels, subTasks, isGroup, parentTaskId, timeCounterEnabled, attachments } = body;
+    const { title, workerId, registrantId, targetDate, projectId, labels, subTasks, isGroup, parentTaskId, timeCounterEnabled, attachments, priority } = body;
     const notes = sanitize(body.notes || '');
     const labelsStr: string | null = Array.isArray(labels) && labels.length > 0 ? labels.join(',') : null;
     const timeCounterEnabledReq = timeCounterEnabled !== false;
+    const priorityValue = ['LOW', 'NORMAL', 'HIGH', 'URGENT'].includes(priority) ? priority : 'NORMAL';
 
     if (!title || !workerId || !registrantId) {
       return errorResponse('필수 항목이 누락되었습니다.', 400, 'VALID_400');
@@ -146,6 +147,7 @@ export async function POST(req: NextRequest) {
           targetDate: targetDate ? new Date(targetDate) : null,
           notes,
           labels: labelsStr,
+          priority: priorityValue,
           status: initialStatus.code,
           projectId: resolvedProjectId,
           parentTaskId: parent.id,
@@ -190,6 +192,7 @@ export async function POST(req: NextRequest) {
         targetDate: targetDate ? new Date(targetDate) : null,
         notes: isGroupReq ? null : notes,
         labels: labelsStr,
+        priority: priorityValue,
         isGroup: isGroupReq,
         status: initialStatus.code,
         projectId: resolvedProjectId,

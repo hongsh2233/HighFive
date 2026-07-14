@@ -67,7 +67,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { title, targetDate, notes, status, workerId: newWorkerId, externalLink } = body;
+    const { title, targetDate, notes, status, workerId: newWorkerId, externalLink, priority } = body;
 
     // 담당자/제목 변경 감지를 위해 수정 전 상태 조회
     const prevTask = await prisma.task.findFirst({
@@ -82,7 +82,7 @@ export async function PATCH(
       // WORKER는 본인이 담당한 업무의 "비고"만 수정 가능(다른 필드는 불가)
       const isAssignedWorker = prevTask.workerId === userId;
       const notesOnly = title === undefined && targetDate === undefined && status === undefined
-        && newWorkerId === undefined && externalLink === undefined && notes !== undefined;
+        && newWorkerId === undefined && externalLink === undefined && priority === undefined && notes !== undefined;
       if (!isAssignedWorker || !notesOnly) {
         return errorResponse('업무를 수정할 권한이 없습니다.', 403, 'AUTH_403');
       }
@@ -97,6 +97,9 @@ export async function PATCH(
     }
     if (targetDate !== undefined) updateData.targetDate = targetDate ? new Date(targetDate) : null;
     if (notes !== undefined) updateData.notes = sanitize(notes || '');
+    if (priority !== undefined && ['LOW', 'NORMAL', 'HIGH', 'URGENT'].includes(priority)) {
+      updateData.priority = priority;
+    }
     if (externalLink !== undefined) updateData.externalLink = externalLink || null;
     if (status !== undefined) {
       if (!(await isValidStatus(prevTask.projectId, status))) {

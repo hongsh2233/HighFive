@@ -1,6 +1,7 @@
 'use client';
 
 import { Task } from '@/types';
+import { TASK_PRIORITY_TEXT, TASK_PRIORITY_COLOR } from '@/lib/constants';
 import styles from './KanbanColumn.module.css';
 
 interface KanbanColumnProps {
@@ -58,6 +59,15 @@ export default function KanbanColumn({
                 onClick={() => onTaskClick(task)}
               >
                 <div className={styles.cardTitle}>
+                  {(task.priority === 'HIGH' || task.priority === 'URGENT') && (
+                    <span
+                      title={TASK_PRIORITY_TEXT[task.priority]}
+                      style={{
+                        display: 'inline-block', width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                        backgroundColor: TASK_PRIORITY_COLOR[task.priority].text,
+                      }}
+                    />
+                  )}
                   {parentTask && <span className={styles.parentPrefix}>[{parentTask.title}]</span>}
                   <span className={styles.cardTitleText}>{task.title}</span>
                 </div>

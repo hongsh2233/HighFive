@@ -156,6 +156,7 @@ model Task {
   externalLink       String?
   projectId          Int?
   labels             String?
+  priority           String    @default("NORMAL")
   isGroup            Boolean   @default(false)
   timeCounterEnabled Boolean   @default(true)
   parentTaskId       Int?

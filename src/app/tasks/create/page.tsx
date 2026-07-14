@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import dynamic from 'next/dynamic';
 import axios from 'axios';
 import styles from './create.module.css';
-import { TASK_LABEL_LIST, TASK_LABEL_TEXT } from '@/lib/constants';
+import { TASK_LABEL_LIST, TASK_LABEL_TEXT, TASK_PRIORITY_LIST, TASK_PRIORITY_TEXT } from '@/lib/constants';
 import 'react-quill-new/dist/quill.snow.css';
 import Spinner from '@/components/common/Spinner';
 
@@ -84,6 +84,7 @@ function TaskCreateForm() {
   const [success, setSuccess] = useState('');
   const [createdDate] = useState(new Date().toLocaleDateString('ko-KR'));
   const [labels, setLabels] = useState<string[]>([]);
+  const [priority, setPriority] = useState('NORMAL');
   const [isGroup, setIsGroup] = useState(false);
   const [timeCounterEnabled, setTimeCounterEnabled] = useState(true);
   const [subTasks, setSubTasks] = useState<SubTaskForm[]>([{ title: '', workerId: '', targetDate: '' }]);
@@ -217,6 +218,7 @@ function TaskCreateForm() {
         notes: (!parentTask && isGroup) ? '' : notes.trim(),
         projectId: projectId ? parseInt(projectId) : null,
         labels,
+        priority,
         parentTaskId: parentTask ? parentTask.id : undefined,
         isGroup: !parentTask && isGroup,
         timeCounterEnabled,
@@ -305,6 +307,15 @@ function TaskCreateForm() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>목표일</label>
                 <input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} className={styles.input} disabled={loading} />
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>우선순위</label>
+                <select value={priority} onChange={e => setPriority(e.target.value)} className={styles.input} disabled={loading}>
+                  {TASK_PRIORITY_LIST.map(code => (
+                    <option key={code} value={code}>{TASK_PRIORITY_TEXT[code]}</option>
+                  ))}
+                </select>
               </div>
 
               <div className={styles.fieldGroupWide}>

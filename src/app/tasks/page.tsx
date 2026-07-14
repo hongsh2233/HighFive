@@ -13,6 +13,7 @@ import { ProjectField, FieldType } from '@/types';
 import styles from './tasks.module.css';
 import Spinner from '@/components/common/Spinner';
 import { useDialog } from '@/components/common/DialogProvider';
+import { TASK_PRIORITY_LIST, TASK_PRIORITY_TEXT, TASK_PRIORITY_COLOR } from '@/lib/constants';
 
 interface Worker {
   id: number;
@@ -109,6 +110,7 @@ function TaskListContent() {
   const [selectedProject, setSelectedProject] = useState(searchParams.get('projectId') || '');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
+  const [selectedPriority, setSelectedPriority] = useState('');
   const [assignableWorkers, setAssignableWorkers] = useState<Worker[]>([]);
   const [myProjects, setMyProjects] = useState<ProjectMeta[]>([]);
 
@@ -178,6 +180,9 @@ function TaskListContent() {
   }
   if (selectedWorker) {
     filteredTasks = filteredTasks.filter((task: any) => task.workerId === parseInt(selectedWorker));
+  }
+  if (selectedPriority) {
+    filteredTasks = filteredTasks.filter((task: any) => (task.priority || 'NORMAL') === selectedPriority);
   }
   if (searchQuery.trim()) {
     const q = searchQuery.trim().toLowerCase();
@@ -334,6 +339,17 @@ function TaskListContent() {
             <option key={worker.id} value={worker.id}>
               {worker.name}
             </option>
+          ))}
+        </select>
+
+        <select
+          value={selectedPriority}
+          onChange={(e) => setSelectedPriority(e.target.value)}
+          className={styles.statusFilterSelect}
+        >
+          <option value="">전체 우선순위</option>
+          {TASK_PRIORITY_LIST.map((code) => (
+            <option key={code} value={code}>{TASK_PRIORITY_TEXT[code]}</option>
           ))}
         </select>
 
@@ -714,6 +730,15 @@ function ProjectTaskSection({
               </button>
             )}
             {isChild && <span className={styles.childArrow}>↳</span>}
+            {(task.priority === 'HIGH' || task.priority === 'URGENT') && (
+              <span
+                title={TASK_PRIORITY_TEXT[task.priority]}
+                style={{
+                  display: 'inline-block', width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                  backgroundColor: TASK_PRIORITY_COLOR[task.priority].text,
+                }}
+              />
+            )}
             {editingTitleId === task.id ? (
               <input
                 type="text"
