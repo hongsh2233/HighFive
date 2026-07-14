@@ -3,14 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserNotification } from '@/types';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useNotificationsContext } from './NotificationsProvider';
 import styles from './NotificationBell.module.css';
 
 export default function NotificationBell() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
-  const { notifications, unreadCount, markAllRead } = useNotifications();
+  const { notifications, unreadCount, markAllRead } = useNotificationsContext();
 
   useEffect(() => {
     if (!open) return;

@@ -8,6 +8,7 @@ import { UserRole } from '@/types';
 import NotificationToastManager from './common/NotificationToast';
 import StickyNotesPanel from './StickyNotesPanel';
 import { DialogProvider, useDialog } from './common/DialogProvider';
+import { NotificationsProvider } from './NotificationsProvider';
 import { consumeManualLogout } from '@/lib/logout-flag';
 
 function AuthSync() {
@@ -51,14 +52,6 @@ function AuthSync() {
   return null;
 }
 
-function NotificationToastGate() {
-  const { status } = useSession();
-  const pathname = usePathname();
-  if (status !== 'authenticated') return null;
-  if (pathname === '/login' || pathname === '/' || pathname.endsWith('/login')) return null;
-  return <NotificationToastManager />;
-}
-
 function StickyNotesGate() {
   const { status } = useSession();
   const pathname = usePathname();
@@ -71,10 +64,12 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider refetchInterval={60} refetchOnWindowFocus>
       <DialogProvider>
-        <AuthSync />
-        <NotificationToastGate />
-        <StickyNotesGate />
-        {children}
+        <NotificationsProvider>
+          <AuthSync />
+          <NotificationToastManager />
+          <StickyNotesGate />
+          {children}
+        </NotificationsProvider>
       </DialogProvider>
     </SessionProvider>
   );

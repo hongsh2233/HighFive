@@ -1,40 +1,37 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserNotification } from '@/types';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useNotificationsContext } from '../NotificationsProvider';
 import styles from './NotificationToast.module.css';
 
 const AUTO_DISMISS_MS = 5000;
 
 export default function NotificationToastManager() {
   const router = useRouter();
-  const [toast, setToast] = useState<UserNotification | null>(null);
-
-  useNotifications((notification) => setToast(notification));
+  const { latestToast, dismissToast } = useNotificationsContext();
 
   useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(null), AUTO_DISMISS_MS);
+    if (!latestToast) return;
+    const timer = setTimeout(dismissToast, AUTO_DISMISS_MS);
     return () => clearTimeout(timer);
-  }, [toast]);
+  }, [latestToast, dismissToast]);
 
-  if (!toast) return null;
+  if (!latestToast) return null;
 
   const handleClick = () => {
-    if (toast.taskId) router.push(`/tasks/${toast.taskId}`);
-    setToast(null);
+    if (latestToast.taskId) router.push(`/tasks/${latestToast.taskId}`);
+    dismissToast();
   };
 
   return (
     <div className={styles.toast} onClick={handleClick} role="status">
       <span className={styles.dot} />
-      <span className={styles.message}>{toast.message}</span>
+      <span className={styles.message}>{latestToast.message}</span>
       <button
         type="button"
         className={styles.closeBtn}
-        onClick={(e) => { e.stopPropagation(); setToast(null); }}
+        onClick={(e) => { e.stopPropagation(); dismissToast(); }}
         aria-label="알림 닫기"
       >
         ✕
