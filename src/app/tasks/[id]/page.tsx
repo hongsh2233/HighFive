@@ -249,7 +249,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   // 멘션용 전체 사용자 목록 (모든 역할 포함, 1회 prefetch)
   useEffect(() => {
     if (authLoading) return;
-    apiClient.get<{ data: Worker[] }>('/users').then((res) => {
+    apiClient.get<{ data: Worker[] }>('/users?minimal=true').then((res) => {
       setAllUsers(res.data.data || []);
     }).catch(() => {});
   }, [authLoading]);
@@ -821,6 +821,17 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                             <div className={styles.commentMeta}>
                               <span className={styles.commentAuthor}>{r.author?.name}</span>
                               <span className={styles.commentDate}>{new Date(r.createdAt).toLocaleString('ko-KR')}</span>
+                              <button
+                                className={styles.commentReplyBtn}
+                                onClick={() => {
+                                  setReplyTo({ commentId: c.id, authorName: r.author?.name || '' });
+                                  setReplyInput('');
+                                  setMentionQuery(null);
+                                  setTimeout(() => replyTextareaRef.current?.focus(), 50);
+                                }}
+                              >
+                                답글
+                              </button>
                               {(user?.id === r.author?.id || userRole === 'ADMIN' || userRole === 'LEADER') && (
                                 <button className={styles.commentDeleteBtn} onClick={() => handleCommentDelete(r.id, c.id)}>
                                   삭제
@@ -859,7 +870,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                           value={replyInput}
                           onChange={handleReplyChange}
                           onKeyDown={buildKeyDown(handleReplySubmit, replyTextareaRef, () => replyInput, setReplyInput)}
-                          placeholder={`@${c.author?.name}에게 답글... (Enter로 등록)`}
+                          placeholder={`@${replyTo?.authorName || c.author?.name}에게 답글... (Enter로 등록)`}
                           className={styles.commentTextarea}
                           rows={2}
                         />

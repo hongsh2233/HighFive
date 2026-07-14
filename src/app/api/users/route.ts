@@ -9,13 +9,24 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const role = searchParams.get('role');
     const projectId = searchParams.get('projectId');
+    const minimal = searchParams.get('minimal') === 'true';
 
-    const auth = role === 'WORKER' ? await requireAuth() : await requireRole(['ADMIN', 'LEADER']);
+    const auth = (role === 'WORKER' || minimal) ? await requireAuth() : await requireRole(['ADMIN', 'LEADER']);
     if (auth.error) return auth.error;
     const { session, organizationId } = auth;
 
     const sessionRole = (session!.user as any).role;
     const sessionUserId = parseInt((session!.user as any).id || '0');
+
+    // 멘션 자동완성용 최소 정보(id/name만) — 전 역할이 조회 가능
+    if (minimal) {
+      const users = await prisma.user.findMany({
+        where: { organizationId, isActive: true },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      });
+      return successResponse(users, '사용자 목록 조회 완료');
+    }
 
     let where: any = { organizationId };
     if (role) where.role = role;
