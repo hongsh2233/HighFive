@@ -57,9 +57,8 @@ export async function PATCH(
     if (error) return error;
 
     const userRole = (session?.user as any)?.role;
-    if (!['ADMIN', 'LEADER'].includes(userRole)) {
-      return errorResponse('업무를 수정할 권한이 없습니다.', 403, 'AUTH_403');
-    }
+    const userId = parseInt((session!.user as any).id || '0');
+    const isAdminOrLeader = ['ADMIN', 'LEADER'].includes(userRole);
 
     const { id } = await params;
     const taskId = parseInt(id);
@@ -77,6 +76,16 @@ export async function PATCH(
     });
     if (!prevTask) {
       return errorResponse('업무를 찾을 수 없습니다.', 404, 'TASK_404');
+    }
+
+    if (!isAdminOrLeader) {
+      // WORKER는 본인이 담당한 업무의 "비고"만 수정 가능(다른 필드는 불가)
+      const isAssignedWorker = prevTask.workerId === userId;
+      const notesOnly = title === undefined && targetDate === undefined && status === undefined
+        && newWorkerId === undefined && externalLink === undefined && notes !== undefined;
+      if (!isAssignedWorker || !notesOnly) {
+        return errorResponse('업무를 수정할 권한이 없습니다.', 403, 'AUTH_403');
+      }
     }
 
     // RMS 번호 파싱 (title이 있으면)
@@ -113,7 +122,7 @@ export async function PATCH(
       await addHistory(taskId, editorId, 'WORKER_CHANGED',
         `${prevTask.worker?.name} → ${task.worker?.name}`);
       const taskUrl = `${process.env.NEXTAUTH_URL}/tasks/${taskId}`;
-      notifyWorkerChange(taskId, task.title, task.workerId, task.worker?.name || '', task.registrantId, task.registrant?.name || '', taskUrl).catch(() => {});
+      notifyWorkerChange(taskId, task.title, task.workerId, task.worker?.name || '', task.registrantId, task.registrant?.name || '', taskUrl, organizationId).catch(() => {});
     }
     if (title && prevTask.title !== updateData.title) {
       await addHistory(taskId, editorId, 'TITLE_CHANGED', `${prevTask.title} → ${task.title}`);

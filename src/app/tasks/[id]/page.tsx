@@ -78,6 +78,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const userRole = (user as any)?.role;
   const canEdit = userRole === 'ADMIN' || userRole === 'LEADER';
   const canDelete = userRole === 'ADMIN' || userRole === 'LEADER';
+  const currentUserId = parseInt((user as any)?.id || '0');
+  const canEditNotes = canEdit || task?.workerId === currentUserId;
 
   const [attachUploading, setAttachUploading] = useState(false);
   const [attachError, setAttachError] = useState('');
@@ -665,7 +667,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       <div className={styles.card}>
         <div className={styles.cardHeader}>
           <h2 className={`${styles.cardTitle} ${styles.noMargin}`}>상세내용</h2>
-          {!editing && (
+          {!editing && canEditNotes && (
             <button onClick={() => setEditing(true)} className={styles.btnSecondary}>
               수정
             </button>

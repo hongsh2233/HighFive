@@ -12,7 +12,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { session, error } = await requireAuth();
+    const { session, error, organizationId } = await requireAuth();
     if (error) return error;
 
     const { id } = await params;
@@ -100,7 +100,7 @@ export async function PATCH(
       notifyStatusChanged(
         updatedTask.id, updatedTask.title,
         updatedTask.workerId, updatedTask.registrantId,
-        newStatusDef.label, userId
+        newStatusDef.label, userId, organizationId
       ).catch(() => {});
     }
 

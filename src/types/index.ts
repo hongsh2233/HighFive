@@ -148,7 +148,17 @@ export interface Notification {
 }
 
 // 인앱 알림(헤더 벨/토스트에서 사용)
-export type UserNotificationType = "WORKER_ASSIGNED" | "WORKER_CHANGED" | "STATUS_CHANGED" | "REVIEW_REQUESTED";
+export type UserNotificationType =
+  | "WORKER_ASSIGNED"
+  | "WORKER_CHANGED"
+  | "STATUS_CHANGED"
+  | "REVIEW_REQUESTED"
+  | "REQUEST_APPROVED"
+  | "REQUEST_REJECTED"
+  | "ANNOUNCEMENT"
+  | "DEADLINE_APPROACHING"
+  | "LEAVE_REMINDER"
+  | (string & {});
 
 export interface UserNotification {
   id: number;
