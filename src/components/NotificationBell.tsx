@@ -10,7 +10,7 @@ export default function NotificationBell() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
-  const { notifications, unreadCount, markAllRead } = useNotificationsContext();
+  const { notifications, unreadCount, markAllRead, markOneRead } = useNotificationsContext();
 
   useEffect(() => {
     if (!open) return;
@@ -24,15 +24,12 @@ export default function NotificationBell() {
   }, [open]);
 
   const handleToggle = () => {
-    setOpen((v) => {
-      const next = !v;
-      if (next && unreadCount > 0) markAllRead();
-      return next;
-    });
+    setOpen((v) => !v);
   };
 
   const handleSelect = (n: UserNotification) => {
     setOpen(false);
+    if (!n.isRead) markOneRead(n.id);
     if (n.taskId) router.push(`/tasks/${n.taskId}`);
   };
 
@@ -53,7 +50,14 @@ export default function NotificationBell() {
 
       {open && (
         <div className={styles.panel}>
-          <div className={styles.panelHeader}>알림</div>
+          <div className={styles.panelHeader}>
+            알림
+            {unreadCount > 0 && (
+              <button type="button" className={styles.markAllBtn} onClick={() => markAllRead()}>
+                모두 읽음
+              </button>
+            )}
+          </div>
           <div className={styles.list}>
             {notifications.length === 0 ? (
               <div className={styles.empty}>알림이 없습니다.</div>

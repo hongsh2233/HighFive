@@ -55,5 +55,21 @@ export function useNotifications(onNewNotification?: (notification: UserNotifica
     }
   };
 
-  return { notifications, unreadCount, markAllRead };
+  const markOneRead = async (id: number) => {
+    const target = notifications.find((n) => n.id === id);
+    if (!target || target.isRead) return;
+    try {
+      await apiClient.patch(`/notifications/${id}`);
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+      setUnreadCount((prev) => {
+        const next = Math.max(0, prev - 1);
+        prevUnreadCount.current = next;
+        return next;
+      });
+    } catch {
+      // 무시 — 다음 폴링에서 다시 시도됨
+    }
+  };
+
+  return { notifications, unreadCount, markAllRead, markOneRead };
 }

@@ -10,6 +10,7 @@ interface NotificationsContextValue {
   notifications: UserNotification[];
   unreadCount: number;
   markAllRead: () => Promise<void>;
+  markOneRead: (id: number) => Promise<void>;
   latestToast: UserNotification | null;
   dismissToast: () => void;
 }
@@ -18,6 +19,7 @@ const EMPTY_CONTEXT: NotificationsContextValue = {
   notifications: [],
   unreadCount: 0,
   markAllRead: async () => {},
+  markOneRead: async () => {},
   latestToast: null,
   dismissToast: () => {},
 };
@@ -33,7 +35,7 @@ const isHiddenPath = (pathname: string) =>
 
 function ActiveNotificationsProvider({ children }: { children: React.ReactNode }) {
   const [latestToast, setLatestToast] = useState<UserNotification | null>(null);
-  const { notifications, unreadCount, markAllRead } = useNotifications((n) => setLatestToast(n));
+  const { notifications, unreadCount, markAllRead, markOneRead } = useNotifications((n) => setLatestToast(n));
 
   return (
     <NotificationsContext.Provider
@@ -41,6 +43,7 @@ function ActiveNotificationsProvider({ children }: { children: React.ReactNode }
         notifications,
         unreadCount,
         markAllRead,
+        markOneRead,
         latestToast,
         dismissToast: () => setLatestToast(null),
       }}
