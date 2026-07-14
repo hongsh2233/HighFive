@@ -27,6 +27,33 @@
   --success: #059669;
   --warning: #D97706;
   --danger:  #DC2626;
+  --info:    #2563EB;
+
+  /* Semantic light tints (badge/card backgrounds) — same formula as --accent-light */
+  --success-light: #ECFDF5;
+  --success-border: #A7F3D0;
+  --warning-light: #FFFBEB;
+  --warning-border: #FDE68A;
+  --danger-light:  #FEF2F2;
+  --danger-border: #FECACA;
+  --info-light:    #EFF6FF;
+  --info-border:   #BFDBFE;
+
+  /* Accent gradient — selective use only (hero/brand panels, primary CTA emphasis) */
+  --accent-gradient: linear-gradient(135deg, #5E6AD2 0%, #7C86E8 100%);
+
+  /* Card elevation — selective use only (KPI/summary cards, modals, dropdowns) */
+  --shadow-card: 0 1px 2px rgba(9, 9, 11, 0.04), 0 1px 3px rgba(9, 9, 11, 0.06);
+  --shadow-hover: 0 2px 4px rgba(9, 9, 11, 0.06), 0 4px 12px rgba(9, 9, 11, 0.08);
+
+  /* Content width scale */
+  --width-wide:     1440px;
+  --width-standard: 960px;
+  --width-narrow:   720px;
+  --width-compact:  440px;
+
+  /* Card radius (unified) */
+  --radius-card: 10px;
 
   /* Legacy aliases (used in some inline styles) */
   --color-primary:      #5E6AD2;
@@ -181,9 +208,22 @@ table tr:hover td {
 /* Utility classes */
 .container {
   width: 100%;
-  max-width: 1460px;
+  max-width: var(--width-wide);
   margin: 0 auto;
   padding: 0 32px;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.page-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
 }
 
 .flex { display: flex; }
@@ -306,19 +346,19 @@ table tr:hover td {
 .btn-success {
   background-color: transparent;
   color: var(--success);
-  border-color: #6EE7B7;
+  border-color: var(--success-border);
 }
 .btn-success:hover:not(:disabled) {
-  background-color: #ECFDF5;
+  background-color: var(--success-light);
 }
 
 .btn-danger {
   background-color: transparent;
   color: var(--danger);
-  border-color: #FCA5A5;
+  border-color: var(--danger-border);
 }
 .btn-danger:hover:not(:disabled) {
-  background-color: #FEF2F2;
+  background-color: var(--danger-light);
 }
 
 .btn-danger-solid {
