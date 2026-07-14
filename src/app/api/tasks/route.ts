@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
           project: { select: { id: true, name: true } },
           timeLogs: true,
           fieldValues: true,
-          _count: { select: { subTasks: true } },
+          _count: { select: { subTasks: true, comments: true, attachments: true } },
         },
       }),
       prisma.task.count({ where }),

@@ -60,7 +60,7 @@ export interface Task {
   fieldValues?: TaskFieldValue[];
   attachments?: TaskAttachment[];
   checklistItems?: TaskChecklistItem[];
-  _count?: { subTasks: number };
+  _count?: { subTasks: number; comments?: number; attachments?: number };
 }
 
 export interface TaskChecklistItem {

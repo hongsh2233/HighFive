@@ -1,7 +1,7 @@
 'use client';
 
 import { Task } from '@/types';
-import { TASK_PRIORITY_TEXT, TASK_PRIORITY_COLOR } from '@/lib/constants';
+import { TASK_PRIORITY_TEXT, TASK_PRIORITY_COLOR, TASK_LABEL_TEXT, TASK_LABEL_COLOR } from '@/lib/constants';
 import styles from './KanbanColumn.module.css';
 
 interface KanbanColumnProps {
@@ -71,7 +71,36 @@ export default function KanbanColumn({
                   {parentTask && <span className={styles.parentPrefix}>[{parentTask.title}]</span>}
                   <span className={styles.cardTitleText}>{task.title}</span>
                 </div>
-                <div className={styles.cardMeta}>담당: {task.worker?.name || '-'}</div>
+
+                {task.labels && (
+                  <div className={styles.cardLabels}>
+                    {task.labels.split(',').filter(Boolean).map((code) => (
+                      <span
+                        key={code}
+                        className={styles.cardLabelChip}
+                        style={{
+                          backgroundColor: TASK_LABEL_COLOR[code]?.bg,
+                          color: TASK_LABEL_COLOR[code]?.text,
+                          borderColor: TASK_LABEL_COLOR[code]?.border,
+                        }}
+                      >
+                        {TASK_LABEL_TEXT[code] || code}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className={styles.cardFooter}>
+                  <div className={styles.cardWorker}>
+                    <span className={styles.cardAvatar}>{(task.worker?.name || '?')[0]}</span>
+                    <span className={styles.cardMeta}>{task.worker?.name || '-'}</span>
+                  </div>
+                  <div className={styles.cardCounts}>
+                    {!!task._count?.comments && <span className={styles.cardCountItem}>💬 {task._count.comments}</span>}
+                    {!!task._count?.attachments && <span className={styles.cardCountItem}>📎 {task._count.attachments}</span>}
+                  </div>
+                </div>
+
                 {task.targetDate && (
                   <div className={styles.cardMetaDate}>
                     {new Date(task.targetDate).toLocaleDateString('ko-KR')}
