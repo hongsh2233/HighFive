@@ -644,3 +644,9 @@
   - **방어적 수정**: `src/lib/services/task.service.ts`의 `createTask()` 헬퍼가 `organizationId` 없이 Task를 생성하던 부분 수정(현재 호출부가 없는 미사용 코드이나, 향후 재사용 시 함정이 되는 것을 방지).
   - **점검 후 이상 없음 확인**: `projects`, `users`, `tasks`(3개 생성 경로 모두), `requests`, `announcements`, `info`, `sticky-notes`, `settings/integrations`, `users/invite`, `requests/[id]/decision`, `scheduler.ts`, `instrumentation.ts`, `audit.ts` — 모두 organizationId가 정상 전달됨.
   - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+
+## 2026-07-13 (67차)
+
+- **WORKER 계정에서 @멘션 목록이 안 뜨던 버그 수정**: 업무 상세의 댓글 @멘션 자동완성이 `GET /api/users`(파라미터 없음)로 전체 사용자를 조회했는데, 이 API는 ADMIN/LEADER만 허용해 WORKER 계정은 403을 받고 `.catch(() => {})`로 조용히 실패 → `allUsers`가 항상 빈 배열로 남아 멘션 드롭다운이 절대 뜨지 않았음. `GET /api/users?minimal=true`(id/name만 반환, 전 역할 허용) 신규 추가하고 프론트에서 이걸 쓰도록 변경.
+- **답글에 답글을 달 수 없던 문제 수정**: 답글(대댓글) 항목에는 "답글" 버튼이 없어 답글 스레드를 이어갈 수 없었음(백엔드는 이미 전 역할 답글 작성을 허용). 답글 항목에도 "답글" 버튼을 추가하되, 스키마상 2단계 스레드 구조를 유지하기 위해 답글의 답글도 같은 최상위 댓글의 `parentId`로 귀속(평평한 2단 구조). 답글 입력창 placeholder도 실제 답글 대상자 이름을 반영하도록 수정.
+- 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
