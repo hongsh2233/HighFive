@@ -142,7 +142,7 @@
 .notesContent {
   font-size: 14px;
   line-height: 1.7;
-  color: var(--color-text);
+  color: var(--text-primary);
 }
 
 .hintError {
@@ -341,7 +341,7 @@
 .infoVal {
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--text-primary);
 }
 
 .timelogHeader {
@@ -544,7 +544,7 @@
 .commentAuthor {
   font-size: 13px;
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--text-primary);
 }
 
 .commentDate {
@@ -635,7 +635,7 @@
 
 .commentContent {
   font-size: 14px;
-  color: var(--color-text);
+  color: var(--text-primary);
   white-space: pre-wrap;
   margin: 0;
 }
@@ -685,7 +685,7 @@
   padding: 6px 8px;
   border-radius: 6px;
   font-size: 13px;
-  color: var(--color-text);
+  color: var(--text-primary);
   text-align: left;
 }
 
