@@ -4,7 +4,7 @@
 
 .container {
   padding: var(--space-8);
-  max-width: 1460px;
+  max-width: var(--width-wide);
   margin: 0 auto;
 }
 
@@ -16,8 +16,9 @@
 }
 
 .title {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .navRow {
@@ -76,7 +77,7 @@
 .summaryCard {
   background-color: var(--bg-surface);
   padding: var(--space-4);
-  border-radius: 8px;
+  border-radius: var(--radius-card);
   border: 1px solid var(--border);
   text-align: center;
 }
@@ -90,19 +91,19 @@
 .summaryValueAssigned {
   font-size: 24px;
   font-weight: 700;
-  color: #DBEAFE;
+  color: var(--info-light);
 }
 
 .summaryValueProgress {
   font-size: 24px;
   font-weight: 700;
-  color: #FEF3C7;
+  color: var(--warning-light);
 }
 
 .summaryValueDone {
   font-size: 24px;
   font-weight: 700;
-  color: #D1FAE5;
+  color: var(--success-light);
 }
 
 .summaryLabel {
@@ -112,7 +113,7 @@
 
 .calendarCard {
   background-color: var(--bg-surface);
-  border-radius: 8px;
+  border-radius: var(--radius-card);
   border: 1px solid var(--border);
   padding: var(--space-4);
 }
@@ -184,8 +185,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  background-color: #ECFDF5;
-  color: #065F46;
+  background-color: var(--success-light);
+  color: var(--success);
   font-weight: 600;
 }
 

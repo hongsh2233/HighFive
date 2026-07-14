@@ -1,6 +1,6 @@
 .page {
   padding: var(--space-8);
-  max-width: 1680px;
+  max-width: var(--width-wide);
   margin: 0 auto;
 }
 
@@ -9,26 +9,27 @@
 }
 
 .title {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 700;
+  letter-spacing: -0.01em;
   margin: 0;
 }
 
 .errorBox {
   padding: var(--space-3);
-  background-color: #FEF2F2;
+  background-color: var(--danger-light);
   border: 1px solid var(--color-danger);
   border-radius: 6px;
-  color: #7F1D1D;
+  color: var(--danger);
   margin-bottom: var(--space-4);
 }
 
 .successBox {
   padding: var(--space-3);
-  background-color: #D1FAE5;
+  background-color: var(--success-light);
   border: 1px solid #10B981;
   border-radius: 6px;
-  color: #065F46;
+  color: var(--success);
   margin-bottom: var(--space-4);
 }
 
@@ -63,7 +64,7 @@
 .card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-card);
   padding: var(--space-6);
 }
 
@@ -194,15 +195,15 @@
 }
 
 .labelChip[data-checked="true"][data-label="URGENT"] {
-  border-color: #FCA5A5;
+  border-color: var(--danger-border);
   background-color: rgba(220,38,38,0.08);
   color: #DC2626;
 }
 
 .labelChip[data-checked="true"][data-label="WEEKEND"] {
-  border-color: #FCD34D;
+  border-color: var(--warning-border);
   background-color: rgba(217,119,6,0.08);
-  color: #B45309;
+  color: var(--warning);
 }
 
 .labelChip[data-checked="true"][data-label="EMERGENCY"] {

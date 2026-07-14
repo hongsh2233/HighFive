@@ -66,7 +66,7 @@
 .formCard {
   background: #fff;
   border: 1px solid var(--border, #E5E7EB);
-  border-radius: 12px;
+  border-radius: var(--radius-card);
   padding: 24px;
   margin-bottom: 24px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.03);
@@ -167,7 +167,7 @@
 .tableCard {
   background: #fff;
   border: 1px solid var(--border, #E5E7EB);
-  border-radius: 12px;
+  border-radius: var(--radius-card);
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
@@ -292,7 +292,7 @@
   composes: btn btn-sm from global;
   border-color: rgba(217,119,6,0.3);
   background-color: rgba(217,119,6,0.06);
-  color: #B45309;
+  color: var(--warning);
 }
 
 .btnDeactivate:hover {

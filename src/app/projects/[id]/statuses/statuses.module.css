@@ -50,15 +50,15 @@
 }
 
 .messageSuccess {
-  background-color: #ECFDF5;
-  color: #065F46;
-  border: 1px solid #D1FAE5;
+  background-color: var(--success-light);
+  color: var(--success);
+  border: 1px solid var(--success-light);
 }
 
 .messageError {
-  background-color: #FEF2F2;
-  color: #991B1B;
-  border: 1px solid #FECACA;
+  background-color: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
 }
 
 .list {

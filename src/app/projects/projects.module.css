@@ -1,9 +1,9 @@
 .page {
-  padding: 40px 32px;
+  padding: var(--space-8);
 }
 
 .inner {
-  max-width: 1460px;
+  max-width: var(--width-wide);
   margin: 0 auto;
 }
 
@@ -39,21 +39,21 @@
 }
 
 .message[data-type="success"] {
-  background-color: #ECFDF5;
-  color: #065F46;
-  border: 1px solid #D1FAE5;
+  background-color: var(--success-light);
+  color: var(--success);
+  border: 1px solid var(--success-light);
 }
 
 .message[data-type="error"] {
-  background-color: #FEF2F2;
-  color: #991B1B;
-  border: 1px solid #FECACA;
+  background-color: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
 }
 
 .formCard {
   background-color: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-card);
   padding: 24px;
   margin-bottom: 24px;
 }
@@ -135,7 +135,7 @@
 .projectCard {
   background-color: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-card);
   padding: 16px 20px;
   cursor: pointer;
   transition: border-color 0.15s;

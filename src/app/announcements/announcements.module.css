@@ -1,10 +1,10 @@
 .page {
-  padding: 40px 32px;
+  padding: var(--space-8);
   max-width: 100%;
 }
 
 .inner {
-  max-width: 1460px;
+  max-width: var(--width-wide);
   margin: 0 auto;
 }
 
@@ -40,21 +40,21 @@
 }
 
 .messageSuccess {
-  background-color: #ECFDF5;
-  color: #065F46;
-  border: 1px solid #D1FAE5;
+  background-color: var(--success-light);
+  color: var(--success);
+  border: 1px solid var(--success-light);
 }
 
 .messageError {
-  background-color: #FEF2F2;
-  color: #991B1B;
-  border: 1px solid #FECACA;
+  background-color: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
 }
 
 .formCard {
   background-color: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-card);
   padding: 24px;
   margin-bottom: 28px;
 }

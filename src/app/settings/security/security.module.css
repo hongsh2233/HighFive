@@ -43,8 +43,8 @@
   font-weight: 600;
   padding: 3px 10px;
   border-radius: var(--radius-full);
-  background: #ECFDF5;
-  color: #065F46;
+  background: var(--success-light);
+  color: var(--success);
   white-space: nowrap;
 }
 
@@ -86,9 +86,9 @@
   font-weight: 600;
   padding: 8px 18px;
   border-radius: var(--radius-md);
-  background: #FEF2F2;
+  background: var(--danger-light);
   color: #DC2626;
-  border: 1px solid #FECACA;
+  border: 1px solid var(--danger-border);
   cursor: pointer;
 }
 
@@ -97,9 +97,9 @@
   font-weight: 600;
   padding: 4px 12px;
   border-radius: var(--radius-md);
-  background: #FEF2F2;
+  background: var(--danger-light);
   color: #DC2626;
-  border: 1px solid #FECACA;
+  border: 1px solid var(--danger-border);
   cursor: pointer;
   white-space: nowrap;
 }

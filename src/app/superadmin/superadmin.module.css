@@ -101,8 +101,8 @@
 }
 
 .planPRO {
-  background: #EFF6FF;
-  color: #1D4ED8;
+  background: var(--info-light);
+  color: var(--info);
 }
 
 .planENTERPRISE {

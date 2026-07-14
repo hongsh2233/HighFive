@@ -1,6 +1,6 @@
 .container {
   padding: var(--space-8);
-  max-width: 100%;
+  max-width: var(--width-wide);
   margin: 0 auto;
 }
 
@@ -39,8 +39,9 @@
 }
 
 .pageTitle {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .count {
@@ -53,8 +54,8 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
-  background: #EFF6FF;
-  border: 1px solid #BFDBFE;
+  background: var(--info-light);
+  border: 1px solid var(--info-border);
   border-radius: 8px;
   margin-bottom: var(--space-3);
   flex-wrap: wrap;
@@ -63,7 +64,7 @@
 .bulkCount {
   font-size: 13px;
   font-weight: 600;
-  color: #1D4ED8;
+  color: var(--info);
   margin-right: var(--space-2);
 }
 
@@ -168,10 +169,10 @@
 
 .errorBox {
   padding: var(--space-3);
-  background-color: #FEF2F2;
+  background-color: var(--danger-light);
   border: 1px solid var(--color-danger);
   border-radius: 6px;
-  color: #7F1D1D;
+  color: var(--danger);
   margin-bottom: var(--space-4);
 }
 
@@ -403,7 +404,7 @@
 }
 
 .fieldLink {
-  color: #2563EB;
+  color: var(--info);
   overflow: hidden;
   text-overflow: ellipsis;
   display: block;
@@ -433,8 +434,8 @@
   font-weight: 700;
   padding: 1px 6px;
   border-radius: var(--radius-full);
-  background: #EFF6FF;
-  color: #1D4ED8;
+  background: var(--info-light);
+  color: var(--info);
 }
 
 .ddayUrgent {
@@ -442,8 +443,8 @@
   font-weight: 700;
   padding: 1px 6px;
   border-radius: var(--radius-full);
-  background: #FEF3C7;
-  color: #B45309;
+  background: var(--warning-light);
+  color: var(--warning);
 }
 
 .ddayOverdue {
@@ -451,7 +452,7 @@
   font-weight: 700;
   padding: 1px 6px;
   border-radius: var(--radius-full);
-  background: #FEE2E2;
+  background: var(--danger-light);
   color: #DC2626;
 }
 

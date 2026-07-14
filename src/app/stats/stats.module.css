@@ -4,7 +4,7 @@
 
 .container {
   padding: var(--space-8);
-  max-width: 1460px;
+  max-width: var(--width-wide);
   margin: 0 auto;
 }
 
@@ -16,8 +16,9 @@
 }
 
 .title {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .headerRight {
@@ -90,7 +91,7 @@
 .summaryCard {
   padding: var(--space-4);
   background-color: var(--accent-light);
-  border-radius: 8px;
+  border-radius: var(--radius-card);
   border-left: 3px solid var(--accent);
 }
 
@@ -117,13 +118,13 @@
 
 .statusCardAssigned {
   padding: var(--space-3);
-  background-color: #DBEAFE;
+  background-color: var(--info-light);
   border-radius: 6px;
 }
 
 .statusCardProgress {
   padding: var(--space-3);
-  background-color: #FEF3C7;
+  background-color: var(--warning-light);
   border-radius: 6px;
 }
 
