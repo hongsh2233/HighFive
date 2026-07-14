@@ -697,4 +697,12 @@
   - 3단계(협업 화면): wiki/meetings는 `--width-standard`, projects/requests/announcements/info/my-notes 등은 `--width-wide`로 통일, 최상위 padding을 `var(--space-8)`로 통일(리터럴 `40px 32px` 하드코딩 제거).
   - 35개 파일에 산재하던 success/warning/danger/info 파스텔 하드코딩 hex(274건)를 신규 시맨틱 토큰으로 일괄 교체, 19개 파일의 카드류 `border-radius`를 `--radius-card`로 통일.
   - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
-  - 남은 작업: 4단계(설정/관리자 화면), 5단계(인증 화면 + 브랜드 그라데이션), 6단계(`docs/DESIGN.md` 갱신) 진행 예정.
+
+## 2026-07-14 (2차)
+
+- **디자인 통일성 + 고급스러움 개선 — 4~6단계 마무리 (전체 완료)**
+  - 4단계(설정/관리자 화면): settings/organization·security·calendar-sync·integrations, profile/password는 `--width-narrow`(720px) 적용, 제목 22px 통일. settings/audit·superadmin·users는 표 위주 화면이라 `--width-wide`(1440px) 적용, superadmin 최상위 padding을 `var(--space-8)`로 통일(리터럴 `32px 24px` 제거). superadmin/[id]·superadmin/plan-config는 `superadmin.module.css`를 공유해 자동 반영.
+  - 5단계(인증 화면): login/register를 `--width-compact`(440px)로 통일(`[slug]/login`은 `login.module.css` 공유). 로고 아이콘 배경에 `--accent-gradient` 선택 적용해 브랜드 영역에 생동감 부여. login의 successBox 하드코딩 hex를 `--success`/`--success-light` 토큰으로 교체.
+  - 6단계(`docs/DESIGN.md` 갱신): Content Width Scale(4단계 토큰) 섹션 신규, 카드 radius를 `--radius-card`(10px) 단일 토큰으로 정정, 시맨틱 라이트 컬러 표 추가, 선택적 그림자/그라데이션 적용 대상(KPI 카드·모달·팝오버·브랜드 히어로)을 명시적으로 규정, 페이지 타이틀 22px/700 통일 규칙 명문화.
+  - 디버깅 체크: 매 단계마다 `npx tsc --noEmit` 오류 0개, `npm run build` 성공 확인 후 커밋·머지·푸시.
+  - 이로써 "1차 개발 마무리, 테스트 모드 진입 전" 디자인 통일성 개선 작업 전체 완료.
