@@ -45,6 +45,17 @@ High5는 개발팀/운영팀이 하루 종일 켜두는 **내부 업무관리 �
 - **Header** (`#18181B` / 텍스트 `#FAFAFA`): 전역 상단 네비게이션 — 시스템에서 유일한 다크 표면.
 - **Border** (`#E4E4E7`) / **Border Strong** (`#D4D4D8`): 얇은 구분선, 인풋 보더.
 
+### Semantic Light (배지/카드 배경 틴트)
+success/warning/danger/info 각각 옅은 배경 틴트 + 매칭 보더 토큰을 쌍으로 제공(`--accent-light`와
+동일한 공식). 페이지마다 파스텔 hex를 직접 하드코딩하지 않고 아래 토큰만 사용한다.
+
+| 토큰 | 값 | 용도 |
+|---|---|---|
+| `--success-light` / `--success-border` | `#ECFDF5` / `#A7F3D0` | 완료/승인 배지·박스 배경 |
+| `--warning-light` / `--warning-border` | `#FFFBEB` / `#FDE68A` | 대기/경고 배지·박스 배경 |
+| `--danger-light` / `--danger-border` | `#FEF2F2` / `#FECACA` | 오류/삭제 배지·박스 배경 |
+| `--info-light` / `--info-border` | `#EFF6FF` / `#BFDBFE` | 정보성 배지(플랜, 안내) 배경 |
+
 ## 3. Typography Rules
 
 ### Font Family
@@ -65,6 +76,9 @@ High5는 개발팀/운영팀이 하루 종일 켜두는 **내부 업무관리 �
 | Small / caption | 11~12px | 400~600 | — | 뱃지, 캡션, 버튼(`.btn-sm`) |
 
 ### Principles
+- **페이지 타이틀은 항상 22px/700**: `globals.css`의 `.page-title` 유틸리티 클래스(또는 동등한
+  `font-size: 22px; font-weight: 700;`)로 통일한다. 16~28px로 흩어져 있던 과거 아웃라이어를
+  모두 이 기준으로 정규화했다 — 새 페이지도 임의의 크기를 쓰지 않는다.
 - **굵기가 위계**: 크기 점프를 크게 두지 않고(13→15→18→22px), 대신 weight 400→600 전환이
   1차 신호. 지라/노션 계열 콘솔 앱의 절제된 타이포와 동일한 전략.
 - **13px 베이스**: 마케팅 사이트보다 촘촘한 밀도가 필요한 실무 도구라 본문 기준을 16px가
@@ -108,8 +122,12 @@ High5는 개발팀/운영팀이 하루 종일 켜두는 **내부 업무관리 �
   무게를 가볍게 유지하기 위함).
 
 ### Cards
-- 배경 `#FFFFFF`, 보더 `1px solid #E4E4E7`, 라운드 8~10px, 패딩 `var(--space-6)`(24px).
-- 그림자 없음 — 카드와 카드 사이는 `--space-6`~`--space-8` 여백으로만 구분.
+- 배경 `#FFFFFF`, 보더 `1px solid #E4E4E7`, 라운드는 `--radius-card`(10px)로 통일, 패딩
+  `var(--space-6)`(24px).
+- 기본은 그림자 없음 — 카드와 카드 사이는 `--space-6`~`--space-8` 여백으로만 구분.
+- **선택적 입체감**: KPI/요약 카드(대시보드 등)와 모달·드롭다운에 한해 `--shadow-card`
+  (hover 시 `--shadow-hover`)를 적용해 생동감을 준다. 일반 목록 카드·문서 카드는 계속 플랫
+  유지 — 아무 카드에나 그림자를 추가하지 않는다.
 
 ### Tables
 - 헤더 배경 `#F4F4F5`, 헤더 텍스트 `#71717A` uppercase 11px.
@@ -126,9 +144,18 @@ High5는 개발팀/운영팀이 하루 종일 켜두는 **내부 업무관리 �
 
 ### Spacing System
 - 4px 베이스 스케일: `--space-1`(4) ~ `--space-16`(64).
-- 페이지 컨테이너 패딩은 `--space-8`(32px), 카드 내부 패딩은 `--space-6`(24px), 폼 필드
-  간격은 `--space-3`~`--space-5`.
-- 페이지 최대 폭은 `1460px`로 전체 앱이 통일(`--container` 유틸, `globals.css`).
+- 모든 페이지 최상위 wrapper 패딩은 `var(--space-8)`(32px)로 통일(리터럴 `40px 32px` 등
+  하드코딩 금지), 카드 내부 패딩은 `--space-6`(24px), 폼 필드 간격은 `--space-3`~`--space-5`.
+
+### Content Width Scale
+페이지 성격에 따라 4단계 너비 토큰 중 하나를 쓴다 — 임의의 px 값을 새로 만들지 않는다.
+
+| 토큰 | 값 | 대상 |
+|---|---|---|
+| `--width-wide` | 1440px | 목록/대시보드형(dashboard, tasks, calendar, stats, projects, requests, announcements, info, my-notes)과 표 위주 관리 화면(superadmin, users, settings/audit) |
+| `--width-standard` | 960px | 문서형(wiki, meetings) |
+| `--width-narrow` | 720px | 설정/폼 페이지(settings/organization·security·calendar-sync·integrations, profile/password) |
+| `--width-compact` | 440px | 인증 페이지(login, register, `[slug]/login`) |
 
 ### Grid & Container
 - 업무 목록(`/tasks`)은 **프로젝트별 섹션**으로 세로 나열 — 각 섹션이 독립된 테이블 +
@@ -139,8 +166,8 @@ High5는 개발팀/운영팀이 하루 종일 켜두는 **내부 업무관리 �
 
 ### Border Radius Scale
 - XS (4px): 축소 버튼(`.btn-sm`), 뱃지
-- SM (6px): 기본 버튼, 인풋, 셀렉트 — 시스템의 기본값
-- MD (8px): 카드, 테이블, 팝오버
+- SM (6px): 기본 버튼, 인풋(`--radius`), 셀렉트 — 시스템의 기본값
+- Card (`--radius-card`, 10px): 카드류(`.card`/`.formCard`/`.summaryCard`/`.kpiCard` 등), 테이블, 팝오버 — 파일마다 8/10/12px로 흩어져 있던 값을 이 토큰 하나로 통일
 - LG (12px): 로그인 카드처럼 강조가 필요한 큰 컨테이너
 - Full: 아바타 등 원형 요소
 
@@ -154,12 +181,16 @@ High5는 개발팀/운영팀이 하루 종일 켜두는 **내부 업무관리 �
 | Float (3) | `box-shadow: 0 4px 16px rgba(0,0,0,0.08)` | 드롭다운 메뉴, 팝오버(제한적으로만 사용) |
 | Color (4) | 액센트/시맨틱 컬러 | 강조가 진짜 필요한 곳(Primary 버튼, 활성 탭) |
 
-**섀도 원칙**: 앱 전체가 사실상 그림자 없는 시스템이다. 유일한 예외는 컨텐츠 위에
-"떠야 하는" 드롭다운/팝오버(예: 헤더 메뉴, 업무 목록의 "+속성" 팝오버) — 이 경우도 얕은
+**섀도 원칙**: 앱 전체가 기본적으로 그림자 없는 시스템이다. 선택적으로 그림자를 쓰는 곳은
+셋뿐이다 — (1) KPI/요약 카드(`--shadow-card`/hover `--shadow-hover`), (2) 컨텐츠 위에
+"떠야 하는" 드롭다운/팝오버·모달(예: 헤더 메뉴, 업무 목록의 "+속성" 팝오버) — 이 경우도 얕은
 그림자 하나만 쓰고 스택하지 않는다. 특히 팝오버는 부모 요소의 `overflow`에 잘리면 안 되므로
 `position: fixed` + `createPortal`로 `document.body`에 직접 렌더링해 어떤 조상의 overflow
 설정과도 무관하게 항상 온전히 보이도록 한다(`overflow-x: auto`가 걸린 조상 안에서는
-`overflow-y: visible`을 줘도 브라우저가 두 축을 함께 클리핑하는 CSS 스펙 한계 때문).
+`overflow-y: visible`을 줘도 브라우저가 두 축을 함께 클리핑하는 CSS 스펙 한계 때문). (3)
+브랜드/히어로 영역(로그인·회원가입 로고 아이콘 등)에 한해 `--accent-gradient`(단색 대신
+인디고 그라데이션)를 써서 생동감을 더한다 — 일반 UI 요소에는 그라데이션을 쓰지 않는다.
+그 외 어떤 카드/목록/테이블에도 그림자를 새로 추가하지 않는다.
 
 ## 7. Do's and Don'ts
 
@@ -187,7 +218,7 @@ High5는 개발팀/운영팀이 하루 종일 켜두는 **내부 업무관리 �
 |---|---|---|
 | Mobile | <640px | **신규 미디어쿼리는 모두 이 기준을 따른다.** 페이지 여백이 `padding: 20px 14px`로 축소, 2열 그리드가 1열로, 업무 목록 테이블이 카드형으로 전환. |
 | Tablet | 640~768px | 헤더 네비게이션이 드로어로 접힘(`AppHeader`의 `mobileToggle`, 이 컴포넌트만 예외적으로 768px 기준). |
-| Desktop | ≥768px | 기본 레이아웃, 최대 폭 1460px 컨테이너 |
+| Desktop | ≥768px | 기본 레이아웃, 페이지 성격별 너비 토큰(`--width-wide` 1440px 등, §5) 적용 |
 
 기존 코드에는 480/640/768/900px가 파일마다 섞여 있었다(`AppHeader` 768px, `tasks/create`
 900px, `login` 480px 등) — 굳이 통일하지 않았고, **새로 추가하는 반응형 스타일만 640px로
@@ -229,11 +260,18 @@ High5는 개발팀/운영팀이 하루 종일 켜두는 **내부 업무관리 �
 ### Iteration Guide
 1. 액센트(`#5E6AD2`)는 유일한 액션 컬러 — 새로 추가하지 않는다.
 2. 새 버튼/인풋은 항상 `globals.css` 프리미티브를 상속한다.
-3. 그림자 대신 톤(`#FAFAFA`/`#F4F4F5`/`#FFFFFF`) 차이와 hairline 보더로 구분한다.
-4. 라운드 사다리: 4px(축소 버튼/뱃지), 6px(기본 버튼/인풋), 8px(카드/테이블/팝오버), 12px(강조 컨테이너).
-5. 프로젝트별로 달라지는 데이터는 "정의 테이블 + 값 테이블" 패턴(ProjectStatus/ProjectField)을 재사용한다.
-6. 떠 있어야 하는 UI(팝오버 등)는 `overflow: hidden` 조상 안에 두지 말고 `createPortal`을 고려한다.
-7. 텍스트 로딩 표시 대신 `<Spinner />`를 쓴다.
+3. 그림자 대신 톤(`#FAFAFA`/`#F4F4F5`/`#FFFFFF`) 차이와 hairline 보더로 구분한다. 그림자가
+   필요하다고 느껴지면 먼저 KPI 카드/모달/팝오버/브랜드 히어로 중 하나에 해당하는지 확인한다
+   (§6 참고) — 아니라면 플랫을 유지한다.
+4. 라운드 사다리: 4px(축소 버튼/뱃지), 6px(기본 버튼/인풋), `--radius-card`=10px(카드/테이블/팝오버), 12px(강조 컨테이너).
+5. 새 페이지의 최상위 wrapper는 성격에 맞는 너비 토큰(`--width-wide/standard/narrow/compact`)과
+   `var(--space-8)` 패딩을 쓴다 — 임의의 px 값을 새로 만들지 않는다(§5 Content Width Scale).
+6. 페이지 타이틀은 항상 22px/700(`.page-title` 유틸리티 또는 동등 스타일).
+7. 성공/경고/위험/정보 배지·박스 배경은 `--success/warning/danger/info-light` 토큰만 쓴다 —
+   파스텔 hex를 직접 하드코딩하지 않는다.
+8. 프로젝트별로 달라지는 데이터는 "정의 테이블 + 값 테이블" 패턴(ProjectStatus/ProjectField)을 재사용한다.
+9. 떠 있어야 하는 UI(팝오버 등)는 `overflow: hidden` 조상 안에 두지 말고 `createPortal`을 고려한다.
+10. 텍스트 로딩 표시 대신 `<Spinner />`를 쓴다.
 
 ---
 
