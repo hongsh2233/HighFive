@@ -656,3 +656,8 @@
 - **알림 토스트/벨 아이콘 상태 통합 + 위치 겹침 해소**: `NotificationToastManager`와 `NotificationBell`이 각자 독립적으로 `useNotifications()`를 호출해 30초 폴링을 두 번 돌리고 상태가 어긋날 수 있던 구조를 `src/components/NotificationsProvider.tsx`(Context)로 단일화. 인증/로그인 페이지 여부에 따라 빈 컨텍스트를 반환해 게이팅. 토스트 팝업 위치도 우하단(WikiSearchButton/NotificationBell FAB와 겹치던 자리)에서 우상단(헤더 아래)으로 이동.
 - **전체 기능 정리 문서 신규**: `docs/FEATURES.md` — 계정/조직 구조, 보안, 업무관리, 캘린더/일정관리, 알림, 협업, 조직관리(ADMIN), 플랫폼관리(SUPERADMIN), UI/UX 9개 영역으로 현재 구현된 모든 기능을 사용자/역할 관점에서 정리. 스코프 제외 영역(회계/CRM/인사평가/급여/결제/네이티브 앱)도 명시.
 - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+
+## 2026-07-13 (69차)
+
+- **로그아웃 시 슬러그 없는 /login으로 되돌아가던 레이스 컨디션 수정**: `src/hooks/useAuth.ts`가 미인증 상태를 감지하면 자체적으로 `router.push`하던 로직이, `AppHeader`의 `handleLogout`(올바른 `/{slug}/login`으로 이동)과 동시에 경합하고 있었음. 로그아웃 시 `Providers.tsx`의 `AuthSync`가 Zustand 스토어(`authStore`)의 `user`를 `null`로 지우는 처리가 먼저 일어나면, `useAuth()`가 참조하는 `organizationSlug`도 함께 사라져 슬러그 없는 `/login`으로 리다이렉트하게 되고, 이게 `AppHeader`의 올바른 이동을 나중에 덮어쓰는 경우가 있었음. `useAuth()`의 미인증 자동 리다이렉트를 제거하고, 책임을 `middleware.ts`(최초 접근 차단)와 `AuthSync`(세션 만료/로그아웃 감지, 수동 로그아웃 플래그 존중)로 일원화.
+- 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
