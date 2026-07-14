@@ -183,7 +183,7 @@ export default function AppHeader() {
                   onMouseLeave={handleMenuLeave}
                 >
                   <button
-                    className={navClass(openMenu === 'collab' || pathname.startsWith('/requests') || pathname === '/info' || pathname === '/wiki' || pathname.startsWith('/projects/'))}
+                    className={navClass(openMenu === 'collab' || pathname.startsWith('/requests') || pathname === '/info' || pathname === '/wiki' || pathname === '/meetings' || pathname.startsWith('/projects/'))}
                     onClick={() => setOpenMenu(openMenu === 'collab' ? null : 'collab')}
                   >
                     협업
@@ -196,6 +196,7 @@ export default function AppHeader() {
                       {has('wiki') && (
                         <Link href="/wiki" className={styles.dropdownItem} onClick={closeAll}>위키</Link>
                       )}
+                      <Link href="/meetings" className={styles.dropdownItem} onClick={closeAll}>회의록</Link>
                       {has('info') && (
                         <Link href="/info" className={styles.dropdownItem} onClick={closeAll}>정보(FAQ)</Link>
                       )}

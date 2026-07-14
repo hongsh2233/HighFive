@@ -98,6 +98,7 @@ model User {
   requestsMade      Request[]       @relation("requestRequester")
   requestsToApprove Request[]       @relation("requestApprover")
   wikiPages         WikiPage[]      @relation("wikiAuthor")
+  meetingNotes      MeetingNote[]   @relation("meetingAuthor")
   stickyNotes       StickyNote[]
   userPages         UserPage[]
   taskComments      TaskComment[]
@@ -279,6 +280,7 @@ model Project {
   members      ProjectMember[]
   tasks        Task[]
   wikiPages    WikiPage[]
+  meetingNotes MeetingNote[]
   statuses     ProjectStatus[]
   fields       ProjectField[]
   createdAt    DateTime        @default(now())
@@ -416,6 +418,24 @@ model WikiPage {
 
   @@index([projectId])
   @@map("wiki_pages")
+}
+
+model MeetingNote {
+  id          Int       @id @default(autoincrement())
+  projectId   Int
+  title       String
+  content     String    @db.Text
+  attendees   String?
+  meetingDate DateTime?
+  authorId    Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author  User    @relation("meetingAuthor", fields: [authorId], references: [id])
+
+  @@index([projectId])
+  @@map("meeting_notes")
 }
 
 // ──────────────────────────────────────────────

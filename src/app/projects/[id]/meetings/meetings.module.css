@@ -1,0 +1,286 @@
+.page {
+  padding: 40px 32px;
+  max-width: 100%;
+}
+
+.inner {
+  max-width: 1460px;
+  margin: 0 auto;
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+
+.backLink {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.backLink:hover {
+  color: var(--accent);
+}
+
+.pageTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.pageSubtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.btnPrimary {
+  composes: btn btn-primary from global;
+  padding: 8px 16px;
+}
+
+.message {
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+.messageSuccess {
+  background-color: #ECFDF5;
+  color: #065F46;
+  border: 1px solid #D1FAE5;
+}
+
+.messageError {
+  background-color: #FEF2F2;
+  color: #991B1B;
+  border: 1px solid #FECACA;
+}
+
+.formCard {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 28px;
+}
+
+.formTitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.formGroup {
+  margin-bottom: 16px;
+}
+
+.formGroupLast {
+  margin-bottom: 20px;
+}
+
+.label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.input {
+  composes: field-input from global;
+}
+
+.formActions {
+  display: flex;
+  gap: 10px;
+}
+
+.btnSubmit {
+  composes: btn btn-primary from global;
+  padding: 8px 20px;
+}
+
+.btnCancel {
+  composes: btn btn-secondary from global;
+  padding: 8px 16px;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.empty {
+  text-align: center;
+  padding: 60px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accordion {
+  background-color: var(--bg-surface);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+  border: 1px solid var(--border);
+}
+
+.accordion[data-open="true"] {
+  border-color: var(--accent);
+}
+
+.accordionHeader {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.accordionTitle {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.accordionTitle[data-open="true"] {
+  color: var(--accent);
+}
+
+.accordionControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btnEdit {
+  composes: btn btn-sm btn-ghost from global;
+}
+
+.btnDelete {
+  composes: btn btn-sm btn-danger from global;
+}
+
+.chevron {
+  font-size: 14px;
+  color: var(--text-muted);
+  display: inline-block;
+  transition: transform 0.2s;
+  margin-left: 4px;
+}
+
+.chevron[data-open="true"] {
+  color: var(--accent);
+  transform: rotate(180deg);
+}
+
+.accordionBody {
+  padding: 14px 20px 18px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.contentText {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.contentMeta {
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.contentList {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+
+.contentListItem {
+  margin-bottom: 3px;
+}
+
+.contentLine {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.formRow {
+  display: flex;
+  gap: 12px;
+}
+
+.formRow > div {
+  flex: 1;
+}
+
+.dictateRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.dictateBtn {
+  composes: btn btn-secondary from global;
+  padding: 6px 14px;
+  font-size: 12px;
+}
+
+.dictateBtnActive {
+  composes: btn btn-secondary from global;
+  padding: 6px 14px;
+  font-size: 12px;
+  background-color: #FEF2F2;
+  color: #DC2626;
+  border-color: #FECACA;
+}
+
+.dictateHint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.dictateInterim {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 6px;
+}
+
+.metaAttendees {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 20px 14px;
+  }
+
+  .formRow {
+    flex-direction: column;
+    gap: 0;
+  }
+}
