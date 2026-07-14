@@ -11,6 +11,33 @@
   margin-bottom: var(--space-6);
 }
 
+.viewTabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.viewTab {
+  padding: var(--space-2) var(--space-4);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.viewTab[data-active="true"] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.viewTab:hover {
+  color: var(--text-primary);
+}
+
 .pageTitle {
   font-size: 24px;
   font-weight: 700;

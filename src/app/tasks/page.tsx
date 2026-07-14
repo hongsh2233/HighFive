@@ -111,6 +111,16 @@ function TaskListContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
+  const [viewTab, setViewTab] = useState<'all' | 'mine' | 'mentioned'>('all');
+  const [mentionedTaskIds, setMentionedTaskIds] = useState<number[] | null>(null);
+  const currentUserIdForView = parseInt((user as any)?.id || '0');
+
+  useEffect(() => {
+    if (viewTab !== 'mentioned' || mentionedTaskIds !== null) return;
+    apiClient.get<{ data: { taskIds: number[] } }>('/tasks/mentioned')
+      .then((res) => setMentionedTaskIds(res.data.data.taskIds))
+      .catch(() => setMentionedTaskIds([]));
+  }, [viewTab, mentionedTaskIds]);
   const [assignableWorkers, setAssignableWorkers] = useState<Worker[]>([]);
   const [myProjects, setMyProjects] = useState<ProjectMeta[]>([]);
 
@@ -180,6 +190,12 @@ function TaskListContent() {
   }
   if (selectedWorker) {
     filteredTasks = filteredTasks.filter((task: any) => task.workerId === parseInt(selectedWorker));
+  }
+  if (viewTab === 'mine') {
+    filteredTasks = filteredTasks.filter((task: any) => task.workerId === currentUserIdForView);
+  } else if (viewTab === 'mentioned') {
+    const ids = new Set(mentionedTaskIds || []);
+    filteredTasks = filteredTasks.filter((task: any) => ids.has(task.id));
   }
   if (selectedPriority) {
     filteredTasks = filteredTasks.filter((task: any) => (task.priority || 'NORMAL') === selectedPriority);
@@ -273,6 +289,12 @@ function TaskListContent() {
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>업무 목록</h1>
         <span className={styles.pageCount}>총 {filteredTasks.length}건</span>
+      </div>
+
+      <div className={styles.viewTabs}>
+        <button className={styles.viewTab} data-active={viewTab === 'all'} onClick={() => setViewTab('all')}>전체</button>
+        <button className={styles.viewTab} data-active={viewTab === 'mine'} onClick={() => setViewTab('mine')}>내 담당</button>
+        <button className={styles.viewTab} data-active={viewTab === 'mentioned'} onClick={() => setViewTab('mentioned')}>내가 멘션된 업무</button>
       </div>
 
       {selectedIds.size > 0 && (
