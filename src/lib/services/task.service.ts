@@ -9,6 +9,7 @@ export interface CreateTaskInput {
   targetDate?: string | null;
   notes?: string | null;
   templateId?: number | null;
+  organizationId?: number | null;
 }
 
 export interface UpdateTaskInput {
@@ -30,6 +31,7 @@ export async function createTask(input: CreateTaskInput) {
       targetDate: input.targetDate ? new Date(input.targetDate) : null,
       notes: input.notes,
       templateId: input.templateId,
+      organizationId: input.organizationId,
       status: 'ASSIGNED',
     },
     include: {

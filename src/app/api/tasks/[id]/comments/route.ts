@@ -86,7 +86,8 @@ export async function POST(
           uid,
           'COMMENT_MENTION',
           `'${task.title}' 업무 댓글에서 ${authorName}님이 회원님을 멘션했습니다.`,
-          taskId
+          taskId,
+          task.organizationId ?? undefined
         )
       )
     ).catch(() => {});
