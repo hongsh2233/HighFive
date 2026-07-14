@@ -175,12 +175,27 @@ model Task {
   fieldValues   TaskFieldValue[]
   comments      TaskComment[]
   attachments   TaskAttachment[]
+  checklistItems TaskChecklistItem[]
 
   @@index([organizationId, workerId, status])
   @@index([organizationId, targetDate])
   @@index([rmsNo])
   @@index([parentTaskId])
   @@map("tasks")
+}
+
+model TaskChecklistItem {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  content   String
+  isDone    Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_checklist_items")
 }
 
 model TimeLog {

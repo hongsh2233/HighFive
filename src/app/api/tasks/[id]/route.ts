@@ -33,6 +33,7 @@ export async function GET(
           select: { id: true, filename: true, mimeType: true, size: true, createdAt: true, uploadedBy: { select: { id: true, name: true } } },
           orderBy: { createdAt: 'asc' },
         },
+        checklistItems: { orderBy: { order: 'asc' } },
       },
     });
 

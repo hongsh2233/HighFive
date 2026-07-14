@@ -81,6 +81,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const canDelete = userRole === 'ADMIN' || userRole === 'LEADER';
   const currentUserId = parseInt((user as any)?.id || '0');
   const canEditNotes = canEdit || task?.workerId === currentUserId;
+  const canManageChecklist = canEdit || task?.workerId === currentUserId || task?.registrantId === currentUserId;
 
   const [attachUploading, setAttachUploading] = useState(false);
   const [attachError, setAttachError] = useState('');
@@ -131,6 +132,50 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     if (bytes < 1024) return `${bytes}B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
     return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+  };
+
+  const [newChecklistInput, setNewChecklistInput] = useState('');
+  const [checklistSaving, setChecklistSaving] = useState(false);
+
+  const handleChecklistAdd = async () => {
+    const content = newChecklistInput.trim();
+    if (!content || !task || checklistSaving) return;
+    setChecklistSaving(true);
+    try {
+      const res = await apiClient.post(`/tasks/${task.id}/checklist`, { content });
+      setTask(prev => prev ? { ...prev, checklistItems: [...(prev.checklistItems || []), res.data.data] } : prev);
+      setNewChecklistInput('');
+    } catch (err: any) {
+      setInfoError(err.response?.data?.message || '체크리스트 추가 실패');
+    } finally {
+      setChecklistSaving(false);
+    }
+  };
+
+  const handleChecklistToggle = async (itemId: number, isDone: boolean) => {
+    if (!task) return;
+    setTask(prev => prev ? {
+      ...prev,
+      checklistItems: (prev.checklistItems || []).map(i => i.id === itemId ? { ...i, isDone } : i),
+    } : prev);
+    try {
+      await apiClient.patch(`/tasks/${task.id}/checklist/${itemId}`, { isDone });
+    } catch {
+      setTask(prev => prev ? {
+        ...prev,
+        checklistItems: (prev.checklistItems || []).map(i => i.id === itemId ? { ...i, isDone: !isDone } : i),
+      } : prev);
+    }
+  };
+
+  const handleChecklistDelete = async (itemId: number) => {
+    if (!task) return;
+    try {
+      await apiClient.delete(`/tasks/${task.id}/checklist/${itemId}`);
+      setTask(prev => prev ? { ...prev, checklistItems: (prev.checklistItems || []).filter(i => i.id !== itemId) } : prev);
+    } catch {
+      setInfoError('체크리스트 삭제 실패');
+    }
   };
 
   // 커스텀 필드(속성) — /tasks 목록과 동일한 개념, 상세 페이지에서도 편집 가능
@@ -668,6 +713,58 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
               <span className={styles.infoLabel}>우선순위</span>
               <span className={styles.infoVal}>{TASK_PRIORITY_TEXT[task.priority] || task.priority}</span>
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* 체크리스트 */}
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <h2 className={`${styles.cardTitle} ${styles.noMargin}`}>체크리스트</h2>
+          {task.checklistItems && task.checklistItems.length > 0 && (
+            <span className={styles.checklistProgress}>
+              {task.checklistItems.filter(i => i.isDone).length} / {task.checklistItems.length}
+            </span>
+          )}
+        </div>
+
+        {task.checklistItems && task.checklistItems.length > 0 ? (
+          <ul className={styles.checklistList}>
+            {task.checklistItems.map(item => (
+              <li key={item.id} className={styles.checklistItem}>
+                <label className={styles.checklistLabel}>
+                  <input
+                    type="checkbox"
+                    checked={item.isDone}
+                    onChange={(e) => handleChecklistToggle(item.id, e.target.checked)}
+                    disabled={!canManageChecklist}
+                  />
+                  <span data-done={item.isDone}>{item.content}</span>
+                </label>
+                {canManageChecklist && (
+                  <button className={styles.checklistDeleteBtn} onClick={() => handleChecklistDelete(item.id)}>✕</button>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className={styles.emptyLogs}>체크리스트가 없습니다.</p>
+        )}
+
+        {canManageChecklist && (
+          <div className={styles.checklistAddRow}>
+            <input
+              type="text"
+              value={newChecklistInput}
+              onChange={(e) => setNewChecklistInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleChecklistAdd(); } }}
+              placeholder="새 체크리스트 항목 입력..."
+              className={styles.commentTextarea}
+              disabled={checklistSaving}
+            />
+            <button onClick={handleChecklistAdd} disabled={checklistSaving || !newChecklistInput.trim()} className={styles.btn}>
+              추가
+            </button>
           </div>
         )}
       </div>

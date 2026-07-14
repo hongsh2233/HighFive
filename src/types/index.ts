@@ -59,7 +59,17 @@ export interface Task {
   subTasks?: Task[];
   fieldValues?: TaskFieldValue[];
   attachments?: TaskAttachment[];
+  checklistItems?: TaskChecklistItem[];
   _count?: { subTasks: number };
+}
+
+export interface TaskChecklistItem {
+  id: number;
+  taskId: number;
+  content: string;
+  isDone: boolean;
+  order: number;
+  createdAt: string;
 }
 
 export interface TaskAttachment {
