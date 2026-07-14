@@ -661,3 +661,19 @@
 
 - **로그아웃 시 슬러그 없는 /login으로 되돌아가던 레이스 컨디션 수정**: `src/hooks/useAuth.ts`가 미인증 상태를 감지하면 자체적으로 `router.push`하던 로직이, `AppHeader`의 `handleLogout`(올바른 `/{slug}/login`으로 이동)과 동시에 경합하고 있었음. 로그아웃 시 `Providers.tsx`의 `AuthSync`가 Zustand 스토어(`authStore`)의 `user`를 `null`로 지우는 처리가 먼저 일어나면, `useAuth()`가 참조하는 `organizationSlug`도 함께 사라져 슬러그 없는 `/login`으로 리다이렉트하게 되고, 이게 `AppHeader`의 올바른 이동을 나중에 덮어쓰는 경우가 있었음. `useAuth()`의 미인증 자동 리다이렉트를 제거하고, 책임을 `middleware.ts`(최초 접근 차단)와 `AuthSync`(세션 만료/로그아웃 감지, 수동 로그아웃 플래그 존중)로 일원화.
 - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+
+## 2026-07-13 (70차) — 업무 관리 협업 강화 9종
+
+사용자 요청("업무 관리 중심으로 협업 강화 검토")에 따라 조사·제안한 9개 항목을 순차 구현.
+
+1. **댓글 수정**: `PATCH /api/tasks/[id]/comments/[commentId]` 신규, 본인 댓글만 수정 가능. 기존 댓글/답글 삭제 버튼 노출 조건이 `session.user.id`(string)와 `author.id`(number)를 `===`로 비교해 실질적으로 항상 false였던 버그도 함께 수정(`currentUserId`로 통일).
+2. **일반 댓글 알림**: 댓글/답글이 달리면 멘션 여부와 무관하게 담당자·등록자에게 `NEW_COMMENT` 알림(작성자 본인·이미 멘션받은 사람 중복 제외).
+3. **댓글 전역검색 포함**: `/api/search`에 `TaskComment.content` 검색 추가, 매치 시 스니펫에 💬 접두사로 댓글 내용 표시.
+4. **업무목록 검색/정렬 UI**: 필터 바에 텍스트 검색(제목/비고)과 정렬(목표일 빠른/늦은순, 제목순, 최근등록순) 드롭다운 추가.
+5. **알림 개별 읽음 처리**: `PATCH /api/notifications/[id]` 신규, 벨을 열 때 무조건 전체읽음 처리하던 것을 제거하고 항목 클릭 시에만 해당 알림 읽음 처리. "모두 읽음" 버튼은 별도 노출.
+6. **우선순위(priority) 필드**: `Task.priority`(LOW/NORMAL/HIGH/URGENT) 추가. 업무 등록/상세 수정 폼에 select, 목록 필터, HIGH/URGENT 업무는 제목 앞 색상 점으로 표시(목록+칸반).
+7. **체크리스트**: `TaskChecklistItem` 모델 신설. ADMIN/LEADER 또는 담당자·등록자가 추가/체크토글/삭제 가능. 업무 상세에 진행률(N/M)과 함께 카드로 표시.
+8. **칸반 카드 개선**: 담당자 이니셜 아바타, 라벨 색상칩, 댓글수/첨부파일수 카운트 추가(`_count`에 comments/attachments 포함).
+9. **개인화 뷰 탭**: `/tasks` 목록 상단에 전체/내 담당/내가 멘션된 업무 탭. `GET /api/tasks/mentioned`가 댓글 내 멘션 패턴(`](userId)`)으로 매칭된 업무 id를 반환.
+
+디버깅 체크: 매 항목마다 `npx tsc --noEmit` 오류 0개, `npm run build` 성공 확인 후 커밋.
