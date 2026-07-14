@@ -19,7 +19,7 @@
 /* 로고 영역: 가로로 컴팩트하게 */
 .brandPanel {
   width: 100%;
-  max-width: 420px;
+  max-width: var(--width-compact);
   padding: 0;
   background: none;
   display: flex;
@@ -43,7 +43,7 @@
   width: 40px;
   height: 40px;
   border-radius: 8px;
-  background-color: var(--header-bg);
+  background: var(--accent-gradient);
   flex-shrink: 0;
   margin-bottom: 0;
 }
@@ -69,7 +69,7 @@
 /* 폼 패널: 중앙 카드 */
 .formPanel {
   width: 100%;
-  max-width: 420px;
+  max-width: var(--width-compact);
   padding: 40px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -102,10 +102,10 @@
 
 .successBox {
   padding: 10px 14px;
-  background-color: #F0FDF4;
-  border: 1px solid #16A34A;
+  background-color: var(--success-light);
+  border: 1px solid var(--success);
   border-radius: 6px;
-  color: #14532D;
+  color: var(--success);
   font-size: 13px;
   margin-bottom: 20px;
 }
