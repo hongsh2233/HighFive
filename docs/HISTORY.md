@@ -688,3 +688,13 @@
   - `src/app/meetings/page.tsx`(허브, `/wiki` 허브와 동일 구조), `src/app/projects/[id]/meetings/page.tsx`(프로젝트별 목록/아코디언/작성/수정/삭제) 신규. 받아쓰기 토글 + SimpleEditor로 직접 수정 가능.
   - `/projects` 멤버 패널과 `AppHeader` "협업" 드롭다운에 "회의록" 링크 추가. `src/middleware.ts`의 `orgScopedRoutes`에 `meetings` 추가(`/{slug}/meetings` 지원).
   - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+
+## 2026-07-14
+
+- **디자인 통일성 + 고급스러움 개선 (1차 개발 마무리, 테스트 모드 진입 전)**: Linear/Notion 스타일의 절제된 프리미엄 방향으로 전체 페이지 디자인 정비. 6단계 순차 진행 중 1~3단계 완료.
+  - 1단계(`globals.css` 토큰 확장): 콘텐츠 너비 스케일(`--width-wide` 1440px / `--width-standard` 960px / `--width-narrow` 720px / `--width-compact` 440px), 카드 radius(`--radius-card` 10px), 시맨틱 라이트 컬러(`--success/warning/danger/info-light`, `-border`), 선택적 그림자(`--shadow-card`/`--shadow-hover`), 선택적 그라데이션(`--accent-gradient`), 제목 유틸리티(`.page-title`/`.page-subtitle`) 신규 토큰 추가.
+  - 2단계(일상 업무 화면): dashboard/tasks(목록·생성·상세·칸반)/calendar/stats — max-width를 `--width-wide`로, 제목 22px로 통일. dashboard KPI 카드에 `--shadow-card`(hover 시 `--shadow-hover`) 선택 적용.
+  - 3단계(협업 화면): wiki/meetings는 `--width-standard`, projects/requests/announcements/info/my-notes 등은 `--width-wide`로 통일, 최상위 padding을 `var(--space-8)`로 통일(리터럴 `40px 32px` 하드코딩 제거).
+  - 35개 파일에 산재하던 success/warning/danger/info 파스텔 하드코딩 hex(274건)를 신규 시맨틱 토큰으로 일괄 교체, 19개 파일의 카드류 `border-radius`를 `--radius-card`로 통일.
+  - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+  - 남은 작업: 4단계(설정/관리자 화면), 5단계(인증 화면 + 브랜드 그라데이션), 6단계(`docs/DESIGN.md` 갱신) 진행 예정.
