@@ -629,3 +629,10 @@
   - 구글→High5 역방향 동기화는 웹훅 채널 관리 복잡도(공개 콜백 URL, 채널 갱신) 때문에 이번 범위에서 제외 — 필요 시 후속 작업으로 남김.
   - `.env.example`에 `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` 안내 추가(Google Cloud Console에서 OAuth 클라이언트 발급, 리디렉션 URI `{NEXTAUTH_URL}/api/auth/google/callback` 등록 필요). `googleapis` 패키지 의존성 추가.
   - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+
+## 2026-07-13 (65차)
+
+- **상태변경/담당자변경 알림이 안 뜨던 버그 수정**: `src/lib/notify.ts`의 `notifyWorkerChange`/`notifyStatusChanged`가 `organizationId`를 넘기지 않아 `UserNotification.organizationId`가 항상 `null`로 저장되고 있었음. `GET /api/notifications`가 `organizationId`로 엄격히 필터링하기 때문에(멀티테넌시 전환 시 누락) 상태변경/담당자변경 알림이 토스트에도 목록에도 절대 노출되지 않는 상태였음. 두 함수에 `organizationId` 파라미터를 추가하고 `src/app/api/tasks/[id]/status/route.ts`, `src/app/api/tasks/[id]/route.ts`에서 `requireAuth()`가 반환하는 값을 전달하도록 수정.
+- **알림 벨 아이콘 추가**: `src/components/NotificationBell.tsx` 신규 — 위키검색 FAB 위에 배치, 안읽음 개수 뱃지 표시(9+는 "9+"로 표기). 클릭 시 최근 알림 30건 드롭다운(열람 시 자동 전체 읽음 처리), 항목 클릭 시 `taskId`가 있으면 해당 업무 상세로 이동. `LayoutWrapper`에 로그인 상태에서만 렌더링. `src/types/index.ts`의 `UserNotificationType`에 실제 서버에서 쓰는 타입(REQUEST_APPROVED/REJECTED, ANNOUNCEMENT, DEADLINE_APPROACHING, LEAVE_REMINDER 등) 반영.
+- **작업자도 비고 수정 가능**: `PATCH /api/tasks/[id]`에서 WORKER가 본인이 담당한 업무의 "비고"만 수정할 수 있도록 허용(요청 바디에 notes 외 필드가 섞이면 거부, 다른 필드는 여전히 ADMIN/LEADER 전용). `/tasks/[id]` 페이지의 상세내용 "수정" 버튼도 `canEdit`(ADMIN/LEADER) 대신 `canEditNotes`(ADMIN/LEADER 또는 담당 작업자)로 노출.
+- 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
