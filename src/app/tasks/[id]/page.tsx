@@ -413,6 +413,45 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     }
   };
 
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editCommentInput, setEditCommentInput] = useState('');
+  const [editCommentSaving, setEditCommentSaving] = useState(false);
+
+  const startCommentEdit = (commentId: number, content: string) => {
+    setEditingCommentId(commentId);
+    setEditCommentInput(content);
+  };
+
+  const cancelCommentEdit = () => {
+    setEditingCommentId(null);
+    setEditCommentInput('');
+  };
+
+  const handleCommentEditSave = async (commentId: number, parentId?: number) => {
+    const content = editCommentInput.trim();
+    if (!content || editCommentSaving) return;
+    setEditCommentSaving(true);
+    try {
+      const res = await apiClient.patch<{ data: any }>(`/tasks/${id}/comments/${commentId}`, { content });
+      if (parentId) {
+        setComments((prev) =>
+          prev.map((c) =>
+            c.id === parentId
+              ? { ...c, replies: (c.replies || []).map((r: any) => r.id === commentId ? res.data.data : r) }
+              : c
+          )
+        );
+      } else {
+        setComments((prev) => prev.map((c) => c.id === commentId ? { ...res.data.data, replies: c.replies } : c));
+      }
+      cancelCommentEdit();
+    } catch (err: any) {
+      setInfoError(err.response?.data?.message || '댓글 수정 실패');
+    } finally {
+      setEditCommentSaving(false);
+    }
+  };
+
   const handleCommentDelete = async (commentId: number, parentId?: number) => {
     if (!(await confirm('댓글을 삭제하시겠습니까?'))) return;
     try {
@@ -803,13 +842,36 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                     >
                       답글
                     </button>
-                    {(user?.id === c.author?.id || userRole === 'ADMIN' || userRole === 'LEADER') && (
+                    {currentUserId === c.author?.id && editingCommentId !== c.id && (
+                      <button className={styles.commentReplyBtn} onClick={() => startCommentEdit(c.id, c.content)}>
+                        수정
+                      </button>
+                    )}
+                    {(currentUserId === c.author?.id || userRole === 'ADMIN' || userRole === 'LEADER') && (
                       <button className={styles.commentDeleteBtn} onClick={() => handleCommentDelete(c.id)}>
                         삭제
                       </button>
                     )}
                   </div>
-                  <p className={styles.commentContent}>{renderCommentContent(c.content)}</p>
+                  {editingCommentId === c.id ? (
+                    <div className={styles.commentEditArea}>
+                      <textarea
+                        value={editCommentInput}
+                        onChange={(e) => setEditCommentInput(e.target.value)}
+                        className={styles.commentTextarea}
+                        rows={2}
+                        autoFocus
+                      />
+                      <div className={styles.replyActions}>
+                        <button onClick={() => handleCommentEditSave(c.id)} disabled={editCommentSaving || !editCommentInput.trim()} className={styles.btn}>
+                          {editCommentSaving ? '저장 중...' : '저장'}
+                        </button>
+                        <button onClick={cancelCommentEdit} className={styles.btnSecondary}>취소</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className={styles.commentContent}>{renderCommentContent(c.content)}</p>
+                  )}
 
                   {/* 대댓글 */}
                   {c.replies && c.replies.length > 0 && (
@@ -832,13 +894,36 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                               >
                                 답글
                               </button>
-                              {(user?.id === r.author?.id || userRole === 'ADMIN' || userRole === 'LEADER') && (
+                              {currentUserId === r.author?.id && editingCommentId !== r.id && (
+                                <button className={styles.commentReplyBtn} onClick={() => startCommentEdit(r.id, r.content)}>
+                                  수정
+                                </button>
+                              )}
+                              {(currentUserId === r.author?.id || userRole === 'ADMIN' || userRole === 'LEADER') && (
                                 <button className={styles.commentDeleteBtn} onClick={() => handleCommentDelete(r.id, c.id)}>
                                   삭제
                                 </button>
                               )}
                             </div>
-                            <p className={styles.commentContent}>{renderCommentContent(r.content)}</p>
+                            {editingCommentId === r.id ? (
+                              <div className={styles.commentEditArea}>
+                                <textarea
+                                  value={editCommentInput}
+                                  onChange={(e) => setEditCommentInput(e.target.value)}
+                                  className={styles.commentTextarea}
+                                  rows={2}
+                                  autoFocus
+                                />
+                                <div className={styles.replyActions}>
+                                  <button onClick={() => handleCommentEditSave(r.id, c.id)} disabled={editCommentSaving || !editCommentInput.trim()} className={styles.btn}>
+                                    {editCommentSaving ? '저장 중...' : '저장'}
+                                  </button>
+                                  <button onClick={cancelCommentEdit} className={styles.btnSecondary}>취소</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className={styles.commentContent}>{renderCommentContent(r.content)}</p>
+                            )}
                           </div>
                         </li>
                       ))}

@@ -564,6 +564,13 @@
   align-items: flex-end;
 }
 
+.commentEditArea {
+  margin-top: 6px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
 .replyActions {
   display: flex;
   flex-direction: column;
