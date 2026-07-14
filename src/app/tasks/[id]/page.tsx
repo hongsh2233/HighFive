@@ -62,6 +62,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
   const [comments, setComments] = useState<any[]>([]);
   const [commentInput, setCommentInput] = useState('');
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [commentSaving, setCommentSaving] = useState(false);
   // 대댓글: replyTo = { commentId, authorName }
   const [replyTo, setReplyTo] = useState<{ commentId: number; authorName: string } | null>(null);
@@ -1135,25 +1136,33 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
       {/* 히스토리 */}
       <div className={styles.card}>
-        <h2 className={styles.cardTitle}>활동 히스토리</h2>
-        {histories.length === 0 ? (
-          <p className={styles.emptyLogs}>히스토리가 없습니다.</p>
-        ) : (
-          <ul className={styles.historyList}>
-            {histories.map((h) => (
-              <li key={h.id} className={styles.historyItem}>
-                <span className={styles.historyDot} />
-                <div className={styles.historyBody}>
-                  <span className={styles.historyAction}>{actionLabel[h.action as keyof typeof actionLabel] ?? h.action}</span>
-                  {h.detail && <span className={styles.historyDetail}> — {h.detail}</span>}
-                  <div className={styles.historyMeta}>
-                    <span>{h.user?.name}</span>
-                    <span>{new Date(h.createdAt).toLocaleString('ko-KR')}</span>
+        <h2
+          className={styles.cardTitleToggle}
+          onClick={() => setHistoryOpen((v) => !v)}
+        >
+          활동 히스토리
+          <span className={styles.cardTitleChevron} data-open={historyOpen}>▸</span>
+        </h2>
+        {historyOpen && (
+          histories.length === 0 ? (
+            <p className={styles.emptyLogs}>히스토리가 없습니다.</p>
+          ) : (
+            <ul className={styles.historyList}>
+              {histories.map((h) => (
+                <li key={h.id} className={styles.historyItem}>
+                  <span className={styles.historyDot} />
+                  <div className={styles.historyBody}>
+                    <span className={styles.historyAction}>{actionLabel[h.action as keyof typeof actionLabel] ?? h.action}</span>
+                    {h.detail && <span className={styles.historyDetail}> — {h.detail}</span>}
+                    <div className={styles.historyMeta}>
+                      <span>{h.user?.name}</span>
+                      <span>{new Date(h.createdAt).toLocaleString('ko-KR')}</span>
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          )
         )}
       </div>
     </div>

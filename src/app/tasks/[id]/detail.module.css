@@ -55,6 +55,26 @@
   margin-bottom: var(--space-4);
 }
 
+.cardTitleToggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cardTitleChevron {
+  font-size: 12px;
+  color: var(--text-muted);
+  transition: transform var(--motion-fast) var(--ease-standard);
+}
+
+.cardTitleChevron[data-open="true"] {
+  transform: rotate(90deg);
+}
+
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
