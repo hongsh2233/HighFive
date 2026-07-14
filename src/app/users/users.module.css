@@ -5,7 +5,7 @@
 }
 
 .inner {
-  max-width: 1100px;
+  max-width: var(--width-wide);
   margin: 0 auto;
 }
 

@@ -1,10 +1,10 @@
 .page {
-  padding: 40px 32px;
+  padding: var(--space-8);
   max-width: 100%;
 }
 
 .inner {
-  max-width: 760px;
+  max-width: var(--width-narrow);
   margin: 0 auto;
 }
 
