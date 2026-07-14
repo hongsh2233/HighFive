@@ -76,16 +76,36 @@ export async function POST(
     include: { author: AUTHOR_SELECT },
   });
 
-  // 멘션 알림 발송 (비동기)
+  const authorName = (session!.user as any).name || '누군가';
   const mentionIds = parseMentionIds(content).filter((uid) => uid !== authorId);
+
+  // 멘션 알림 발송 (비동기)
   if (mentionIds.length > 0) {
-    const authorName = (session!.user as any).name || '누군가';
     Promise.all(
       mentionIds.map((uid) =>
         createUserNotification(
           uid,
           'COMMENT_MENTION',
           `'${task.title}' 업무 댓글에서 ${authorName}님이 회원님을 멘션했습니다.`,
+          taskId,
+          task.organizationId ?? undefined
+        )
+      )
+    ).catch(() => {});
+  }
+
+  // 일반 댓글 알림: 멘션과 별개로 담당자/등록자에게 발송(작성자 본인·이미 멘션받은 사람 제외 중복 방지)
+  const commentType = parentId ? '답글' : '댓글';
+  const generalRecipients = new Set<number>();
+  if (task.workerId !== authorId && !mentionIds.includes(task.workerId)) generalRecipients.add(task.workerId);
+  if (task.registrantId !== authorId && !mentionIds.includes(task.registrantId)) generalRecipients.add(task.registrantId);
+  if (generalRecipients.size > 0) {
+    Promise.all(
+      Array.from(generalRecipients).map((uid) =>
+        createUserNotification(
+          uid,
+          'NEW_COMMENT',
+          `'${task.title}' 업무에 ${authorName}님이 ${commentType}을 남겼습니다.`,
           taskId,
           task.organizationId ?? undefined
         )

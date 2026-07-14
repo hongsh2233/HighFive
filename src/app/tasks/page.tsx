@@ -107,6 +107,8 @@ function TaskListContent() {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedWorker, setSelectedWorker] = useState('');
   const [selectedProject, setSelectedProject] = useState(searchParams.get('projectId') || '');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('');
   const [assignableWorkers, setAssignableWorkers] = useState<Worker[]>([]);
   const [myProjects, setMyProjects] = useState<ProjectMeta[]>([]);
 
@@ -176,6 +178,28 @@ function TaskListContent() {
   }
   if (selectedWorker) {
     filteredTasks = filteredTasks.filter((task: any) => task.workerId === parseInt(selectedWorker));
+  }
+  if (searchQuery.trim()) {
+    const q = searchQuery.trim().toLowerCase();
+    filteredTasks = filteredTasks.filter((task: any) =>
+      task.title?.toLowerCase().includes(q) || task.notes?.toLowerCase().includes(q)
+    );
+  }
+  if (sortBy) {
+    filteredTasks = [...filteredTasks].sort((a: any, b: any) => {
+      switch (sortBy) {
+        case 'targetDate_asc':
+          return (a.targetDate ? new Date(a.targetDate).getTime() : Infinity) - (b.targetDate ? new Date(b.targetDate).getTime() : Infinity);
+        case 'targetDate_desc':
+          return (b.targetDate ? new Date(b.targetDate).getTime() : -Infinity) - (a.targetDate ? new Date(a.targetDate).getTime() : -Infinity);
+        case 'title_asc':
+          return (a.title || '').localeCompare(b.title || '');
+        case 'createdAt_desc':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        default:
+          return 0;
+      }
+    });
   }
 
   // 프로젝트별로 그룹핑 (프로젝트 미지정 업무는 별도 섹션)
@@ -311,6 +335,26 @@ function TaskListContent() {
               {worker.name}
             </option>
           ))}
+        </select>
+
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="제목/비고 검색..."
+          className={styles.searchInput}
+        />
+
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className={styles.sortSelect}
+        >
+          <option value="">정렬: 기본</option>
+          <option value="targetDate_asc">목표일 빠른순</option>
+          <option value="targetDate_desc">목표일 늦은순</option>
+          <option value="title_asc">제목순</option>
+          <option value="createdAt_desc">최근 등록순</option>
         </select>
       </div>
 

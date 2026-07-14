@@ -158,6 +158,8 @@ export type UserNotificationType =
   | "ANNOUNCEMENT"
   | "DEADLINE_APPROACHING"
   | "LEAVE_REMINDER"
+  | "COMMENT_MENTION"
+  | "NEW_COMMENT"
   | (string & {});
 
 export interface UserNotification {
