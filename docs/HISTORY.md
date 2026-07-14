@@ -706,3 +706,22 @@
   - 6단계(`docs/DESIGN.md` 갱신): Content Width Scale(4단계 토큰) 섹션 신규, 카드 radius를 `--radius-card`(10px) 단일 토큰으로 정정, 시맨틱 라이트 컬러 표 추가, 선택적 그림자/그라데이션 적용 대상(KPI 카드·모달·팝오버·브랜드 히어로)을 명시적으로 규정, 페이지 타이틀 22px/700 통일 규칙 명문화.
   - 디버깅 체크: 매 단계마다 `npx tsc --noEmit` 오류 0개, `npm run build` 성공 확인 후 커밋·머지·푸시.
   - 이로써 "1차 개발 마무리, 테스트 모드 진입 전" 디자인 통일성 개선 작업 전체 완료.
+
+## 2026-07-14 (3차)
+
+- **버그: 전역 검색 입력 텍스트 미표시** — `GlobalSearchModal.module.css`, `tasks/[id]/detail.module.css`, `tasks/tasks.module.css`, `tasks/create/create.module.css`가 `globals.css`에 정의된 적 없는 CSS 변수(`--color-text`, `--color-gray-700`)를 참조해 텍스트가 사실상 안 보이던 문제 수정. 실제 정의된 토큰(`--text-primary`/`--text-secondary`)으로 교체. 전체 코드베이스의 `var(--x)` 참조 vs `globals.css` 정의 diff로 동일 유형 버그를 전수 스캔해 확인.
+- **기능: 업무 상세 "활동 히스토리" 접기/펼치기** — 기본 접힌 상태로 변경, 제목 클릭 시 펼침. 이후 사용자 피드백으로 화살표를 카드 우측 끝으로 재배치하고 색상/크기를 키워 가시성 개선(`--text-muted` 12px → `--text-secondary` 14px).
+- **보안 점검 전체 감사 및 수정**: Explore 에이전트 3개를 병렬로 띄워 (1)인증/세션/미들웨어, (2)API 인가/멀티테넌시 격리, (3)XSS/입력검증/시크릿 노출을 감사.
+  - **Critical IDOR 수정** (조직 간 데이터 격리 붕괴 — `findUnique({id})` → `findFirst({id, organizationId})` 패턴으로 교체):
+    - `api/projects/[id]` GET/PATCH/DELETE — 다른 조직 프로젝트를 ID만 알면 조회/수정/삭제 가능했던 문제
+    - `api/tasks/[id]` DELETE — org 필터 없이 역할 체크만으로 다른 조직 업무 삭제 가능했던 문제
+    - `api/requests/[id]/decision` — 다른 조직의 미배정 신청을 ADMIN이 승인/거절 가능했던 문제
+    - `api/tasks/[id]/comments/[commentId]` PATCH/DELETE — task 관계의 조직 검증 누락
+    - `api/projects/[id]/wiki/[wikiId]` PATCH/DELETE — projectId가 호출자 조직 소속인지 미검증
+  - **High 이슈 수정**:
+    - `src/lib/ical-token.ts` — `NEXTAUTH_SECRET` 미설정 시 하드코딩 fallback 시크릿(`'tms-ical-secret'`)으로 조용히 넘어가던 것을 제거, 지연 평가(lazy getSecret())로 명시적 에러를 던지도록 변경(빌드 타임 영향 없음)
+    - `api/webhooks/github` — `GITHUB_WEBHOOK_SECRET` 미설정 시 서명검증을 통째로 스킵하던 것을 제거, 시크릿 미설정 또는 서명불일치 시 무조건 401 거부
+    - `api/webhooks/slack` — 인증 없이 누구나 호출 가능하던 것에 `requireAuth()` 추가
+  - **보류 항목** (설계 논의 필요, 이번 라운드 미포함): JWT 세션이 요청마다 DB 재검증 없이 30분간 신뢰되는 문제(계정 비활성화/역할 변경이 즉시 반영 안 됨), 로그인 시 사용자 존재 여부에 따른 응답시간 차이(타이밍 사이드채널), 첨부파일 업로드 MIME 타입/확장자 미검증(현재는 크기만 검증, `attachment` disposition으로 즉각적 위험은 낮음), bcrypt cost factor 불일치(`src/lib/utils.ts`=10 vs `organizations/route.ts`=12).
+  - **확인됨(문제 없음)**: task.notes는 `sanitize-html`로 서버측 새니타이즈 후 저장(XSS 안전), 댓글/멘션 렌더링은 React 자동 이스케이프만 사용, search 계열 API는 모두 organizationId로 정상 스코핑, superadmin 라우트는 일관되게 `requireSuperAdmin()` 사용, `$executeRawUnsafe`는 파라미터 바인딩이라 SQL 인젝션 아님, `.env.example`엔 실제 시크릿 없음, 로그인 브루트포스 방지용 rate-limit 적용됨(인메모리라 다중 인스턴스 배포 시 비영속적이라는 한계는 있음).
+  - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
