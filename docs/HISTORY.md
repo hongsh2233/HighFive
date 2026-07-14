@@ -677,3 +677,14 @@
 9. **개인화 뷰 탭**: `/tasks` 목록 상단에 전체/내 담당/내가 멘션된 업무 탭. `GET /api/tasks/mentioned`가 댓글 내 멘션 패턴(`](userId)`)으로 매칭된 업무 id를 반환.
 
 디버깅 체크: 매 항목마다 `npx tsc --noEmit` 오류 0개, `npm run build` 성공 확인 후 커밋.
+
+## 2026-07-13 (71차)
+
+- **회의록 기능 (Web Speech API 음성 받아쓰기 + 직접 작성)**: 인사평가는 이전 결정대로 스코프 제외, 회의록만 구현.
+  - `prisma/schema.prisma`: `MeetingNote` 모델 신설(projectId, title, content, attendees, meetingDate, authorId) — `WikiPage`와 동일한 프로젝트 종속 문서 패턴.
+  - `GET/POST /api/projects/[id]/meetings`, `PATCH/DELETE /api/projects/[id]/meetings/[meetingId]`: wiki 라우트와 동일한 접근 제어(프로젝트 멤버 또는 ADMIN 조회/작성, 작성자 본인·ADMIN 삭제).
+  - `GET /api/meetings/search`: 소속 프로젝트(ADMIN은 전체) 회의록 통합검색.
+  - `src/hooks/useDictation.ts` 신규: 브라우저 내장 Web Speech API 래퍼(ko-KR, continuous, interimResults). 오디오 파일은 저장하지 않고 텍스트만 실시간 반영 — 서버 비용/저장소 이슈 회피. Chrome/Edge만 지원, 미지원 브라우저는 버튼 비활성화 + 안내 문구.
+  - `src/app/meetings/page.tsx`(허브, `/wiki` 허브와 동일 구조), `src/app/projects/[id]/meetings/page.tsx`(프로젝트별 목록/아코디언/작성/수정/삭제) 신규. 받아쓰기 토글 + SimpleEditor로 직접 수정 가능.
+  - `/projects` 멤버 패널과 `AppHeader` "협업" 드롭다운에 "회의록" 링크 추가. `src/middleware.ts`의 `orgScopedRoutes`에 `meetings` 추가(`/{slug}/meetings` 지원).
+  - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
