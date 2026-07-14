@@ -18,10 +18,11 @@ export async function POST(req: NextRequest) {
   const event = req.headers.get('x-github-event');
   const secret = process.env.GITHUB_WEBHOOK_SECRET;
 
-  if (secret && sig) {
-    if (!verify(secret, rawBody, sig)) {
-      return new NextResponse('signature mismatch', { status: 401 });
-    }
+  if (!secret) {
+    return new NextResponse('webhook secret not configured', { status: 401 });
+  }
+  if (!sig || !verify(secret, rawBody, sig)) {
+    return new NextResponse('signature mismatch', { status: 401 });
   }
 
   if (event !== 'pull_request') {

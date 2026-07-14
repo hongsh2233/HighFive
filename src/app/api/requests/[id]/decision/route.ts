@@ -7,7 +7,7 @@ import { syncLeaveCalendarEvent } from '@/lib/google-calendar';
 // PATCH /api/requests/[id]/decision - 결재(승인/반려)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { session, error } = await requireAuth();
+    const { session, organizationId, error } = await requireAuth();
     if (error) return error;
 
     const { id } = await params;
@@ -15,7 +15,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const userId = parseInt((session!.user as any).id || '0');
     const role = (session!.user as any).role;
 
-    const target = await prisma.request.findUnique({ where: { id: requestId } });
+    const target = await prisma.request.findFirst({ where: { id: requestId, organizationId } });
     if (!target) {
       return errorResponse('신청서를 찾을 수 없습니다.', 404);
     }

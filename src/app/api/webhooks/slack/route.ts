@@ -1,10 +1,13 @@
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse } from '@/lib/utils';
+import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 import { notifyStatusChange } from '@/lib/services/webhook.service';
 
-// POST /api/webhooks/slack — 내부 서비스에서 Slack 알림 발송 요청
+// POST /api/webhooks/slack — 내부 서비스에서 Slack 알림 발송 요청 (인증된 사용자만 호출 가능)
 export async function POST(req: NextRequest) {
   try {
+    const { error } = await requireAuth();
+    if (error) return error;
+
     const body = await req.json();
     const { taskId, taskTitle, workerName, status, taskUrl } = body;
 

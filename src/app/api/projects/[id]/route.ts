@@ -7,12 +7,12 @@ import { ensureProjectsSchema } from '@/lib/db-init';
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await ensureProjectsSchema();
-    const { error } = await requireAuth();
+    const { organizationId, error } = await requireAuth();
     if (error) return error;
 
     const { id } = await params;
-    const project = await prisma.project.findUnique({
-      where: { id: parseInt(id) },
+    const project = await prisma.project.findFirst({
+      where: { id: parseInt(id), organizationId },
       include: {
         creator: { select: { id: true, name: true } },
         members: { include: { user: { select: { id: true, name: true, email: true, role: true } } } },
@@ -33,7 +33,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await ensureProjectsSchema();
-    const { session, error } = await requireAuth();
+    const { session, organizationId, error } = await requireAuth();
     if (error) return error;
 
     const role = (session!.user as any).role;
@@ -43,6 +43,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const { id } = await params;
     const projectId = parseInt(id);
+
+    const existing = await prisma.project.findFirst({ where: { id: projectId, organizationId } });
+    if (!existing) return errorResponse('프로젝트를 찾을 수 없습니다.', 404);
+
     const body = await req.json();
     const { name, status, projectManagerName, projectLeadName } = body;
 
@@ -82,7 +86,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await ensureProjectsSchema();
-    const { session, error } = await requireAuth();
+    const { session, organizationId, error } = await requireAuth();
     if (error) return error;
 
     const role = (session!.user as any).role;
@@ -91,6 +95,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     }
 
     const { id } = await params;
+    const existing = await prisma.project.findFirst({ where: { id: parseInt(id), organizationId } });
+    if (!existing) return errorResponse('프로젝트를 찾을 수 없습니다.', 404);
+
     await prisma.project.delete({ where: { id: parseInt(id) } });
 
     return successResponse(null, '삭제되었습니다.');

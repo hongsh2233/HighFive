@@ -166,7 +166,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error, session } = await requireAuth();
+    const { error, session, organizationId } = await requireAuth();
     if (error) return error;
 
     const userRole = (session?.user as any)?.role;
@@ -180,7 +180,10 @@ export async function DELETE(
       return errorResponse('유효하지 않은 업무 ID입니다.', 400, 'VALID_400');
     }
 
-    const target = await prisma.task.findUnique({ where: { id: taskId }, select: { workerId: true } });
+    const target = await prisma.task.findFirst({ where: { id: taskId, organizationId }, select: { workerId: true } });
+    if (!target) {
+      return errorResponse('업무를 찾을 수 없습니다.', 404, 'NOT_FOUND_404');
+    }
 
     // 관련 timelog 삭제
     await prisma.timeLog.deleteMany({

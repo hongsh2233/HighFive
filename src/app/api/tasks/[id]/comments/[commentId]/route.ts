@@ -8,10 +8,11 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; commentId: string }> }
 ) {
-  const { session, error } = await requireAuth();
+  const { session, organizationId, error } = await requireAuth();
   if (error) return error;
 
-  const { commentId } = await params;
+  const { id: taskIdParam, commentId } = await params;
+  const taskId = parseInt(taskIdParam);
   const id = parseInt(commentId);
   if (isNaN(id)) return NextResponse.json({ message: '잘못된 요청' }, { status: 400 });
 
@@ -19,7 +20,9 @@ export async function PATCH(
   const content = (body.content || '').trim();
   if (!content) return NextResponse.json({ message: '내용을 입력해주세요.' }, { status: 400 });
 
-  const comment = await prisma.taskComment.findUnique({ where: { id } });
+  const comment = await prisma.taskComment.findFirst({
+    where: { id, taskId, task: { organizationId } },
+  });
   if (!comment) return NextResponse.json({ message: '댓글을 찾을 수 없습니다.' }, { status: 404 });
 
   const userId = parseInt((session!.user as any).id || '0');
@@ -40,14 +43,17 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string; commentId: string }> }
 ) {
-  const { session, error } = await requireAuth();
+  const { session, organizationId, error } = await requireAuth();
   if (error) return error;
 
-  const { commentId } = await params;
+  const { id: taskIdParam, commentId } = await params;
+  const taskId = parseInt(taskIdParam);
   const id = parseInt(commentId);
   if (isNaN(id)) return NextResponse.json({ message: '잘못된 요청' }, { status: 400 });
 
-  const comment = await prisma.taskComment.findUnique({ where: { id } });
+  const comment = await prisma.taskComment.findFirst({
+    where: { id, taskId, task: { organizationId } },
+  });
   if (!comment) return NextResponse.json({ message: '댓글을 찾을 수 없습니다.' }, { status: 404 });
 
   const userId = parseInt((session!.user as any).id || '0');
