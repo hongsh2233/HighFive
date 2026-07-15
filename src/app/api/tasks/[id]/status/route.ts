@@ -6,6 +6,8 @@ import { notifyStatusChanged } from '@/lib/notify';
 import { addHistory } from '@/lib/task-history';
 import { getProjectStatuses } from '@/lib/task-status';
 import { assertNotBlocked } from '@/lib/task-dependency';
+import { getOrgGithubToken } from '@/lib/ai-settings';
+import { postGithubComment } from '@/lib/github';
 
 // PATCH /api/tasks/[id]/status - 업무 상태 변경
 export async function PATCH(
@@ -112,6 +114,15 @@ export async function PATCH(
 
     await addHistory(updatedTask.id, userId, 'STATUS_CHANGED',
       `${prevStatusDef?.label ?? task.status} → ${newStatusDef.label}`);
+
+    // 완료 단계로 전환되고 GitHub PR/이슈가 연결되어 있으면, 조직에 등록된 토큰이 있는 경우
+    // 완료 코멘트를 비동기로 남긴다(실패해도 상태변경 자체는 이미 성공 처리됨).
+    if (newStatusDef.isDone && !prevStatusDef?.isDone && updatedTask.externalLink) {
+      getOrgGithubToken(organizationId).then((token) => {
+        if (!token) return;
+        postGithubComment(token, updatedTask.externalLink!, `✅ 업무 상태가 '${newStatusDef.label}'(으)로 변경되었습니다 (High5)`);
+      }).catch(() => {});
+    }
 
     return successResponse(updatedTask, '업무 상태가 변경되었습니다.');
   } catch (err) {

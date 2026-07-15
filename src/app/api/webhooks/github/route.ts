@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import { prisma } from '@/lib/db';
 import { addHistory } from '@/lib/task-history';
 import { createUserNotification } from '@/lib/notify';
+import { getProjectStatuses } from '@/lib/task-status';
 
 function verify(secret: string, body: string, signature: string): boolean {
   const expected = 'sha256=' + createHmac('sha256', secret).update(body).digest('hex');
@@ -26,10 +27,13 @@ export async function POST(req: NextRequest) {
     return new NextResponse('signature mismatch', { status: 401 });
   }
 
-  if (event !== 'pull_request') {
-    return new NextResponse('ok', { status: 200 });
-  }
+  if (event === 'pull_request') return handlePullRequest(rawBody);
+  if (event === 'issues') return handleIssue(rawBody);
 
+  return new NextResponse('ok', { status: 200 });
+}
+
+async function handlePullRequest(rawBody: string) {
   const payload = JSON.parse(rawBody);
   const prUrl: string | undefined = payload.pull_request?.html_url;
   if (!prUrl) {
@@ -83,6 +87,47 @@ export async function POST(req: NextRequest) {
       )
     )
   );
+
+  return new NextResponse('ok', { status: 200 });
+}
+
+async function handleIssue(rawBody: string) {
+  const payload = JSON.parse(rawBody);
+  const issueUrl: string | undefined = payload.issue?.html_url;
+  if (!issueUrl) {
+    return new NextResponse('ok', { status: 200 });
+  }
+
+  const task = await prisma.task.findFirst({
+    where: { externalLink: issueUrl },
+  });
+  if (!task) {
+    return new NextResponse('no matching task', { status: 200 });
+  }
+
+  const orgId = task.organizationId ?? undefined;
+  const statuses = await getProjectStatuses(task.projectId);
+
+  if (payload.action === 'closed') {
+    const doneStatus = statuses.find((s) => s.isDone) || statuses[statuses.length - 1];
+    await prisma.task.update({ where: { id: task.id }, data: { status: doneStatus.code, updatedAt: new Date() } });
+    await addHistory(task.id, 0, 'STATUS_CHANGED', `GitHub 이슈 종료로 자동 완료 처리 (${issueUrl})`);
+
+    const recipients = new Set<number>([task.registrantId, task.workerId]);
+    await Promise.all(
+      Array.from(recipients).map((userId) =>
+        createUserNotification(userId, 'GITHUB_PR_MERGED', `'${task.title}' 업무의 GitHub 이슈가 종료되어 완료 처리되었습니다. ${issueUrl}`, task.id, orgId)
+      )
+    );
+    return new NextResponse('ok', { status: 200 });
+  }
+
+  if (payload.action === 'reopened') {
+    const firstOpenStatus = statuses.find((s) => !s.isDone) || statuses[0];
+    await prisma.task.update({ where: { id: task.id }, data: { status: firstOpenStatus.code, updatedAt: new Date() } });
+    await addHistory(task.id, 0, 'STATUS_CHANGED', `GitHub 이슈 재오픈으로 상태 되돌림 (${issueUrl})`);
+    return new NextResponse('ok', { status: 200 });
+  }
 
   return new NextResponse('ok', { status: 200 });
 }

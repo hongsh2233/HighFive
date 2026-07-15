@@ -494,6 +494,7 @@ model AiSettings {
   organizationId   Int      @unique
   anthropicKeyEnc  String?  // AES-256-GCM 암호화된 Anthropic API 키
   weatherKeyEnc    String?  // AES-256-GCM 암호화된 날씨 API 키
+  githubTokenEnc   String?  // AES-256-GCM 암호화된 GitHub Personal Access Token
   weatherCity      String?  // 조직 기본 도시 (날씨 인사말용)
   features         Json     @default("{}")  // { taskDraft, taskSummary, aiSearch, weeklyReport, workloadInsight, meetingSummary, meetingToTask, weatherGreeting }
   updatedAt        DateTime @updatedAt

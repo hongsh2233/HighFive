@@ -34,6 +34,12 @@ export async function getOrgAnthropicKey(organizationId?: number): Promise<strin
   return decryptSecret(settings.anthropicKeyEnc);
 }
 
+export async function getOrgGithubToken(organizationId?: number): Promise<string | null> {
+  const settings = await getOrgAiSettings(organizationId);
+  if (!settings?.githubTokenEnc) return null;
+  return decryptSecret(settings.githubTokenEnc);
+}
+
 export async function getOrgWeatherConfig(organizationId?: number): Promise<{ apiKey: string | null; city: string | null }> {
   const settings = await getOrgAiSettings(organizationId);
   if (!settings) return { apiKey: null, city: null };

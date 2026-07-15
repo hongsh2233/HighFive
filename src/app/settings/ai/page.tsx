@@ -20,6 +20,7 @@ const FEATURE_META: { key: string; label: string; hint: string; needsWeather?: b
 interface AiSettingsData {
   hasAnthropicKey: boolean;
   hasWeatherKey: boolean;
+  hasGithubToken: boolean;
   weatherCity: string | null;
   features: Record<string, boolean>;
   updatedAt: string | null;
@@ -33,6 +34,7 @@ export default function AiSettingsPage() {
   const [anthropicKeyInput, setAnthropicKeyInput] = useState('');
   const [weatherKeyInput, setWeatherKeyInput] = useState('');
   const [weatherCityInput, setWeatherCityInput] = useState('');
+  const [githubTokenInput, setGithubTokenInput] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const fetchData = async () => {
@@ -59,11 +61,13 @@ export default function AiSettingsPage() {
       const body: any = {};
       if (anthropicKeyInput.trim()) body.anthropicKey = anthropicKeyInput.trim();
       if (weatherKeyInput.trim()) body.weatherKey = weatherKeyInput.trim();
+      if (githubTokenInput.trim()) body.githubToken = githubTokenInput.trim();
       body.weatherCity = weatherCityInput.trim() || null;
       const res = await apiClient.put<{ data: AiSettingsData }>('/settings/ai', body);
       setData(res.data.data);
       setAnthropicKeyInput('');
       setWeatherKeyInput('');
+      setGithubTokenInput('');
       setMessage({ type: 'success', text: 'API 키가 저장되었습니다.' });
     } catch (err: any) {
       setMessage({ type: 'error', text: err.response?.data?.message || '저장 실패' });
@@ -153,6 +157,27 @@ export default function AiSettingsPage() {
                 value={weatherCityInput}
                 onChange={(e) => setWeatherCityInput(e.target.value)}
                 placeholder="예: Seoul"
+                className={styles.input}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.card}>
+          <h2 className={styles.cardTitle}>GitHub 연동 (완료 코멘트 자동 발송)</h2>
+          <p className={styles.cardHint}>
+            {data.hasGithubToken
+              ? '✅ 설정됨 — 교체하려면 새 토큰을 입력 후 저장하세요.'
+              : '미설정 — 업무 완료 시 연결된 PR/이슈에 자동으로 완료 코멘트를 남기려면 Personal Access Token(issues 쓰기 권한)을 입력하세요.'}
+          </p>
+          <div className={styles.fieldGrid}>
+            <div>
+              <label className={styles.label}>Personal Access Token</label>
+              <input
+                type="password"
+                value={githubTokenInput}
+                onChange={(e) => setGithubTokenInput(e.target.value)}
+                placeholder={data.hasGithubToken ? '새 토큰으로 교체하려면 입력' : 'ghp_...'}
                 className={styles.input}
               />
             </div>

@@ -20,6 +20,7 @@ export async function GET() {
     return successResponse({
       hasAnthropicKey: !!settings?.anthropicKeyEnc,
       hasWeatherKey: !!settings?.weatherKeyEnc,
+      hasGithubToken: !!settings?.githubTokenEnc,
       weatherCity: settings?.weatherCity ?? null,
       features,
       updatedAt: settings?.updatedAt ?? null,
@@ -38,9 +39,10 @@ export async function PUT(req: NextRequest) {
     if (!organizationId) return errorResponse('조직 정보를 확인할 수 없습니다.', 400, 'VALID_400');
 
     const body = await req.json();
-    const { anthropicKey, weatherKey, weatherCity, features } = body as {
+    const { anthropicKey, weatherKey, githubToken, weatherCity, features } = body as {
       anthropicKey?: string | null;
       weatherKey?: string | null;
+      githubToken?: string | null;
       weatherCity?: string | null;
       features?: Partial<AiFeatureMap>;
     };
@@ -55,6 +57,10 @@ export async function PUT(req: NextRequest) {
     let weatherKeyEnc = existing?.weatherKeyEnc ?? null;
     if (weatherKey === null) weatherKeyEnc = null;
     else if (typeof weatherKey === 'string' && weatherKey.trim()) weatherKeyEnc = encryptSecret(weatherKey.trim());
+
+    let githubTokenEnc = existing?.githubTokenEnc ?? null;
+    if (githubToken === null) githubTokenEnc = null;
+    else if (typeof githubToken === 'string' && githubToken.trim()) githubTokenEnc = encryptSecret(githubToken.trim());
 
     const finalCity = weatherCity === undefined ? (existing?.weatherCity ?? null) : (weatherCity?.trim() || null);
 
@@ -74,13 +80,14 @@ export async function PUT(req: NextRequest) {
 
     const saved = await prisma.aiSettings.upsert({
       where: { organizationId },
-      update: { anthropicKeyEnc, weatherKeyEnc, weatherCity: finalCity, features: requestedFeatures },
-      create: { organizationId, anthropicKeyEnc, weatherKeyEnc, weatherCity: finalCity, features: requestedFeatures },
+      update: { anthropicKeyEnc, weatherKeyEnc, githubTokenEnc, weatherCity: finalCity, features: requestedFeatures },
+      create: { organizationId, anthropicKeyEnc, weatherKeyEnc, githubTokenEnc, weatherCity: finalCity, features: requestedFeatures },
     });
 
     return successResponse({
       hasAnthropicKey: !!saved.anthropicKeyEnc,
       hasWeatherKey: !!saved.weatherKeyEnc,
+      hasGithubToken: !!saved.githubTokenEnc,
       weatherCity: saved.weatherCity,
       features: requestedFeatures,
       updatedAt: saved.updatedAt,
