@@ -103,8 +103,13 @@ export default function ProjectMeetingsPage({ params }: { params: Promise<{ id: 
   const [formMeetingDate, setFormMeetingDate] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [aiEnabled, setAiEnabled] = useState<{ meetingSummary: boolean }>({ meetingSummary: false });
+  const [aiEnabled, setAiEnabled] = useState<{ meetingSummary: boolean; meetingToTask: boolean }>({ meetingSummary: false, meetingToTask: false });
   const [summarizingId, setSummarizingId] = useState<number | null>(null);
+  const [projectMembers, setProjectMembers] = useState<{ id: number; name: string }[]>([]);
+  const [itemChecked, setItemChecked] = useState<Record<string, boolean>>({});
+  const [itemAssignee, setItemAssignee] = useState<Record<string, number | ''>>({});
+  const [convertedKeys, setConvertedKeys] = useState<Set<string>>(new Set());
+  const [converting, setConverting] = useState<number | null>(null);
 
   const dictation = useDictation((finalText) => {
     setFormContent((prev) => (prev ? `${prev} ${finalText}` : finalText));
@@ -113,10 +118,11 @@ export default function ProjectMeetingsPage({ params }: { params: Promise<{ id: 
   const fetchAll = async () => {
     try {
       const [projectRes, notesRes] = await Promise.all([
-        apiClient.get<{ data: { name: string } }>(`/projects/${projectId}`),
+        apiClient.get<{ data: { name: string; members: { user: { id: number; name: string } }[] } }>(`/projects/${projectId}`),
         apiClient.get<{ data: MeetingNote[] }>(`/projects/${projectId}/meetings`),
       ]);
       setProjectName(projectRes.data.data.name);
+      setProjectMembers(projectRes.data.data.members.map((m) => m.user));
       setNotes(notesRes.data.data);
       setAccessDenied(false);
     } catch (err: any) {
@@ -129,11 +135,54 @@ export default function ProjectMeetingsPage({ params }: { params: Promise<{ id: 
 
   useEffect(() => {
     if (!authLoading) fetchAll();
-    apiClient.get<{ data: { features: { meetingSummary: boolean } } }>('/settings/ai/status')
-      .then((res) => setAiEnabled({ meetingSummary: !!res.data.data.features.meetingSummary }))
+    apiClient.get<{ data: { features: { meetingSummary: boolean; meetingToTask: boolean } } }>('/settings/ai/status')
+      .then((res) => setAiEnabled({
+        meetingSummary: !!res.data.data.features.meetingSummary,
+        meetingToTask: !!res.data.data.features.meetingToTask,
+      }))
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading]);
+
+  const canConvertToTask = user?.role === 'ADMIN' || user?.role === 'LEADER';
+
+  const handleConvert = async (note: MeetingNote, actionItems: MeetingAiSummary['actionItems']) => {
+    const selected = actionItems
+      .map((item, idx) => ({ item, key: `${note.id}:${idx}` }))
+      .filter(({ key }) => itemChecked[key] && !convertedKeys.has(key));
+
+    if (selected.length === 0) return;
+    const missingAssignee = selected.find(({ key }) => !itemAssignee[key]);
+    if (missingAssignee) {
+      setMessage({ type: 'error', text: '선택한 항목의 담당자를 모두 지정해주세요.' });
+      return;
+    }
+
+    setConverting(note.id);
+    setMessage(null);
+    try {
+      const registrantId = Number(user?.id);
+      await Promise.all(selected.map(({ item, key }) =>
+        apiClient.post('/tasks', {
+          title: item.text.slice(0, 200),
+          workerId: itemAssignee[key],
+          registrantId,
+          projectId,
+          notes: `'${note.title}' 회의록의 AI 요약에서 자동 생성된 업무입니다.`,
+        })
+      ));
+      setConvertedKeys((prev) => {
+        const next = new Set(prev);
+        selected.forEach(({ key }) => next.add(key));
+        return next;
+      });
+      setMessage({ type: 'success', text: `${selected.length}건의 업무가 생성되었습니다.` });
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.response?.data?.message || '업무 생성 중 오류가 발생했습니다.' });
+    } finally {
+      setConverting(null);
+    }
+  };
 
   const handleSummarize = async (noteId: number) => {
     setSummarizingId(noteId);
@@ -356,11 +405,56 @@ export default function ProjectMeetingsPage({ params }: { params: Promise<{ id: 
                                 {parsed.actionItems.length > 0 && (
                                   <div className={styles.aiSummarySection}>
                                     <span className={styles.aiSummarySectionTitle}>액션아이템</span>
-                                    <ul className={styles.aiSummaryList}>
-                                      {parsed.actionItems.map((a, i) => (
-                                        <li key={i}>{a.text}{a.suggestedAssignee && ` (담당: ${a.suggestedAssignee})`}</li>
-                                      ))}
-                                    </ul>
+                                    {canConvertToTask && aiEnabled.meetingToTask ? (
+                                      <>
+                                        <ul className={styles.actionItemList}>
+                                          {parsed.actionItems.map((a, i) => {
+                                            const key = `${note.id}:${i}`;
+                                            const converted = convertedKeys.has(key);
+                                            return (
+                                              <li key={i} className={styles.actionItemRow}>
+                                                <label className={styles.actionItemCheck}>
+                                                  <input
+                                                    type="checkbox"
+                                                    checked={!!itemChecked[key]}
+                                                    disabled={converted}
+                                                    onChange={(e) => setItemChecked((prev) => ({ ...prev, [key]: e.target.checked }))}
+                                                  />
+                                                  <span>{a.text}</span>
+                                                </label>
+                                                {converted ? (
+                                                  <span className={styles.actionItemDone}>✅ 업무 생성됨</span>
+                                                ) : (
+                                                  <select
+                                                    className={styles.actionItemSelect}
+                                                    value={itemAssignee[key] ?? ''}
+                                                    onChange={(e) => setItemAssignee((prev) => ({ ...prev, [key]: e.target.value ? Number(e.target.value) : '' }))}
+                                                  >
+                                                    <option value="">담당자 선택</option>
+                                                    {projectMembers.map((m) => (
+                                                      <option key={m.id} value={m.id}>{m.name}</option>
+                                                    ))}
+                                                  </select>
+                                                )}
+                                              </li>
+                                            );
+                                          })}
+                                        </ul>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); handleConvert(note, parsed.actionItems); }}
+                                          disabled={converting === note.id}
+                                          className={styles.btnConvert}
+                                        >
+                                          {converting === note.id ? '생성 중...' : '선택 항목 업무로 변환'}
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <ul className={styles.aiSummaryList}>
+                                        {parsed.actionItems.map((a, i) => (
+                                          <li key={i}>{a.text}{a.suggestedAssignee && ` (담당: ${a.suggestedAssignee})`}</li>
+                                        ))}
+                                      </ul>
+                                    )}
                                   </div>
                                 )}
                               </div>
