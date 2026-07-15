@@ -44,6 +44,33 @@ export default function ProjectsPage() {
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [projectMuted, setProjectMuted] = useState(false);
+  const [muteLoading, setMuteLoading] = useState(false);
+
+  useEffect(() => {
+    if (!selectedProject) return;
+    apiClient.get<{ data: { muted: boolean } }>(`/notifications/mute?scope=PROJECT&targetId=${selectedProject.id}`)
+      .then((res) => setProjectMuted(res.data.data.muted))
+      .catch(() => {});
+  }, [selectedProject?.id]);
+
+  const handleToggleProjectMute = async () => {
+    if (!selectedProject) return;
+    setMuteLoading(true);
+    try {
+      if (projectMuted) {
+        await apiClient.delete('/notifications/mute', { data: { scope: 'PROJECT', targetId: selectedProject.id } });
+        setProjectMuted(false);
+      } else {
+        await apiClient.post('/notifications/mute', { scope: 'PROJECT', targetId: selectedProject.id });
+        setProjectMuted(true);
+      }
+    } catch {
+      // silent
+    } finally {
+      setMuteLoading(false);
+    }
+  };
 
   const fetchProjects = async () => {
     try {
@@ -322,7 +349,16 @@ export default function ProjectsPage() {
                   <div className={styles.memberPanelTitle}>{selectedProject.name}</div>
                   <div className={styles.memberPanelCount}>멤버 {selectedProject.members.length}명</div>
                 </div>
-                <button onClick={() => setSelectedProject(null)} className={styles.memberPanelClose}>✕</button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <button
+                    onClick={handleToggleProjectMute}
+                    disabled={muteLoading}
+                    style={{ padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                  >
+                    {projectMuted ? '🔕 알림 꺼짐' : '🔔 알림 켜짐'}
+                  </button>
+                  <button onClick={() => setSelectedProject(null)} className={styles.memberPanelClose}>✕</button>
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>

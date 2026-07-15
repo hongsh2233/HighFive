@@ -20,6 +20,18 @@
   margin-bottom: var(--space-8);
 }
 
+.pageHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.btnMuteToggle {
+  composes: btn btn-sm btn-secondary from global;
+  flex-shrink: 0;
+}
+
 .pageTitle {
   font-size: 22px;
   font-weight: 700;

@@ -64,6 +64,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [commentInput, setCommentInput] = useState('');
   const [historyOpen, setHistoryOpen] = useState(false);
   const [taskSummaryEnabled, setTaskSummaryEnabled] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [muteLoading, setMuteLoading] = useState(false);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [aiSummaryLoading, setAiSummaryLoading] = useState(false);
   const [aiSummaryError, setAiSummaryError] = useState<string | null>(null);
@@ -290,6 +292,29 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       .then((res) => setTaskSummaryEnabled(!!res.data.data.features.taskSummary))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    apiClient.get<{ data: { muted: boolean } }>(`/notifications/mute?scope=TASK&targetId=${id}`)
+      .then((res) => setMuted(res.data.data.muted))
+      .catch(() => {});
+  }, [id]);
+
+  const handleToggleMute = async () => {
+    setMuteLoading(true);
+    try {
+      if (muted) {
+        await apiClient.delete('/notifications/mute', { data: { scope: 'TASK', targetId: parseInt(id) } });
+        setMuted(false);
+      } else {
+        await apiClient.post('/notifications/mute', { scope: 'TASK', targetId: parseInt(id) });
+        setMuted(true);
+      }
+    } catch {
+      // silent
+    } finally {
+      setMuteLoading(false);
+    }
+  };
 
   const handleAiSummary = async () => {
     setAiSummaryLoading(true);
@@ -608,7 +633,12 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   return (
     <div className={styles.container}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>{task.title}</h1>
+        <div className={styles.pageHeaderRow}>
+          <h1 className={styles.pageTitle}>{task.title}</h1>
+          <button onClick={handleToggleMute} disabled={muteLoading} className={styles.btnMuteToggle}>
+            {muted ? '🔕 알림 꺼짐' : '🔔 알림 켜짐'}
+          </button>
+        </div>
         <p className={styles.pageSubtitle}>
           업무 #{task.id}
           {task.rmsNo && ` · ${task.rmsNo}`}

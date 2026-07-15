@@ -93,6 +93,7 @@ model User {
   createdProjects   Project[]       @relation("projectCreator")
   taskHistories     TaskHistory[]
   userNotifications UserNotification[]
+  notificationMutes NotificationMute[]
   manager           User?           @relation("userManager", fields: [managerId], references: [id])
   subordinates      User[]          @relation("userManager")
   announcements     Announcement[]  @relation("announcementAuthor")
@@ -355,6 +356,19 @@ model UserNotification {
   @@index([userId, isRead])
   @@index([organizationId])
   @@map("user_notifications")
+}
+
+model NotificationMute {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  scope     String   // 'TASK' | 'PROJECT'
+  targetId  Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, scope, targetId])
+  @@map("notification_mutes")
 }
 
 model Announcement {

@@ -1,6 +1,22 @@
 import { prisma } from './db';
 import { notifyStatusChange } from './services/webhook.service';
 
+async function isMuted(userId: number, taskId?: number): Promise<boolean> {
+  if (!taskId) return false;
+  try {
+    const task = await prisma.task.findUnique({ where: { id: taskId }, select: { projectId: true } });
+    const targets: { scope: string; targetId: number }[] = [{ scope: 'TASK', targetId: taskId }];
+    if (task?.projectId) targets.push({ scope: 'PROJECT', targetId: task.projectId });
+
+    const mute = await prisma.notificationMute.findFirst({
+      where: { userId, OR: targets.map((t) => ({ scope: t.scope, targetId: t.targetId })) },
+    });
+    return !!mute;
+  } catch {
+    return false;
+  }
+}
+
 export async function createUserNotification(
   userId: number,
   type: string,
@@ -9,6 +25,7 @@ export async function createUserNotification(
   organizationId?: number
 ) {
   try {
+    if (await isMuted(userId, taskId)) return;
     await prisma.userNotification.create({ data: { userId, type, message, taskId, organizationId } });
   } catch (e) {
     console.error('[notify] failed:', e);
