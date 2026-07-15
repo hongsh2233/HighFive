@@ -66,6 +66,11 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [taskSummaryEnabled, setTaskSummaryEnabled] = useState(false);
   const [muted, setMuted] = useState(false);
   const [muteLoading, setMuteLoading] = useState(false);
+  const [blockers, setBlockers] = useState<{ id: number; title: string; status: string; isDone: boolean }[]>([]);
+  const [projectTasks, setProjectTasks] = useState<{ id: number; title: string }[]>([]);
+  const [newBlockerId, setNewBlockerId] = useState('');
+  const [depError, setDepError] = useState('');
+  const [depLoading, setDepLoading] = useState(false);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [aiSummaryLoading, setAiSummaryLoading] = useState(false);
   const [aiSummaryError, setAiSummaryError] = useState<string | null>(null);
@@ -274,6 +279,15 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
       const commentsRes = await apiClient.get<{ data: any[] }>(`/tasks/${id}/comments`);
       setComments(commentsRes.data.data);
+
+      const depsRes = await apiClient.get<{ data: { id: number; title: string; status: string; isDone: boolean }[] }>(`/tasks/${id}/dependencies`);
+      setBlockers(depsRes.data.data);
+
+      if (t.projectId) {
+        apiClient.get<{ data: { data: Task[] } }>(`/tasks?projectId=${t.projectId}&limit=200`)
+          .then((res) => setProjectTasks(res.data.data.data.filter((pt) => pt.id !== t.id).map((pt) => ({ id: pt.id, title: pt.title }))))
+          .catch(() => {});
+      }
     } catch (err: any) {
       setError(err.message || '업무 조회 실패');
     } finally {
@@ -298,6 +312,34 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       .then((res) => setMuted(res.data.data.muted))
       .catch(() => {});
   }, [id]);
+
+  const handleAddBlocker = async () => {
+    if (!newBlockerId) return;
+    setDepLoading(true);
+    setDepError('');
+    try {
+      await apiClient.post(`/tasks/${id}/dependencies`, { blockingTaskId: parseInt(newBlockerId) });
+      setNewBlockerId('');
+      const res = await apiClient.get<{ data: { id: number; title: string; status: string; isDone: boolean }[] }>(`/tasks/${id}/dependencies`);
+      setBlockers(res.data.data);
+    } catch (err: any) {
+      setDepError(err.response?.data?.message || '선행 업무 등록 중 오류가 발생했습니다.');
+    } finally {
+      setDepLoading(false);
+    }
+  };
+
+  const handleRemoveBlocker = async (blockingTaskId: number) => {
+    setDepLoading(true);
+    try {
+      await apiClient.delete(`/tasks/${id}/dependencies`, { data: { blockingTaskId } });
+      setBlockers((prev) => prev.filter((b) => b.id !== blockingTaskId));
+    } catch (err: any) {
+      setDepError(err.response?.data?.message || '선행 업무 제거 중 오류가 발생했습니다.');
+    } finally {
+      setDepLoading(false);
+    }
+  };
 
   const handleToggleMute = async () => {
     setMuteLoading(true);
@@ -849,6 +891,38 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
       )}
+
+      {/* 선행 업무 */}
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <h2 className={`${styles.cardTitle} ${styles.noMargin}`}>선행 업무</h2>
+          {blockers.length > 0 && (
+            <span className={styles.blockedSummary}>🔒 {blockers.filter((b) => !b.isDone).length}건 미완료</span>
+          )}
+        </div>
+        {depError && <p className={styles.errorBox}>{depError}</p>}
+        {blockers.length > 0 && (
+          <ul className={styles.blockerList}>
+            {blockers.map((b) => (
+              <li key={b.id} className={styles.blockerItem}>
+                <span>{b.isDone ? '✅' : '⏳'} {b.title}</span>
+                <button onClick={() => handleRemoveBlocker(b.id)} disabled={depLoading} className={styles.blockerRemove}>제거</button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {canEdit && (
+          <div className={styles.blockerAddRow}>
+            <select value={newBlockerId} onChange={(e) => setNewBlockerId(e.target.value)} className={styles.input}>
+              <option value="">같은 프로젝트 업무 선택</option>
+              {projectTasks.filter((pt) => !blockers.some((b) => b.id === pt.id)).map((pt) => (
+                <option key={pt.id} value={pt.id}>{pt.title}</option>
+              ))}
+            </select>
+            <button onClick={handleAddBlocker} disabled={!newBlockerId || depLoading} className={styles.btnSecondary}>추가</button>
+          </div>
+        )}
+      </div>
 
       {/* GitHub 연결 */}
       <div className={styles.card}>

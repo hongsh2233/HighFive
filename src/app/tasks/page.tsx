@@ -761,6 +761,9 @@ function ProjectTaskSection({
                 }}
               />
             )}
+            {task.hasIncompleteBlockers && (
+              <span title="선행 업무 미완료" style={{ flexShrink: 0 }}>🔒</span>
+            )}
             {editingTitleId === task.id ? (
               <input
                 type="text"

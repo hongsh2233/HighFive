@@ -110,6 +110,12 @@ export default function KanbanBoard({ onTaskClick }: KanbanBoardProps) {
     const task = tasks.find((t) => t.id === taskId);
     if (!task || task.status === targetStatus) return;
 
+    const targetDef = getStatuses(task.projectId).find((s) => s.code === targetStatus);
+    if (targetDef?.isProgress && task.hasIncompleteBlockers) {
+      alert('선행 업무가 완료되지 않아 시작할 수 없습니다.');
+      return;
+    }
+
     setTasks(tasks.map((t) => t.id === taskId ? { ...t, status: targetStatus } : t));
 
     try {

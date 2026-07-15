@@ -5,6 +5,7 @@ import { notifyStatusChange } from '@/lib/webhook';
 import { notifyStatusChanged } from '@/lib/notify';
 import { addHistory } from '@/lib/task-history';
 import { getProjectStatuses } from '@/lib/task-status';
+import { assertNotBlocked } from '@/lib/task-dependency';
 
 // PATCH /api/tasks/[id]/status - 업무 상태 변경
 export async function PATCH(
@@ -25,8 +26,8 @@ export async function PATCH(
     const { status } = body;
 
     // 업무 존재 확인
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
+    const task = await prisma.task.findFirst({
+      where: { id: taskId, organizationId },
     });
 
     if (!task) {
@@ -39,6 +40,11 @@ export async function PATCH(
       return errorResponse('유효하지 않은 상태입니다.', 400, 'VALID_400');
     }
     const prevStatusDef = projectStatuses.find((s) => s.code === task.status);
+
+    const blockedMessage = await assertNotBlocked(taskId, status, task.projectId);
+    if (blockedMessage) {
+      return errorResponse(blockedMessage, 400, 'TASK_BLOCKED');
+    }
 
     // 상태 변경
     const updatedTask = await prisma.task.update({

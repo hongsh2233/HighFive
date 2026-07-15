@@ -32,6 +32,43 @@
   flex-shrink: 0;
 }
 
+.blockedSummary {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--warning);
+}
+
+.blockerList {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.blockerItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--bg-subtle);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.blockerRemove {
+  composes: btn btn-sm btn-secondary from global;
+  flex-shrink: 0;
+}
+
+.blockerAddRow {
+  display: flex;
+  gap: 8px;
+}
+
 .pageTitle {
   font-size: 22px;
   font-weight: 700;

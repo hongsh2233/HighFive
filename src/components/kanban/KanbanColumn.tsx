@@ -68,6 +68,9 @@ export default function KanbanColumn({
                       }}
                     />
                   )}
+                  {task.hasIncompleteBlockers && (
+                    <span title="선행 업무 미완료" style={{ flexShrink: 0 }}>🔒</span>
+                  )}
                   {parentTask && <span className={styles.parentPrefix}>[{parentTask.title}]</span>}
                   <span className={styles.cardTitleText}>{task.title}</span>
                 </div>

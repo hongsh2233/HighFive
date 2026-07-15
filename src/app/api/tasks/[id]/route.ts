@@ -5,6 +5,7 @@ import { sanitize } from '@/lib/sanitize';
 import { addHistory } from '@/lib/task-history';
 import { notifyWorkerChange } from '@/lib/notify';
 import { isValidStatus } from '@/lib/task-status';
+import { assertNotBlocked } from '@/lib/task-dependency';
 import { syncTaskCalendarEvent, deleteGoogleCalendarEvent } from '@/lib/google-calendar';
 
 // GET /api/tasks/[id] - 업무 상세 조회
@@ -105,6 +106,10 @@ export async function PATCH(
     if (status !== undefined) {
       if (!(await isValidStatus(prevTask.projectId, status))) {
         return errorResponse('유효하지 않은 상태값입니다.', 400, 'VALID_400');
+      }
+      const blockedMessage = await assertNotBlocked(taskId, status, prevTask.projectId);
+      if (blockedMessage) {
+        return errorResponse(blockedMessage, 400, 'TASK_BLOCKED');
       }
       updateData.status = status;
     }

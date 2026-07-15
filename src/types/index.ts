@@ -61,6 +61,7 @@ export interface Task {
   attachments?: TaskAttachment[];
   checklistItems?: TaskChecklistItem[];
   _count?: { subTasks: number; comments?: number; attachments?: number };
+  hasIncompleteBlockers?: boolean;
 }
 
 export interface TaskChecklistItem {

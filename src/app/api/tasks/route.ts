@@ -86,12 +86,32 @@ export async function GET(req: NextRequest) {
           timeLogs: true,
           fieldValues: true,
           _count: { select: { subTasks: true, comments: true, attachments: true } },
+          blockedBy: { include: { blockingTask: { select: { status: true, projectId: true } } } },
         },
       }),
       prisma.task.count({ where }),
     ]);
 
-    return successResponse({ data: tasks, total, page, limit }, '업무 목록 조회 완료');
+    // 선행 업무 완료 여부 판정 — 관련 프로젝트들의 커스텀 상태(isDone)를 한 번씩만 조회해 재사용
+    const blockingProjectIds = Array.from(new Set(
+      tasks.flatMap((t) => t.blockedBy.map((d) => d.blockingTask.projectId))
+    ));
+    const doneCodesByProject = new Map<number | null, Set<string>>();
+    await Promise.all(
+      blockingProjectIds.map(async (pid) => {
+        const statuses = await getProjectStatuses(pid);
+        doneCodesByProject.set(pid, new Set(statuses.filter((s) => s.isDone).map((s) => s.code)));
+      })
+    );
+
+    const tasksWithBlockedFlag = tasks.map(({ blockedBy, ...t }) => ({
+      ...t,
+      hasIncompleteBlockers: blockedBy.some(
+        (d) => !doneCodesByProject.get(d.blockingTask.projectId)?.has(d.blockingTask.status)
+      ),
+    }));
+
+    return successResponse({ data: tasksWithBlockedFlag, total, page, limit }, '업무 목록 조회 완료');
   } catch (err) {
     console.error(err);
     return errorResponse('업무 목록 조회 중 오류가 발생했습니다.', 500);

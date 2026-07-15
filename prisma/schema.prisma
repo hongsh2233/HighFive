@@ -179,12 +179,27 @@ model Task {
   comments      TaskComment[]
   attachments   TaskAttachment[]
   checklistItems TaskChecklistItem[]
+  blockedBy      TaskDependency[] @relation("taskBlockedBy")
+  blocking       TaskDependency[] @relation("taskBlocks")
 
   @@index([organizationId, workerId, status])
   @@index([organizationId, targetDate])
   @@index([rmsNo])
   @@index([parentTaskId])
   @@map("tasks")
+}
+
+model TaskDependency {
+  id             Int      @id @default(autoincrement())
+  taskId         Int      // 차단되는 업무(이 업무가 선행 업무를 기다림)
+  blockingTaskId Int      // 선행되어야 하는 업무
+  createdAt      DateTime @default(now())
+
+  task         Task @relation("taskBlockedBy", fields: [taskId], references: [id], onDelete: Cascade)
+  blockingTask Task @relation("taskBlocks", fields: [blockingTaskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, blockingTaskId])
+  @@map("task_dependencies")
 }
 
 model TaskChecklistItem {
