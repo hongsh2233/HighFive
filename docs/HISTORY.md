@@ -754,4 +754,4 @@
   8. **AI 주간 보고서**: `POST /api/ai/weekly-report` — 이번 주 완료/진행 업무 + `computeWorkloadStats()` 팀별 공수 기반 보고서. `/stats` 헤더에 "AI 주간 보고서" 버튼(ADMIN/LEADER).
   9. **날씨 기반 인사말**: `src/lib/weather.ts`(OpenWeatherMap) + `GET /api/ai/weather-greeting`(같은 조직·날짜 인메모리 캐시). 대시보드 인사말 아래 한 줄 표시, 키/도시 미설정 시 자동 숨김.
   - 각 단계 완료마다 `npx tsc --noEmit` 오류 0개, `npm run build` 성공 확인 후 커밋·머지·푸시.
-  - 참고: 이 환경은 `DATABASE_URL`이 없어 `npx prisma db push`를 실행하지 못함 — **실제 배포 환경에서 반드시 `db push`(또는 migrate)를 실행해 `AiSettings` 모델과 `MeetingNote.aiSummary` 필드를 반영해야 함.**
+  - 참고: 이 환경은 `DATABASE_URL`이 없어 `npx prisma db push`를 직접 실행하지 못했으나, `package.json`의 `start` 스크립트(`prisma db push --skip-generate --accept-data-loss && next start`)가 Railway 배포(`railway.json`의 `deploy.startCommand`) 때마다 자동 실행되므로 `AiSettings`/`MeetingNote.aiSummary` 스키마 변경은 별도 조치 없이 다음 배포에 자동 반영됨.
