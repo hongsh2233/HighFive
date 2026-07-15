@@ -18,8 +18,24 @@ interface MeetingNote {
   attendees: string | null;
   meetingDate: string | null;
   author: { id: number; name: string };
+  aiSummary: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+interface MeetingAiSummary {
+  summary: string;
+  decisions: string[];
+  actionItems: { text: string; suggestedAssignee: string | null }[];
+}
+
+function parseAiSummary(raw: string | null): MeetingAiSummary | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
 
 // Renders content text: **bold**, *italic*, - list, newlines
@@ -87,6 +103,8 @@ export default function ProjectMeetingsPage({ params }: { params: Promise<{ id: 
   const [formMeetingDate, setFormMeetingDate] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [aiEnabled, setAiEnabled] = useState<{ meetingSummary: boolean }>({ meetingSummary: false });
+  const [summarizingId, setSummarizingId] = useState<number | null>(null);
 
   const dictation = useDictation((finalText) => {
     setFormContent((prev) => (prev ? `${prev} ${finalText}` : finalText));
@@ -111,8 +129,24 @@ export default function ProjectMeetingsPage({ params }: { params: Promise<{ id: 
 
   useEffect(() => {
     if (!authLoading) fetchAll();
+    apiClient.get<{ data: { features: { meetingSummary: boolean } } }>('/settings/ai/status')
+      .then((res) => setAiEnabled({ meetingSummary: !!res.data.data.features.meetingSummary }))
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading]);
+
+  const handleSummarize = async (noteId: number) => {
+    setSummarizingId(noteId);
+    setMessage(null);
+    try {
+      const res = await apiClient.post<{ data: MeetingAiSummary }>(`/projects/${projectId}/meetings/${noteId}/summarize`);
+      setNotes((prev) => prev.map((n) => (n.id === noteId ? { ...n, aiSummary: JSON.stringify(res.data.data) } : n)));
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'AI 요약 중 오류가 발생했습니다.' });
+    } finally {
+      setSummarizingId(null);
+    }
+  };
 
   useEffect(() => {
     if (openParam) {
@@ -292,6 +326,48 @@ export default function ProjectMeetingsPage({ params }: { params: Promise<{ id: 
                       <div className={styles.contentMeta}>
                         {note.author.name} · {new Date(note.updatedAt).toLocaleString('ko-KR')}
                       </div>
+
+                      {aiEnabled.meetingSummary && (
+                        <div className={styles.aiSummaryBlock}>
+                          <div className={styles.aiSummaryHeader}>
+                            <span className={styles.aiSummaryLabel}>🤖 AI 요약</span>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleSummarize(note.id); }}
+                              disabled={summarizingId === note.id}
+                              className={styles.btnAiSummary}
+                            >
+                              {summarizingId === note.id ? '요약 중...' : (note.aiSummary ? '다시 요약' : 'AI 요약 생성')}
+                            </button>
+                          </div>
+                          {(() => {
+                            const parsed = parseAiSummary(note.aiSummary);
+                            if (!parsed) return null;
+                            return (
+                              <div className={styles.aiSummaryBody}>
+                                {parsed.summary && <p className={styles.aiSummaryText}>{parsed.summary}</p>}
+                                {parsed.decisions.length > 0 && (
+                                  <div className={styles.aiSummarySection}>
+                                    <span className={styles.aiSummarySectionTitle}>결정사항</span>
+                                    <ul className={styles.aiSummaryList}>
+                                      {parsed.decisions.map((d, i) => <li key={i}>{d}</li>)}
+                                    </ul>
+                                  </div>
+                                )}
+                                {parsed.actionItems.length > 0 && (
+                                  <div className={styles.aiSummarySection}>
+                                    <span className={styles.aiSummarySectionTitle}>액션아이템</span>
+                                    <ul className={styles.aiSummaryList}>
+                                      {parsed.actionItems.map((a, i) => (
+                                        <li key={i}>{a.text}{a.suggestedAssignee && ` (담당: ${a.suggestedAssignee})`}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

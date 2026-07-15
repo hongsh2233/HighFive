@@ -429,6 +429,7 @@ model MeetingNote {
   attendees   String?
   meetingDate DateTime?
   authorId    Int
+  aiSummary   String?   @db.Text  // AI 자동요약 캐시(액션아이템/결정사항 JSON 문자열)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

@@ -211,6 +211,64 @@
   color: var(--text-muted);
 }
 
+.aiSummaryBlock {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: var(--accent-light);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-card);
+}
+
+.aiSummaryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.aiSummaryLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.btnAiSummary {
+  composes: btn btn-sm btn-secondary from global;
+}
+
+.aiSummaryBody {
+  margin-top: 10px;
+}
+
+.aiSummaryText {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.7;
+  margin: 0 0 10px;
+}
+
+.aiSummarySection {
+  margin-bottom: 10px;
+}
+
+.aiSummarySectionTitle {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.aiSummaryList {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--text-primary);
+  line-height: 1.7;
+}
+
 .contentList {
   margin: 6px 0;
   padding-left: 20px;
