@@ -725,3 +725,13 @@
   - **보류 항목** (설계 논의 필요, 이번 라운드 미포함): JWT 세션이 요청마다 DB 재검증 없이 30분간 신뢰되는 문제(계정 비활성화/역할 변경이 즉시 반영 안 됨), 로그인 시 사용자 존재 여부에 따른 응답시간 차이(타이밍 사이드채널), 첨부파일 업로드 MIME 타입/확장자 미검증(현재는 크기만 검증, `attachment` disposition으로 즉각적 위험은 낮음), bcrypt cost factor 불일치(`src/lib/utils.ts`=10 vs `organizations/route.ts`=12).
   - **확인됨(문제 없음)**: task.notes는 `sanitize-html`로 서버측 새니타이즈 후 저장(XSS 안전), 댓글/멘션 렌더링은 React 자동 이스케이프만 사용, search 계열 API는 모두 organizationId로 정상 스코핑, superadmin 라우트는 일관되게 `requireSuperAdmin()` 사용, `$executeRawUnsafe`는 파라미터 바인딩이라 SQL 인젝션 아님, `.env.example`엔 실제 시크릿 없음, 로그인 브루트포스 방지용 rate-limit 적용됨(인메모리라 다중 인스턴스 배포 시 비영속적이라는 한계는 있음).
   - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+- **UI**: 업무 상세 "활동 히스토리" 토글 화살표 크기를 14px → 38px로 재확대(사용자 피드백).
+
+## 2026-07-14 (4차)
+
+- **보류했던 Medium 보안 이슈 4건 전부 수정**:
+  - `src/lib/utils.ts`의 `requireAuth`/`requireRole`/`requireSuperAdmin`에 `isSessionAccountActive()` 재검증 추가 — 매 API 요청마다 계정/조직 `isActive` 여부를 가볍게 재조회. 기존엔 JWT 세션이 최대 30분간 재검증 없이 신뢰되어, 세션 발급 이후 계정이 비활성화되거나 조직이 비활성화돼도 만료 전까지 그대로 접근 가능했던 문제를 해소.
+  - `src/lib/auth.ts`의 `authorize()`를 재구성해 계정 존재 여부와 무관하게 항상 `bcrypt.compare`를 실행하도록 변경(계정 없을 때는 모듈 로드 시 1회 계산한 더미 해시와 비교) — 응답 시간으로 계정 존재 여부를 유추할 수 있던 타이밍 사이드채널 제거.
+  - `src/app/api/tasks/[id]/attachments/route.ts`에 서버측 MIME/확장자 허용목록(`ALLOWED_ATTACHMENT_TYPES`) 추가 — 이미지/문서/압축 등 정해진 타입 외(html, svg, 실행파일 등)는 거부, 파일명에서 경로 구분자를 제거해 정규화.
+  - bcrypt cost factor 통일: `src/lib/utils.ts`의 `hashPassword()`가 `BCRYPT_COST=12` 상수를 쓰도록 하고, `change-password`/`organizations`(회원가입)/`superadmin/organizations/[id]/users`의 개별 `bcryptjs.hash(x, 10|12)` 호출을 전부 `hashPassword()` 재사용으로 교체.
+  - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
