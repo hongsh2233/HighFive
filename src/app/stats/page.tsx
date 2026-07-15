@@ -38,11 +38,36 @@ interface SummaryData {
 }
 
 export default function StatsPage() {
-  const { isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [workload, setWorkload] = useState<WorkloadData[]>([]);
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [workloadInsightEnabled, setWorkloadInsightEnabled] = useState(false);
+  const [insight, setInsight] = useState<string | null>(null);
+  const [insightLoading, setInsightLoading] = useState(false);
+  const [insightError, setInsightError] = useState<string | null>(null);
+
+  const canSeeInsight = user?.role === 'ADMIN' || user?.role === 'LEADER';
+
+  useEffect(() => {
+    apiClient.get<{ data: { features: { workloadInsight: boolean } } }>('/settings/ai/status')
+      .then((res) => setWorkloadInsightEnabled(!!res.data.data.features.workloadInsight))
+      .catch(() => {});
+  }, []);
+
+  const handleAnalyze = async () => {
+    setInsightLoading(true);
+    setInsightError(null);
+    try {
+      const res = await apiClient.post<{ data: { insight: string } }>('/ai/workload-insight');
+      setInsight(res.data.data.insight);
+    } catch (err: any) {
+      setInsightError(err.response?.data?.message || 'AI 부하 분석 중 오류가 발생했습니다.');
+    } finally {
+      setInsightLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -174,9 +199,17 @@ export default function StatsPage() {
 
       {/* 작업자별 부하량 */}
       <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>
-          작업자별 부하량
-        </h2>
+        <div className={styles.sectionHeaderRow}>
+          <h2 className={styles.sectionTitle}>작업자별 부하량</h2>
+          {canSeeInsight && workloadInsightEnabled && (
+            <button onClick={handleAnalyze} disabled={insightLoading} className={styles.btnAiInsight}>
+              {insightLoading ? '분석 중...' : '🤖 AI 부하 분석'}
+            </button>
+          )}
+        </div>
+
+        {insightError && <p className={styles.aiInsightError}>{insightError}</p>}
+        {insight && <div className={styles.aiInsightBox}>{insight}</div>}
 
         <div className={styles.tableScroll}>
           <table className={styles.table}>
