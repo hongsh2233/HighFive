@@ -29,11 +29,17 @@ export default function GlobalSearchModal({ onClose }: { onClose: () => void }) 
   const [tasks, setTasks] = useState<TaskResult[]>([]);
   const [wiki, setWiki] = useState<WikiResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [aiSearchEnabled, setAiSearchEnabled] = useState(false);
+  const [aiMode, setAiMode] = useState(false);
+  const [aiKeyword, setAiKeyword] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
+    apiClient.get<{ data: { features: { aiSearch: boolean } } }>('/settings/ai/status')
+      .then((res) => setAiSearchEnabled(!!res.data.data.features.aiSearch))
+      .catch(() => {});
   }, []);
 
   const search = useCallback(async (q: string) => {
@@ -55,12 +61,30 @@ export default function GlobalSearchModal({ onClose }: { onClose: () => void }) 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
     setQuery(v);
+    setAiKeyword(null);
+    if (aiMode) return; // AI 모드는 Enter로 명시적 검색
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => search(v), 300);
   };
 
+  const aiSearch = useCallback(async (q: string) => {
+    if (!q.trim()) return;
+    setLoading(true);
+    try {
+      const res = await apiClient.post<{ data: { keyword: string; tasks: TaskResult[]; wiki: WikiResult[] } }>('/ai/search', { query: q });
+      setAiKeyword(res.data.data.keyword);
+      setTasks(res.data.data.tasks);
+      setWiki(res.data.data.wiki);
+    } catch {
+      // silent
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') onClose();
+    if (e.key === 'Enter' && aiMode) aiSearch(query);
   };
 
   const goTask = (id: number) => {
@@ -85,12 +109,26 @@ export default function GlobalSearchModal({ onClose }: { onClose: () => void }) 
             type="text"
             value={query}
             onChange={handleChange}
-            placeholder="업무 제목, 메모, 위키 검색..."
+            onKeyDown={handleKeyDown}
+            placeholder={aiMode ? '자연어로 검색하고 Enter를 누르세요...' : '업무 제목, 메모, 위키 검색...'}
             className={styles.input}
           />
+          {aiSearchEnabled && (
+            <button
+              className={aiMode ? styles.aiToggleActive : styles.aiToggle}
+              onClick={() => { setAiMode((v) => !v); setAiKeyword(null); }}
+              title="AI 자연어 검색"
+            >
+              ✨ AI
+            </button>
+          )}
           {loading && <span className={styles.loadingDot}>⋯</span>}
           <button className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
+
+        {aiKeyword && (
+          <p className={styles.aiKeywordHint}>🔍 AI가 추출한 검색어: <strong>{aiKeyword}</strong></p>
+        )}
 
         {query.trim() && (
           <div className={styles.results}>

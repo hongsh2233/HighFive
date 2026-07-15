@@ -48,6 +48,24 @@
   flex-shrink: 0;
 }
 
+.aiToggle {
+  composes: btn btn-sm btn-secondary from global;
+  flex-shrink: 0;
+}
+
+.aiToggleActive {
+  composes: btn btn-sm btn-primary from global;
+  flex-shrink: 0;
+}
+
+.aiKeywordHint {
+  padding: 6px 16px;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0;
+  border-bottom: 1px solid var(--border);
+}
+
 .closeBtn {
   background: none;
   border: none;
