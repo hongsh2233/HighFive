@@ -47,14 +47,34 @@ export default function StatsPage() {
   const [insight, setInsight] = useState<string | null>(null);
   const [insightLoading, setInsightLoading] = useState(false);
   const [insightError, setInsightError] = useState<string | null>(null);
+  const [weeklyReportEnabled, setWeeklyReportEnabled] = useState(false);
+  const [report, setReport] = useState<string | null>(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
 
   const canSeeInsight = user?.role === 'ADMIN' || user?.role === 'LEADER';
 
   useEffect(() => {
-    apiClient.get<{ data: { features: { workloadInsight: boolean } } }>('/settings/ai/status')
-      .then((res) => setWorkloadInsightEnabled(!!res.data.data.features.workloadInsight))
+    apiClient.get<{ data: { features: { workloadInsight: boolean; weeklyReport: boolean } } }>('/settings/ai/status')
+      .then((res) => {
+        setWorkloadInsightEnabled(!!res.data.data.features.workloadInsight);
+        setWeeklyReportEnabled(!!res.data.data.features.weeklyReport);
+      })
       .catch(() => {});
   }, []);
+
+  const handleWeeklyReport = async () => {
+    setReportLoading(true);
+    setReportError(null);
+    try {
+      const res = await apiClient.post<{ data: { report: string } }>('/ai/weekly-report');
+      setReport(res.data.data.report);
+    } catch (err: any) {
+      setReportError(err.response?.data?.message || 'AI 주간 보고서 생성 중 오류가 발생했습니다.');
+    } finally {
+      setReportLoading(false);
+    }
+  };
 
   const handleAnalyze = async () => {
     setInsightLoading(true);
@@ -143,11 +163,19 @@ export default function StatsPage() {
             </span>
             <button className={styles.monthNavBtn} onClick={nextMonth} disabled={isCurrentMonth}>&#8250;</button>
           </div>
+          {canSeeInsight && weeklyReportEnabled && (
+            <button onClick={handleWeeklyReport} disabled={reportLoading} className={styles.btnAiInsight}>
+              {reportLoading ? '생성 중...' : '🤖 AI 주간 보고서'}
+            </button>
+          )}
           <button onClick={handleExportXlsx} className={styles.btnExport}>
             📥 엑셀 다운로드
           </button>
         </div>
       </div>
+
+      {reportError && <p className={styles.aiInsightError}>{reportError}</p>}
+      {report && <div className={styles.aiInsightBox}>{report}</div>}
 
       {/* 월간 요약 */}
       {summary && (
