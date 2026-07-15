@@ -740,3 +740,18 @@
 
 - **기능: GitHub PR 등록/머지 시 담당 리더(등록자)에게 인앱 알림** — 기존엔 PR이 머지돼도 업무 상태만 자동 완료 처리되고 아무 알림이 없었음(사용자 지적: "이 기능이 의미없잖아, 알림 가야하잖아"). `api/webhooks/github/route.ts`에 `pull_request` 액션 분기 추가: `opened` 시 등록자에게 "PR 등록" 알림(`GITHUB_PR_OPENED`), `closed`+`merged` 시 등록자+담당자에게 "머지 완료" 알림(`GITHUB_PR_MERGED`) 발송(`src/lib/notify.ts`의 `createUserNotification` 재사용). `src/types/index.ts`의 `UserNotificationType`에 두 타입 추가. `docs/PROJECT_STRUCTURE.md`에 웹훅 등록이 코드 배포와 별개로 저장소 측 설정(Payload URL + Secret)이 필요하다는 점도 명시.
 - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+
+## 2026-07-15
+
+- **AI 자동화 기능 확장 (전체 9단계 완료)**: 담당자별 업무 부하 분석, 날씨 인사말, 회의록 자동요약/업무변환 등 폭넓은 AI 제안 중 사용자가 "순차적으로 구현, 이후 API 값만 넣으면 동작할 정도로" 요청 — 조직별 ADMIN이 API 키를 등록하고 기능별로 켜고 끌 수 있는 인프라를 먼저 구축한 뒤 9개 기능을 순차 적용.
+  1. **인프라**: `AiSettings` 모델 신규(조직당 1행). `src/lib/crypto.ts`(AES-256-GCM, `NEXTAUTH_SECRET`에서 파생한 키 재사용, 추가 환경변수 불필요)로 API 키를 암호화 저장. `src/lib/ai.ts`의 `callClaude()`에 조직별 키 오버라이드 파라미터 추가(없으면 기존 env 폴백). `GET/PUT /api/settings/ai`(ADMIN), `GET /api/settings/ai/status`(인증 사용자 전체, 기능 on/off만 반환) 신규. `/settings/ai` 페이지(ADMIN 전용) — Anthropic/날씨 API 키 입력 + 8개 기능 토글, 키 없이 기능을 켜려는 시도는 서버에서 거부.
+  2. **회의록 AI 자동요약**: `MeetingNote.aiSummary`(Text) 필드 추가. `POST /api/projects/[id]/meetings/[meetingId]/summarize` — 본문에서 결정사항/액션아이템을 JSON으로 구조화해 요약·캐시. 회의록 아코디언에 "AI 요약 생성" 버튼과 결과 표시.
+  3. **회의록 → 업무 자동 변환**: ADMIN/LEADER가 액션아이템을 체크박스+담당자 선택으로 골라 기존 `POST /api/tasks`를 통해 일괄 업무 생성.
+  4. **담당자별 업무 부하 AI 인사이트**: 기존 `GET /api/stats/workload` 집계 로직을 `src/lib/workload.ts`의 `computeWorkloadStats()`로 추출·재사용, `POST /api/ai/workload-insight`가 재계산 없이 그대로 프롬프트에 전달. `/stats` 페이지에 "AI 부하 분석" 버튼(ADMIN/LEADER).
+  5. **AI 업무 생성 보조**: `POST /api/ai/task-draft` — 제목만으로 상세내용 초안 + 라벨 추천. `/tasks/create`의 "비고" 카드에 "AI로 작성" 버튼.
+  6. **AI 업무 요약**: `POST /api/ai/task-summary` — 업무 비고+최근 히스토리 10건+댓글 20건 기반 현황 요약. `/tasks/[id]` "기본 정보" 카드에 "AI 요약" 버튼.
+  7. **AI 자연어 검색**: 기존 `GET /api/search` 로직을 `src/lib/search.ts`의 `runSearch()`로 추출·재사용, `POST /api/ai/search`가 자연어 질의에서 키워드만 추출해 그대로 재사용. `GlobalSearchModal`에 "✨ AI" 토글 + Enter 검색.
+  8. **AI 주간 보고서**: `POST /api/ai/weekly-report` — 이번 주 완료/진행 업무 + `computeWorkloadStats()` 팀별 공수 기반 보고서. `/stats` 헤더에 "AI 주간 보고서" 버튼(ADMIN/LEADER).
+  9. **날씨 기반 인사말**: `src/lib/weather.ts`(OpenWeatherMap) + `GET /api/ai/weather-greeting`(같은 조직·날짜 인메모리 캐시). 대시보드 인사말 아래 한 줄 표시, 키/도시 미설정 시 자동 숨김.
+  - 각 단계 완료마다 `npx tsc --noEmit` 오류 0개, `npm run build` 성공 확인 후 커밋·머지·푸시.
+  - 참고: 이 환경은 `DATABASE_URL`이 없어 `npx prisma db push`를 실행하지 못함 — **실제 배포 환경에서 반드시 `db push`(또는 migrate)를 실행해 `AiSettings` 모델과 `MeetingNote.aiSummary` 필드를 반영해야 함.**

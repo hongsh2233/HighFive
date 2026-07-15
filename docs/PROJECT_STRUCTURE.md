@@ -136,6 +136,9 @@ User (1) ──< Request [requester / approver] (1) ──< Announcement (전결
 ### Integration
 채널별 외부연동(알림 발송) 설정. `channel`(SLACK/JANDI/TEAMS/TELEGRAM/KAKAO, unique), `webhookUrl`, `botToken`/`chatId`(TELEGRAM 전용), `isEnabled`. `src/lib/integrations.ts`가 DB에 저장된 값을 우선 사용하고, 해당 채널에 DB row가 아예 없을 때만 `.env`(`SLACK_WEBHOOK_URL` 등)로 폴백한다. `Notification` 모델(발송 로그)과는 별개로, 이 모델은 "어디로 보낼지"에 대한 설정만 저장한다.
 
+### AiSettings
+조직당 1행. AI 자동화 기능을 위한 API 키(암호화 저장)와 기능별 활성화 토글. `anthropicKeyEnc`/`weatherKeyEnc`(AES-256-GCM, `src/lib/crypto.ts`, `NEXTAUTH_SECRET`에서 파생한 키), `weatherCity`, `features`(Json — `taskDraft`/`taskSummary`/`aiSearch`/`weeklyReport`/`workloadInsight`/`meetingSummary`/`meetingToTask`/`weatherGreeting` 8개 boolean). `/settings/ai`(ADMIN 전용)에서 관리. 키가 없는 상태로 기능을 켜려는 시도는 서버(`PUT /api/settings/ai`)에서 거부된다. `src/lib/ai.ts`의 `callClaude()`는 조직이 키를 등록했으면 그 키를, 없으면 서버 `ANTHROPIC_API_KEY` env로 폴백한다.
+
 ### StickyNote
 개인 메모 스티커. `userId`, `content`(Text), `color?`, `order`. **개인당 최대 3개**(`/api/sticky-notes` POST에서 `count`로 검증). 화면 좌/우 가장자리에 고정되는 `StickyNotesPanel`(`src/components/StickyNotesPanel.tsx`, `Providers.tsx`에 로그인 시 전역 렌더링)에서 추가/수정(blur 시 자동 저장)/삭제/드래그 재정렬(`/api/sticky-notes` PUT으로 순서 일괄 저장) 가능. 패널의 열림 상태와 좌/우 배치는 서버가 아니라 `localStorage`(`AnnouncementBanner`의 dismiss 기록과 같은 패턴)에 저장.
 
@@ -346,6 +349,17 @@ ASSIGNED → PROGRESS → REVIEW → QA → DONE
 - `action: 'closed'` + `merged: true` — 업무 상태를 `DONE`으로 갱신하고 히스토리 기록, 등록자+담당자에게 머지 완료 인앱 알림(`GITHUB_PR_MERGED`) 발송
 - 저장소 쪽에서 Settings → Webhooks에 Payload URL(`/api/webhooks/github`)과 Secret(`GITHUB_WEBHOOK_SECRET`과 동일 값)을 등록하고 이벤트를 "Pull requests"로 지정해야 동작한다(코드 배포만으로는 활성화되지 않음)
 
+### AI 자동화 (`/settings/ai`, `src/lib/ai*.ts`, `src/app/api/ai/**`)
+조직별 ADMIN이 `/settings/ai`에서 Anthropic/날씨 API 키를 등록하고 기능별로 켜고 끌 수 있다(`AiSettings` 모델). 키가 없으면 해당 기능 토글 자체가 서버에서 거부되고, 각 페이지의 AI 버튼은 `GET /api/settings/ai/status`(인증 사용자 전체 호출 가능, 키 값은 절대 반환하지 않음)로 노출 여부를 결정한다.
+- **회의록 자동요약**(`meetingSummary`): `POST /api/projects/[id]/meetings/[meetingId]/summarize` — 결정사항/액션아이템을 JSON으로 구조화해 `MeetingNote.aiSummary`에 캐시.
+- **회의록 → 업무 변환**(`meetingToTask`): 회의록 페이지에서 액션아이템을 체크박스+담당자 선택으로 골라 기존 `POST /api/tasks`로 일괄 생성(ADMIN/LEADER만).
+- **업무 부하 AI 인사이트**(`workloadInsight`): `POST /api/ai/workload-insight` — `src/lib/workload.ts`의 `computeWorkloadStats()`(기존 `/api/stats/workload`와 공유) 결과를 그대로 프롬프트에 전달.
+- **AI 업무 생성 보조**(`taskDraft`): `POST /api/ai/task-draft` — 제목만으로 상세내용 초안 + 라벨 추천.
+- **AI 업무 요약**(`taskSummary`): `POST /api/ai/task-summary` — 업무 비고+최근 히스토리 10건+댓글 20건 기반 현황 요약.
+- **AI 자연어 검색**(`aiSearch`): `POST /api/ai/search` — `src/lib/search.ts`의 `runSearch()`(기존 `/api/search`와 공유)로 자연어에서 추출한 키워드를 검색.
+- **AI 주간 보고서**(`weeklyReport`): `POST /api/ai/weekly-report` — 이번 주 완료/진행 업무 + 팀별 공수 기반 보고서.
+- **날씨 인사말**(`weatherGreeting`): `GET /api/ai/weather-greeting` — OpenWeatherMap 조회 후 짧은 인사 문구 생성, 같은 조직·날짜는 인메모리 캐시로 재호출 방지.
+
 ### 자동 시간 카운트 흐름 (`PATCH /api/tasks/[id]/status`)
 업무의 `timeCounterEnabled`가 true인 경우, 상태 변경 시 자동으로 타임로그가 시작/종료된다 (수동 시작/종료 버튼 없음). 리터럴 `'PROGRESS'` 문자열이 아니라 해당 업무가 속한 프로젝트의 `ProjectStatus.isProgress` 플래그로 판단한다(커스텀 상태 대응).
 ```
@@ -452,8 +466,18 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 | GET | `/api/settings/integrations` | ADMIN | 외부연동 채널별 설정 목록 |
 | PUT | `/api/settings/integrations/[channel]` | ADMIN | 채널 설정 저장 |
 | POST | `/api/settings/integrations/[channel]/test` | ADMIN | 테스트 메시지 발송 |
-| POST | `/api/webhooks/slack` | 내부 | Slack/잔디 알림 발송 |
+| POST | `/api/webhooks/slack` | 내부 (인증 필요) | Slack/잔디 알림 발송 |
 | POST | `/api/webhooks/github` | 서명 검증 | GitHub PR merge 연동 |
+| GET/PUT | `/api/settings/ai` | ADMIN | AI 설정(API 키/기능 토글) 조회·저장 |
+| GET | `/api/settings/ai/status` | ALL | 기능별 활성화 여부 조회(키 값 미포함) |
+| POST | `/api/projects/[id]/meetings/[meetingId]/summarize` | 프로젝트 멤버 또는 ADMIN | 회의록 AI 요약 |
+| POST | `/api/ai/workload-insight` | LEADER+ | 담당자별 업무 부하 AI 인사이트 |
+| POST | `/api/ai/task-draft` | ALL | AI 업무 초안(상세내용+라벨) 생성 |
+| POST | `/api/ai/task-summary` | ALL | AI 업무 현황 요약 |
+| POST | `/api/ai/search` | ALL | AI 자연어 검색(키워드 추출 후 기존 검색 재사용) |
+| POST | `/api/ai/weekly-report` | LEADER+ | AI 주간 보고서 생성 |
+| GET | `/api/ai/weather-greeting` | ALL | 날씨 기반 인사 문구 |
+| GET | `/api/ai/calendar-summary` | ALL | (기존) 이번 주 업무/휴가 AI 브리핑 |
 
 ---
 
@@ -469,6 +493,7 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 | `JANDI_WEBHOOK_URL` | ⬜ | 잔디 알림 Webhook URL |
 | `KAKAO_WEBHOOK_URL` / `KAKAO_ACCESS_TOKEN` | ⬜ | 카카오톡 알림 |
 | `GITHUB_WEBHOOK_SECRET` | ⬜ | GitHub webhook 서명 검증 시크릿 |
+| `ANTHROPIC_API_KEY` | ⬜ | 서버 기본 AI 키(조직이 `/settings/ai`에 자체 키를 등록하면 그 키가 우선) |
 
 ---
 
