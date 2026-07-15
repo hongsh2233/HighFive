@@ -42,6 +42,7 @@ model Organization {
   integrations   Integration[]
   templates      Template[]
   inviteTokens   InviteToken[]
+  aiSettings     AiSettings?
 
   @@map("organizations")
 }
@@ -456,6 +457,20 @@ model Integration {
 
   @@unique([organizationId, channel])
   @@map("integrations")
+}
+
+model AiSettings {
+  id               Int      @id @default(autoincrement())
+  organizationId   Int      @unique
+  anthropicKeyEnc  String?  // AES-256-GCM 암호화된 Anthropic API 키
+  weatherKeyEnc    String?  // AES-256-GCM 암호화된 날씨 API 키
+  weatherCity      String?  // 조직 기본 도시 (날씨 인사말용)
+  features         Json     @default("{}")  // { taskDraft, taskSummary, aiSearch, weeklyReport, workloadInsight, meetingSummary, meetingToTask, weatherGreeting }
+  updatedAt        DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("ai_settings")
 }
 
 // ──────────────────────────────────────────────
