@@ -67,7 +67,8 @@
 }
 
 .cardTitleChevron {
-  font-size: 14px;
+  font-size: 38px;
+  line-height: 1;
   color: var(--text-secondary);
   transition: transform var(--motion-fast) var(--ease-standard);
 }

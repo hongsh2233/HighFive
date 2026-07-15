@@ -5,6 +5,10 @@ import bcryptjs from "bcryptjs";
 import * as OTPAuth from "otpauth";
 import { isLocked, recordFailure, recordSuccess } from "./rate-limit";
 
+// 존재하지 않는 계정으로 로그인 시도 시에도 항상 bcrypt.compare를 실행해 응답 시간으로
+// 계정 존재 여부를 유추할 수 없도록 하기 위한 더미 해시 (모듈 로드 시 1회만 계산됨).
+const DUMMY_PASSWORD_HASH = bcryptjs.hashSync('dummy-password-for-timing-safety', 12);
+
 function parseDeviceName(ua: string | undefined): string {
   if (!ua) return '알 수 없는 기기';
   if (/mobile/i.test(ua)) return '모바일';
@@ -44,26 +48,19 @@ export const authOptions: NextAuthOptions = {
           include: { organization: { select: { id: true, slug: true, isActive: true, plan: true, name: true, displayName: true, logoUrl: true } } },
         });
 
-        if (!user || !user.isActive) {
-          recordFailure(identifier);
-          return null;
-        }
-
-        if (user.organization && !user.organization.isActive) {
-          recordFailure(identifier);
-          return null;
-        }
-
         const slug = credentials.slug?.trim() || '';
 
-        if (!slug) {
-          if (user.role !== 'SUPERADMIN') { recordFailure(identifier); return null; }
-        } else {
-          if (user.organization?.slug !== slug) { recordFailure(identifier); return null; }
-        }
+        // 계정 존재 여부와 무관하게 항상 bcrypt.compare를 실행(타이밍 사이드채널 방지) —
+        // 이후 모든 조건을 한 번에 평가해 실패 사유별 응답 시간 차이를 없앤다.
+        const isPasswordValid = await bcryptjs.compare(
+          credentials.password,
+          user?.passwordHash ?? DUMMY_PASSWORD_HASH
+        );
 
-        const isPasswordValid = await bcryptjs.compare(credentials.password, user.passwordHash);
-        if (!isPasswordValid) {
+        const accountValid = !!user && user.isActive && (!user.organization || user.organization.isActive);
+        const slugValid = !slug ? user?.role === 'SUPERADMIN' : user?.organization?.slug === slug;
+
+        if (!user || !accountValid || !slugValid || !isPasswordValid) {
           recordFailure(identifier);
           return null;
         }

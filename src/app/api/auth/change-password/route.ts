@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
+import { requireAuth, successResponse, errorResponse, hashPassword } from '@/lib/utils';
 import bcryptjs from 'bcryptjs';
 
 export async function POST(req: NextRequest) {
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 새 비밀번호 해시
-    const hashedPassword = await bcryptjs.hash(newPassword, 12);
+    const hashedPassword = await hashPassword(newPassword);
 
     // 비밀번호 업데이트
     await prisma.user.update({

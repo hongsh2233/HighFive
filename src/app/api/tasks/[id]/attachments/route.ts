@@ -7,6 +7,40 @@ const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024; // 5MB per file
 const MAX_TOTAL_ATTACHMENT_BYTES = 20 * 1024 * 1024; // 20MB per task
 const MAX_ATTACHMENT_COUNT = 5;
 
+// 서버측 MIME/확장자 허용목록 — 클라이언트가 보낸 mimeType은 신뢰할 수 없으므로
+// 실행/스크립트 가능성이 있는 타입(html, svg, 실행파일 등)을 명시적으로 차단한다.
+const ALLOWED_ATTACHMENT_TYPES: Record<string, string[]> = {
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/png': ['.png'],
+  'image/gif': ['.gif'],
+  'image/webp': ['.webp'],
+  'application/pdf': ['.pdf'],
+  'application/msword': ['.doc'],
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+  'application/vnd.ms-excel': ['.xls'],
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+  'application/vnd.ms-powerpoint': ['.ppt'],
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+  'text/plain': ['.txt'],
+  'text/csv': ['.csv'],
+  'application/zip': ['.zip'],
+  'application/x-zip-compressed': ['.zip'],
+};
+
+function sanitizeFilename(filename: string): string {
+  // 경로 구분자를 제거해 파일명만 남기고, 200자로 자른다.
+  const base = filename.replace(/^.*[\\/]/, '');
+  return base.slice(0, 200);
+}
+
+function isAllowedAttachment(filename: string, mimeType: string): boolean {
+  const ext = filename.toLowerCase().match(/\.[a-z0-9]+$/)?.[0];
+  if (!ext) return false;
+  const allowedExts = ALLOWED_ATTACHMENT_TYPES[mimeType];
+  if (!allowedExts) return false;
+  return allowedExts.includes(ext);
+}
+
 // POST /api/tasks/[id]/attachments - 기존 업무에 첨부파일 추가
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -39,10 +73,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const rows: { taskId: number; filename: string; mimeType: string; size: number; data: Buffer; uploadedById: number }[] = [];
     for (const item of attachments) {
       if (!item?.filename || !item?.dataBase64) continue;
+      const filename = sanitizeFilename(item.filename);
+      const mimeType = item.mimeType || 'application/octet-stream';
+      if (!isAllowedAttachment(filename, mimeType)) {
+        return errorResponse(`${filename}: 허용되지 않는 파일 형식입니다.`, 400, 'VALID_400');
+      }
       const base64 = item.dataBase64.replace(/^data:[^;]+;base64,/, '');
       const buffer = Buffer.from(base64, 'base64');
       if (buffer.length > MAX_ATTACHMENT_BYTES) {
-        return errorResponse(`${item.filename} 파일이 5MB를 초과합니다.`, 400, 'VALID_400');
+        return errorResponse(`${filename} 파일이 5MB를 초과합니다.`, 400, 'VALID_400');
       }
       total += buffer.length;
       if (total > MAX_TOTAL_ATTACHMENT_BYTES) {
@@ -50,8 +89,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
       rows.push({
         taskId,
-        filename: item.filename.slice(0, 200),
-        mimeType: item.mimeType || 'application/octet-stream',
+        filename,
+        mimeType,
         size: buffer.length,
         data: buffer,
         uploadedById: userId,

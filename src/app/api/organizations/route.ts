@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { successResponse, errorResponse } from '@/lib/utils';
-import bcryptjs from 'bcryptjs';
+import { successResponse, errorResponse, hashPassword } from '@/lib/utils';
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,7 +30,7 @@ export async function POST(req: NextRequest) {
       return errorResponse('이미 사용 중인 이메일입니다.', 409);
     }
 
-    const passwordHash = await bcryptjs.hash(password, 12);
+    const passwordHash = await hashPassword(password);
 
     const org = await prisma.organization.create({
       data: {

@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
-import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/db';
-import { successResponse, errorResponse, requireSuperAdmin } from '@/lib/utils';
+import { successResponse, errorResponse, requireSuperAdmin, hashPassword } from '@/lib/utils';
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireSuperAdmin();
@@ -47,7 +46,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return errorResponse('이미 사용 중인 이메일입니다.', 409);
 
-    const hash = await bcrypt.hash(password, 10);
+    const hash = await hashPassword(password);
     const newUser = await prisma.user.create({
       data: {
         name,
