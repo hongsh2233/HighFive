@@ -137,7 +137,13 @@ User (1) ──< Request [requester / approver] (1) ──< Announcement (전결
 채널별 외부연동(알림 발송) 설정. `channel`(SLACK/JANDI/TEAMS/TELEGRAM/KAKAO, unique), `webhookUrl`, `botToken`/`chatId`(TELEGRAM 전용), `isEnabled`. `src/lib/integrations.ts`가 DB에 저장된 값을 우선 사용하고, 해당 채널에 DB row가 아예 없을 때만 `.env`(`SLACK_WEBHOOK_URL` 등)로 폴백한다. `Notification` 모델(발송 로그)과는 별개로, 이 모델은 "어디로 보낼지"에 대한 설정만 저장한다.
 
 ### AiSettings
-조직당 1행. AI 자동화 기능을 위한 API 키(암호화 저장)와 기능별 활성화 토글. `anthropicKeyEnc`/`weatherKeyEnc`(AES-256-GCM, `src/lib/crypto.ts`, `NEXTAUTH_SECRET`에서 파생한 키), `weatherCity`, `features`(Json — `taskDraft`/`taskSummary`/`aiSearch`/`weeklyReport`/`workloadInsight`/`meetingSummary`/`meetingToTask`/`weatherGreeting` 8개 boolean). `/settings/ai`(ADMIN 전용)에서 관리. 키가 없는 상태로 기능을 켜려는 시도는 서버(`PUT /api/settings/ai`)에서 거부된다. `src/lib/ai.ts`의 `callClaude()`는 조직이 키를 등록했으면 그 키를, 없으면 서버 `ANTHROPIC_API_KEY` env로 폴백한다.
+조직당 1행. AI 자동화 기능을 위한 API 키(암호화 저장)와 기능별 활성화 토글. `anthropicKeyEnc`/`weatherKeyEnc`/`githubTokenEnc`(AES-256-GCM, `src/lib/crypto.ts`, `NEXTAUTH_SECRET`에서 파생한 키), `weatherCity`, `features`(Json — `taskDraft`/`taskSummary`/`aiSearch`/`weeklyReport`/`workloadInsight`/`meetingSummary`/`meetingToTask`/`weatherGreeting` 8개 boolean). `/settings/ai`(ADMIN 전용)에서 관리. 키가 없는 상태로 기능을 켜려는 시도는 서버(`PUT /api/settings/ai`)에서 거부된다. `src/lib/ai.ts`의 `callClaude()`는 조직이 키를 등록했으면 그 키를, 없으면 서버 `ANTHROPIC_API_KEY` env로 폴백한다. `githubTokenEnc`는 토글 대상이 아니며 GitHub 완료 코멘트 발송 시에만 조회된다(`getOrgGithubToken`).
+
+### NotificationMute
+`userId`, `scope`('TASK'|'PROJECT'), `targetId`, `@@unique([userId, scope, targetId])`. 업무 또는 프로젝트 단위로 인앱 알림을 끄는 설정. `src/lib/notify.ts`의 `createUserNotification()`이 생성 직전 이 테이블을 확인해 매치되면 조용히 건너뛴다(단일 지점 게이팅). 업무 상세/프로젝트 멤버 패널의 🔔/🔕 토글로 관리(`GET/POST/DELETE /api/notifications/mute`). Slack/잔디 등 외부 채널 알림은 대상 아님.
+
+### TaskDependency
+`taskId`(차단되는 업무), `blockingTaskId`(선행되어야 하는 업무), `@@unique([taskId, blockingTaskId])`. 업무 상태가 프로젝트의 `isProgress` 단계로 진입하려 할 때, 아직 완료(`isDone`)되지 않은 선행 업무가 있으면 차단한다(`src/lib/task-dependency.ts`의 `assertNotBlocked`, `tasks/[id]/status/route.ts`와 `tasks/[id]/route.ts` PATCH 양쪽에서 호출). 등록 시 `wouldCreateCycle()`로 순환 의존관계를 BFS 검사해 거부. `GET/POST/DELETE /api/tasks/[id]/dependencies`로 관리, 업무 목록/칸반은 `GET /api/tasks`가 배치 계산해 내려주는 `hasIncompleteBlockers` 플래그로 🔒 배지를 표시한다.
 
 ### StickyNote
 개인 메모 스티커. `userId`, `content`(Text), `color?`, `order`. **개인당 최대 3개**(`/api/sticky-notes` POST에서 `count`로 검증). 화면 좌/우 가장자리에 고정되는 `StickyNotesPanel`(`src/components/StickyNotesPanel.tsx`, `Providers.tsx`에 로그인 시 전역 렌더링)에서 추가/수정(blur 시 자동 저장)/삭제/드래그 재정렬(`/api/sticky-notes` PUT으로 순서 일괄 저장) 가능. 패널의 열림 상태와 좌/우 배치는 서버가 아니라 `localStorage`(`AnnouncementBanner`의 dismiss 기록과 같은 패턴)에 저장.
@@ -343,11 +349,13 @@ ASSIGNED → PROGRESS → REVIEW → QA → DONE
 - `PATCH /api/tasks/[id]/status` 호출 시 상태 저장 후 `notifyStatusChange()` 비동기 실행 → Slack/잔디/카카오 webhook + `TaskHistory` 기록
 - 담당자 변경/검수 요청 시 `src/lib/notify.ts`가 `UserNotification`(인앱 알림 벨)도 함께 생성
 
-### GitHub PR 연동 (`src/app/api/webhooks/github/route.ts`)
-- `Task.externalLink`에 등록된 PR URL과 일치하는 GitHub webhook(`pull_request` 이벤트, `x-hub-signature-256` 서명 검증, `GITHUB_WEBHOOK_SECRET` 미설정/서명불일치 시 401)이 오면 해당 업무를 갱신
-- `action: 'opened'` — 담당 리더(업무 등록자, `registrantId`)에게 PR 등록 인앱 알림(`GITHUB_PR_OPENED`) 발송
-- `action: 'closed'` + `merged: true` — 업무 상태를 `DONE`으로 갱신하고 히스토리 기록, 등록자+담당자에게 머지 완료 인앱 알림(`GITHUB_PR_MERGED`) 발송
-- 저장소 쪽에서 Settings → Webhooks에 Payload URL(`/api/webhooks/github`)과 Secret(`GITHUB_WEBHOOK_SECRET`과 동일 값)을 등록하고 이벤트를 "Pull requests"로 지정해야 동작한다(코드 배포만으로는 활성화되지 않음)
+### GitHub 연동 (`src/app/api/webhooks/github/route.ts`, `src/lib/github.ts`)
+**Inbound (GitHub → 앱)**: `Task.externalLink`에 등록된 PR/이슈 URL과 일치하는 GitHub webhook(`x-hub-signature-256` 서명 검증, `GITHUB_WEBHOOK_SECRET` 미설정/서명불일치 시 401)이 오면 해당 업무를 갱신.
+- `pull_request` — `action: 'opened'`는 등록자에게 PR 등록 알림(`GITHUB_PR_OPENED`), `action: 'closed'`+`merged: true`는 업무를 `DONE`으로 갱신하고 등록자+담당자에게 머지 알림(`GITHUB_PR_MERGED`)
+- `issues` — `action: 'closed'`는 프로젝트의 `isDone` 상태로 갱신(커스텀 상태 대응), `action: 'reopened'`는 첫 번째 비완료 상태로 되돌림
+- 저장소 쪽에서 Settings → Webhooks에 Payload URL(`/api/webhooks/github`)과 Secret(`GITHUB_WEBHOOK_SECRET`과 동일 값)을 등록하고 이벤트를 "Pull requests"+"Issues"로 지정해야 동작한다(코드 배포만으로는 활성화되지 않음)
+
+**Outbound (앱 → GitHub)**: `tasks/[id]/status/route.ts`에서 업무가 완료(`isDone`) 단계로 전환되고 `externalLink`가 있으면, 조직에 `AiSettings.githubTokenEnc`(PAT)가 등록된 경우 `postGithubComment()`로 해당 PR/이슈에 완료 코멘트를 비동기 발송(실패해도 상태변경 자체는 성공 처리). 전체 댓글 양방향 동기화는 범위 밖 — 완료 시그널 1건만 발송.
 
 ### AI 자동화 (`/settings/ai`, `src/lib/ai*.ts`, `src/app/api/ai/**`)
 조직별 ADMIN이 `/settings/ai`에서 Anthropic/날씨 API 키를 등록하고 기능별로 켜고 끌 수 있다(`AiSettings` 모델). 키가 없으면 해당 기능 토글 자체가 서버에서 거부되고, 각 페이지의 AI 버튼은 `GET /api/settings/ai/status`(인증 사용자 전체 호출 가능, 키 값은 절대 반환하지 않음)로 노출 여부를 결정한다.
@@ -459,6 +467,8 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 | PATCH | `/api/requests/[id]/decision` | 지정된 결재자 또는 (결재자 미지정 시) ADMIN | 승인/반려 |
 | GET | `/api/notifications` | ALL | 인앱 알림 목록 |
 | PATCH | `/api/notifications/read-all` | ALL | 알림 전체 읽음 처리 |
+| GET/POST/DELETE | `/api/notifications/mute` | ALL | 업무/프로젝트 단위 알림 뮤트 조회·설정·해제 |
+| GET/POST/DELETE | `/api/tasks/[id]/dependencies` | ALL | 선행 업무 조회·추가·제거(순환 검사 포함) |
 | GET | `/api/stats/summary` | LEADER+ | 월간 요약 통계 |
 | GET | `/api/stats/workload` | LEADER+ | 작업자별 부하량 |
 | GET | `/api/calendar/ical-url` | ALL | iCal 구독 URL 발급 |
@@ -467,7 +477,7 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 | PUT | `/api/settings/integrations/[channel]` | ADMIN | 채널 설정 저장 |
 | POST | `/api/settings/integrations/[channel]/test` | ADMIN | 테스트 메시지 발송 |
 | POST | `/api/webhooks/slack` | 내부 (인증 필요) | Slack/잔디 알림 발송 |
-| POST | `/api/webhooks/github` | 서명 검증 | GitHub PR merge 연동 |
+| POST | `/api/webhooks/github` | 서명 검증 | GitHub PR merge + issues 연동 |
 | GET/PUT | `/api/settings/ai` | ADMIN | AI 설정(API 키/기능 토글) 조회·저장 |
 | GET | `/api/settings/ai/status` | ALL | 기능별 활성화 여부 조회(키 값 미포함) |
 | POST | `/api/projects/[id]/meetings/[meetingId]/summarize` | 프로젝트 멤버 또는 ADMIN | 회의록 AI 요약 |

@@ -755,3 +755,11 @@
   9. **날씨 기반 인사말**: `src/lib/weather.ts`(OpenWeatherMap) + `GET /api/ai/weather-greeting`(같은 조직·날짜 인메모리 캐시). 대시보드 인사말 아래 한 줄 표시, 키/도시 미설정 시 자동 숨김.
   - 각 단계 완료마다 `npx tsc --noEmit` 오류 0개, `npm run build` 성공 확인 후 커밋·머지·푸시.
   - 참고: 이 환경은 `DATABASE_URL`이 없어 `npx prisma db push`를 직접 실행하지 못했으나, `package.json`의 `start` 스크립트(`prisma db push --skip-generate --accept-data-loss && next start`)가 Railway 배포(`railway.json`의 `deploy.startCommand`) 때마다 자동 실행되므로 `AiSettings`/`MeetingNote.aiSummary` 스키마 변경은 별도 조치 없이 다음 배포에 자동 반영됨.
+
+## 2026-07-15 (2차)
+
+- **협업 강화 우선순위 C 전체 완료**: 이전 세션에서 제안한 "업무 관리 중심 협업 강화" 3개 우선순위 중 A·B는 이미 구현되어 있음을 확인, 사용자 요청대로 C 3개만 진행.
+  1. **알림 구독/음소거 설정**: `NotificationMute` 모델(userId+scope['TASK'|'PROJECT']+targetId, unique) 신규. `src/lib/notify.ts`의 `createUserNotification()`(모든 인앱 알림 생성의 단일 지점)에 뮤트 체크를 넣어 개별 호출부(댓글/상태변경/담당자변경/신청결재/GitHub웹훅 등)를 건드리지 않고 한 곳에서 차단. `GET/POST/DELETE /api/notifications/mute` 신규. 업무 상세 제목 옆(`tasks/[id]/page.tsx`)과 프로젝트 멤버 패널(`projects/page.tsx`)에 🔔/🔕 토글 버튼 추가. 외부 채널(Slack/잔디) 알림은 이번 범위 제외, 인앱 알림만 대상.
+  2. **업무 의존관계(선후행)**: `TaskDependency` 모델(taskId=차단되는 업무, blockingTaskId=선행 업무, unique) 신규. `src/lib/task-dependency.ts`에 BFS 순환검사(`wouldCreateCycle`)와 프로젝트별 커스텀 상태(`isProgress`/`isDone`) 기준 차단 판정(`assertNotBlocked`) 구현 — `'DONE'` 문자열 하드코딩 없이 `src/lib/task-status.ts`의 `getProjectStatuses()` 재사용. `GET/POST/DELETE /api/tasks/[id]/dependencies` 신규. 상태변경 경로 2곳(`tasks/[id]/status/route.ts`, `tasks/[id]/route.ts` PATCH) 모두에 차단 체크 삽입(이 김에 `status/route.ts`의 `findUnique`→`findFirst` organizationId 필터 누락도 같이 수정). `GET /api/tasks` 목록에 `hasIncompleteBlockers` 플래그 추가(관련 프로젝트들의 완료 코드셋을 배치 조회해 N+1 방지), 업무 상세에 "선행 업무" 카드, 업무 목록/칸반 카드에 🔒 배지, 칸반 드래그 시 클라이언트 1차 차단(서버 이중 검증) 추가.
+  3. **GitHub 양방향 동기화 확장**: 전체 댓글 동기화는 범위가 커서 제외, 두 가지로 좁힘 — (1) 완료 처리 시 GitHub PR/이슈에 완료 코멘트 자동 발송(Outbound), (2) 웹훅이 `pull_request`뿐 아니라 `issues`(opened/closed/reopened) 이벤트도 처리(Inbound 확장). `AiSettings.githubTokenEnc` 필드 추가(기존 Anthropic/날씨 키와 동일 암호화 패턴), `/settings/ai`에 "GitHub 연동" 카드, `src/lib/github.ts` 신규(`postGithubComment`, URL 파싱 후 GitHub REST API 호출).
+  - 각 기능 완료마다 `npx tsc --noEmit` 오류 0개, `npm run build` 성공 확인 후 커밋·머지·푸시.
