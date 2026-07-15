@@ -735,3 +735,8 @@
   - `src/app/api/tasks/[id]/attachments/route.ts`에 서버측 MIME/확장자 허용목록(`ALLOWED_ATTACHMENT_TYPES`) 추가 — 이미지/문서/압축 등 정해진 타입 외(html, svg, 실행파일 등)는 거부, 파일명에서 경로 구분자를 제거해 정규화.
   - bcrypt cost factor 통일: `src/lib/utils.ts`의 `hashPassword()`가 `BCRYPT_COST=12` 상수를 쓰도록 하고, `change-password`/`organizations`(회원가입)/`superadmin/organizations/[id]/users`의 개별 `bcryptjs.hash(x, 10|12)` 호출을 전부 `hashPassword()` 재사용으로 교체.
   - 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+
+## 2026-07-14 (5차)
+
+- **기능: GitHub PR 등록/머지 시 담당 리더(등록자)에게 인앱 알림** — 기존엔 PR이 머지돼도 업무 상태만 자동 완료 처리되고 아무 알림이 없었음(사용자 지적: "이 기능이 의미없잖아, 알림 가야하잖아"). `api/webhooks/github/route.ts`에 `pull_request` 액션 분기 추가: `opened` 시 등록자에게 "PR 등록" 알림(`GITHUB_PR_OPENED`), `closed`+`merged` 시 등록자+담당자에게 "머지 완료" 알림(`GITHUB_PR_MERGED`) 발송(`src/lib/notify.ts`의 `createUserNotification` 재사용). `src/types/index.ts`의 `UserNotificationType`에 두 타입 추가. `docs/PROJECT_STRUCTURE.md`에 웹훅 등록이 코드 배포와 별개로 저장소 측 설정(Payload URL + Secret)이 필요하다는 점도 명시.
+- 디버깅 체크: `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
