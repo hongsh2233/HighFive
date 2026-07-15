@@ -90,6 +90,9 @@ function TaskCreateForm() {
   const [subTasks, setSubTasks] = useState<SubTaskForm[]>([{ title: '', workerId: '', targetDate: '' }]);
   const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([]);
   const [fileError, setFileError] = useState('');
+  const [taskDraftEnabled, setTaskDraftEnabled] = useState(false);
+  const [draftLoading, setDraftLoading] = useState(false);
+  const [draftError, setDraftError] = useState('');
 
   const handleFilesSelected = (fileList: FileList | null) => {
     if (!fileList) return;
@@ -194,6 +197,34 @@ function TaskCreateForm() {
       setWorkers(res.data.data || []);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    axios.get('/api/settings/ai/status')
+      .then((res) => setTaskDraftEnabled(!!res.data.data.features.taskDraft))
+      .catch(() => {});
+  }, []);
+
+  const handleAiDraft = async () => {
+    if (!title.trim()) { setDraftError('업무 제목을 먼저 입력해주세요.'); return; }
+    setDraftLoading(true);
+    setDraftError('');
+    try {
+      const proj = projects.find(p => p.id === parseInt(projectId));
+      const res = await axios.post('/api/ai/task-draft', {
+        title: title.trim(),
+        projectContext: proj?.name,
+      });
+      const { notes: draftNotes, suggestedLabels } = res.data.data;
+      if (draftNotes) setNotes(`<p>${draftNotes.replace(/\n/g, '<br/>')}</p>`);
+      if (Array.isArray(suggestedLabels) && suggestedLabels.length > 0) {
+        setLabels((prev) => Array.from(new Set([...prev, ...suggestedLabels])));
+      }
+    } catch (err: any) {
+      setDraftError(err.response?.data?.message || 'AI 초안 생성 중 오류가 발생했습니다.');
+    } finally {
+      setDraftLoading(false);
     }
   };
 
@@ -426,7 +457,15 @@ function TaskCreateForm() {
             </div>
           ) : (
             <div className={styles.card}>
-              <h2 className={styles.cardTitle}>비고</h2>
+              <div className={styles.cardTitleRow}>
+                <h2 className={styles.cardTitle}>비고</h2>
+                {taskDraftEnabled && (
+                  <button type="button" onClick={handleAiDraft} disabled={draftLoading} className={styles.btnAiDraft}>
+                    {draftLoading ? '작성 중...' : '🤖 AI로 작성'}
+                  </button>
+                )}
+              </div>
+              {draftError && <p className={styles.hintError}>{draftError}</p>}
               <div className={styles.editorWrap}>
                 <ReactQuill
                   theme="snow"

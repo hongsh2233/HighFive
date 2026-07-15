@@ -75,6 +75,21 @@
   color: var(--text-primary);
 }
 
+.cardTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.cardTitleRow .cardTitle {
+  margin-bottom: 0;
+}
+
+.btnAiDraft {
+  composes: btn btn-sm btn-secondary from global;
+}
+
 .fieldGroup {
   margin-bottom: var(--space-5);
 }
