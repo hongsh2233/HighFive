@@ -171,6 +171,8 @@ export type UserNotificationType =
   | "LEAVE_REMINDER"
   | "COMMENT_MENTION"
   | "NEW_COMMENT"
+  | "GITHUB_PR_OPENED"
+  | "GITHUB_PR_MERGED"
   | (string & {});
 
 export interface UserNotification {

@@ -341,7 +341,10 @@ ASSIGNED → PROGRESS → REVIEW → QA → DONE
 - 담당자 변경/검수 요청 시 `src/lib/notify.ts`가 `UserNotification`(인앱 알림 벨)도 함께 생성
 
 ### GitHub PR 연동 (`src/app/api/webhooks/github/route.ts`)
-- `Task.externalLink`에 등록된 PR URL이 머지되면 GitHub webhook(`pull_request` 이벤트, `x-hub-signature-256` 서명 검증)이 해당 업무를 갱신하고 히스토리에 기록
+- `Task.externalLink`에 등록된 PR URL과 일치하는 GitHub webhook(`pull_request` 이벤트, `x-hub-signature-256` 서명 검증, `GITHUB_WEBHOOK_SECRET` 미설정/서명불일치 시 401)이 오면 해당 업무를 갱신
+- `action: 'opened'` — 담당 리더(업무 등록자, `registrantId`)에게 PR 등록 인앱 알림(`GITHUB_PR_OPENED`) 발송
+- `action: 'closed'` + `merged: true` — 업무 상태를 `DONE`으로 갱신하고 히스토리 기록, 등록자+담당자에게 머지 완료 인앱 알림(`GITHUB_PR_MERGED`) 발송
+- 저장소 쪽에서 Settings → Webhooks에 Payload URL(`/api/webhooks/github`)과 Secret(`GITHUB_WEBHOOK_SECRET`과 동일 값)을 등록하고 이벤트를 "Pull requests"로 지정해야 동작한다(코드 배포만으로는 활성화되지 않음)
 
 ### 자동 시간 카운트 흐름 (`PATCH /api/tasks/[id]/status`)
 업무의 `timeCounterEnabled`가 true인 경우, 상태 변경 시 자동으로 타임로그가 시작/종료된다 (수동 시작/종료 버튼 없음). 리터럴 `'PROGRESS'` 문자열이 아니라 해당 업무가 속한 프로젝트의 `ProjectStatus.isProgress` 플래그로 판단한다(커스텀 상태 대응).
