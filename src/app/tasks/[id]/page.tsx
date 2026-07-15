@@ -63,6 +63,10 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [comments, setComments] = useState<any[]>([]);
   const [commentInput, setCommentInput] = useState('');
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [taskSummaryEnabled, setTaskSummaryEnabled] = useState(false);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [aiSummaryLoading, setAiSummaryLoading] = useState(false);
+  const [aiSummaryError, setAiSummaryError] = useState<string | null>(null);
   const [commentSaving, setCommentSaving] = useState(false);
   // 대댓글: replyTo = { commentId, authorName }
   const [replyTo, setReplyTo] = useState<{ commentId: number; authorName: string } | null>(null);
@@ -280,6 +284,25 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       fetchTask();
     }
   }, [id, authLoading]);
+
+  useEffect(() => {
+    apiClient.get<{ data: { features: { taskSummary: boolean } } }>('/settings/ai/status')
+      .then((res) => setTaskSummaryEnabled(!!res.data.data.features.taskSummary))
+      .catch(() => {});
+  }, []);
+
+  const handleAiSummary = async () => {
+    setAiSummaryLoading(true);
+    setAiSummaryError(null);
+    try {
+      const res = await apiClient.post<{ data: { summary: string } }>('/ai/task-summary', { taskId: parseInt(id) });
+      setAiSummary(res.data.data.summary);
+    } catch (err: any) {
+      setAiSummaryError(err.response?.data?.message || 'AI 요약 중 오류가 발생했습니다.');
+    } finally {
+      setAiSummaryLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!canEdit) return;
@@ -599,19 +622,29 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       <div className={styles.card}>
         <div className={styles.cardHeader}>
           <h2 className={`${styles.cardTitle} ${styles.noMargin}`}>기본 정보</h2>
-          {canEdit && !infoEditing && (
-            <div>
-              <button onClick={() => { setInfoEditing(true); setInfoError(null); }} className={styles.btnSecondary}>
-                수정
+          <div className={styles.cardHeaderActions}>
+            {taskSummaryEnabled && (
+              <button onClick={handleAiSummary} disabled={aiSummaryLoading} className={styles.btnSecondary}>
+                {aiSummaryLoading ? '요약 중...' : '🤖 AI 요약'}
               </button>
-              {canDelete && (
-                <button onClick={handleDelete} disabled={deleting} className={styles.btnDanger}>
-                  {deleting ? '삭제 중...' : '삭제'}
+            )}
+            {canEdit && !infoEditing && (
+              <>
+                <button onClick={() => { setInfoEditing(true); setInfoError(null); }} className={styles.btnSecondary}>
+                  수정
                 </button>
-              )}
-            </div>
-          )}
+                {canDelete && (
+                  <button onClick={handleDelete} disabled={deleting} className={styles.btnDanger}>
+                    {deleting ? '삭제 중...' : '삭제'}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
+
+        {aiSummaryError && <p className={styles.errorBox}>{aiSummaryError}</p>}
+        {aiSummary && <div className={styles.aiSummaryBox}>{aiSummary}</div>}
 
         {infoEditing ? (
           <div>
