@@ -20,6 +20,13 @@
   font-size: 14px;
 }
 
+.weatherGreeting {
+  margin-top: var(--space-2);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .sectionTitle {
   font-size: 18px;
   font-weight: 700;

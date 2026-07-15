@@ -138,6 +138,18 @@ export default function DashboardPage() {
   const [isOnLeaveToday, setIsOnLeaveToday] = useState(false);
   const [parentMap, setParentMap] = useState<Map<number, Task>>(new Map());
   const [loadingTasks, setLoadingTasks] = useState(true);
+  const [weatherGreeting, setWeatherGreeting] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isLoading || !user) return;
+    apiClient.get<{ data: { features: { weatherGreeting: boolean } } }>('/settings/ai/status')
+      .then((res) => {
+        if (!res.data.data.features.weatherGreeting) return;
+        return apiClient.get<{ data: { greeting: string } }>('/ai/weather-greeting');
+      })
+      .then((res) => { if (res) setWeatherGreeting(res.data.data.greeting); })
+      .catch(() => {});
+  }, [isLoading, user]);
 
   useEffect(() => {
     if (isLoading || !user) return;
@@ -226,6 +238,7 @@ export default function DashboardPage() {
           {user?.role === 'WORKER' && '작업자'}
           {' '}계정입니다.
         </p>
+        {weatherGreeting && <p className={styles.weatherGreeting}>{weatherGreeting}</p>}
       </div>
 
       <div className={styles.section}>
