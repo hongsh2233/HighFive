@@ -16,6 +16,7 @@
 | 작업자 | `WORKER` | `/stats`, `/users` 제외 |
 
 ```
+/               → 누구나 접근 가능 (랜딩 페이지, src/app/page.tsx — 도메인 루트, /login으로 자동 리다이렉트하지 않음)
 /login          → 누구나 접근 가능
 /dashboard      → 인증 필요 (전 역할)
 /tasks/**       → 인증 필요 (전 역할)
