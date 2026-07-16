@@ -140,6 +140,9 @@ User (1) ──< Request [requester / approver] (1) ──< Announcement (전결
 ### AiSettings
 조직당 1행. AI 자동화 기능을 위한 API 키(암호화 저장)와 기능별 활성화 토글. `anthropicKeyEnc`/`weatherKeyEnc`/`githubTokenEnc`(AES-256-GCM, `src/lib/crypto.ts`, `NEXTAUTH_SECRET`에서 파생한 키), `weatherCity`, `features`(Json — `taskDraft`/`taskSummary`/`aiSearch`/`weeklyReport`/`workloadInsight`/`meetingSummary`/`meetingToTask`/`weatherGreeting` 8개 boolean). `/settings/ai`(ADMIN 전용)에서 관리. 키가 없는 상태로 기능을 켜려는 시도는 서버(`PUT /api/settings/ai`)에서 거부된다. `src/lib/ai.ts`의 `callClaude()`는 조직이 키를 등록했으면 그 키를, 없으면 서버 `ANTHROPIC_API_KEY` env로 폴백한다. `githubTokenEnc`는 토글 대상이 아니며 GitHub 완료 코멘트 발송 시에만 조회된다(`getOrgGithubToken`).
 
+### DemoRequest
+랜딩 페이지 공개 폼에서 접수되는 무료 데모 신청. `name`, `company`, `email`, `phone?`, `message?`, `status`(PENDING/CONTACTED/CLOSED, 기본 PENDING). 인증 불필요(`POST /api/demo-requests`, IP당 1시간 5건 인메모리 스팸 방지), 열람/상태변경/삭제는 SUPERADMIN 전용(`/superadmin/demo-requests`).
+
 ### NotificationMute
 `userId`, `scope`('TASK'|'PROJECT'), `targetId`, `@@unique([userId, scope, targetId])`. 업무 또는 프로젝트 단위로 인앱 알림을 끄는 설정. `src/lib/notify.ts`의 `createUserNotification()`이 생성 직전 이 테이블을 확인해 매치되면 조용히 건너뛴다(단일 지점 게이팅). 업무 상세/프로젝트 멤버 패널의 🔔/🔕 토글로 관리(`GET/POST/DELETE /api/notifications/mute`). Slack/잔디 등 외부 채널 알림은 대상 아님.
 
@@ -470,6 +473,9 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 | PATCH | `/api/notifications/read-all` | ALL | 알림 전체 읽음 처리 |
 | GET/POST/DELETE | `/api/notifications/mute` | ALL | 업무/프로젝트 단위 알림 뮤트 조회·설정·해제 |
 | GET/POST/DELETE | `/api/tasks/[id]/dependencies` | ALL | 선행 업무 조회·추가·제거(순환 검사 포함) |
+| POST | `/api/demo-requests` | 공개(인증 불필요) | 무료 데모 신청 접수 |
+| GET | `/api/superadmin/demo-requests` | SUPERADMIN | 데모 신청 목록 |
+| PATCH/DELETE | `/api/superadmin/demo-requests/[id]` | SUPERADMIN | 상태 변경/삭제 |
 | GET | `/api/stats/summary` | LEADER+ | 월간 요약 통계 |
 | GET | `/api/stats/workload` | LEADER+ | 작업자별 부하량 |
 | GET | `/api/calendar/ical-url` | ALL | iCal 구독 URL 발급 |
