@@ -62,7 +62,6 @@ export default function LandingPage() {
             <span className={styles.navLogoText}>High5</span>
           </div>
           <div className={styles.navActions}>
-            <Link href="/login" className={styles.navLink}>슈퍼관리자</Link>
             <Link href="/register" className={styles.navCta}>무료로 시작하기</Link>
           </div>
         </div>
@@ -130,7 +129,6 @@ export default function LandingPage() {
           <span>© {new Date().getFullYear()} High5</span>
           <div className={styles.footerLinks}>
             <Link href="/register" className={styles.footerLink}>회원가입</Link>
-            <Link href="/login" className={styles.footerLink}>슈퍼관리자</Link>
           </div>
         </div>
       </footer>
