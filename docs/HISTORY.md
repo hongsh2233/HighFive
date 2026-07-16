@@ -765,5 +765,13 @@
   - 각 기능 완료마다 `npx tsc --noEmit` 오류 0개, `npm run build` 성공 확인 후 커밋·머지·푸시.
 - **랜딩 페이지 신규**: 기존엔 `/`(도메인 루트)에 접속하면 즉시 SUPERADMIN 전용 `/login`으로 클라이언트 리다이렉트되어 일반 방문자용 소개 페이지가 없었음. `src/app/page.tsx`를 이 세션에서 구현한 기능들(업무관리/칸반/의존관계, 프로젝트 위키+회의록 AI요약, 캘린더+AI주간보고서, AI자동화 8종, 알림뮤트+멀티테넌시 보안, GitHub 양방향연동) 기반 랜딩 페이지로 교체. 히어로의 "무료로 시작하기"는 `/register`로, 조직 슬러그 입력 폼은 `/{slug}/login`으로 바로 이동. `src/app/landing.module.css` 신규(기존 디자인 토큰 재사용). 미들웨어가 `/`를 이미 공개 경로로 통과시키고 있어 라우팅 로직 변경은 불필요했음. `npx tsc --noEmit` 오류 0개, `npm run build` 성공(빌드 결과에 `/` 정적 페이지로 확인).
   - 후속 수정: 관리자는 `/login` URL을 직접 입력하면 되므로, 랜딩 페이지 네비/푸터의 "슈퍼관리자" 링크를 제거.
+- **모바일 반응형 개선**: 랜딩 페이지(768px 이하 여백/폰트 대폭 축소, 히어로 버튼 세로스택, 데모모달 480px 대응), 업무 상세(제목/카드 헤더 버튼 줄바꿈, 선행업무 폼 세로스택), 회의록(액션아이템 행 세로스택). 업무 목록 테이블 컬럼 너비 고정(담당자/등록일자/목표일/상태 110px, ID 56px, 작업시간 90px, 비고 160px, 제목만 가변)과 필터바/뷰탭/일괄작업바 모바일 대응(세로 스택, 가로 스크롤) 추가.
+- **마케팅 착수 전 준비 (2~4번)**:
+  1. 데모 신청 접수 시 관리자 알림 — `src/lib/platform-notify.ts`(SLACK_WEBHOOK_URL로 직접 발송) + 신청자 확인 이메일 + `PLATFORM_ADMIN_EMAIL` 설정 시 관리자 알림 이메일.
+  2. SEO/소셜 공유 메타데이터 — `src/app/icon.tsx`/`opengraph-image.tsx`(next/og로 동적 생성, 별도 이미지 자산 불필요), `robots.ts`/`sitemap.ts` 신규, `layout.tsx`에 metadataBase/openGraph/twitter 카드 추가.
+  3. 이메일 인프라 — `src/lib/email.ts`(nodemailer, SMTP_HOST 미설정 시 콘솔 로그로 대체), `email-templates.ts`(데모신청 확인/관리자알림, 조직가입 환영 메일). 조직 생성(`/register`) 시 환영 이메일 + Slack 알림 발송하도록 연결.
+  4. 에러 트래킹(Sentry) — `sentry.server.config.ts` + `src/lib/sentry-client.ts`(Providers.tsx에서 import), SENTRY_DSN 미설정 시 비활성화, next.config 변경 없음(빌드 리스크 회피).
+  5. 분석 도구 — `NEXT_PUBLIC_GA_MEASUREMENT_ID` 설정 시에만 layout.tsx에 Google Analytics 스크립트 삽입.
+  - 모든 신규 기능은 관련 env var 미설정 시 조용히 비활성화되어 기존 배포에 영향 없음 — 실제 활성화하려면 배포 환경에 각 서비스 키 설정 필요. `nodemailer`, `@sentry/nextjs` 패키지 추가. `npx tsc --noEmit` 오류 0개, `npm run build` 성공(icon/opengraph-image/robots.txt/sitemap.xml 라우트 정상 생성 확인).
 - **사용 메뉴얼 페이지 신규**: 현재 구현된 기능을 카테고리별로 설명하는 정적 콘텐츠 페이지(`/manual`) 추가 — 업무관리(칸반/의존관계/체크리스트), 프로젝트 협업(위키/회의록+AI요약/업무변환), 일정&리포트(캘린더/통계/AI부하분석/AI주간보고서), AI 자동화(설정방법 포함), 알림&개인화(뮤트/외부연동), 권한&보안, GitHub 연동 7개 섹션. 아코디언 접기/펼치기 + 상단 태그 앵커 이동. `AppHeader` "협업" 드롭다운에 링크 추가, `middleware.ts`의 `orgScopedRoutes`에 `manual` 추가.
 - **무료 데모 신청 → 슈퍼관리자 열람**: `DemoRequest` 모델 신규(name/company/email/phone?/message?/status). `POST /api/demo-requests`(공개, IP당 1시간 5건 인메모리 스팸 방지)로 랜딩 페이지에서 신청 접수. `GET/PATCH/DELETE /api/superadmin/demo-requests[/id]`(SUPERADMIN 전용)로 목록 조회·상태변경(대기중/연락완료/종료)·삭제. `/superadmin/demo-requests` 페이지 신규(기존 `superadmin.module.css` 재사용), `AppHeader`의 시스템관리자 드롭다운에 "데모 신청" 링크 추가. 랜딩 페이지 네비/히어로/하단 CTA에 "무료 데모 신청" 버튼 + 모달 폼(이름/회사명/이메일 필수, 연락처/메시지 선택) 추가. `npx tsc --noEmit` 오류 0개, `npm run build` 성공.

@@ -512,6 +512,10 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 | `KAKAO_WEBHOOK_URL` / `KAKAO_ACCESS_TOKEN` | ⬜ | 카카오톡 알림 |
 | `GITHUB_WEBHOOK_SECRET` | ⬜ | GitHub webhook 서명 검증 시크릿 |
 | `ANTHROPIC_API_KEY` | ⬜ | 서버 기본 AI 키(조직이 `/settings/ai`에 자체 키를 등록하면 그 키가 우선) |
+| `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`/`SMTP_FROM` | ⬜ | 이메일 발송(`src/lib/email.ts`). 미설정 시 콘솔 로그로 대체 |
+| `PLATFORM_ADMIN_EMAIL` | ⬜ | 데모 신청/신규 조직 가입 시 이메일 알림 받을 주소 |
+| `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` | ⬜ | Sentry 에러 트래킹(서버/클라이언트). 미설정 시 비활성화 |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | ⬜ | Google Analytics. 미설정 시 스크립트 자체가 삽입 안 됨 |
 
 ---
 
