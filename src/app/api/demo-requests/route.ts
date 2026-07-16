@@ -1,6 +1,9 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/utils';
+import { notifyPlatformAdminsSlack } from '@/lib/platform-notify';
+import { sendEmail } from '@/lib/email';
+import { demoRequestConfirmationEmail, demoRequestAdminAlertEmail } from '@/lib/email-templates';
 
 // 랜딩 페이지 공개 폼용 경량 스팸 방지(IP당 1시간에 5건) — 인메모리, 재시작 시 초기화.
 const WINDOW_MS = 60 * 60 * 1000;
@@ -38,7 +41,7 @@ export async function POST(req: NextRequest) {
       return errorResponse('유효한 이메일 주소를 입력해주세요.', 400, 'VALID_400');
     }
 
-    await prisma.demoRequest.create({
+    const created = await prisma.demoRequest.create({
       data: {
         name: name.trim().slice(0, 100),
         company: company.trim().slice(0, 100),
@@ -47,6 +50,24 @@ export async function POST(req: NextRequest) {
         message: message?.trim().slice(0, 1000) || null,
       },
     });
+
+    notifyPlatformAdminsSlack(
+      `🎉 새 무료 데모 신청\n회사: ${created.company}\n이름: ${created.name}\n이메일: ${created.email}${created.phone ? `\n연락처: ${created.phone}` : ''}${created.message ? `\n메시지: ${created.message}` : ''}`
+    ).catch(() => {});
+
+    sendEmail({
+      to: created.email,
+      subject: '[High5] 데모 신청이 접수되었습니다',
+      html: demoRequestConfirmationEmail(created.name),
+    }).catch(() => {});
+
+    if (process.env.PLATFORM_ADMIN_EMAIL) {
+      sendEmail({
+        to: process.env.PLATFORM_ADMIN_EMAIL,
+        subject: `[High5] 새 데모 신청 — ${created.company}`,
+        html: demoRequestAdminAlertEmail(created),
+      }).catch(() => {});
+    }
 
     return successResponse(null, '데모 신청이 접수되었습니다. 곧 연락드리겠습니다.', 201);
   } catch (err) {

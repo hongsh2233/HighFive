@@ -1,6 +1,9 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { successResponse, errorResponse, hashPassword } from '@/lib/utils';
+import { sendEmail } from '@/lib/email';
+import { welcomeEmail } from '@/lib/email-templates';
+import { notifyPlatformAdminsSlack } from '@/lib/platform-notify';
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,6 +52,14 @@ export async function POST(req: NextRequest) {
         },
       },
     });
+
+    const loginUrl = `${process.env.NEXTAUTH_URL || ''}/${org.slug}/login`;
+    sendEmail({
+      to: adminEmail,
+      subject: '[High5] 조직이 생성되었습니다',
+      html: welcomeEmail(orgName, loginUrl),
+    }).catch(() => {});
+    notifyPlatformAdminsSlack(`🏢 새 조직 가입\n회사: ${orgName}\n슬러그: ${org.slug}\n관리자: ${adminName} (${adminEmail})`).catch(() => {});
 
     return successResponse({ orgId: org.id, slug: org.slug }, '조직이 생성되었습니다.', 201);
   } catch {

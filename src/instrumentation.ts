@@ -1,6 +1,8 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
 
+  await import('../sentry.server.config');
+
   const { PrismaClient } = await import('@prisma/client');
   const bcryptjs = await import('bcryptjs');
 

@@ -10,6 +10,7 @@ import StickyNotesPanel from './StickyNotesPanel';
 import { DialogProvider, useDialog } from './common/DialogProvider';
 import { NotificationsProvider } from './NotificationsProvider';
 import { consumeManualLogout } from '@/lib/logout-flag';
+import '@/lib/sentry-client';
 
 function AuthSync() {
   const { data: session, status } = useSession();
