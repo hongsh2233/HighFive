@@ -322,6 +322,7 @@ table tr:hover td {
 .btn-primary:hover:not(:disabled) {
   background-color: var(--accent-hover);
   border-color: var(--accent-hover);
+  color: #FFFFFF;
 }
 
 .btn-secondary {
@@ -331,6 +332,7 @@ table tr:hover td {
 }
 .btn-secondary:hover:not(:disabled) {
   background-color: var(--bg-subtle);
+  color: var(--text-primary);
 }
 
 .btn-ghost {
@@ -350,6 +352,7 @@ table tr:hover td {
 }
 .btn-success:hover:not(:disabled) {
   background-color: var(--success-light);
+  color: var(--success);
 }
 
 .btn-danger {
@@ -359,6 +362,7 @@ table tr:hover td {
 }
 .btn-danger:hover:not(:disabled) {
   background-color: var(--danger-light);
+  color: var(--danger);
 }
 
 .btn-danger-solid {
@@ -369,6 +373,7 @@ table tr:hover td {
 .btn-danger-solid:hover:not(:disabled) {
   background-color: #B91C1C;
   border-color: #B91C1C;
+  color: #FFFFFF;
 }
 
 .field-input {
