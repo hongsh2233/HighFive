@@ -202,6 +202,7 @@ export default function AppHeader() {
                         <Link href="/info" className={styles.dropdownItem} onClick={closeAll}>정보(FAQ)</Link>
                       )}
                       <Link href="/announcements" className={styles.dropdownItem} onClick={closeAll}>공지사항</Link>
+                      <Link href="/manual" className={styles.dropdownItem} onClick={closeAll}>사용 메뉴얼</Link>
                     </div>
                   )}
                 </div>

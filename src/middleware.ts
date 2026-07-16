@@ -3,7 +3,7 @@ import { getToken } from 'next-auth/jwt';
 
 // 조직 slug가 URL에 붙는 라우트 (예: /exwave/dashboard). 실제 페이지는 여전히 app/dashboard 등 slug 없는 경로에 있고,
 // 아래에서 slug 유무에 따라 redirect(slug 없음 → 있음)/rewrite(있음 → 내부적으로 slug 제거)로 연결한다.
-const orgScopedRoutes = ['dashboard', 'tasks', 'calendar', 'stats', 'users', 'announcements', 'requests', 'my-notes', 'info', 'wiki', 'meetings', 'projects', 'profile', 'settings'];
+const orgScopedRoutes = ['dashboard', 'tasks', 'calendar', 'stats', 'users', 'announcements', 'requests', 'my-notes', 'info', 'wiki', 'meetings', 'projects', 'profile', 'settings', 'manual'];
 const adminRoutes = ['users'];
 const leaderRoutes = ['stats'];
 const publicRoutes = ['/login', '/register'];
