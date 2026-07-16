@@ -108,6 +108,38 @@
   padding: var(--space-2);
 }
 
+.thId {
+  width: 56px;
+}
+
+.thTitle {
+  width: auto;
+}
+
+.thAssignee {
+  width: 110px;
+}
+
+.thCreatedAt {
+  width: 110px;
+}
+
+.thTarget {
+  width: 110px;
+}
+
+.thNotes {
+  width: 160px;
+}
+
+.thHours {
+  width: 90px;
+}
+
+.thStatus {
+  width: 110px;
+}
+
 .filterBar {
   display: flex;
   flex-wrap: wrap;
@@ -550,6 +582,41 @@
 @media (max-width: 640px) {
   .container {
     padding: 20px 14px;
+  }
+
+  .viewTabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+  }
+
+  .viewTab {
+    flex-shrink: 0;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .filterBar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .filterBar > * {
+    margin-left: 0 !important;
+    width: 100%;
+  }
+
+  .workerSelect,
+  .statusFilterSelect,
+  .searchInput,
+  .sortSelect,
+  .projectFilterSelect {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .bulkBar {
+    flex-wrap: wrap;
   }
 
   /* 업무 목록 테이블 → 카드형 전환 (data-label 속성으로 라벨 표시) */

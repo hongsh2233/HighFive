@@ -936,11 +936,11 @@ function ProjectTaskSection({
                 />
               </th>
               <th className={`${styles.th} ${styles.thId}`}>ID</th>
-              <th className={styles.th}>제목</th>
+              <th className={`${styles.th} ${styles.thTitle}`}>제목</th>
               <th className={`${styles.th} ${styles.thAssignee}`}>담당자</th>
               <th className={`${styles.th} ${styles.thCreatedAt}`}>등록일자</th>
               <th className={`${styles.th} ${styles.thTarget}`}>목표일</th>
-              <th className={styles.th}>비고</th>
+              <th className={`${styles.th} ${styles.thNotes}`}>비고</th>
               <th className={`${styles.th} ${styles.thHours}`}>작업시간</th>
               <th className={`${styles.th} ${styles.thStatus}`}>상태</th>
               {project && fields.map((field) => (
