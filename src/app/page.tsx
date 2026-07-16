@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from './landing.module.css';
 
@@ -41,25 +40,11 @@ const FEATURES = [
 const emptyDemoForm = { name: '', company: '', email: '', phone: '', message: '' };
 
 export default function LandingPage() {
-  const router = useRouter();
-  const [slug, setSlug] = useState('');
-  const [slugError, setSlugError] = useState('');
-
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [demoForm, setDemoForm] = useState(emptyDemoForm);
   const [demoSubmitting, setDemoSubmitting] = useState(false);
   const [demoError, setDemoError] = useState('');
   const [demoSubmitted, setDemoSubmitted] = useState(false);
-
-  const handleOrgLogin = (e: FormEvent) => {
-    e.preventDefault();
-    const trimmed = slug.trim().toLowerCase();
-    if (!trimmed) {
-      setSlugError('조직 슬러그를 입력해주세요.');
-      return;
-    }
-    router.push(`/${trimmed}/login`);
-  };
 
   const openDemoModal = () => {
     setDemoForm(emptyDemoForm);
@@ -121,21 +106,6 @@ export default function LandingPage() {
               <Link href="/register" className={styles.btnPrimary}>무료로 시작하기</Link>
               <button onClick={openDemoModal} className={styles.btnSecondary}>무료 데모 신청</button>
             </div>
-
-            <form onSubmit={handleOrgLogin} className={styles.orgLoginForm}>
-              <span className={styles.orgLoginLabel}>이미 사용 중이신가요?</span>
-              <div className={styles.orgLoginRow}>
-                <input
-                  type="text"
-                  value={slug}
-                  onChange={(e) => { setSlug(e.target.value); setSlugError(''); }}
-                  placeholder="조직 슬러그 입력 (예: acme)"
-                  className={styles.orgLoginInput}
-                />
-                <button type="submit" className={styles.orgLoginBtn}>조직 로그인</button>
-              </div>
-              {slugError && <p className={styles.orgLoginError}>{slugError}</p>}
-            </form>
           </div>
         </section>
 
