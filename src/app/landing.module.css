@@ -19,6 +19,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
 
 .navLogo {
@@ -247,17 +248,83 @@
 }
 
 @media (max-width: 768px) {
+  .navInner {
+    padding: 12px var(--space-4);
+  }
+
+  .navActions {
+    gap: 12px;
+  }
+
+  .navLink {
+    font-size: 12px;
+  }
+
+  .hero {
+    padding: 48px var(--space-4) 40px;
+  }
+
+  .heroBadge {
+    font-size: 11px;
+    margin-bottom: var(--space-4);
+  }
+
   .heroTitle {
-    font-size: 28px;
+    font-size: 26px;
+    margin-bottom: var(--space-4);
+  }
+
+  .heroSubtitle {
+    font-size: 14px;
+    margin-bottom: var(--space-6);
+  }
+
+  .heroActions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+
+  .heroActions .btnPrimary,
+  .heroActions .btnSecondary {
+    width: 100%;
+  }
+
+  .features {
+    padding: 40px var(--space-4);
+  }
+
+  .sectionTitle {
+    font-size: 20px;
+    margin-bottom: 28px;
   }
 
   .featureGrid {
     grid-template-columns: 1fr;
   }
 
+  .cta {
+    padding: 48px var(--space-4);
+  }
+
+  .ctaTitle {
+    font-size: 20px;
+  }
+
+  .footer {
+    padding: 20px var(--space-4);
+  }
+
   .footerInner {
     flex-direction: column;
     gap: 10px;
+  }
+}
+
+@media (max-width: 400px) {
+  .navLogoText {
+    display: none;
   }
 }
 
@@ -348,4 +415,18 @@
 .modalSuccessIcon {
   font-size: 32px;
   margin-bottom: var(--space-3);
+}
+
+@media (max-width: 480px) {
+  .modal {
+    padding: var(--space-5);
+  }
+
+  .modalActions {
+    flex-direction: column-reverse;
+  }
+
+  .modalActions button {
+    width: 100%;
+  }
 }
