@@ -53,6 +53,21 @@
   gap: 20px;
 }
 
+.navLink {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.navLink:hover {
+  color: var(--text-primary);
+}
+
 .navCta {
   composes: btn btn-primary btn-sm from global;
   text-decoration: none;
@@ -288,4 +303,93 @@
     flex-direction: column;
     gap: 10px;
   }
+}
+
+/* Demo modal */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.modal {
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  padding: var(--space-6);
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.modalSubtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-5);
+}
+
+.modalError {
+  padding: 10px 14px;
+  background-color: var(--danger-light);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: var(--space-4);
+}
+
+.modalFieldGroup {
+  margin-bottom: var(--space-4);
+}
+
+.modalLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.modalInput {
+  composes: field-input from global;
+  width: 100%;
+}
+
+.modalTextarea {
+  composes: field-input from global;
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: var(--space-5);
+}
+
+.modalSuccess {
+  text-align: center;
+  padding: var(--space-4) 0;
+}
+
+.modalSuccessIcon {
+  font-size: 32px;
+  margin-bottom: var(--space-3);
 }

@@ -652,3 +652,16 @@ model SystemConfig {
 
   @@map("system_config")
 }
+
+model DemoRequest {
+  id        Int      @id @default(autoincrement())
+  name      String
+  company   String
+  email     String
+  phone     String?
+  message   String?
+  status    String   @default("PENDING") // PENDING, CONTACTED, CLOSED
+  createdAt DateTime @default(now())
+
+  @@map("demo_requests")
+}

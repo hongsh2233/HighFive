@@ -38,10 +38,18 @@ const FEATURES = [
   },
 ];
 
+const emptyDemoForm = { name: '', company: '', email: '', phone: '', message: '' };
+
 export default function LandingPage() {
   const router = useRouter();
   const [slug, setSlug] = useState('');
   const [slugError, setSlugError] = useState('');
+
+  const [showDemoModal, setShowDemoModal] = useState(false);
+  const [demoForm, setDemoForm] = useState(emptyDemoForm);
+  const [demoSubmitting, setDemoSubmitting] = useState(false);
+  const [demoError, setDemoError] = useState('');
+  const [demoSubmitted, setDemoSubmitted] = useState(false);
 
   const handleOrgLogin = (e: FormEvent) => {
     e.preventDefault();
@@ -53,6 +61,36 @@ export default function LandingPage() {
     router.push(`/${trimmed}/login`);
   };
 
+  const openDemoModal = () => {
+    setDemoForm(emptyDemoForm);
+    setDemoError('');
+    setDemoSubmitted(false);
+    setShowDemoModal(true);
+  };
+
+  const handleDemoSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setDemoError('');
+    setDemoSubmitting(true);
+    try {
+      const res = await fetch('/api/demo-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(demoForm),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setDemoError(data.message || '신청 중 오류가 발생했습니다.');
+        return;
+      }
+      setDemoSubmitted(true);
+    } catch {
+      setDemoError('신청 중 오류가 발생했습니다.');
+    } finally {
+      setDemoSubmitting(false);
+    }
+  };
+
   return (
     <div className={styles.page}>
       <header className={styles.nav}>
@@ -62,6 +100,7 @@ export default function LandingPage() {
             <span className={styles.navLogoText}>High5</span>
           </div>
           <div className={styles.navActions}>
+            <button onClick={openDemoModal} className={styles.navLink}>무료 데모 신청</button>
             <Link href="/register" className={styles.navCta}>무료로 시작하기</Link>
           </div>
         </div>
@@ -80,7 +119,7 @@ export default function LandingPage() {
             </p>
             <div className={styles.heroActions}>
               <Link href="/register" className={styles.btnPrimary}>무료로 시작하기</Link>
-              <a href="#features" className={styles.btnSecondary}>기능 살펴보기</a>
+              <button onClick={openDemoModal} className={styles.btnSecondary}>무료 데모 신청</button>
             </div>
 
             <form onSubmit={handleOrgLogin} className={styles.orgLoginForm}>
@@ -118,11 +157,92 @@ export default function LandingPage() {
         <section className={styles.cta}>
           <div className={styles.ctaInner}>
             <h2 className={styles.ctaTitle}>지금 바로 팀과 함께 시작해보세요</h2>
-            <p className={styles.ctaSubtitle}>회사명과 이메일만 있으면 1분 안에 조직을 만들 수 있습니다.</p>
-            <Link href="/register" className={styles.btnPrimary}>무료로 시작하기</Link>
+            <p className={styles.ctaSubtitle}>회사명과 이메일만 있으면 1분 안에 조직을 만들 수 있습니다. 먼저 체험해보고 싶다면 무료 데모를 신청하세요.</p>
+            <div className={styles.heroActions}>
+              <Link href="/register" className={styles.btnPrimary}>무료로 시작하기</Link>
+              <button onClick={openDemoModal} className={styles.btnSecondary}>무료 데모 신청</button>
+            </div>
           </div>
         </section>
       </main>
+
+      {showDemoModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowDemoModal(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            {demoSubmitted ? (
+              <div className={styles.modalSuccess}>
+                <p className={styles.modalSuccessIcon}>✅</p>
+                <h3 className={styles.modalTitle}>신청이 접수되었습니다</h3>
+                <p className={styles.modalSubtitle}>담당자가 확인 후 입력하신 이메일로 연락드리겠습니다.</p>
+                <button onClick={() => setShowDemoModal(false)} className={styles.btnPrimary}>닫기</button>
+              </div>
+            ) : (
+              <>
+                <h3 className={styles.modalTitle}>무료 데모 신청</h3>
+                <p className={styles.modalSubtitle}>담당자가 확인 후 빠르게 연락드리겠습니다.</p>
+                {demoError && <div className={styles.modalError}>{demoError}</div>}
+                <form onSubmit={handleDemoSubmit}>
+                  <div className={styles.modalFieldGroup}>
+                    <label className={styles.modalLabel}>이름 *</label>
+                    <input
+                      type="text"
+                      required
+                      value={demoForm.name}
+                      onChange={(e) => setDemoForm({ ...demoForm, name: e.target.value })}
+                      className={styles.modalInput}
+                    />
+                  </div>
+                  <div className={styles.modalFieldGroup}>
+                    <label className={styles.modalLabel}>회사명 *</label>
+                    <input
+                      type="text"
+                      required
+                      value={demoForm.company}
+                      onChange={(e) => setDemoForm({ ...demoForm, company: e.target.value })}
+                      className={styles.modalInput}
+                    />
+                  </div>
+                  <div className={styles.modalFieldGroup}>
+                    <label className={styles.modalLabel}>이메일 *</label>
+                    <input
+                      type="email"
+                      required
+                      value={demoForm.email}
+                      onChange={(e) => setDemoForm({ ...demoForm, email: e.target.value })}
+                      className={styles.modalInput}
+                    />
+                  </div>
+                  <div className={styles.modalFieldGroup}>
+                    <label className={styles.modalLabel}>연락처</label>
+                    <input
+                      type="text"
+                      value={demoForm.phone}
+                      onChange={(e) => setDemoForm({ ...demoForm, phone: e.target.value })}
+                      placeholder="선택 입력"
+                      className={styles.modalInput}
+                    />
+                  </div>
+                  <div className={styles.modalFieldGroup}>
+                    <label className={styles.modalLabel}>남기실 말씀</label>
+                    <textarea
+                      value={demoForm.message}
+                      onChange={(e) => setDemoForm({ ...demoForm, message: e.target.value })}
+                      placeholder="궁금하신 점이나 팀 규모를 알려주시면 더 도움이 됩니다."
+                      className={styles.modalTextarea}
+                    />
+                  </div>
+                  <div className={styles.modalActions}>
+                    <button type="button" onClick={() => setShowDemoModal(false)} className={styles.btnSecondary}>취소</button>
+                    <button type="submit" disabled={demoSubmitting} className={styles.btnPrimary}>
+                      {demoSubmitting ? '전송 중...' : '신청하기'}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       <footer className={styles.footer}>
         <div className={styles.footerInner}>

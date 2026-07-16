@@ -127,6 +127,7 @@ export default function AppHeader() {
                 {openMenu === 'settings' && (
                   <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
                     <Link href="/superadmin" className={styles.dropdownItem} onClick={closeAll}>가입 현황</Link>
+                    <Link href="/superadmin/demo-requests" className={styles.dropdownItem} onClick={closeAll}>데모 신청</Link>
                     <Link href="/superadmin/plan-config" className={styles.dropdownItem} onClick={closeAll}>플랜 설정</Link>
                   </div>
                 )}
