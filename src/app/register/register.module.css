@@ -153,6 +153,26 @@
   box-shadow: 0 0 0 3px var(--accent-light);
 }
 
+.consentRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.consentRow input {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.consentRow a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
 .submitBtn {
   width: 100%;
   padding: 10px;

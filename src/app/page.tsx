@@ -219,6 +219,8 @@ export default function LandingPage() {
           <span>© {new Date().getFullYear()} High5</span>
           <div className={styles.footerLinks}>
             <Link href="/register" className={styles.footerLink}>회원가입</Link>
+            <Link href="/legal/terms" className={styles.footerLink}>이용약관</Link>
+            <Link href="/legal/privacy" className={styles.footerLink}>개인정보처리방침</Link>
           </div>
         </div>
       </footer>

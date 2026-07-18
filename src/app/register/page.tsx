@@ -14,6 +14,7 @@ export default function RegisterPage() {
     adminEmail: '',
     password: '',
   });
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -23,13 +24,19 @@ export default function RegisterPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!agreed) {
+      setError('이용약관 및 개인정보처리방침에 동의해주세요.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await fetch('/api/organizations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, termsAccepted: agreed }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -141,7 +148,20 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className={styles.submitBtn}>
+            <label className={styles.consentRow}>
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                disabled={loading}
+              />
+              <span>
+                <Link href="/legal/terms" target="_blank">이용약관</Link> 및{' '}
+                <Link href="/legal/privacy" target="_blank">개인정보처리방침</Link>에 동의합니다.
+              </span>
+            </label>
+
+            <button type="submit" disabled={loading || !agreed} className={styles.submitBtn}>
               {loading ? '처리 중...' : '조직 등록'}
             </button>
           </form>

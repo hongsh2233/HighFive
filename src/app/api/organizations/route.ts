@@ -8,10 +8,14 @@ import { notifyPlatformAdminsSlack } from '@/lib/platform-notify';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { orgName, slug, adminEmail, adminName, password } = body;
+    const { orgName, slug, adminEmail, adminName, password, termsAccepted } = body;
 
     if (!orgName || !slug || !adminEmail || !adminName || !password) {
       return errorResponse('모든 필드를 입력해주세요.', 400);
+    }
+
+    if (!termsAccepted) {
+      return errorResponse('이용약관 및 개인정보처리방침에 동의해주세요.', 400);
     }
 
     if (password.length < 8) {
