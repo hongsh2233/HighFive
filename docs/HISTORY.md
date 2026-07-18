@@ -775,3 +775,15 @@
   - 모든 신규 기능은 관련 env var 미설정 시 조용히 비활성화되어 기존 배포에 영향 없음 — 실제 활성화하려면 배포 환경에 각 서비스 키 설정 필요. `nodemailer`, `@sentry/nextjs` 패키지 추가. `npx tsc --noEmit` 오류 0개, `npm run build` 성공(icon/opengraph-image/robots.txt/sitemap.xml 라우트 정상 생성 확인).
 - **사용 메뉴얼 페이지 신규**: 현재 구현된 기능을 카테고리별로 설명하는 정적 콘텐츠 페이지(`/manual`) 추가 — 업무관리(칸반/의존관계/체크리스트), 프로젝트 협업(위키/회의록+AI요약/업무변환), 일정&리포트(캘린더/통계/AI부하분석/AI주간보고서), AI 자동화(설정방법 포함), 알림&개인화(뮤트/외부연동), 권한&보안, GitHub 연동 7개 섹션. 아코디언 접기/펼치기 + 상단 태그 앵커 이동. `AppHeader` "협업" 드롭다운에 링크 추가, `middleware.ts`의 `orgScopedRoutes`에 `manual` 추가.
 - **무료 데모 신청 → 슈퍼관리자 열람**: `DemoRequest` 모델 신규(name/company/email/phone?/message?/status). `POST /api/demo-requests`(공개, IP당 1시간 5건 인메모리 스팸 방지)로 랜딩 페이지에서 신청 접수. `GET/PATCH/DELETE /api/superadmin/demo-requests[/id]`(SUPERADMIN 전용)로 목록 조회·상태변경(대기중/연락완료/종료)·삭제. `/superadmin/demo-requests` 페이지 신규(기존 `superadmin.module.css` 재사용), `AppHeader`의 시스템관리자 드롭다운에 "데모 신청" 링크 추가. 랜딩 페이지 네비/히어로/하단 CTA에 "무료 데모 신청" 버튼 + 모달 폼(이름/회사명/이메일 필수, 연락처/메시지 선택) 추가. `npx tsc --noEmit` 오류 0개, `npm run build` 성공.
+
+## 2026-07-18
+
+- **모바일 최적화 2차**: 랜딩 페이지(`landing.module.css`) 네비/히어로/CTA/모달 반응형 대폭 보강(버튼 세로 스택, 텍스트 크기 축소, 400px 이하에서 로고 텍스트 숨김). 업무 상세(`tasks/[id]/detail.module.css`)·회의록(`meetings.module.css`)의 버튼/액션 행이 좁은 화면에서 겹치던 문제를 `flex-wrap`으로 수정.
+- **업무 목록 테이블 컬럼 너비 버그 수정**: `tasks/page.tsx`의 `<th>`가 참조하던 `thAssignee`/`thStatus`/`thId`/`thCreatedAt`/`thTarget`/`thHours` CSS 클래스가 `tasks.module.css`에 아예 정의돼 있지 않아(존재하는 건 `thCheck` 뿐) `table-layout: fixed` 상태에서 컬럼 너비가 제각각으로 나뉘던 것이 근본 원인이었음. 담당자/상태/등록일/목표일 계열은 110px 고정, 아이디 56px, 공수 90px, 비고 160px, 제목만 `width: auto`(가변)로 전체 컬럼 너비 규칙 신규 추가. 필터 영역(`filterBar`)도 모바일에서 세로 스택 + 각 입력 100% 너비로, 뷰 탭(`viewTabs`)은 가로 스크롤 가능하도록 반응형 추가.
+- **마케팅 준비 항목(2~4) 구현**:
+  1. 데모 신청 접수 시 플랫폼 관리자 Slack 알림(`src/lib/platform-notify.ts`, `SLACK_WEBHOOK_URL` 미설정 시 무동작) + 신청자 확인 메일/관리자 알림 메일(`nodemailer` 기반 `src/lib/email.ts`, `SMTP_HOST` 미설정 시 콘솔 로그만 남기는 안전한 폴백) 발송. 조직 가입(`POST /api/organizations`) 완료 시에도 환영 메일 + Slack 알림 발송.
+  2. SEO 기본기 — `src/app/icon.tsx`/`opengraph-image.tsx`(`next/og` `ImageResponse`로 동적 생성, 별도 이미지 파일 불필요), `robots.ts`, `sitemap.ts` 신규. `layout.tsx`에 `metadataBase`/`openGraph`/`twitter` 메타데이터 보강.
+  3. 에러 트래킹(Sentry) — `sentry.server.config.ts` + `src/lib/sentry-client.ts`(Providers.tsx에서 import), SENTRY_DSN 미설정 시 비활성화.
+  4. 분석 도구 — `NEXT_PUBLIC_GA_MEASUREMENT_ID` 설정 시에만 layout.tsx에 Google Analytics 스크립트 삽입.
+  - 모든 신규 기능은 관련 env var 미설정 시 조용히 비활성화되어 기존 배포에 영향 없음. `nodemailer`, `@sentry/nextjs` 패키지 추가.
+- **이용약관/개인정보처리방침 페이지 + 가입 동의 체크박스**: `/legal/terms`, `/legal/privacy` 공개 정적 페이지 신규(`legal.module.css` 공용, 인증 불필요 — `middleware.ts`의 `orgScopedRoutes`에 포함되지 않아 자동으로 공개). `/register` 폼 하단에 "이용약관 및 개인정보처리방침에 동의합니다" 필수 체크박스 추가, 미동의 시 제출 버튼 비활성화 + 클라이언트측 에러 메시지. `POST /api/organizations`에도 `termsAccepted` 미전송 시 400으로 거부하는 서버측 검증 추가(클라이언트 우회 방지). 랜딩 페이지 푸터에 두 링크 추가. `npx tsc --noEmit` 오류 0개, `npm run build` 성공(`/legal/terms`, `/legal/privacy` 정적 라우트 정상 생성 확인).
