@@ -787,3 +787,4 @@
   4. 분석 도구 — `NEXT_PUBLIC_GA_MEASUREMENT_ID` 설정 시에만 layout.tsx에 Google Analytics 스크립트 삽입.
   - 모든 신규 기능은 관련 env var 미설정 시 조용히 비활성화되어 기존 배포에 영향 없음. `nodemailer`, `@sentry/nextjs` 패키지 추가.
 - **이용약관/개인정보처리방침 페이지 + 가입 동의 체크박스**: `/legal/terms`, `/legal/privacy` 공개 정적 페이지 신규(`legal.module.css` 공용, 인증 불필요 — `middleware.ts`의 `orgScopedRoutes`에 포함되지 않아 자동으로 공개). `/register` 폼 하단에 "이용약관 및 개인정보처리방침에 동의합니다" 필수 체크박스 추가, 미동의 시 제출 버튼 비활성화 + 클라이언트측 에러 메시지. `POST /api/organizations`에도 `termsAccepted` 미전송 시 400으로 거부하는 서버측 검증 추가(클라이언트 우회 방지). 랜딩 페이지 푸터에 두 링크 추가. `npx tsc --noEmit` 오류 0개, `npm run build` 성공(`/legal/terms`, `/legal/privacy` 정적 라우트 정상 생성 확인).
+- **업무 상세 페이지 "목록으로" 링크 추가**: `/tasks/[id]`에서 목록으로 돌아갈 방법이 없던 문제 수정 — 페이지 상단에 `← 목록으로` 버튼(`router.push('/tasks')`) 추가. `detail.module.css`에 `.backLink` 스타일 신규.
