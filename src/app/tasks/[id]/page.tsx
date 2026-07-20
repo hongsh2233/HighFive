@@ -674,6 +674,9 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className={styles.container}>
+      <button onClick={() => router.push('/tasks')} className={styles.backLink}>
+        ← 목록으로
+      </button>
       <div className={styles.pageHeader}>
         <div className={styles.pageHeaderRow}>
           <h1 className={styles.pageTitle}>{task.title}</h1>

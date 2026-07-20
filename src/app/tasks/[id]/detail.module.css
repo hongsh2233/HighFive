@@ -16,6 +16,24 @@
   color: var(--color-danger);
 }
 
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: var(--space-4);
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.backLink:hover {
+  color: var(--accent);
+}
+
 .pageHeader {
   margin-bottom: var(--space-8);
 }
