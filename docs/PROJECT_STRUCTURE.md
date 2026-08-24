@@ -451,6 +451,15 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 | POST | `/api/settings/integrations/[channel]/test` | ADMIN | 테스트 메시지 발송 |
 | POST | `/api/webhooks/slack` | 내부 | Slack/잔디 알림 발송 |
 | POST | `/api/webhooks/github` | 서명 검증 | GitHub PR merge 연동 |
+| POST | `/api/organizations/[slug]/inquiries` | 공개(인증불필요) | 홈페이지 문의 접수 (IP당 시간당 5건 제한) |
+| GET | `/api/inquiries` | ADMIN/LEADER | 문의 목록 |
+| PATCH | `/api/inquiries/[id]` | ADMIN/LEADER | 문의 상태 변경(검토중/종결) |
+| POST | `/api/inquiries/[id]/convert` | ADMIN/LEADER | 문의를 업무로 전환 |
+| GET/POST | `/api/projects/[id]/meetings` | 소속 멤버 또는 ADMIN | 회의록 목록/작성(액션아이템 포함) |
+| PATCH/DELETE | `/api/projects/[id]/meetings/[meetingId]` | 소속 멤버 또는 ADMIN(삭제는 작성자·ADMIN만) | 회의록 수정/삭제 |
+| POST | `/api/projects/[id]/meetings/[meetingId]/action-items/[itemId]/convert` | ADMIN/LEADER | 액션아이템을 업무로 전환 |
+
+> **참고**: 위 문의/회의록 기능(`docs/하이파이브_업무접수_프로세스설계_v1.md` 설계 구현, 2026-08-13)은 `Task.sourceType`(DIRECT/INQUIRY/MEETING)/`sourceId`로 전환 출처를 추적한다. 이 문서의 나머지 절(1~4)은 2026-07-01 멀티테넌시 도입 이전 시점 기준이라 Organization/SUPERADMIN/2FA/감사로그 등 이후 기능은 반영되어 있지 않음 — 최신 전체 현황은 `docs/하이파이브_08_v1.md` 참고.
 
 ---
 

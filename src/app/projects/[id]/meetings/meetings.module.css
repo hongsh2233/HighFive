@@ -1,0 +1,65 @@
+.actionItemRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.actionItemInput {
+  flex: 1;
+  composes: field-input from global;
+}
+
+.actionItemSelect {
+  width: 140px;
+  composes: field-select from global;
+}
+
+.actionItemDate {
+  width: 140px;
+  composes: field-input from global;
+}
+
+.btnRemoveItem {
+  composes: btn btn-sm btn-ghost from global;
+}
+
+.btnAddItem {
+  composes: btn btn-sm btn-secondary from global;
+  margin-top: 4px;
+}
+
+.actionItemList {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.actionItemDisplay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg-subtle);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.actionItemContent {
+  flex: 1;
+}
+
+.actionItemMeta {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.actionItemConverted {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.btnConvert {
+  composes: btn btn-sm btn-secondary from global;
+}

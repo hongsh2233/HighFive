@@ -332,6 +332,12 @@ export default function ProjectsPage() {
                 >
                   📖 위키
                 </Link>
+                <Link
+                  href={`/projects/${selectedProject.id}/meetings`}
+                  style={{ flex: 1, display: 'block', textAlign: 'center', padding: '8px 12px', backgroundColor: 'var(--bg-subtle)', color: 'var(--text-primary)', borderRadius: 7, fontSize: 12, fontWeight: 600, border: '1px solid var(--border)' }}
+                >
+                  📝 회의록
+                </Link>
                 {canManage && (
                   <Link
                     href={`/projects/${selectedProject.id}/statuses`}

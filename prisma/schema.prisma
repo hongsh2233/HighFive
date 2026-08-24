@@ -38,6 +38,8 @@ model Organization {
   integrations   Integration[]
   templates      Template[]
   inviteTokens   InviteToken[]
+  inquiries      Inquiry[]
+  meetingNotes   MeetingNote[]
 
   @@map("organizations")
 }
@@ -98,6 +100,8 @@ model User {
   userPages         UserPage[]
   taskComments      TaskComment[]
   userSessions      UserSession[]
+  meetingNotesAuthored MeetingNote[]        @relation("meetingAuthor")
+  meetingActionItems   MeetingActionItem[]  @relation("meetingActionAssignee")
 
   @@index([organizationId])
   @@map("users")
@@ -125,6 +129,8 @@ model Task {
   isGroup            Boolean   @default(false)
   timeCounterEnabled Boolean   @default(true)
   parentTaskId       Int?
+  sourceType         String    @default("DIRECT") // DIRECT / INQUIRY / MEETING
+  sourceId           Int?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
@@ -211,6 +217,7 @@ model Project {
   members      ProjectMember[]
   tasks        Task[]
   wikiPages    WikiPage[]
+  meetingNotes MeetingNote[]
   statuses     ProjectStatus[]
   fields       ProjectField[]
   createdAt    DateTime        @default(now())
@@ -348,6 +355,67 @@ model WikiPage {
 
   @@index([projectId])
   @@map("wiki_pages")
+}
+
+// ──────────────────────────────────────────────
+// 업무 접수 (홈페이지 문의 / 미팅 액션아이템)
+// ──────────────────────────────────────────────
+
+model Inquiry {
+  id              Int       @id @default(autoincrement())
+  organizationId  Int
+  name            String
+  contact         String
+  type            String
+  content         String    @db.Text
+  status          String    @default("NEW") // NEW / IN_REVIEW / CONVERTED / CLOSED
+  closeReason     String?
+  convertedTaskId Int?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
+  @@map("inquiries")
+}
+
+model MeetingNote {
+  id             Int      @id @default(autoincrement())
+  organizationId Int
+  projectId      Int
+  title          String
+  meetingDate    DateTime?
+  attendees      String?
+  content        String   @db.Text
+  authorId       Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author       User                @relation("meetingAuthor", fields: [authorId], references: [id])
+  actionItems  MeetingActionItem[]
+
+  @@index([organizationId, projectId])
+  @@map("meeting_notes")
+}
+
+model MeetingActionItem {
+  id            Int       @id @default(autoincrement())
+  meetingNoteId Int
+  content       String
+  assigneeId    Int?
+  targetDate    DateTime?
+  status        String    @default("OPEN") // OPEN / CONVERTED
+  taskId        Int?
+  order         Int       @default(0)
+
+  meetingNote MeetingNote @relation(fields: [meetingNoteId], references: [id], onDelete: Cascade)
+  assignee    User?       @relation("meetingActionAssignee", fields: [assigneeId], references: [id])
+
+  @@index([meetingNoteId])
+  @@map("meeting_action_items")
 }
 
 // ──────────────────────────────────────────────

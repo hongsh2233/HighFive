@@ -515,3 +515,20 @@
 
 - **헤더 검색 버튼**: 🔍 아이콘 → "검색" 텍스트로 변경(디자인 밸런스 개선).
 - 디버깅 체크: `npx tsc --noEmit` 오류 0개.
+
+## 2026-08-13 (57차) — 배포 최적화 + 업무접수 프로세스(문의/미팅) 구현
+
+- **배포 최적화**: `next.config.ts`에 `output: 'standalone'` 추가. `Dockerfile`(멀티스테이지: deps→builder→runner, standalone 산출물만 복사)/`docker-compose.yml`/`.dockerignore` 신규 — NCP VPS 등 저사양 서버에 Docker로 배포 가능하게. `prisma db push`는 컨테이너 기동 스크립트에 넣지 않고 배포 시 별도 1회 실행하도록 Dockerfile 주석에 명시(운영 DB 안전).
+- **업무 접수 프로세스 — 채널 A: 홈페이지 문의접수**:
+  - `Inquiry` 모델 신규(`organizationId, name, contact, type, content, status(NEW/IN_REVIEW/CONVERTED/CLOSED), closeReason?, convertedTaskId?`).
+  - `POST /api/organizations/[slug]/inquiries`(공개, 인증불필요) — `src/lib/rate-limit.ts` 신규(인메모리 IP당 시간당 5건 제한)로 스팸 방지. 접수 시 조직 내 ADMIN/LEADER 전원에게 `notifyInquiryReceived`(`src/lib/notify.ts` 신규 헬퍼) 알림 발송.
+  - `src/app/[slug]/inquiry/page.tsx` 신규 — 로그인 불필요 공개 문의 폼(`register.module.css` 재사용). `middleware.ts`에 `/inquiry`로 끝나는 경로 공개 처리 추가.
+  - `GET/PATCH /api/inquiries[/id]`, `POST /api/inquiries/[id]/convert`(ADMIN/LEADER) — 전환 시 기존 `getProjectStatuses`로 초기 상태 결정 후 `Task` 생성(`sourceType:'INQUIRY', sourceId`), `notes`에 문의내용 자동 기록.
+  - `src/app/inquiries/page.tsx` 신규(ADMIN/LEADER, `requests.module.css` 재사용) — 목록/검토시작/전환(담당자·프로젝트 선택)/종결. `AppHeader` 설정 드롭다운에 "문의 관리" 링크 추가, `middleware.ts` `protectedRoutes`에 `/inquiries` 추가.
+- **업무 접수 프로세스 — 채널 B: 미팅 액션아이템→업무전환**:
+  - `MeetingNote`/`MeetingActionItem` 모델 신규(`WikiPage`와 동일한 프로젝트 종속 + `checkAccess`(멤버 또는 ADMIN) 패턴). 액션아이템: `content, assigneeId?, targetDate?, status(OPEN/CONVERTED), taskId?`.
+  - `GET/POST /api/projects/[id]/meetings`, `PATCH/DELETE /api/projects/[id]/meetings/[meetingId]` — `wiki` 라우트 패턴 그대로 복제, 작성 시 액션아이템 배열 일괄 생성.
+  - `POST /api/projects/[id]/meetings/[meetingId]/action-items/[itemId]/convert`(ADMIN/LEADER — 기존 `POST /api/tasks`가 ADMIN/LEADER 전용인 불변식에 맞춰 설계 문서의 "참석자 누구나"에서 범위를 좁힘) → `Task` 생성(`sourceType:'MEETING', sourceId`, notes에 미팅명/날짜 자동 기록).
+  - `src/app/projects/[id]/meetings/page.tsx` 신규 — 회의록 아코디언 목록(`wiki` 페이지의 `renderContent`/아코디언 패턴 재사용) + 작성 폼(액션아이템 동적 추가/삭제) + 액션아이템별 "업무로 전환" 버튼(ADMIN/LEADER만 노출). `projects` 페이지 멤버 패널에 "📝 회의록" 링크 추가.
+- **`Task` 모델에 `sourceType`(DIRECT/INQUIRY/MEETING 기본 DIRECT)/`sourceId` 필드 추가** — 업무가 어느 채널에서 왔는지 추적(직접등록/문의전환/미팅전환).
+- 근거: `docs/하이파이브_업무접수_프로세스설계_v1.md`의 설계를 그대로 구현. `npx tsc --noEmit` 오류 0개, `npx next build` 성공(신규 라우트 `/inquiries`, `/[slug]/inquiry`, `/projects/[id]/meetings` 및 API 정상 생성 확인, `.next/standalone/server.js` 생성 확인).

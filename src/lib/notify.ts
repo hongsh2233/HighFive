@@ -55,3 +55,17 @@ export async function notifyStatusChanged(
     )
   );
 }
+
+export async function notifyInquiryReceived(organizationId: number, name: string) {
+  const admins = await prisma.user.findMany({
+    where: { organizationId, role: { in: ['ADMIN', 'LEADER'] }, isActive: true },
+    select: { id: true },
+  });
+
+  await Promise.all(
+    admins.map((admin) =>
+      createUserNotification(admin.id, 'INQUIRY_RECEIVED',
+        `${name}님으로부터 새 문의가 접수되었습니다.`, undefined, organizationId)
+    )
+  );
+}

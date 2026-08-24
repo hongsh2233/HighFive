@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 // 보호가 필요한 라우트
-const protectedRoutes = ['/dashboard', '/tasks', '/calendar', '/stats', '/users', '/announcements', '/requests', '/my-notes', '/superadmin'];
+const protectedRoutes = ['/dashboard', '/tasks', '/calendar', '/stats', '/users', '/announcements', '/requests', '/my-notes', '/superadmin', '/inquiries'];
 const adminRoutes = ['/users'];
 const leaderRoutes = ['/stats'];
 const superadminRoutes = ['/superadmin'];
@@ -15,7 +15,7 @@ export async function middleware(req: NextRequest) {
   if (publicRoutes.some((route) => pathname === route || pathname.startsWith(route + '/'))) {
     return NextResponse.next();
   }
-  if (pathname.endsWith('/login')) {
+  if (pathname.endsWith('/login') || pathname.endsWith('/inquiry')) {
     return NextResponse.next();
   }
 
