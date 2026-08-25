@@ -43,6 +43,7 @@ model Organization {
   templates      Template[]
   inviteTokens   InviteToken[]
   aiSettings     AiSettings?
+  inquiries      Inquiry[]
 
   @@map("organizations")
 }
@@ -163,6 +164,8 @@ model Task {
   isGroup            Boolean   @default(false)
   timeCounterEnabled Boolean   @default(true)
   parentTaskId       Int?
+  sourceType         String    @default("DIRECT") // DIRECT / INQUIRY (홈페이지 문의에서 전환된 업무 출처 추적)
+  sourceId           Int?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
@@ -467,6 +470,29 @@ model MeetingNote {
 
   @@index([projectId])
   @@map("meeting_notes")
+}
+
+// ──────────────────────────────────────────────
+// 업무 접수 (홈페이지 문의)
+// ──────────────────────────────────────────────
+
+model Inquiry {
+  id              Int      @id @default(autoincrement())
+  organizationId  Int
+  name            String
+  contact         String
+  type            String
+  content         String   @db.Text
+  status          String   @default("NEW") // NEW / IN_REVIEW / CONVERTED / CLOSED
+  closeReason     String?
+  convertedTaskId Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
+  @@map("inquiries")
 }
 
 // ──────────────────────────────────────────────

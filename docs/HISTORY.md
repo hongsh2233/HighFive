@@ -788,3 +788,15 @@
   - 모든 신규 기능은 관련 env var 미설정 시 조용히 비활성화되어 기존 배포에 영향 없음. `nodemailer`, `@sentry/nextjs` 패키지 추가.
 - **이용약관/개인정보처리방침 페이지 + 가입 동의 체크박스**: `/legal/terms`, `/legal/privacy` 공개 정적 페이지 신규(`legal.module.css` 공용, 인증 불필요 — `middleware.ts`의 `orgScopedRoutes`에 포함되지 않아 자동으로 공개). `/register` 폼 하단에 "이용약관 및 개인정보처리방침에 동의합니다" 필수 체크박스 추가, 미동의 시 제출 버튼 비활성화 + 클라이언트측 에러 메시지. `POST /api/organizations`에도 `termsAccepted` 미전송 시 400으로 거부하는 서버측 검증 추가(클라이언트 우회 방지). 랜딩 페이지 푸터에 두 링크 추가. `npx tsc --noEmit` 오류 0개, `npm run build` 성공(`/legal/terms`, `/legal/privacy` 정적 라우트 정상 생성 확인).
 - **업무 상세 페이지 "목록으로" 링크 추가**: `/tasks/[id]`에서 목록으로 돌아갈 방법이 없던 문제 수정 — 페이지 상단에 `← 목록으로` 버튼(`router.push('/tasks')`) 추가. `detail.module.css`에 `.backLink` 스타일 신규.
+
+## 2026-08-24 — 배포 최적화(Docker standalone) + 홈페이지 문의접수 기능
+
+- **배포 최적화**: `next.config.ts`에 `output: 'standalone'` 추가. `Dockerfile`(멀티스테이지: deps→builder→runner, standalone 산출물만 복사)/`docker-compose.yml`/`.dockerignore` 신규 — NCP VPS 등 저사양 서버에 Docker로 배포 가능하게. `prisma db push`는 컨테이너 기동 스크립트에 넣지 않고 배포 시 별도 1회 실행하도록 Dockerfile 주석에 명시(운영 DB 안전).
+- **홈페이지 문의접수 → 업무 전환**: `Inquiry` 모델 신규(`organizationId, name, contact, type, content, status(NEW/IN_REVIEW/CONVERTED/CLOSED), closeReason?, convertedTaskId?`).
+  - `POST /api/organizations/[slug]/inquiries`(공개, 인증불필요) — `src/lib/rate-limit.ts`에 `isRateLimited` 헬퍼 추가(기존 로그인 잠금 로직과 별개 버킷, IP당 시간당 5건 제한)로 스팸 방지. 접수 시 조직 내 ADMIN/LEADER 전원에게 `notifyInquiryReceived`(`src/lib/notify.ts` 신규 헬퍼) 알림 발송.
+  - `src/app/[slug]/inquiry/page.tsx` 신규 — 로그인 불필요 공개 문의 폼(`register.module.css` 재사용). `orgScopedRoutes`에 포함되지 않아 `middleware.ts` 수정 없이 자동으로 공개.
+  - `GET/PATCH /api/inquiries[/id]`, `POST /api/inquiries/[id]/convert`(ADMIN/LEADER) — 전환 시 기존 `getProjectStatuses`로 초기 상태 결정 후 `Task` 생성(`sourceType:'INQUIRY', sourceId`), `notes`에 문의내용 자동 기록.
+  - `src/app/inquiries/page.tsx` 신규(ADMIN/LEADER, `requests.module.css` 재사용) — 목록/검토시작/전환(담당자·프로젝트 선택)/종결. `AppHeader` "관리" 드롭다운에 "문의 관리" 링크 추가, `middleware.ts` `orgScopedRoutes`에 `inquiries` 추가(다른 조직 스코프 페이지와 동일하게 `/{slug}/inquiries`로 자동 라우팅).
+- **`Task` 모델에 `sourceType`(DIRECT/INQUIRY 기본 DIRECT)/`sourceId` 필드 추가** — 업무가 문의에서 전환됐는지 추적.
+- **참고**: 기존에 별도로 설계했던 "미팅 액션아이템 → 업무 전환"(채널 B)은 이 브랜치의 `MeetingNote`에 이미 AI 요약 기반 업무 변환(`handleConvert`, `aiSummary` 파싱)이 구현되어 있어 중복 구현하지 않고 제외함.
+- 근거: `docs/하이파이브_업무접수_프로세스설계_v1.md`의 채널 A 설계를 구현. `npx tsc --noEmit` 오류 0개, `npx next build` 성공 확인.

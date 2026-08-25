@@ -47,3 +47,24 @@ export function recordFailure(identifier: string): void {
 export function recordSuccess(identifier: string): void {
   attempts.delete(keyFor(identifier));
 }
+
+// 공개 폼(로그인 불필요, 예: 홈페이지 문의 접수) 스팸 방지용 범용 rate limiter.
+// 위 로그인 잠금과는 별개의 카운터(버킷)를 사용한다.
+const buckets = new Map<string, { count: number; resetAt: number }>();
+
+export function isRateLimited(key: string, limit: number, windowMs: number): boolean {
+  const now = Date.now();
+  const bucket = buckets.get(key);
+
+  if (!bucket || now > bucket.resetAt) {
+    buckets.set(key, { count: 1, resetAt: now + windowMs });
+    return false;
+  }
+
+  if (bucket.count >= limit) {
+    return true;
+  }
+
+  bucket.count += 1;
+  return false;
+}

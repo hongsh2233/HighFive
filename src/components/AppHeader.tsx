@@ -215,7 +215,7 @@ export default function AppHeader() {
                   onMouseLeave={handleMenuLeave}
                 >
                   <button
-                    className={navClass(openMenu === 'admin' || pathname.startsWith('/users') || pathname.startsWith('/stats') || pathname.startsWith('/projects'))}
+                    className={navClass(openMenu === 'admin' || pathname.startsWith('/users') || pathname.startsWith('/stats') || pathname.startsWith('/projects') || pathname.startsWith('/inquiries'))}
                     onClick={() => setOpenMenu(openMenu === 'admin' ? null : 'admin')}
                   >
                     관리
@@ -223,6 +223,7 @@ export default function AppHeader() {
                   {openMenu === 'admin' && (
                     <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
                       <Link href="/projects" className={styles.dropdownItem} onClick={closeAll}>프로젝트</Link>
+                      <Link href="/inquiries" className={styles.dropdownItem} onClick={closeAll}>문의 관리</Link>
                       {user?.role === 'ADMIN' && (
                         <Link href="/users" className={styles.dropdownItem} onClick={closeAll}>팀원관리</Link>
                       )}

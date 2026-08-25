@@ -499,6 +499,12 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 | POST | `/api/ai/weekly-report` | LEADER+ | AI 주간 보고서 생성 |
 | GET | `/api/ai/weather-greeting` | ALL | 날씨 기반 인사 문구 |
 | GET | `/api/ai/calendar-summary` | ALL | (기존) 이번 주 업무/휴가 AI 브리핑 |
+| POST | `/api/organizations/[slug]/inquiries` | 공개(인증불필요) | 홈페이지 문의 접수 (IP당 시간당 5건 제한) |
+| GET | `/api/inquiries` | ADMIN/LEADER | 문의 목록 |
+| PATCH | `/api/inquiries/[id]` | ADMIN/LEADER | 문의 상태 변경(검토중/종결) |
+| POST | `/api/inquiries/[id]/convert` | ADMIN/LEADER | 문의를 업무로 전환 |
+
+> **참고(2026-08-24)**: `Task.sourceType`(DIRECT/INQUIRY)/`sourceId`로 전환 출처를 추적한다. `/{slug}/inquiry`(공개 문의 폼), `/inquiries`(관리 페이지, `orgScopedRoutes`에 포함)가 함께 추가됨 — 설계 근거는 `docs/하이파이브_업무접수_프로세스설계_v1.md` 참고.
 
 ---
 
