@@ -1,20 +1,33 @@
-# NCP VPS 등에서 앱 컨테이너만 구동하기 위한 참고 구성.
-# - DB(PostgreSQL)는 별도 관리형 DB 또는 별도 컨테이너로 분리 운영 권장(앱 재배포 시 DB까지
-#   내려가지 않도록). Nginx 리버스 프록시는 호스트에 직접 설치하는 구조를 전제로 하며,
-#   이 파일에는 포함하지 않는다(docs/하이파이브_에이전시_인프라전략_v1.md §3 참고).
-# - 스키마 반영(`npx prisma db push`)은 이 compose로 자동 실행되지 않는다. 배포 시
-#   `docker compose exec app npx prisma db push`를 별도로 1회 실행할 것.
-
 services:
-  app:
-    build: .
+  db:
+    image: postgres:16-alpine
+    container_name: highfive-db
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:3000:3000"
+    environment:
+      POSTGRES_USER: highfive
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: highfive
+    volumes:
+      - highfive-db-data:/var/lib/postgresql/data
+    networks:
+      - highfive-internal
+
+  app:
+    build:
+      context: .
+      target: runner
+    container_name: highfive-web
+    restart: unless-stopped
+    depends_on:
+      - db
     env_file:
       - .env
     environment:
-      - NODE_ENV=production
+      NODE_ENV: production
+    networks:
+      - highfive-internal
+      - proxy
+
   seed:
     build:
       context: .
@@ -26,3 +39,11 @@ services:
     networks:
       - highfive-internal
     command: npx ts-node prisma/seed.ts
+
+volumes:
+  highfive-db-data:
+
+networks:
+  highfive-internal:
+  proxy:
+    external: true
