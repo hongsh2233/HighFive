@@ -27,8 +27,8 @@ services:
     networks:
       - highfive-internal
       - proxy
-      
-   migrate:
+
+  migrate:
     build:
       context: .
       target: builder
@@ -38,8 +38,8 @@ services:
       - db
     networks:
       - highfive-internal
-    command: npx prisma db push 
-  
+    command: npx prisma db push
+
   seed:
     build:
       context: .
