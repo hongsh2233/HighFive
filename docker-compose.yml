@@ -27,7 +27,19 @@ services:
     networks:
       - highfive-internal
       - proxy
-
+      
+   migrate:
+    build:
+      context: .
+      target: builder
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+      - highfive-internal
+    command: npx prisma db push 
+  
   seed:
     build:
       context: .
