@@ -15,3 +15,14 @@ services:
       - .env
     environment:
       - NODE_ENV=production
+  seed:
+    build:
+      context: .
+      target: builder
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+      - highfive-internal
+    command: npx ts-node prisma/seed.ts
