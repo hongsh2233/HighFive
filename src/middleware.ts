@@ -110,6 +110,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', req.url));
   }
 
+  // 조직 슬러그만 있고 하위 경로가 없는 접근 (예: /demo, /demo/) → 해당 조직 로그인 화면으로 안내
+  // (orgScopedRoutes에 없는 미확인 세그먼트 1개 = 조직 슬러그로 간주. 존재하지 않는 슬러그는
+  // /{slug}/login 페이지 자체가 "존재하지 않는 조직입니다" 안내를 처리한다)
+  if (segments.length === 1 && segments[0] !== 'superadmin') {
+    return NextResponse.redirect(new URL(`/${segments[0]}/login`, req.url));
+  }
+
   return withSecurityHeaders(NextResponse.next());
 }
 

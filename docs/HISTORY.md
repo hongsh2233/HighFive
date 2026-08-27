@@ -800,3 +800,9 @@
 - **`Task` 모델에 `sourceType`(DIRECT/INQUIRY 기본 DIRECT)/`sourceId` 필드 추가** — 업무가 문의에서 전환됐는지 추적.
 - **참고**: 기존에 별도로 설계했던 "미팅 액션아이템 → 업무 전환"(채널 B)은 이 브랜치의 `MeetingNote`에 이미 AI 요약 기반 업무 변환(`handleConvert`, `aiSummary` 파싱)이 구현되어 있어 중복 구현하지 않고 제외함.
 - 근거: `docs/하이파이브_업무접수_프로세스설계_v1.md`의 채널 A 설계를 구현. `npx tsc --noEmit` 오류 0개, `npx next build` 성공 확인.
+
+## 2026-08-24 (2차) — 조직 슬러그만 있는 URL 접속 시 조직 로그인으로 안내
+
+- **버그**: 조직 생성 후 `https://.../{slug}/`(하위 경로 없이 슬러그만)로 접속하면 어떤 페이지에도 매칭되지 않아 결국 슈퍼관리자 전용 `/login`으로 빠지던 문제.
+- **수정**: `src/middleware.ts`에 규칙 추가 — 세그먼트가 1개이고(`/{slug}`) `orgScopedRoutes`/`/superadmin` 어디에도 해당하지 않으면 `/{slug}/login`으로 리다이렉트. 존재하지 않는 슬러그는 `/{slug}/login` 페이지 자체가 "존재하지 않는 조직입니다" 안내를 처리하므로 별도 검증은 하지 않음.
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
