@@ -166,17 +166,22 @@ function TaskListContent() {
     new Map(tasks.filter((t) => t.worker).map((t: any) => [t.worker.id, t.worker])).values()
   ).sort((a: any, b: any) => a.name.localeCompare(b.name));
 
-  // 상태 필터 목록: 현재 선택된 담당자 필터를 반영한 업무 범위에서 실제로 사용 중인 상태만 모음
-  const tasksForStatusOptions = tasks.filter((t: any) => {
-    if (selectedWorker && t.workerId !== parseInt(selectedWorker)) return false;
-    return true;
-  });
+  // 상태 필터 목록: 현재 선택된 프로젝트(없으면 화면에 보이는 전체 프로젝트)에 정의된
+  // 상태 단계를 전부 보여준다. 예전에는 "실제로 사용 중인 상태"만 모아서, 아직 완료
+  // 처리된 업무가 하나도 없는 프로젝트는 "완료" 자체가 필터에 안 보이는 문제가 있었다.
+  const projectIdsForStatusOptions = selectedProject
+    ? [parseInt(selectedProject)]
+    : Array.from(new Set(tasks.filter((t: any) => t.projectId).map((t: any) => t.projectId)));
   const statusOptionMap = new Map<string, string>();
-  tasksForStatusOptions.forEach((t: any) => {
-    if (statusOptionMap.has(t.status)) return;
-    const def = getStatuses(t.projectId).find((s) => s.code === t.status);
-    statusOptionMap.set(t.status, def?.label ?? t.status);
-  });
+  if (projectIdsForStatusOptions.length === 0) {
+    getStatuses(null).forEach((s) => statusOptionMap.set(s.code, s.label));
+  } else {
+    projectIdsForStatusOptions.forEach((pid: number) => {
+      getStatuses(pid).forEach((s) => {
+        if (!statusOptionMap.has(s.code)) statusOptionMap.set(s.code, s.label);
+      });
+    });
+  }
   const statusOptions = Array.from(statusOptionMap.entries());
 
   if (authLoading) {

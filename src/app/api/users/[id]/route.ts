@@ -15,15 +15,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const target = await prisma.user.findFirst({ where: { id: userId, organizationId } });
     if (!target) return errorResponse('사용자를 찾을 수 없습니다.', 404);
     const body = await req.json();
-    const { name, role, isActive, leaveDate, affiliation, projectIds, managerId } = body;
+    const { name, email, role, isActive, leaveDate, affiliation, projectIds, managerId } = body;
 
     if (managerId !== undefined && managerId !== null && parseInt(managerId) === userId) {
       return errorResponse('본인을 담당 리더로 지정할 수 없습니다.', 400, 'VALID_400');
     }
 
+    if (email !== undefined && email !== target.email) {
+      const existing = await prisma.user.findUnique({ where: { email } });
+      if (existing) return errorResponse('이미 사용 중인 이메일입니다.', 409, 'VALID_409');
+    }
+
     const user = await prisma.user.update({
       where: { id: userId },
       data: {
+        ...(email !== undefined && { email }),
         ...(name !== undefined && { name }),
         ...(role !== undefined && { role }),
         ...(isActive !== undefined && { isActive }),

@@ -116,7 +116,7 @@ export default function UsersPage() {
       };
 
       if (editingUser) {
-        await apiClient.patch(`/users/${editingUser.id}`, payload);
+        await apiClient.patch(`/users/${editingUser.id}`, { ...payload, email: formData.email });
         setMessage({ type: 'success', text: '사용자 정보가 수정되었습니다.' });
       } else {
         const res = await apiClient.post<{ data: { tempPassword: string } }>('/users', {
@@ -207,12 +207,10 @@ export default function UsersPage() {
             </h2>
             <form onSubmit={handleSubmit}>
               <div className={styles.formGrid}>
-                {!editingUser && (
-                  <div>
-                    <label className={styles.label}>이메일 *</label>
-                    <input type="email" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} required className={styles.input} placeholder="name@company.com" />
-                  </div>
-                )}
+                <div>
+                  <label className={styles.label}>이메일 *</label>
+                  <input type="email" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} required className={styles.input} placeholder="name@company.com" />
+                </div>
                 <div>
                   <label className={styles.label}>이름 *</label>
                   <input type="text" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} required className={styles.input} placeholder="홍길동" />
