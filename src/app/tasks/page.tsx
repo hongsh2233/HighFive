@@ -854,7 +854,7 @@ function ProjectTaskSection({
                 disabled={hasNotes}
                 title={hasNotes ? '비고가 있는 업무는 하위 업무를 등록할 수 없습니다.' : undefined}
                 onClick={async () => {
-                  if (!(await confirm('하위 업무를 등록하면 이 업무는 그룹 업무로 전환됩니다. 계속하시겠습니까?'))) return;
+                  if (!isGroupRow && !(await confirm('하위 업무를 등록하면 이 업무는 그룹 업무로 전환됩니다. 계속하시겠습니까?'))) return;
                   router.push(`/tasks/create?parentTaskId=${task.id}`);
                 }}
               >
