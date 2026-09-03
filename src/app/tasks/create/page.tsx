@@ -171,8 +171,20 @@ function TaskCreateForm() {
     } else {
       setWorkers([]);
     }
-    setWorkerId('');
   }, [projectId, projects]);
+
+  // 담당자 목록이 바뀔 때: 기존 선택이 여전히 유효하면 유지하고, 무효하면 로그인 사용자를
+  // 기본 담당자로 자동 선택한다(목록에 없으면 비움). 이전에는 담당자 목록이 바뀔 때마다
+  // 무조건 선택을 초기화해 "선택이 풀리는" 문제가 있었다.
+  useEffect(() => {
+    const selectable = workers.filter(w => w.role !== 'ADMIN');
+    if (selectable.length === 0) return;
+    const stillValid = selectable.some(w => String(w.id) === workerId);
+    if (stillValid) return;
+    const currentUserId = user?.id ? String(user.id) : '';
+    const defaultWorker = selectable.find(w => String(w.id) === currentUserId);
+    setWorkerId(defaultWorker ? currentUserId : '');
+  }, [workers]);
 
   const fetchProjects = async () => {
     try {
