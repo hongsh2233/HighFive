@@ -39,6 +39,24 @@
   font-size: 13px;
 }
 
+.manualCard {
+  display: block;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  background-color: var(--accent-light);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.manualCard:hover {
+  background-color: var(--accent-light);
+  filter: brightness(0.98);
+}
+
 .messageSuccess {
   background-color: var(--success-light);
   color: var(--success);

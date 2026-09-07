@@ -49,7 +49,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!existing) return errorResponse('프로젝트를 찾을 수 없습니다.', 404);
 
     const body = await req.json();
-    const { name, status, description, projectManagerName, projectLeadName, wikiEnabled, simpleMode, roles } = body;
+    const { name, status, description, projectManagerName, projectLeadName, wikiEnabled, simpleMode, customLabels, roles } = body;
 
     // 부분 업데이트: 전달된 필드만 SET
     const setClauses: string[] = ['"updatedAt"=NOW()'];
@@ -63,6 +63,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (projectLeadName !== undefined) { setClauses.push(`"projectLeadName"=$${idx++}`); values.push(projectLeadName?.trim() || null); }
     if (wikiEnabled !== undefined) { setClauses.push(`"wikiEnabled"=$${idx++}`); values.push(!!wikiEnabled); }
     if (simpleMode !== undefined) { setClauses.push(`"simpleMode"=$${idx++}`); values.push(!!simpleMode); }
+    if (customLabels !== undefined) { setClauses.push(`"customLabels"=$${idx++}`); values.push(customLabels?.trim() || null); }
 
     values.push(projectId);
     await prisma.$executeRawUnsafe(

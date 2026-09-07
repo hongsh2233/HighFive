@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
@@ -119,6 +120,10 @@ export default function WikiHubPage() {
             {message.text}
           </div>
         )}
+
+        <Link href="/manual" className={styles.manualCard}>
+          📘 사용 매뉴얼 — High5 기능 안내 보러가기
+        </Link>
 
         {projects.length === 0 ? (
           <div className={styles.empty}>소속된 프로젝트가 없어 위키를 사용할 수 없습니다. 관리자에게 프로젝트 배정을 요청하세요.</div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import styles from './manual.module.css';
 
 interface Section {
@@ -109,6 +110,7 @@ export default function ManualPage() {
     <div className={styles.page}>
       <div className={styles.inner}>
         <div className={styles.pageHeader}>
+          <Link href="/wiki" className={styles.backLink}>← 위키로</Link>
           <h1 className={styles.pageTitle}>사용 메뉴얼</h1>
           <p className={styles.pageSubtitle}>High5의 주요 기능을 한눈에 확인하세요.</p>
         </div>

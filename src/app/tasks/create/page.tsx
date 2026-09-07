@@ -23,6 +23,8 @@ interface Project {
   id: number;
   name: string;
   status: string;
+  simpleMode?: boolean;
+  customLabels?: string | null;
   members: { user: Worker }[];
 }
 
@@ -132,6 +134,11 @@ function TaskCreateForm() {
   };
 
   const assignableWorkers = workers.filter(w => w.role !== 'ADMIN');
+
+  const selectedProjectMeta = projects.find(p => p.id === parseInt(projectId));
+  const labelOptions: { code: string; text: string }[] = selectedProjectMeta?.customLabels
+    ? selectedProjectMeta.customLabels.split(',').map(s => s.trim()).filter(Boolean).map(name => ({ code: name, text: name }))
+    : TASK_LABEL_LIST.map(code => ({ code, text: TASK_LABEL_TEXT[code] }));
 
   const isAdmin = user?.role === 'ADMIN';
   const isLeader = user?.role === 'LEADER';
@@ -377,7 +384,7 @@ function TaskCreateForm() {
               <div className={styles.fieldGroupWide}>
                 <label className={styles.label}>라벨</label>
                 <div className={styles.labelRow}>
-                  {TASK_LABEL_LIST.map(code => (
+                  {labelOptions.map(({ code, text }) => (
                     <label key={code} className={styles.labelChip} data-checked={labels.includes(code) ? 'true' : 'false'} data-label={code}>
                       <input
                         type="checkbox"
@@ -385,23 +392,25 @@ function TaskCreateForm() {
                         onChange={() => toggleLabel(code)}
                         className={styles.labelCheckbox}
                       />
-                      {TASK_LABEL_TEXT[code]}
+                      {text}
                     </label>
                   ))}
                 </div>
               </div>
 
-              <div className={styles.fieldGroupWide}>
-                <label className={styles.groupCheckLabel}>
-                  <input
-                    type="checkbox"
-                    checked={timeCounterEnabled}
-                    onChange={e => setTimeCounterEnabled(e.target.checked)}
-                    className={styles.labelCheckbox}
-                  />
-                  시간카운터 사용 (상태 변경에 따라 작업 시간을 자동으로 계산합니다)
-                </label>
-              </div>
+              {!selectedProjectMeta?.simpleMode && (
+                <div className={styles.fieldGroupWide}>
+                  <label className={styles.groupCheckLabel}>
+                    <input
+                      type="checkbox"
+                      checked={timeCounterEnabled}
+                      onChange={e => setTimeCounterEnabled(e.target.checked)}
+                      className={styles.labelCheckbox}
+                    />
+                    시간카운터 사용 (상태 변경에 따라 작업 시간을 자동으로 계산합니다)
+                  </label>
+                </div>
+              )}
 
               {!parentTask && (
                 <div className={styles.fieldGroupWide}>

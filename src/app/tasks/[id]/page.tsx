@@ -927,39 +927,41 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         )}
       </div>
 
-      {/* GitHub 연결 */}
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>
-          <h2 className={`${styles.cardTitle} ${styles.noMargin}`}>GitHub 연결</h2>
-          {!linkEditing && (
-            <button onClick={() => setLinkEditing(true)} className={styles.btnSecondary}>
-              {externalLink ? '수정' : '연결'}
-            </button>
+      {/* GitHub 연결 (간편모드 프로젝트에서는 숨김) */}
+      {!task.project?.simpleMode && (
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <h2 className={`${styles.cardTitle} ${styles.noMargin}`}>GitHub 연결</h2>
+            {!linkEditing && (
+              <button onClick={() => setLinkEditing(true)} className={styles.btnSecondary}>
+                {externalLink ? '수정' : '연결'}
+              </button>
+            )}
+          </div>
+          {linkEditing ? (
+            <div>
+              <input
+                type="url"
+                value={linkInput}
+                onChange={(e) => setLinkInput(e.target.value)}
+                placeholder="https://github.com/org/repo/issues/1"
+                className={styles.textarea}
+                style={{ height: 'auto', padding: '8px 10px', resize: 'none' }}
+              />
+              <div className={styles.editActions}>
+                <button onClick={handleLinkSave} className={styles.btn}>저장</button>
+                <button onClick={() => { setLinkEditing(false); setLinkInput(externalLink); }} className={styles.btnSecondary}>취소</button>
+              </div>
+            </div>
+          ) : externalLink ? (
+            <a href={externalLink} target="_blank" rel="noopener noreferrer" style={{ color: '#2563EB', fontSize: '13px', wordBreak: 'break-all' }}>
+              {externalLink}
+            </a>
+          ) : (
+            <p className={styles.emptyLogs}>연결된 GitHub URL이 없습니다.</p>
           )}
         </div>
-        {linkEditing ? (
-          <div>
-            <input
-              type="url"
-              value={linkInput}
-              onChange={(e) => setLinkInput(e.target.value)}
-              placeholder="https://github.com/org/repo/issues/1"
-              className={styles.textarea}
-              style={{ height: 'auto', padding: '8px 10px', resize: 'none' }}
-            />
-            <div className={styles.editActions}>
-              <button onClick={handleLinkSave} className={styles.btn}>저장</button>
-              <button onClick={() => { setLinkEditing(false); setLinkInput(externalLink); }} className={styles.btnSecondary}>취소</button>
-            </div>
-          </div>
-        ) : externalLink ? (
-          <a href={externalLink} target="_blank" rel="noopener noreferrer" style={{ color: '#2563EB', fontSize: '13px', wordBreak: 'break-all' }}>
-            {externalLink}
-          </a>
-        ) : (
-          <p className={styles.emptyLogs}>연결된 GitHub URL이 없습니다.</p>
-        )}
-      </div>
+      )}
 
       {/* 상세내용 */}
       <div className={styles.card}>

@@ -815,3 +815,15 @@
 - **참고**: 간편모드가 업무 등록/상세 화면(GitHub 연결 등)에 미치는 영향은 이번 범위에서 제외 — 업무등록 화면을 논의할 때 별도 라운드로 구체화하기로 함.
 - **문서**: `docs/하이파이브_기능리스트_사이트맵_v1.md` 신규 — 현재 코드 기준 전체 기능 리스트, 역할별(SUPERADMIN/ADMIN/LEADER/WORKER) 권한 매트릭스, 사이트맵 정리.
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-07 (2차) — 사용 메뉴얼을 위키로 통합 + 간편모드 범위 확정(시간카운터/GitHub 숨김) + 프로젝트별 커스텀 라벨
+
+- **사용 메뉴얼 → 위키 통합**: 헤더 "협업" 드롭다운의 독립 "사용 메뉴얼" 메뉴 항목 제거. `/wiki` 허브 페이지 상단에 "📘 사용 매뉴얼" 카드를 항상(프로젝트 소속 여부와 무관하게) 노출해 `/manual`로 연결. `/manual` 페이지에는 "← 위키로" 백링크 추가. 라우트 자체(`/manual`, `middleware.ts`의 `orgScopedRoutes`)는 유지 — 정적 콘텐츠 성격상 위키 문서로 편입하지 않고 진입 경로만 위키로 통합.
+- **간편모드 범위 확정 (업무 화면)**: 지난 라운드에서 보류했던 "간편모드가 업무 등록/상세 화면에 미치는 영향"을 구체화.
+  - `src/app/api/tasks/[id]/route.ts` GET에 `project: { select: { id, name, simpleMode } }` include 추가.
+  - `src/types/index.ts`의 `Task.project`에 `simpleMode?: boolean` 추가.
+  - `tasks/create` 페이지: 선택된 프로젝트가 `simpleMode`면 "시간카운터 사용" 체크박스를 숨김(값은 기존 기본 동작 유지, 노출만 제거).
+  - `tasks/[id]` 상세 페이지: `task.project.simpleMode`가 true면 "GitHub 연결" 카드 전체를 숨김.
+- **프로젝트별 커스텀 라벨**: `Project.customLabels String?`(쉼표 구분 자유 텍스트) 추가. 프로젝트 생성/수정 화면에 "업무 라벨" 입력란 신규(비워두면 기존 기본 라벨인 긴급/주말대응/비상 사용). `tasks/create` 페이지는 선택된 프로젝트에 `customLabels`가 있으면 그 목록을, 없으면 기본 라벨을 라벨 체크박스로 노출.
+- API: `POST /api/projects`, `PATCH /api/projects/[id]`에 `customLabels` 필드 처리 추가.
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.

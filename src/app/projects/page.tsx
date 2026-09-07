@@ -30,6 +30,7 @@ interface Project {
   projectLeadName?: string | null;
   wikiEnabled: boolean;
   simpleMode: boolean;
+  customLabels?: string | null;
   roles: ProjectRole[];
   members: ProjectMember[];
   _count: { tasks: number };
@@ -46,6 +47,7 @@ const emptyForm = {
   projectManagerName: '',
   wikiEnabled: true,
   simpleMode: false,
+  customLabels: '',
   roles: [] as RoleDraft[],
 };
 
@@ -130,6 +132,7 @@ export default function ProjectsPage() {
       projectManagerName: p.projectManagerName || '',
       wikiEnabled: p.wikiEnabled,
       simpleMode: p.simpleMode,
+      customLabels: p.customLabels || '',
       roles: (p.roles || []).map(r => ({
         label: r.label,
         userId: r.userId ? String(r.userId) : '',
@@ -160,6 +163,7 @@ export default function ProjectsPage() {
         projectManagerName: form.projectManagerName.trim() || null,
         wikiEnabled: form.wikiEnabled,
         simpleMode: form.simpleMode,
+        customLabels: form.customLabels.trim() || null,
         roles: form.simpleMode ? [] : form.roles
           .filter(r => r.label.trim())
           .map(r => ({
@@ -330,6 +334,16 @@ export default function ProjectsPage() {
                   />
                   간편모드 (개요·역할 설정 생략)
                 </label>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>업무 라벨 <span style={{ textTransform: 'none', fontWeight: 400 }}>(쉼표로 구분, 비워두면 기본 라벨 사용)</span></label>
+                <input
+                  value={form.customLabels}
+                  onChange={e => setForm(p => ({ ...p, customLabels: e.target.value }))}
+                  placeholder="예: 긴급, 주말대응, VIP고객, 재작업"
+                  style={inputStyle}
+                />
               </div>
 
               {!form.simpleMode && (

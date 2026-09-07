@@ -28,6 +28,7 @@ export async function GET(
       include: {
         registrant: { select: { id: true, name: true, email: true } },
         worker: { select: { id: true, name: true, email: true } },
+        project: { select: { id: true, name: true, simpleMode: true } },
         timeLogs: { orderBy: { createdAt: 'desc' } },
         fieldValues: true,
         attachments: {

@@ -54,6 +54,7 @@ export interface Task {
   project?: {
     id: number;
     name: string;
+    simpleMode?: boolean;
   } | null;
   timeLogs?: TimeLog[];
   subTasks?: Task[];
