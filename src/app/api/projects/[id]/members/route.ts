@@ -7,7 +7,7 @@ import { ensureProjectsSchema } from '@/lib/db-init';
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await ensureProjectsSchema();
-    const { session, error } = await requireAuth();
+    const { session, error, organizationId } = await requireAuth();
     if (error) return error;
 
     const role = (session!.user as any).role;
@@ -21,6 +21,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     if (!userId) return errorResponse('userId가 필요합니다.', 400);
 
+    const [project, targetUser] = await Promise.all([
+      prisma.project.findFirst({ where: { id: projectId, organizationId } }),
+      prisma.user.findFirst({ where: { id: parseInt(userId), organizationId } }),
+    ]);
+    if (!project) return errorResponse('프로젝트를 찾을 수 없습니다.', 404);
+    if (!targetUser) return errorResponse('유효하지 않은 사용자입니다.', 400);
+
     await prisma.projectMember.upsert({
       where: { projectId_userId: { projectId, userId: parseInt(userId) } },
       update: {},
@@ -28,12 +35,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     });
 
     // Update user's projectIds by returning updated project
-    const project = await prisma.project.findUnique({
+    const updatedProject = await prisma.project.findUnique({
       where: { id: projectId },
       include: { members: { include: { user: { select: { id: true, name: true, email: true, role: true } } } } },
     });
 
-    return successResponse(project, '멤버가 추가되었습니다.');
+    return successResponse(updatedProject, '멤버가 추가되었습니다.');
   } catch (e) {
     console.error(e);
     return errorResponse('멤버 추가 실패', 500);
@@ -43,7 +50,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 // DELETE /api/projects/[id]/members - 멤버 제거
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { session, error } = await requireAuth();
+    const { session, error, organizationId } = await requireAuth();
     if (error) return error;
 
     const role = (session!.user as any).role;
@@ -57,6 +64,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const userId = parseInt(searchParams.get('userId') || '0');
 
     if (!userId) return errorResponse('userId가 필요합니다.', 400);
+
+    const project = await prisma.project.findFirst({ where: { id: projectId, organizationId } });
+    if (!project) return errorResponse('프로젝트를 찾을 수 없습니다.', 404);
 
     await prisma.projectMember.delete({
       where: { projectId_userId: { projectId, userId } },

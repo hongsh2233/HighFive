@@ -116,10 +116,16 @@ export async function PATCH(
     }
     updateData.updatedAt = new Date();
 
-    if (newWorkerId !== undefined) updateData.workerId = parseInt(newWorkerId);
+    if (newWorkerId !== undefined) {
+      const newWorker = await prisma.user.findFirst({ where: { id: parseInt(newWorkerId), organizationId } });
+      if (!newWorker) {
+        return errorResponse('유효하지 않은 담당자입니다.', 400, 'VALID_400');
+      }
+      updateData.workerId = newWorker.id;
+    }
 
     const task = await prisma.task.update({
-      where: { id: taskId },
+      where: { id: taskId, organizationId },
       data: updateData,
       include: {
         registrant: { select: { id: true, name: true, email: true } },

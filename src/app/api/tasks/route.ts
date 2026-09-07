@@ -146,14 +146,29 @@ export async function POST(req: NextRequest) {
       return errorResponse(parsedAttachments.error, 400, 'VALID_400');
     }
 
+    // 조직 격리: 클라이언트가 보낸 담당자/등록자/프로젝트 ID가 실제로 같은 조직 소속인지 검증
+    const [worker, registrant] = await Promise.all([
+      prisma.user.findFirst({ where: { id: parseInt(workerId), organizationId } }),
+      prisma.user.findFirst({ where: { id: parseInt(registrantId), organizationId } }),
+    ]);
+    if (!worker || !registrant) {
+      return errorResponse('유효하지 않은 담당자 또는 등록자입니다.', 400, 'VALID_400');
+    }
+
     const { cleanTitle, rmsNo } = parseRmsNo(title);
     const creatorId = parseInt((session!.user as any).id || '0');
     const resolvedProjectId = projectId ? parseInt(projectId) : null;
+    if (resolvedProjectId) {
+      const project = await prisma.project.findFirst({ where: { id: resolvedProjectId, organizationId } });
+      if (!project) {
+        return errorResponse('유효하지 않은 프로젝트입니다.', 400, 'VALID_400');
+      }
+    }
     const [initialStatus] = await getProjectStatuses(resolvedProjectId);
 
     // 기존 그룹 업무에 하위 업무를 1건 추가하는 경우
     if (parentTaskId) {
-      const parent = await prisma.task.findUnique({ where: { id: parseInt(parentTaskId) } });
+      const parent = await prisma.task.findFirst({ where: { id: parseInt(parentTaskId), organizationId } });
       if (!parent) {
         return errorResponse('상위 그룹 업무를 찾을 수 없습니다.', 404, 'NOT_FOUND_404');
       }
@@ -248,6 +263,8 @@ export async function POST(req: NextRequest) {
     if (isGroupReq && Array.isArray(subTasks) && subTasks.length > 0) {
       for (const sub of subTasks) {
         if (!sub?.title || !sub?.workerId) continue;
+        const subWorker = await prisma.user.findFirst({ where: { id: parseInt(sub.workerId), organizationId } });
+        if (!subWorker) continue;
         const { cleanTitle: subTitle, rmsNo: subRmsNo } = parseRmsNo(sub.title);
         const subTask = await prisma.task.create({
           data: {

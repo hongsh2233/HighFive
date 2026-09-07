@@ -827,3 +827,16 @@
 - **프로젝트별 커스텀 라벨**: `Project.customLabels String?`(쉼표 구분 자유 텍스트) 추가. 프로젝트 생성/수정 화면에 "업무 라벨" 입력란 신규(비워두면 기존 기본 라벨인 긴급/주말대응/비상 사용). `tasks/create` 페이지는 선택된 프로젝트에 `customLabels`가 있으면 그 목록을, 없으면 기본 라벨을 라벨 체크박스로 노출.
 - API: `POST /api/projects`, `PATCH /api/projects/[id]`에 `customLabels` 필드 처리 추가.
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-07 (3차) — 구조 개선 분석 문서 1단계: 조직 격리 점검·수정 + 문의→업무 전환 트랜잭션
+
+업로드된 구조 개선 분석 문서(`High5 전체 구조 및 기능 개선 분석 v1`)의 "1단계: 즉시 정리" 항목 중 사용자가 승인한 두 가지(조직 격리 누락 점검+수정, 문의→업무 전환 트랜잭션 적용)를 반영. 나머지 두 항목(초기 최고관리자 생성 방식 변경, 운영 DB 마이그레이션 방식 변경)은 로그인/배포 흐름에 직접 영향을 주므로 별도로 진행 예정.
+
+- **조직 격리 누락 점검+수정**: 클라이언트가 보낸 ID를 검증 없이 신뢰하던 지점을 점검해 수정.
+  - `POST /api/tasks`: `workerId`/`registrantId`/`projectId`/`parentTaskId`(그리고 그룹 업무의 각 하위 업무 `workerId`)가 실제로 요청자와 같은 조직 소속인지 조회로 확인 후 생성하도록 변경. 기존에는 다른 조직의 사용자/프로젝트 ID를 넣어도 그대로 저장되던 문제가 있었음.
+  - `PATCH /api/tasks/[id]`: 담당자 변경(`workerId`) 시에도 같은 조직 소속 사용자인지 검증 추가, `task.update`의 `where`에 `organizationId`를 추가해 다른 조직 업무를 ID만으로 수정할 수 없도록 방어.
+  - `POST/DELETE /api/projects/[id]/members`: 대상 프로젝트가 요청자 조직 소속인지, 추가하려는 `userId`가 같은 조직 사용자인지 검증 추가(기존에는 프로젝트/사용자 ID를 조직 확인 없이 그대로 사용).
+  - `POST /api/projects`, `PATCH /api/projects/[id]`: `ProjectRole.userId`(역할 담당자)도 같은 조직 사용자인지 확인 후에만 연결, 아니면 `null` 처리.
+  - `src/app/api/tasks/[id]/dependencies/route.ts` 등 기존에 이미 `organizationId`로 스코프되어 있던 라우트는 별도 수정 없음(패턴 확인만 함).
+- **문의→업무 전환 트랜잭션**: `POST /api/inquiries/[id]/convert`에서 업무 생성과 문의 상태(`CONVERTED`) 갱신을 `prisma.$transaction`으로 묶어 원자성 보장(중간 실패 시 업무만 생성되고 문의 상태가 갱신 안 되는 불일치 방지). 트랜잭션 내부에서 문의 상태를 재조회해 동시 요청으로 인한 중복 전환도 방어. 담당자/프로젝트 ID도 조직 소속 여부를 사전 검증하도록 함께 수정.
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.

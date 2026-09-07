@@ -74,12 +74,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (Array.isArray(roles)) {
       await prisma.projectRole.deleteMany({ where: { projectId } });
       const roleList: { label: string; userId?: number; userName?: string }[] = roles;
+      const roleUserIds = roleList.map((r) => r.userId).filter((v): v is number => !!v);
+      const validRoleUserIds = roleUserIds.length
+        ? new Set((await prisma.user.findMany({ where: { id: { in: roleUserIds }, organizationId }, select: { id: true } })).map((u) => u.id))
+        : new Set<number>();
       const toCreate = roleList
         .filter((r) => r.label?.trim())
         .map((r, i) => ({
           projectId,
           label: r.label.trim(),
-          userId: r.userId ? Number(r.userId) : null,
+          userId: r.userId && validRoleUserIds.has(Number(r.userId)) ? Number(r.userId) : null,
           userName: r.userName?.trim() || null,
           order: i,
         }));

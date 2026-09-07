@@ -27,33 +27,57 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return errorResponse('이미 업무로 전환된 문의입니다.', 400);
     }
 
+    const worker = await prisma.user.findFirst({ where: { id: parseInt(workerId), organizationId } });
+    if (!worker) {
+      return errorResponse('유효하지 않은 담당자입니다.', 400);
+    }
+
     const creatorId = parseInt((session!.user as any).id || '0');
     const resolvedProjectId = projectId ? parseInt(projectId) : null;
+    if (resolvedProjectId) {
+      const project = await prisma.project.findFirst({ where: { id: resolvedProjectId, organizationId } });
+      if (!project) {
+        return errorResponse('유효하지 않은 프로젝트입니다.', 400);
+      }
+    }
     const [initialStatus] = await getProjectStatuses(resolvedProjectId);
 
-    const task = await prisma.task.create({
-      data: {
-        organizationId,
-        title: `[문의] ${inquiry.name} - ${inquiry.type}`,
-        registrantId: creatorId,
-        workerId: parseInt(workerId),
-        projectId: resolvedProjectId,
-        status: initialStatus.code,
-        notes: `<p>문의자: ${inquiry.name} (${inquiry.contact})</p><p>${inquiry.content}</p>`,
-        sourceType: 'INQUIRY',
-        sourceId: inquiry.id,
-      },
+    const task = await prisma.$transaction(async (tx) => {
+      // 재확인: 트랜잭션 내에서 다시 한번 중복 전환 방지
+      const current = await tx.inquiry.findFirst({ where: { id: inquiryId, organizationId } });
+      if (!current || current.status === 'CONVERTED') {
+        throw new Error('ALREADY_CONVERTED');
+      }
+
+      const created = await tx.task.create({
+        data: {
+          organizationId,
+          title: `[문의] ${inquiry.name} - ${inquiry.type}`,
+          registrantId: creatorId,
+          workerId: worker.id,
+          projectId: resolvedProjectId,
+          status: initialStatus.code,
+          notes: `<p>문의자: ${inquiry.name} (${inquiry.contact})</p><p>${inquiry.content}</p>`,
+          sourceType: 'INQUIRY',
+          sourceId: inquiry.id,
+        },
+      });
+
+      await tx.inquiry.update({
+        where: { id: inquiryId },
+        data: { status: 'CONVERTED', convertedTaskId: created.id },
+      });
+
+      return created;
     });
 
     await addHistory(task.id, creatorId, 'CREATED', '홈페이지 문의에서 전환된 업무');
 
-    await prisma.inquiry.update({
-      where: { id: inquiryId },
-      data: { status: 'CONVERTED', convertedTaskId: task.id },
-    });
-
     return successResponse({ taskId: task.id }, '업무로 전환되었습니다.', 201);
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.message === 'ALREADY_CONVERTED') {
+      return errorResponse('이미 업무로 전환된 문의입니다.', 400);
+    }
     console.error(err);
     return errorResponse('업무 전환 중 오류가 발생했습니다.', 500);
   }
