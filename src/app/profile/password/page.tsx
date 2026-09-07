@@ -10,6 +10,7 @@ import Spinner from '@/components/common/Spinner';
 export default function PasswordChangePage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
+  const forced = !!(user as any)?.mustChangePassword;
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -83,6 +84,11 @@ export default function PasswordChangePage() {
         비밀번호 변경
       </h1>
 
+      {forced && !success && (
+        <div className={styles.errorBox}>
+          최초 로그인이거나 관리자가 발급한 임시 비밀번호입니다. 계속 이용하려면 비밀번호를 변경해주세요.
+        </div>
+      )}
       {error && <div className={styles.errorBox}>{error}</div>}
       {success && <div className={styles.successBox}>{success}</div>}
 
@@ -135,14 +141,16 @@ export default function PasswordChangePage() {
           >
             {loading ? '변경 중...' : '비밀번호 변경'}
           </button>
-          <button
-            type="button"
-            className={styles.btnCancel}
-            onClick={() => router.back()}
-            disabled={loading}
-          >
-            취소
-          </button>
+          {!forced && (
+            <button
+              type="button"
+              className={styles.btnCancel}
+              onClick={() => router.back()}
+              disabled={loading}
+            >
+              취소
+            </button>
+          )}
         </div>
       </form>
     </div>

@@ -113,6 +113,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          mustChangePassword: user.mustChangePassword,
           organizationId: user.organizationId ?? undefined,
           organizationSlug: user.organization?.slug ?? undefined,
           organizationPlan: user.organization?.plan ?? undefined,
@@ -127,6 +128,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
+        token.mustChangePassword = (user as any).mustChangePassword;
         token.organizationId = (user as any).organizationId;
         token.organizationSlug = (user as any).organizationSlug;
         token.organizationPlan = (user as any).organizationPlan;
@@ -139,6 +141,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as any).id = token.id as string;
         (session.user as any).role = token.role as string;
+        (session.user as any).mustChangePassword = token.mustChangePassword as boolean | undefined;
         (session.user as any).organizationId = token.organizationId as number | undefined;
         (session.user as any).organizationSlug = token.organizationSlug as string | undefined;
         (session.user as any).organizationPlan = token.organizationPlan as string | undefined;

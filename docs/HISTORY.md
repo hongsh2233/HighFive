@@ -828,6 +828,35 @@
 - API: `POST /api/projects`, `PATCH /api/projects/[id]`에 `customLabels` 필드 처리 추가.
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
 
+## 2026-09-07 (4차) — 구조 개선 분석 문서 1단계: 초기 최고관리자 부트스트랩 보안 강화 + 운영 DB 마이그레이션 방식 전환
+
+⚠️ **배포 시 반드시 아래 "운영 반영 시 필수 절차"를 먼저 수행해야 합니다.** 그냥 배포하면 마이그레이션이 실패합니다.
+
+### 초기 최고관리자 생성 방식 변경
+- 기존 문제: `src/instrumentation.ts`가 서버 부팅마다 `admin@admin.co.kr` 계정을 하드코딩된 비밀번호(`Admin@2024!`)로 자동 생성하고, 이미 존재하면 무조건 `role: SUPERADMIN`으로 재승격했음 — 비밀번호가 코드에 노출되고, 운영자가 계정을 바꿔도 계속 되살아나는 문제.
+- 변경 후: DB 전체에 `SUPERADMIN` 역할 계정이 하나도 없을 때만(즉 최초 설치 시 1회) 부트스트랩 계정을 생성. 비밀번호는 `crypto.randomBytes`로 매번 무작위 생성해 서버 로그에 1회만 출력하고, `User.mustChangePassword=true`로 최초 로그인 시 비밀번호 변경을 강제. 기존 계정을 매 부팅마다 재승격하는 로직은 완전히 제거.
+- `prisma/schema.prisma`: `User.mustChangePassword Boolean @default(false)` 추가.
+- `src/lib/auth.ts`: 로그인 시 `mustChangePassword`를 JWT/세션에 포함.
+- `src/middleware.ts`: `mustChangePassword`가 true인 사용자는 `/profile/password` 외 모든 보호 라우트 접근 시 그 페이지로 강제 리다이렉트(SUPERADMIN 포함).
+- `src/app/api/auth/change-password`: 비밀번호 변경 성공 시 `mustChangePassword`를 false로 초기화.
+- `src/app/profile/password/page.tsx`: 강제 변경 상황일 때 안내 문구 표시, 취소 버튼 숨김.
+
+### 운영 DB 마이그레이션 방식 변경
+- 기존 문제: Docker(`docker-compose.yml`의 `migrate` 서비스)와 Railway(`package.json`의 `start` 스크립트) 모두 `prisma db push --accept-data-loss`를 배포 때마다 직접 실행 — 스키마 변경 이력이 전혀 남지 않고, 컬럼 삭제/타입 변경 시 확인 없이 데이터 손실이 발생할 수 있었음.
+- 변경 후: 정식 Prisma 마이그레이션 파일 도입. `prisma/migrations/20260907000000_init/migration.sql`을 현재 스키마 기준 베이스라인 마이그레이션으로 생성(`prisma migrate diff --from-empty --to-schema-datamodel`로 생성, DB 연결 없이 스키마만으로 생성 가능). 이후 스키마 변경은 `npx prisma migrate dev --name <설명>`으로 마이그레이션 파일을 생성해 커밋하는 방식으로 전환.
+- `package.json`: `start` 스크립트를 `prisma db push --accept-data-loss` → `prisma migrate deploy`로 변경.
+- `docker-compose.yml`: `migrate` 서비스 명령을 `npx prisma db push` → `npx prisma migrate deploy`로 변경.
+
+### ⚠️ 운영 반영 시 필수 절차 (1회성, 수동)
+운영 DB(`highfive.exawave.co.kr`이 쓰는 실제 Postgres)는 지금까지 `db push`로만 스키마가 만들어져 있고, Prisma의 마이그레이션 이력 테이블(`_prisma_migrations`)에는 아무 기록이 없습니다. 이 상태에서 그냥 새 코드를 배포하면 `prisma migrate deploy`가 `20260907000000_init` 마이그레이션을 처음부터 실행하려다가 "테이블이 이미 존재합니다" 오류로 실패합니다.
+
+**배포 전에 운영 DB에 대해 아래 명령을 정확히 1회만 실행해 "이미 적용된 것으로" 표시해야 합니다:**
+```
+npx prisma migrate resolve --applied 20260907000000_init
+```
+(운영 서버 컨테이너 안에서, 또는 운영 `DATABASE_URL`을 가리키는 환경에서 새 코드로 실행). 이 명령은 스키마를 건드리지 않고 `_prisma_migrations` 테이블에 기록만 남깁니다. 이후부터는 `prisma migrate deploy`가 정상 동작합니다.
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
 ## 2026-09-07 (3차) — 구조 개선 분석 문서 1단계: 조직 격리 점검·수정 + 문의→업무 전환 트랜잭션
 
 업로드된 구조 개선 분석 문서(`High5 전체 구조 및 기능 개선 분석 v1`)의 "1단계: 즉시 정리" 항목 중 사용자가 승인한 두 가지(조직 격리 누락 점검+수정, 문의→업무 전환 트랜잭션 적용)를 반영. 나머지 두 항목(초기 최고관리자 생성 방식 변경, 운영 DB 마이그레이션 방식 변경)은 로그인/배포 흐름에 직접 영향을 주므로 별도로 진행 예정.

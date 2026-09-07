@@ -38,7 +38,7 @@ services:
       - db
     networks:
       - highfive-internal
-    command: npx prisma db push
+    command: npx prisma migrate deploy
 
   seed:
     build:

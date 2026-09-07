@@ -5,6 +5,7 @@ export async function register() {
 
   const { PrismaClient } = await import('@prisma/client');
   const bcryptjs = await import('bcryptjs');
+  const crypto = await import('crypto');
 
   const prisma = new PrismaClient();
 
@@ -20,24 +21,33 @@ export async function register() {
       },
     });
 
-    const existing = await prisma.user.findUnique({ where: { email: 'admin@admin.co.kr' } });
-    if (!existing) {
-      const hash = await bcryptjs.hash('Admin@2024!', 12);
-      await prisma.user.create({
-        data: {
-          email: 'admin@admin.co.kr',
-          name: '관리자',
-          role: 'SUPERADMIN',
-          passwordHash: hash,
-          isActive: true,
-          organizationId: org.id,
-        },
-      });
-    } else {
-      await prisma.user.update({
-        where: { email: 'admin@admin.co.kr' },
-        data: { organizationId: org.id, role: 'SUPERADMIN' },
-      });
+    // 최고관리자(SUPERADMIN) 계정이 하나도 없을 때만 최초 1회 부트스트랩 계정을 생성한다.
+    // 기존에는 매 부팅마다 admin@admin.co.kr 계정을 하드코딩된 비밀번호로 재생성/재승격했으나,
+    // 그 방식은 (1) 비밀번호가 코드에 노출되고 (2) 운영자가 계정을 삭제/변경해도 계속 되살아나는 문제가 있었다.
+    const superAdminCount = await prisma.user.count({ where: { role: 'SUPERADMIN' } });
+    if (superAdminCount === 0) {
+      const existing = await prisma.user.findUnique({ where: { email: 'admin@admin.co.kr' } });
+      if (!existing) {
+        const tempPassword = crypto.randomBytes(12).toString('base64url');
+        const hash = await bcryptjs.hash(tempPassword, 12);
+        await prisma.user.create({
+          data: {
+            email: 'admin@admin.co.kr',
+            name: '관리자',
+            role: 'SUPERADMIN',
+            passwordHash: hash,
+            mustChangePassword: true,
+            isActive: true,
+            organizationId: org.id,
+          },
+        });
+        console.log('='.repeat(60));
+        console.log('🔐 최초 최고관리자 계정이 생성되었습니다.');
+        console.log(`   이메일: admin@admin.co.kr`);
+        console.log(`   임시 비밀번호: ${tempPassword}`);
+        console.log('   최초 로그인 시 비밀번호 변경이 강제됩니다. 이 로그는 다시 출력되지 않으니 지금 기록해두세요.');
+        console.log('='.repeat(60));
+      }
     }
 
     const migrate = (model: any) => model.updateMany({ where: { organizationId: null }, data: { organizationId: org.id } });

@@ -75,6 +75,7 @@ model User {
   name           String
   role           String    @default("WORKER") // ADMIN, LEADER, WORKER
   passwordHash   String
+  mustChangePassword Boolean @default(false)
   isActive       Boolean   @default(true)
   leaveDate      DateTime?
   affiliation    String?   // 정규 | 프리

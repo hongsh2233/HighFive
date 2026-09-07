@@ -26,7 +26,6 @@ yarn-error.log*
 .env*.local
 
 # Prisma
-prisma/migrations/
 .env
 
 # TypeScript

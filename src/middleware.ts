@@ -48,6 +48,13 @@ export async function middleware(req: NextRequest) {
   const userRole = (token?.role as string) || 'WORKER';
   const tokenSlug = (token?.organizationSlug as string) || '';
 
+  // 최초 부트스트랩 계정 등 비밀번호 변경이 강제된 사용자는 변경 화면 외 다른 보호 라우트 접근 불가
+  if (token && token.mustChangePassword && !pathname.endsWith('/profile/password')) {
+    const url = req.nextUrl.clone();
+    url.pathname = tokenSlug ? `/${tokenSlug}/profile/password` : '/profile/password';
+    return NextResponse.redirect(url);
+  }
+
   // SUPERADMIN은 슬러그 없이(/superadmin 등) 모든 보호 라우트 통과
   if (userRole === 'SUPERADMIN' && token) {
     return withSecurityHeaders(NextResponse.next());

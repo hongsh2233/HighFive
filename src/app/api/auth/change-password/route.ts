@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     // 비밀번호 업데이트
     await prisma.user.update({
       where: { id: userId },
-      data: { passwordHash: hashedPassword },
+      data: { passwordHash: hashedPassword, mustChangePassword: false },
     });
 
     return successResponse(null, '비밀번호가 변경되었습니다.');
