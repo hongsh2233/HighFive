@@ -5,7 +5,6 @@ export async function register() {
 
   const { PrismaClient } = await import('@prisma/client');
   const bcryptjs = await import('bcryptjs');
-  const crypto = await import('node:crypto');
 
   const prisma = new PrismaClient();
 
@@ -28,7 +27,9 @@ export async function register() {
     if (superAdminCount === 0) {
       const existing = await prisma.user.findUnique({ where: { email: 'admin@admin.co.kr' } });
       if (!existing) {
-        const tempPassword = crypto.randomBytes(12).toString('base64url');
+        const randomBytes = new Uint8Array(12);
+        globalThis.crypto.getRandomValues(randomBytes);
+        const tempPassword = Buffer.from(randomBytes).toString('base64url');
         const hash = await bcryptjs.hash(tempPassword, 12);
         await prisma.user.create({
           data: {
