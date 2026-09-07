@@ -5,7 +5,7 @@ export async function register() {
 
   const { PrismaClient } = await import('@prisma/client');
   const bcryptjs = await import('bcryptjs');
-  const crypto = await import('crypto');
+  const crypto = await import('node:crypto');
 
   const prisma = new PrismaClient();
 
