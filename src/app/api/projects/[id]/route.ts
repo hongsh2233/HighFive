@@ -16,6 +16,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       include: {
         creator: { select: { id: true, name: true } },
         members: { include: { user: { select: { id: true, name: true, email: true, role: true } } } },
+        roles: { include: { user: { select: { id: true, name: true } } }, orderBy: { order: 'asc' } },
         _count: { select: { tasks: true } },
       },
     });
@@ -48,17 +49,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!existing) return errorResponse('프로젝트를 찾을 수 없습니다.', 404);
 
     const body = await req.json();
-    const { name, status, projectManagerName, projectLeadName } = body;
+    const { name, status, description, projectManagerName, projectLeadName, wikiEnabled, simpleMode, roles } = body;
 
     // 부분 업데이트: 전달된 필드만 SET
     const setClauses: string[] = ['"updatedAt"=NOW()'];
-    const values: (string | number | null)[] = [];
+    const values: (string | number | boolean | null)[] = [];
     let idx = 1;
 
     if (name !== undefined) { setClauses.push(`name=$${idx++}`); values.push(name.trim()); }
     if (status !== undefined) { setClauses.push(`status=$${idx++}`); values.push(status); }
+    if (description !== undefined) { setClauses.push(`description=$${idx++}`); values.push(description?.trim() || null); }
     if (projectManagerName !== undefined) { setClauses.push(`"projectManagerName"=$${idx++}`); values.push(projectManagerName?.trim() || null); }
     if (projectLeadName !== undefined) { setClauses.push(`"projectLeadName"=$${idx++}`); values.push(projectLeadName?.trim() || null); }
+    if (wikiEnabled !== undefined) { setClauses.push(`"wikiEnabled"=$${idx++}`); values.push(!!wikiEnabled); }
+    if (simpleMode !== undefined) { setClauses.push(`"simpleMode"=$${idx++}`); values.push(!!simpleMode); }
 
     values.push(projectId);
     await prisma.$executeRawUnsafe(
@@ -66,11 +70,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...values,
     );
 
+    if (Array.isArray(roles)) {
+      await prisma.projectRole.deleteMany({ where: { projectId } });
+      const roleList: { label: string; userId?: number; userName?: string }[] = roles;
+      const toCreate = roleList
+        .filter((r) => r.label?.trim())
+        .map((r, i) => ({
+          projectId,
+          label: r.label.trim(),
+          userId: r.userId ? Number(r.userId) : null,
+          userName: r.userName?.trim() || null,
+          order: i,
+        }));
+      if (toCreate.length > 0) {
+        await prisma.projectRole.createMany({ data: toCreate });
+      }
+    }
+
     const project = await prisma.project.findUnique({
       where: { id: projectId },
       include: {
         creator: { select: { id: true, name: true } },
         members: { include: { user: { select: { id: true, name: true, role: true } } } },
+        roles: { include: { user: { select: { id: true, name: true } } }, orderBy: { order: 'asc' } },
         _count: { select: { tasks: true } },
       },
     });

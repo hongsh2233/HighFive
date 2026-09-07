@@ -108,6 +108,7 @@ model User {
   userSessions      UserSession[]
   taskAttachments   TaskAttachment[]
   googleCalendar    GoogleCalendarConnection?
+  projectRoles      ProjectRole[]
 
   @@index([organizationId])
   @@map("users")
@@ -290,10 +291,13 @@ model Project {
   id                 Int      @id @default(autoincrement())
   organizationId     Int?
   name               String
+  description        String?  @db.Text
   status             String   @default("ACTIVE")
   createdBy          Int?
   projectManagerName String?
   projectLeadName    String?
+  wikiEnabled        Boolean  @default(true)
+  simpleMode         Boolean  @default(false)
 
   organization Organization?   @relation(fields: [organizationId], references: [id])
   creator      User?           @relation("projectCreator", fields: [createdBy], references: [id])
@@ -303,11 +307,27 @@ model Project {
   meetingNotes MeetingNote[]
   statuses     ProjectStatus[]
   fields       ProjectField[]
+  roles        ProjectRole[]
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
   @@index([organizationId])
   @@map("projects")
+}
+
+model ProjectRole {
+  id        Int    @id @default(autoincrement())
+  projectId Int
+  label     String
+  userId    Int?
+  userName  String?
+  order     Int    @default(0)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
+
+  @@index([projectId, order])
+  @@map("project_roles")
 }
 
 model ProjectMember {

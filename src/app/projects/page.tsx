@@ -12,20 +12,42 @@ interface ProjectMember {
   user: { id: number; name: string; email: string; role: string };
 }
 
+interface ProjectRole {
+  id: number;
+  label: string;
+  userId: number | null;
+  userName: string | null;
+  user: { id: number; name: string } | null;
+}
+
 interface Project {
   id: number;
   name: string;
+  description?: string | null;
   status: string;
   creator: { id: number; name: string };
   projectManagerName?: string | null;
   projectLeadName?: string | null;
+  wikiEnabled: boolean;
+  simpleMode: boolean;
+  roles: ProjectRole[];
   members: ProjectMember[];
   _count: { tasks: number };
   createdAt: string;
 }
 
+interface RoleDraft { label: string; userId: string; userName: string; }
 
-const emptyForm = { name: '', projectManagerName: '', projectLeadName: '' };
+const ROLE_PRESETS = ['PL', '기획리더', '디자인리더', '퍼블리싱리더', '개발리더', '시장조사리더'];
+
+const emptyForm = {
+  name: '',
+  description: '',
+  projectManagerName: '',
+  wikiEnabled: true,
+  simpleMode: false,
+  roles: [] as RoleDraft[],
+};
 
 export default function ProjectsPage() {
   const { user } = useAuth();
@@ -104,10 +126,27 @@ export default function ProjectsPage() {
     setEditingProject(p);
     setForm({
       name: p.name,
+      description: p.description || '',
       projectManagerName: p.projectManagerName || '',
-      projectLeadName: p.projectLeadName || '',
+      wikiEnabled: p.wikiEnabled,
+      simpleMode: p.simpleMode,
+      roles: (p.roles || []).map(r => ({
+        label: r.label,
+        userId: r.userId ? String(r.userId) : '',
+        userName: r.userName || '',
+      })),
     });
     setShowForm(true);
+  };
+
+  const addRole = (presetLabel?: string) => {
+    setForm(p => ({ ...p, roles: [...p.roles, { label: presetLabel || '', userId: '', userName: '' }] }));
+  };
+  const removeRole = (idx: number) => {
+    setForm(p => ({ ...p, roles: p.roles.filter((_, i) => i !== idx) }));
+  };
+  const updateRole = (idx: number, patch: Partial<RoleDraft>) => {
+    setForm(p => ({ ...p, roles: p.roles.map((r, i) => (i === idx ? { ...r, ...patch } : r)) }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,8 +156,17 @@ export default function ProjectsPage() {
     try {
       const payload = {
         name: form.name.trim(),
+        description: form.description.trim() || null,
         projectManagerName: form.projectManagerName.trim() || null,
-        projectLeadName: form.projectLeadName.trim() || null,
+        wikiEnabled: form.wikiEnabled,
+        simpleMode: form.simpleMode,
+        roles: form.simpleMode ? [] : form.roles
+          .filter(r => r.label.trim())
+          .map(r => ({
+            label: r.label.trim(),
+            userId: r.userId ? Number(r.userId) : undefined,
+            userName: r.userName.trim() || undefined,
+          })),
       };
 
       if (editingProject) {
@@ -233,7 +281,7 @@ export default function ProjectsPage() {
               {editingProject ? '프로젝트 수정' : '새 프로젝트 생성'}
             </h2>
             <form onSubmit={handleSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 16 }}>
                 <div>
                   <label style={labelStyle}>프로젝트 이름 *</label>
                   <input
@@ -263,25 +311,98 @@ export default function ProjectsPage() {
                     style={inputStyle}
                   />
                 </div>
-                <div>
-                  <label style={labelStyle}>PL (Project Lead)</label>
-                  <select
-                    onChange={e => { if (e.target.value) setForm(p => ({ ...p, projectLeadName: e.target.value })); }}
-                    style={{ ...inputStyle, marginBottom: 6 }}
-                  >
-                    <option value="">팀원에서 선택...</option>
-                    {allUsers.map(u => (
-                      <option key={u.id} value={u.name}>{u.name}</option>
-                    ))}
-                  </select>
-                  <input
-                    value={form.projectLeadName}
-                    onChange={e => setForm(p => ({ ...p, projectLeadName: e.target.value }))}
-                    placeholder="이름 직접 입력"
-                    style={inputStyle}
-                  />
-                </div>
               </div>
+
+              <div style={{ display: 'flex', gap: 20, marginBottom: 16, fontSize: 13 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={form.wikiEnabled}
+                    onChange={e => setForm(p => ({ ...p, wikiEnabled: e.target.checked }))}
+                  />
+                  위키 사용
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={form.simpleMode}
+                    onChange={e => setForm(p => ({ ...p, simpleMode: e.target.checked }))}
+                  />
+                  간편모드 (개요·역할 설정 생략)
+                </label>
+              </div>
+
+              {!form.simpleMode && (
+                <>
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={labelStyle}>프로젝트 개요</label>
+                    <textarea
+                      value={form.description}
+                      onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                      placeholder="이 프로젝트가 어떤 프로젝트인지 설명해주세요. (예: IT 시스템 구축, 마케팅 캠페인 등)"
+                      rows={3}
+                      style={{ ...inputStyle, resize: 'vertical' }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: 20 }}>
+                    <label style={labelStyle}>역할 (선택)</label>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                      {ROLE_PRESETS.map(preset => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => addRole(preset)}
+                          style={{ padding: '4px 10px', fontSize: 11, fontWeight: 600, backgroundColor: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 999, cursor: 'pointer' }}
+                        >
+                          + {preset}
+                        </button>
+                      ))}
+                    </div>
+                    {form.roles.map((role, idx) => (
+                      <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+                        <input
+                          value={role.label}
+                          onChange={e => updateRole(idx, { label: e.target.value })}
+                          placeholder="역할명 (예: 기획리더)"
+                          style={inputStyle}
+                        />
+                        <select
+                          value={role.userId}
+                          onChange={e => updateRole(idx, { userId: e.target.value, userName: '' })}
+                          style={inputStyle}
+                        >
+                          <option value="">팀원에서 선택...</option>
+                          {allUsers.map(u => (
+                            <option key={u.id} value={u.id}>{u.name}</option>
+                          ))}
+                        </select>
+                        <input
+                          value={role.userName}
+                          onChange={e => updateRole(idx, { userName: e.target.value, userId: '' })}
+                          placeholder="이름 직접 입력"
+                          style={inputStyle}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeRole(idx)}
+                          style={{ padding: '6px 10px', fontSize: 12, backgroundColor: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer' }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => addRole()}
+                      style={{ padding: '6px 12px', fontSize: 12, fontWeight: 600, backgroundColor: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 7, cursor: 'pointer' }}
+                    >
+                      + 역할 추가
+                    </button>
+                  </div>
+                </>
+              )}
+
               <div style={{ display: 'flex', gap: 10 }}>
                 <button type="submit" disabled={submitting} style={{ padding: '8px 20px', backgroundColor: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                   {submitting ? '저장 중...' : (editingProject ? '수정' : '생성')}
@@ -329,9 +450,15 @@ export default function ProjectsPage() {
                         </div>
                       )}
                     </div>
-                    <div style={{ display: 'flex', gap: 20, fontSize: 12, color: 'var(--text-muted)' }}>
+                    {p.description && (
+                      <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 8 }}>{p.description}</div>
+                    )}
+                    <div style={{ display: 'flex', gap: 20, fontSize: 12, color: 'var(--text-muted)', flexWrap: 'wrap' }}>
                       {p.projectManagerName && <span>PM: <strong style={{ color: 'var(--text-secondary)' }}>{p.projectManagerName}</strong></span>}
-                      {p.projectLeadName && <span>PL: <strong style={{ color: 'var(--text-secondary)' }}>{p.projectLeadName}</strong></span>}
+                      {(p.roles || []).map(r => (
+                        <span key={r.id}>{r.label}: <strong style={{ color: 'var(--text-secondary)' }}>{r.user?.name || r.userName || '-'}</strong></span>
+                      ))}
+                      {p.simpleMode && <span style={{ color: 'var(--accent)', fontWeight: 600 }}>간편모드</span>}
                       <span>멤버 {p.members.length}명</span>
                       <span>업무 {p._count.tasks}건</span>
                     </div>
@@ -362,12 +489,14 @@ export default function ProjectsPage() {
               </div>
 
               <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                <Link
-                  href={`/projects/${selectedProject.id}/wiki`}
-                  style={{ flex: 1, display: 'block', textAlign: 'center', padding: '8px 12px', backgroundColor: 'var(--bg-subtle)', color: 'var(--text-primary)', borderRadius: 7, fontSize: 12, fontWeight: 600, border: '1px solid var(--border)' }}
-                >
-                  📖 위키
-                </Link>
+                {selectedProject.wikiEnabled && (
+                  <Link
+                    href={`/projects/${selectedProject.id}/wiki`}
+                    style={{ flex: 1, display: 'block', textAlign: 'center', padding: '8px 12px', backgroundColor: 'var(--bg-subtle)', color: 'var(--text-primary)', borderRadius: 7, fontSize: 12, fontWeight: 600, border: '1px solid var(--border)' }}
+                  >
+                    📖 위키
+                  </Link>
+                )}
                 <Link
                   href={`/projects/${selectedProject.id}/meetings`}
                   style={{ flex: 1, display: 'block', textAlign: 'center', padding: '8px 12px', backgroundColor: 'var(--bg-subtle)', color: 'var(--text-primary)', borderRadius: 7, fontSize: 12, fontWeight: 600, border: '1px solid var(--border)' }}

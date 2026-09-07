@@ -6,6 +6,7 @@ import { ensureProjectsSchema } from '@/lib/db-init';
 const projectInclude = {
   creator: { select: { id: true, name: true } },
   members: { include: { user: { select: { id: true, name: true, role: true } } } },
+  roles: { include: { user: { select: { id: true, name: true } } }, orderBy: { order: 'asc' as const } },
   _count: { select: { tasks: true } },
 } as const;
 
@@ -55,19 +56,33 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = parseInt((session!.user as any).id || '0');
-    const { name, projectManagerName, projectLeadName } = await req.json();
+    const { name, description, projectManagerName, wikiEnabled, simpleMode, roles } = await req.json();
 
     if (!name?.trim()) {
       return errorResponse('프로젝트 이름을 입력해주세요.', 400);
     }
 
+    const roleList: { label: string; userId?: number; userName?: string }[] = Array.isArray(roles) ? roles : [];
+
     const project = await prisma.project.create({
       data: {
         name: name.trim(),
+        description: description?.trim() || null,
         createdBy: userId,
         organizationId,
         projectManagerName: projectManagerName?.trim() || null,
-        projectLeadName: projectLeadName?.trim() || null,
+        wikiEnabled: wikiEnabled !== false,
+        simpleMode: !!simpleMode,
+        roles: {
+          create: roleList
+            .filter((r) => r.label?.trim())
+            .map((r, idx) => ({
+              label: r.label.trim(),
+              userId: r.userId ? Number(r.userId) : null,
+              userName: r.userName?.trim() || null,
+              order: idx,
+            })),
+        },
       },
     });
 
