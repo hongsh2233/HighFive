@@ -24,6 +24,7 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      HOSTNAME: 0.0.0.0
     networks:
       - highfive-internal
       - proxy
