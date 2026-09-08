@@ -131,10 +131,11 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, workerId, registrantId, targetDate, projectId, labels, subTasks, isGroup, parentTaskId, timeCounterEnabled, attachments, priority } = body;
+    const { title, workerId, registrantId, targetDate, projectId, labels, subTasks, isGroup, parentTaskId, timeCounterEnabled, githubEnabled, attachments, priority } = body;
     const notes = sanitize(body.notes || '');
     const labelsStr: string | null = Array.isArray(labels) && labels.length > 0 ? labels.join(',') : null;
     const timeCounterEnabledReq = timeCounterEnabled !== false;
+    const githubEnabledReq = githubEnabled === true;
     const priorityValue = ['LOW', 'NORMAL', 'HIGH', 'URGENT'].includes(priority) ? priority : 'NORMAL';
 
     if (!title || !workerId || !registrantId) {
@@ -187,6 +188,7 @@ export async function POST(req: NextRequest) {
           projectId: resolvedProjectId,
           parentTaskId: parent.id,
           timeCounterEnabled: timeCounterEnabledReq,
+          githubEnabled: githubEnabledReq,
           organizationId,
         },
         include: {
@@ -232,6 +234,7 @@ export async function POST(req: NextRequest) {
         status: initialStatus.code,
         projectId: resolvedProjectId,
         timeCounterEnabled: timeCounterEnabledReq,
+        githubEnabled: githubEnabledReq,
         organizationId,
       },
       include: {

@@ -37,6 +37,7 @@ export interface Task {
   priority: string;
   isGroup: boolean;
   timeCounterEnabled: boolean;
+  githubEnabled: boolean;
   parentTaskId: number | null;
   projectId: number | null;
   createdAt: string;

@@ -89,6 +89,8 @@ function TaskCreateForm() {
   const [priority, setPriority] = useState('NORMAL');
   const [isGroup, setIsGroup] = useState(false);
   const [timeCounterEnabled, setTimeCounterEnabled] = useState(true);
+  const [githubEnabled, setGithubEnabled] = useState(false);
+  const [quickRegister, setQuickRegister] = useState(false);
   const [subTasks, setSubTasks] = useState<SubTaskForm[]>([{ title: '', workerId: '', targetDate: '' }]);
   const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([]);
   const [fileError, setFileError] = useState('');
@@ -272,6 +274,7 @@ function TaskCreateForm() {
         parentTaskId: parentTask ? parentTask.id : undefined,
         isGroup: !parentTask && isGroup,
         timeCounterEnabled,
+        githubEnabled,
         subTasks: (!parentTask && isGroup) ? validSubTasks.map(s => ({
           title: s.title.trim(),
           workerId: parseInt(s.workerId),
@@ -398,7 +401,27 @@ function TaskCreateForm() {
                 </div>
               </div>
 
-              {!selectedProjectMeta?.simpleMode && (
+              <div className={styles.fieldGroupWide}>
+                <label className={styles.groupCheckLabel}>
+                  <input
+                    type="checkbox"
+                    checked={quickRegister}
+                    onChange={e => {
+                      const checked = e.target.checked;
+                      setQuickRegister(checked);
+                      if (checked) {
+                        setTimeCounterEnabled(false);
+                        setIsGroup(false);
+                        setGithubEnabled(false);
+                      }
+                    }}
+                    className={styles.labelCheckbox}
+                  />
+                  간편 등록 (시간카운터/그룹 업무/GitHub 연결 없이 빠르게 등록)
+                </label>
+              </div>
+
+              {!quickRegister && !selectedProjectMeta?.simpleMode && (
                 <div className={styles.fieldGroupWide}>
                   <label className={styles.groupCheckLabel}>
                     <input
@@ -412,7 +435,7 @@ function TaskCreateForm() {
                 </div>
               )}
 
-              {!parentTask && (
+              {!quickRegister && !parentTask && (
                 <div className={styles.fieldGroupWide}>
                   <label className={styles.groupCheckLabel}>
                     <input
@@ -422,6 +445,20 @@ function TaskCreateForm() {
                       className={styles.labelCheckbox}
                     />
                     그룹 업무로 등록 (하위 업무는 지금 등록하거나, 나중에 그룹 업무 상세에서 추가할 수 있습니다)
+                  </label>
+                </div>
+              )}
+
+              {!quickRegister && !selectedProjectMeta?.simpleMode && (
+                <div className={styles.fieldGroupWide}>
+                  <label className={styles.groupCheckLabel}>
+                    <input
+                      type="checkbox"
+                      checked={githubEnabled}
+                      onChange={e => setGithubEnabled(e.target.checked)}
+                      className={styles.labelCheckbox}
+                    />
+                    GitHub 연결 사용 (업무 상세에서 GitHub PR/커밋 연결 카드를 노출합니다)
                   </label>
                 </div>
               )}

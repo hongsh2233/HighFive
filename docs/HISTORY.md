@@ -912,3 +912,18 @@ npx prisma migrate resolve --applied 20260907000000_init
 - **작업시간 컬럼 선택적 노출**: 기존에는 항상 노출되던 "작업시간" 컬럼을 기본 숨김으로 변경. 헤더 우측 "+" 버튼(기존 프로젝트 커스텀 속성 추가 팝오버)에 "작업시간 표시" 체크박스를 추가해 켜고 끌 수 있게 함 — 선택 상태는 프로젝트별로 브라우저에 저장(localStorage, DB 스키마 변경 없음). "+" 버튼 자체도 기존에는 프로젝트가 지정된 경우에만 보였는데, 작업시간 토글은 미지정 업무 목록에서도 필요해 프로젝트 유무와 무관하게 노출되도록 변경(커스텀 속성 추가 UI는 여전히 프로젝트가 있을 때만 표시).
 - 커스텀 속성 컬럼(`fieldTh`)과 "+" 버튼 컬럼(`addFieldWrap`)에도 고정폭(각 120px/40px)을 부여해 컬럼이 늘어날수록 제목/비고가 자동으로 좁아지도록 폭 계산에 반영.
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-08 (5차) — 업무 상세 화면 GitHub 연결/타임로그 노출을 등록 시 선택값에 따라 제어 + 간편 등록 옵션 추가
+
+업무 등록 화면에서 선택한 값에 따라 상세(VIEW) 화면의 표시 여부를 결정하도록 개선.
+
+- `prisma/schema.prisma`: `Task.githubEnabled Boolean @default(false)` 추가.
+- **업무 등록 화면**(`src/app/tasks/create/page.tsx`):
+  - "GitHub 연결 사용" 체크박스 신규 추가(기본 미체크) — 체크해야 상세 화면에 GitHub 연결 카드가 노출됨.
+  - "간편 등록" 체크박스 신규 추가 — 체크 시 시간카운터/그룹 업무 등록/GitHub 연결 체크박스를 모두 숨기고 값도 강제로 꺼짐(false) 처리.
+- **업무 상세 화면**(`src/app/tasks/[id]/page.tsx`):
+  - "타임로그"(총 소요 시간 + 상세 내역) 카드를 `task.timeCounterEnabled`가 false면 통째로 숨김(기존엔 항상 노출).
+  - "GitHub 연결" 카드는 기존 프로젝트 간편모드 조건에 더해 `task.githubEnabled`가 true일 때만 노출되도록 조건 추가.
+- `POST /api/tasks`에서 `githubEnabled` 필드 저장(그룹 업무 하위 추가 포함).
+- `prisma/migrations/20260908030000_add_task_github_enabled/migration.sql` 추가.
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.

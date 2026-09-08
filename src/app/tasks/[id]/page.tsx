@@ -927,8 +927,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         )}
       </div>
 
-      {/* GitHub 연결 (간편모드 프로젝트에서는 숨김) */}
-      {!task.project?.simpleMode && (
+      {/* GitHub 연결 (간편모드 프로젝트이거나, 업무 등록 시 GitHub 연결 사용을 체크하지 않은 경우 숨김) */}
+      {!task.project?.simpleMode && task.githubEnabled && (
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={`${styles.cardTitle} ${styles.noMargin}`}>GitHub 연결</h2>
@@ -1035,7 +1035,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       </div>
 
-      {/* 타임로그 */}
+      {/* 타임로그 (업무 등록 시 시간카운터 사용 체크한 경우만 노출) */}
+      {task.timeCounterEnabled && (
       <div className={styles.card}>
         <div className={styles.timelogHeader}>
           <div className={styles.totalTimeBox}>
@@ -1076,6 +1077,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         )}
       </div>
+      )}
 
       {/* 댓글 */}
       <div className={styles.card}>
