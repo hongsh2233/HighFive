@@ -891,3 +891,15 @@ npx prisma migrate resolve --applied 20260907000000_init
 `prisma/migrations/20260908010000_add_project_customization_fields/migration.sql`로 진단된 diff SQL을 그대로 마이그레이션 파일화해 추가. 진단 명령이 스키마 전체와 비교하는 방식이라 이 마이그레이션 적용 후에는 baseline 이후 발생한 모든 누락분이 해소됨.
 
 **교훈**: `db push` → `migrate`로 전환할 때 "이미 적용된 것으로 resolve" 하는 방식은, 그 시점 스키마가 운영 DB 실제 상태와 정확히 일치할 때만 안전하다. 이번처럼 최근 스키마 변경이 실제로 운영에 반영됐는지 불확실한 상태에서 resolve를 사용하면 조용히 누락이 발생할 수 있다. 앞으로 유사한 전환 작업 시 `prisma migrate diff --from-url --to-schema-datamodel`로 반드시 사전 검증할 것.
+
+## 2026-09-08 (3차) — 프로젝트 역할 입력 방식 개선 + 위키/정보(FAQ) 통합 선택 + 공지사항 메뉴명 변경 + 멤버 패널 단순화
+
+- **프로젝트 역할 입력**: `src/app/projects/page.tsx`의 역할 프리셋(PL/기획리더/디자인리더/퍼블리싱리더/개발리더/시장조사리더) 버튼을 클릭 시 바로 추가되던 방식에서, 예시 텍스트로만 안내하고 "+ 역할 추가" 클릭 시 직접 입력하는 방식으로 변경.
+- **위키 / 정보(FAQ) 통합 선택**: 두 메뉴가 기능적으로 중복된다는 피드백에 따라 조직 단위로 하나만 사용하도록 변경.
+  - `Organization.knowledgeBaseMode String @default("WIKI")` 필드 추가(`WIKI` | `INFO`).
+  - `설정 > 조직 설정`에 선택 UI 추가, `PATCH /api/settings/organization`에서 저장.
+  - `GET /api/plan-config` 응답에 `knowledgeBaseMode` 포함, `AppHeader`의 `has('wiki')`/`has('info')`가 플랜 허용 여부뿐 아니라 조직의 선택값과도 일치할 때만 true가 되도록 수정 — 협업 메뉴에 항상 둘 중 하나만 노출됨.
+- **공지사항 메뉴명 변경**: "공지사항" → "공지/알림"으로 라벨 변경(위치는 협업 메뉴 그대로 유지 — WORKER도 조회 가능해야 해서 ADMIN/LEADER 전용인 관리 메뉴로는 옮기지 않음, 사용자 확인 후 결정).
+- **프로젝트 멤버 패널 단순화**: 프로젝트명 옆 "🔔 알림 켜짐/꺼짐" 토글, "📖 위키 / 📝 회의록 / ⚙️ 상태 관리" 바로가기 버튼 줄, 멤버 목록의 역할 텍스트("리더"/"작업자")를 모두 제거해 패널을 단순화. 연결된 프로젝트 음소거 API 호출 로직도 함께 정리.
+- `prisma/migrations/20260908020000_add_knowledge_base_mode/migration.sql` 추가.
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.

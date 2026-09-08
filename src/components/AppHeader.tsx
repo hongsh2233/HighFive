@@ -21,6 +21,7 @@ export default function AppHeader() {
   const [enabledFeatures, setEnabledFeatures] = useState<string[]>([
     'info', 'requests', 'wiki', 'tasks', 'search', 'stats', 'calendar_sync', 'integrations',
   ]);
+  const [knowledgeBaseMode, setKnowledgeBaseMode] = useState<'WIKI' | 'INFO'>('WIKI');
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -40,11 +41,18 @@ export default function AppHeader() {
     if (role === 'SUPERADMIN') return; // 시스템관리자는 모든 메뉴 항상 표시
     fetch('/api/plan-config')
       .then((r) => r.json())
-      .then((d) => { if (d.success && d.data?.features) setEnabledFeatures(d.data.features); })
+      .then((d) => {
+        if (d.success && d.data?.features) setEnabledFeatures(d.data.features);
+        if (d.success && d.data?.knowledgeBaseMode) setKnowledgeBaseMode(d.data.knowledgeBaseMode);
+      })
       .catch(() => {}); // 실패 시 기본값(전체 허용) 유지
   }, [user]);
 
-  const has = (key: string) => enabledFeatures.includes(key);
+  const has = (key: string) => {
+    if (key === 'wiki') return enabledFeatures.includes('wiki') && knowledgeBaseMode === 'WIKI';
+    if (key === 'info') return enabledFeatures.includes('info') && knowledgeBaseMode === 'INFO';
+    return enabledFeatures.includes(key);
+  };
 
   const handleMenuEnter = (menu: MenuName) => {
     if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
@@ -201,7 +209,7 @@ export default function AppHeader() {
                       {has('info') && (
                         <Link href="/info" className={styles.dropdownItem} onClick={closeAll}>정보(FAQ)</Link>
                       )}
-                      <Link href="/announcements" className={styles.dropdownItem} onClick={closeAll}>공지사항</Link>
+                      <Link href="/announcements" className={styles.dropdownItem} onClick={closeAll}>공지/알림</Link>
                     </div>
                   )}
                 </div>

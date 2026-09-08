@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './projects.module.css';
@@ -68,34 +67,6 @@ export default function ProjectsPage() {
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [projectMuted, setProjectMuted] = useState(false);
-  const [muteLoading, setMuteLoading] = useState(false);
-
-  useEffect(() => {
-    if (!selectedProject) return;
-    apiClient.get<{ data: { muted: boolean } }>(`/notifications/mute?scope=PROJECT&targetId=${selectedProject.id}`)
-      .then((res) => setProjectMuted(res.data.data.muted))
-      .catch(() => {});
-  }, [selectedProject?.id]);
-
-  const handleToggleProjectMute = async () => {
-    if (!selectedProject) return;
-    setMuteLoading(true);
-    try {
-      if (projectMuted) {
-        await apiClient.delete('/notifications/mute', { data: { scope: 'PROJECT', targetId: selectedProject.id } });
-        setProjectMuted(false);
-      } else {
-        await apiClient.post('/notifications/mute', { scope: 'PROJECT', targetId: selectedProject.id });
-        setProjectMuted(true);
-      }
-    } catch {
-      // silent
-    } finally {
-      setMuteLoading(false);
-    }
-  };
-
   const fetchProjects = async () => {
     try {
       const res = await apiClient.get<{ data: Project[] }>('/projects');
@@ -142,8 +113,8 @@ export default function ProjectsPage() {
     setShowForm(true);
   };
 
-  const addRole = (presetLabel?: string) => {
-    setForm(p => ({ ...p, roles: [...p.roles, { label: presetLabel || '', userId: '', userName: '' }] }));
+  const addRole = () => {
+    setForm(p => ({ ...p, roles: [...p.roles, { label: '', userId: '', userName: '' }] }));
   };
   const removeRole = (idx: number) => {
     setForm(p => ({ ...p, roles: p.roles.filter((_, i) => i !== idx) }));
@@ -361,17 +332,8 @@ export default function ProjectsPage() {
 
                   <div style={{ marginBottom: 20 }}>
                     <label style={labelStyle}>역할 (선택)</label>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-                      {ROLE_PRESETS.map(preset => (
-                        <button
-                          key={preset}
-                          type="button"
-                          onClick={() => addRole(preset)}
-                          style={{ padding: '4px 10px', fontSize: 11, fontWeight: 600, backgroundColor: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 999, cursor: 'pointer' }}
-                        >
-                          + {preset}
-                        </button>
-                      ))}
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
+                      예시: {ROLE_PRESETS.join(' / ')} — 아래 "역할 추가"로 원하는 역할명을 직접 입력하세요.
                     </div>
                     {form.roles.map((role, idx) => (
                       <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 8, marginBottom: 8, alignItems: 'center' }}>
@@ -490,41 +452,7 @@ export default function ProjectsPage() {
                   <div className={styles.memberPanelTitle}>{selectedProject.name}</div>
                   <div className={styles.memberPanelCount}>멤버 {selectedProject.members.length}명</div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <button
-                    onClick={handleToggleProjectMute}
-                    disabled={muteLoading}
-                    style={{ padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', cursor: 'pointer' }}
-                  >
-                    {projectMuted ? '🔕 알림 꺼짐' : '🔔 알림 켜짐'}
-                  </button>
-                  <button onClick={() => setSelectedProject(null)} className={styles.memberPanelClose}>✕</button>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                {selectedProject.wikiEnabled && (
-                  <Link
-                    href={`/projects/${selectedProject.id}/wiki`}
-                    style={{ flex: 1, display: 'block', textAlign: 'center', padding: '8px 12px', backgroundColor: 'var(--bg-subtle)', color: 'var(--text-primary)', borderRadius: 7, fontSize: 12, fontWeight: 600, border: '1px solid var(--border)' }}
-                  >
-                    📖 위키
-                  </Link>
-                )}
-                <Link
-                  href={`/projects/${selectedProject.id}/meetings`}
-                  style={{ flex: 1, display: 'block', textAlign: 'center', padding: '8px 12px', backgroundColor: 'var(--bg-subtle)', color: 'var(--text-primary)', borderRadius: 7, fontSize: 12, fontWeight: 600, border: '1px solid var(--border)' }}
-                >
-                  📝 회의록
-                </Link>
-                {canManage && (
-                  <Link
-                    href={`/projects/${selectedProject.id}/statuses`}
-                    style={{ flex: 1, display: 'block', textAlign: 'center', padding: '8px 12px', backgroundColor: 'var(--bg-subtle)', color: 'var(--text-primary)', borderRadius: 7, fontSize: 12, fontWeight: 600, border: '1px solid var(--border)' }}
-                  >
-                    ⚙️ 상태 관리
-                  </Link>
-                )}
+                <button onClick={() => setSelectedProject(null)} className={styles.memberPanelClose}>✕</button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
@@ -533,7 +461,6 @@ export default function ProjectsPage() {
                     <div className={styles.memberAvatar}>{m.user.name[0]}</div>
                     <div className={styles.memberInfo}>
                       <div className={styles.memberName}>{m.user.name}</div>
-                      <div className={styles.memberRole}>{m.user.role === 'ADMIN' ? '최고관리자' : m.user.role === 'LEADER' ? '리더' : '작업자'}</div>
                     </div>
                     {isAdmin && (
                       <button onClick={() => handleRemoveMember(selectedProject.id, m.user.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-muted)', padding: 4 }}>✕</button>

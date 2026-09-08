@@ -21,6 +21,7 @@ export async function GET() {
         ceoName: true,
         address: true,
         deadlineAlertDays: true,
+        knowledgeBaseMode: true,
         plan: true,
       },
     });
@@ -40,7 +41,7 @@ export async function PATCH(req: NextRequest) {
     if (error) return error;
 
     const body = await req.json();
-    const { displayName, bizNo, phone, ceoName, address, deadlineAlertDays } = body;
+    const { displayName, bizNo, phone, ceoName, address, deadlineAlertDays, knowledgeBaseMode } = body;
 
     const data: Record<string, unknown> = {};
     if (displayName !== undefined) data.displayName = displayName?.trim() || null;
@@ -55,13 +56,19 @@ export async function PATCH(req: NextRequest) {
       }
       data.deadlineAlertDays = days;
     }
+    if (knowledgeBaseMode !== undefined) {
+      if (!['WIKI', 'INFO'].includes(knowledgeBaseMode)) {
+        return errorResponse('유효하지 않은 지식 관리 방식입니다.', 400, 'VALID_400');
+      }
+      data.knowledgeBaseMode = knowledgeBaseMode;
+    }
 
     const org = await prisma.organization.update({
       where: { id: organizationId! },
       data,
       select: {
         id: true, name: true, slug: true, displayName: true, logoUrl: true,
-        bizNo: true, phone: true, ceoName: true, address: true, deadlineAlertDays: true, plan: true,
+        bizNo: true, phone: true, ceoName: true, address: true, deadlineAlertDays: true, knowledgeBaseMode: true, plan: true,
       },
     });
 

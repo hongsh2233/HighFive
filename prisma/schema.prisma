@@ -27,6 +27,7 @@ model Organization {
   displayName        String?  // 헤더 표시용 조직명 (없으면 name 사용)
   logoUrl            String?  // base64 또는 URL
   deadlineAlertDays  Int      @default(3)  // D-day 마감 알림 기준일
+  knowledgeBaseMode  String   @default("WIKI") // 위키/정보(FAQ) 중 조직에서 사용할 하나만 선택: WIKI | INFO
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 

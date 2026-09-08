@@ -17,6 +17,7 @@ interface OrgSettings {
   ceoName: string | null;
   address: string | null;
   deadlineAlertDays: number;
+  knowledgeBaseMode: 'WIKI' | 'INFO';
   plan: string;
 }
 
@@ -35,6 +36,7 @@ export default function OrganizationSettingsPage() {
   const [ceoName, setCeoName] = useState('');
   const [address, setAddress] = useState('');
   const [deadlineAlertDays, setDeadlineAlertDays] = useState(3);
+  const [knowledgeBaseMode, setKnowledgeBaseMode] = useState<'WIKI' | 'INFO'>('WIKI');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,6 +52,7 @@ export default function OrganizationSettingsPage() {
         setCeoName(data.ceoName || '');
         setAddress(data.address || '');
         setDeadlineAlertDays(data.deadlineAlertDays);
+        setKnowledgeBaseMode(data.knowledgeBaseMode || 'WIKI');
       })
       .catch(() => setError('조직 설정을 불러오지 못했습니다.'))
       .finally(() => setLoading(false));
@@ -60,7 +63,7 @@ export default function OrganizationSettingsPage() {
     setSaving(true);
     try {
       const res = await apiClient.patch<{ data: OrgSettings }>('/settings/organization', {
-        displayName, bizNo, phone, ceoName, address, deadlineAlertDays,
+        displayName, bizNo, phone, ceoName, address, deadlineAlertDays, knowledgeBaseMode,
       });
       setOrg(res.data.data);
       setSuccess('설정이 저장되었습니다.');
@@ -276,6 +279,29 @@ export default function OrganizationSettingsPage() {
                 disabled={!isAdmin}
               />
               <span className={styles.unit}>일 전부터 D-day 경고 표시</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 지식 관리 방식 */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>지식 관리 방식</h2>
+        <div className={styles.formGrid}>
+          <div className={styles.formRow}>
+            <label className={styles.label}>사용할 메뉴</label>
+            <div className={styles.inputInline}>
+              <select
+                value={knowledgeBaseMode}
+                onChange={e => setKnowledgeBaseMode(e.target.value as 'WIKI' | 'INFO')}
+                disabled={!isAdmin}
+                className={styles.inputNum}
+                style={{ width: 'auto', minWidth: 160 }}
+              >
+                <option value="WIKI">위키</option>
+                <option value="INFO">정보(FAQ)</option>
+              </select>
+              <span className={styles.unit}>위키와 정보(FAQ) 중 하나만 메뉴에 노출됩니다.</span>
             </div>
           </div>
         </div>

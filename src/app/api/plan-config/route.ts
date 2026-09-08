@@ -15,7 +15,7 @@ async function getConfig() {
 
 export async function GET(_req: NextRequest) {
   try {
-    const { session, error } = await requireAuth();
+    const { session, error, organizationId } = await requireAuth();
     if (error) return error;
 
     const role = (session!.user as any).role;
@@ -27,7 +27,13 @@ export async function GET(_req: NextRequest) {
 
     const plan: string = (session!.user as any).organizationPlan ?? 'FREE';
     const features: string[] = planFeatures[plan] ?? planFeatures['FREE'] ?? [];
-    return successResponse({ features });
+
+    const org = await prisma.organization.findUnique({
+      where: { id: organizationId! },
+      select: { knowledgeBaseMode: true },
+    });
+
+    return successResponse({ features, knowledgeBaseMode: org?.knowledgeBaseMode ?? 'WIKI' });
   } catch {
     return errorResponse('서버 오류가 발생했습니다.', 500);
   }
