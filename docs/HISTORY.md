@@ -869,3 +869,15 @@ npx prisma migrate resolve --applied 20260907000000_init
   - `src/app/api/tasks/[id]/dependencies/route.ts` 등 기존에 이미 `organizationId`로 스코프되어 있던 라우트는 별도 수정 없음(패턴 확인만 함).
 - **문의→업무 전환 트랜잭션**: `POST /api/inquiries/[id]/convert`에서 업무 생성과 문의 상태(`CONVERTED`) 갱신을 `prisma.$transaction`으로 묶어 원자성 보장(중간 실패 시 업무만 생성되고 문의 상태가 갱신 안 되는 불일치 방지). 트랜잭션 내부에서 문의 상태를 재조회해 동시 요청으로 인한 중복 전환도 방어. 담당자/프로젝트 ID도 조직 소속 여부를 사전 검증하도록 함께 수정.
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-08 — 배포 후 로그인 불가 장애 대응 (mustChangePassword 컬럼 누락) + Docker HOSTNAME 바인딩 버그 수정
+
+### Docker 앱 컨테이너 502 (수정 완료, `99514d4`)
+`docker-compose.yml`의 `app` 서비스가 Docker가 자동 주입하는 `HOSTNAME` 환경변수(컨테이너 ID)를 그대로 물려받아, Next.js standalone 서버가 `http://<컨테이너ID>:3000`으로만 바인드되고 `127.0.0.1:3000`에는 응답하지 않아 리버스 프록시가 502를 반환. `app` 서비스 environment에 `HOSTNAME: 0.0.0.0`을 명시해 해결.
+
+### 배포 후 로그인 전체 실패 (mustChangePassword 컬럼 누락)
+전날(`a507bc7`) DB 마이그레이션 방식 전환 시, 운영 DB에 이미 있던 스키마를 "베이스라인"으로 처리하려고 `npx prisma migrate resolve --applied 20260907000000_init`을 실행했다. 문제는 그 초기 마이그레이션 파일이 **당시 스키마 전체**(같은 커밋에서 막 추가한 `User.mustChangePassword` 컬럼까지 포함)를 기준으로 생성되어 있었다는 점 — `resolve --applied`는 실제 SQL을 실행하지 않고 "이미 적용됨"이라고 기록만 남기는 명령이라, 정작 `mustChangePassword` 컬럼은 운영 DB `users` 테이블에 생성되지 않았다. 이후 로그인 시 Prisma가 이 컬럼을 조회하다 DB 오류가 발생, NextAuth가 이를 일반 인증 실패로 처리해 "아이디/비밀번호가 틀렸다"는 오류로 보였다(실제로는 비밀번호와 무관).
+
+- **수정**: `prisma/migrations/20260908000000_add_must_change_password/migration.sql` 신규 추가 — `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "mustChangePassword" BOOLEAN NOT NULL DEFAULT false;`만 별도로 적용.
+- **교훈**: 앞으로 `db push` → `migrate`로 전환하는 것처럼 "베이스라인을 지금 스키마 기준으로 만들고 resolve로 넘어가는" 작업을 할 때는, 베이스라인 마이그레이션을 만들기 **직전**의 스키마(운영에 실제로 반영되어 있던 상태)로 diff를 떠야 한다. 같은 커밋에서 스키마를 바꾸면서 베이스라인을 만들면 이번처럼 "resolve로 넘어갔지만 실제로는 적용 안 된 컬럼"이 생길 수 있다.
+- **운영 반영 절차**: `docker compose build`(migrate 이미지 갱신) → `docker compose run --rm migrate`(이번엔 resolve 아니라 정상적으로 `20260908000000_add_must_change_password` 마이그레이션이 적용됨) → `docker compose up -d app`.
