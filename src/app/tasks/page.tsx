@@ -479,6 +479,22 @@ function ProjectTaskSection({
   const [newFieldOptions, setNewFieldOptions] = useState('');
   const [draggedFieldId, setDraggedFieldId] = useState<number | null>(null);
 
+  // 작업시간 컬럼 노출 여부 — 기본은 숨김, "+" 팝오버에서 선택해 켬(브라우저별 저장)
+  const showHoursKey = `taskTableShowHours:${project?.id ?? 'none'}`;
+  const [showHours, setShowHours] = useState(false);
+  useEffect(() => {
+    try {
+      setShowHours(localStorage.getItem(showHoursKey) === 'true');
+    } catch { /* ignore */ }
+  }, [showHoursKey]);
+  const toggleShowHours = () => {
+    setShowHours((prev) => {
+      const next = !prev;
+      try { localStorage.setItem(showHoursKey, String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
   // 팝오버는 document.body에 portal로 렌더링해 테이블/스크롤 영역의 overflow에 절대 가려지지 않도록 함(노션 방식)
   const toggleAddField = () => {
     if (showAddField) { setShowAddField(false); return; }
@@ -670,7 +686,7 @@ function ProjectTaskSection({
   });
   const topLevelTasks = tasks.filter((task) => !task.parentTaskId);
 
-  const colCount = 8 + (project ? fields.length : 0);
+  const colCount = 7 + (showHours ? 1 : 0) + (project ? fields.length : 0);
 
   const renderFieldCell = (task: any, field: ProjectField) => {
     const value = getFieldValue(task, field);
@@ -877,9 +893,11 @@ function ProjectTaskSection({
             )}
           </div>
         </td>
-        <td className={styles.tdHours} data-label="작업시간">
-          {calculateWorkHours(task.timeLogs || [])}
-        </td>
+        {showHours && (
+          <td className={styles.tdHours} data-label="작업시간">
+            {calculateWorkHours(task.timeLogs || [])}
+          </td>
+        )}
         <td className={styles.td} data-label="상태">
           {isGroupRow ? (
             '-'
@@ -930,7 +948,13 @@ function ProjectTaskSection({
       </div>
 
       <div className={styles.tableWrapper}>
-        <table className={styles.table}>
+        <table
+          className={styles.table}
+          style={{
+            ['--fixed-cols-width' as any]:
+              `${532 + (showHours ? 90 : 0) + (project ? fields.length * 120 : 0) + (canEditTitle ? 40 : 0)}px`,
+          }}
+        >
           <thead>
             <tr>
               <th className={`${styles.th} ${styles.thCheck}`}>
@@ -946,7 +970,7 @@ function ProjectTaskSection({
               <th className={`${styles.th} ${styles.thCreatedAt}`}>등록일자</th>
               <th className={`${styles.th} ${styles.thTarget}`}>목표일</th>
               <th className={`${styles.th} ${styles.thNotes}`}>비고</th>
-              <th className={`${styles.th} ${styles.thHours}`}>작업시간</th>
+              {showHours && <th className={`${styles.th} ${styles.thHours}`}>작업시간</th>}
               <th className={`${styles.th} ${styles.thStatus}`}>상태</th>
               {project && fields.map((field) => (
                 <th
@@ -971,15 +995,15 @@ function ProjectTaskSection({
                   )}
                 </th>
               ))}
-              {project && canEditTitle && (
+              {canEditTitle && (
                 <th className={`${styles.th} ${styles.addFieldWrap}`}>
                   <button
                     type="button"
                     ref={addFieldBtnRef}
                     className={styles.addFieldBtn}
                     onClick={toggleAddField}
-                    aria-label="속성 추가"
-                    title="속성 추가"
+                    aria-label="표시 항목 설정"
+                    title="표시 항목 설정"
                   >
                     +
                   </button>
@@ -989,43 +1013,51 @@ function ProjectTaskSection({
                       className={styles.addFieldPopover}
                       style={{ position: 'fixed', top: popoverPos.top, left: popoverPos.left }}
                     >
-                      <input
-                        type="text"
-                        placeholder="속성 이름"
-                        value={newFieldName}
-                        onChange={(e) => setNewFieldName(e.target.value)}
-                        className={styles.addFieldInput}
-                        autoFocus
-                      />
-                      <select
-                        value={newFieldType}
-                        onChange={(e) => setNewFieldType(e.target.value as FieldType)}
-                        className={styles.addFieldInput}
-                      >
-                        <option value="TEXT">텍스트</option>
-                        <option value="NUMBER">숫자</option>
-                        <option value="DATE">날짜</option>
-                        <option value="SELECT">선택</option>
-                        <option value="CHECKBOX">체크박스</option>
-                        <option value="LINK">링크</option>
-                      </select>
-                      {newFieldType === 'SELECT' && (
-                        <input
-                          type="text"
-                          placeholder="선택지(콤마로 구분)"
-                          value={newFieldOptions}
-                          onChange={(e) => setNewFieldOptions(e.target.value)}
-                          className={styles.addFieldInput}
-                        />
+                      <label className={styles.addFieldCheckboxRow}>
+                        <input type="checkbox" checked={showHours} onChange={toggleShowHours} />
+                        작업시간 표시
+                      </label>
+                      {project && (
+                        <>
+                          <div className={styles.addFieldPopoverDivider} />
+                          <input
+                            type="text"
+                            placeholder="속성 이름"
+                            value={newFieldName}
+                            onChange={(e) => setNewFieldName(e.target.value)}
+                            className={styles.addFieldInput}
+                          />
+                          <select
+                            value={newFieldType}
+                            onChange={(e) => setNewFieldType(e.target.value as FieldType)}
+                            className={styles.addFieldInput}
+                          >
+                            <option value="TEXT">텍스트</option>
+                            <option value="NUMBER">숫자</option>
+                            <option value="DATE">날짜</option>
+                            <option value="SELECT">선택</option>
+                            <option value="CHECKBOX">체크박스</option>
+                            <option value="LINK">링크</option>
+                          </select>
+                          {newFieldType === 'SELECT' && (
+                            <input
+                              type="text"
+                              placeholder="선택지(콤마로 구분)"
+                              value={newFieldOptions}
+                              onChange={(e) => setNewFieldOptions(e.target.value)}
+                              className={styles.addFieldInput}
+                            />
+                          )}
+                          <div className={styles.addFieldPopoverActions}>
+                            <button type="button" className={styles.detailBtn} onClick={() => setShowAddField(false)}>
+                              취소
+                            </button>
+                            <button type="button" className={styles.addSubBtnSmall} onClick={handleAddField}>
+                              속성 추가
+                            </button>
+                          </div>
+                        </>
                       )}
-                      <div className={styles.addFieldPopoverActions}>
-                        <button type="button" className={styles.detailBtn} onClick={() => setShowAddField(false)}>
-                          취소
-                        </button>
-                        <button type="button" className={styles.addSubBtnSmall} onClick={handleAddField}>
-                          추가
-                        </button>
-                      </div>
                     </div>,
                     document.body
                   )}
