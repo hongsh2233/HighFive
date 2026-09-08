@@ -881,3 +881,13 @@ npx prisma migrate resolve --applied 20260907000000_init
 - **수정**: `prisma/migrations/20260908000000_add_must_change_password/migration.sql` 신규 추가 — `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "mustChangePassword" BOOLEAN NOT NULL DEFAULT false;`만 별도로 적용.
 - **교훈**: 앞으로 `db push` → `migrate`로 전환하는 것처럼 "베이스라인을 지금 스키마 기준으로 만들고 resolve로 넘어가는" 작업을 할 때는, 베이스라인 마이그레이션을 만들기 **직전**의 스키마(운영에 실제로 반영되어 있던 상태)로 diff를 떠야 한다. 같은 커밋에서 스키마를 바꾸면서 베이스라인을 만들면 이번처럼 "resolve로 넘어갔지만 실제로는 적용 안 된 컬럼"이 생길 수 있다.
 - **운영 반영 절차**: `docker compose build`(migrate 이미지 갱신) → `docker compose run --rm migrate`(이번엔 resolve 아니라 정상적으로 `20260908000000_add_must_change_password` 마이그레이션이 적용됨) → `docker compose up -d app`.
+
+## 2026-09-08 (2차) — 운영 DB에 누락되어 있던 프로젝트 커스터마이징 스키마 추가 반영
+
+`mustChangePassword` 수정 후에도 프로젝트 목록 조회가 "조회 실패"로 나오는 문제 발생. `npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --script`로 운영 DB와 현재 스키마를 직접 비교해본 결과, `mustChangePassword`뿐 아니라 이전 라운드(2026-09-07 1차, 프로젝트 생성 화면 개편)에서 추가했던 아래 항목들도 baseline 마이그레이션을 `resolve --applied`로 넘기면서 실제로는 운영 DB에 반영되지 않은 상태였음이 확인됨:
+- `projects.description`, `projects.customLabels`, `projects.simpleMode`, `projects.wikiEnabled` 컬럼
+- `project_roles` 테이블 전체(외래키 포함)
+
+`prisma/migrations/20260908010000_add_project_customization_fields/migration.sql`로 진단된 diff SQL을 그대로 마이그레이션 파일화해 추가. 진단 명령이 스키마 전체와 비교하는 방식이라 이 마이그레이션 적용 후에는 baseline 이후 발생한 모든 누락분이 해소됨.
+
+**교훈**: `db push` → `migrate`로 전환할 때 "이미 적용된 것으로 resolve" 하는 방식은, 그 시점 스키마가 운영 DB 실제 상태와 정확히 일치할 때만 안전하다. 이번처럼 최근 스키마 변경이 실제로 운영에 반영됐는지 불확실한 상태에서 resolve를 사용하면 조용히 누락이 발생할 수 있다. 앞으로 유사한 전환 작업 시 `prisma migrate diff --from-url --to-schema-datamodel`로 반드시 사전 검증할 것.
