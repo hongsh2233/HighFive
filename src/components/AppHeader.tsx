@@ -209,38 +209,40 @@ export default function AppHeader() {
                       {has('info') && (
                         <Link href="/info" className={styles.dropdownItem} onClick={closeAll}>정보(FAQ)</Link>
                       )}
-                      <Link href="/announcements" className={styles.dropdownItem} onClick={closeAll}>공지/알림</Link>
                     </div>
                   )}
                 </div>
               )}
 
-              {isAdminOrLeader && (
-                <div
-                  className={styles.menuWrapper}
-                  onMouseEnter={() => handleMenuEnter('admin')}
-                  onMouseLeave={handleMenuLeave}
+              <div
+                className={styles.menuWrapper}
+                onMouseEnter={() => handleMenuEnter('admin')}
+                onMouseLeave={handleMenuLeave}
+              >
+                <button
+                  className={navClass(openMenu === 'admin' || pathname.startsWith('/users') || pathname.startsWith('/stats') || pathname.startsWith('/projects') || pathname.startsWith('/inquiries') || pathname.startsWith('/announcements'))}
+                  onClick={() => setOpenMenu(openMenu === 'admin' ? null : 'admin')}
                 >
-                  <button
-                    className={navClass(openMenu === 'admin' || pathname.startsWith('/users') || pathname.startsWith('/stats') || pathname.startsWith('/projects') || pathname.startsWith('/inquiries'))}
-                    onClick={() => setOpenMenu(openMenu === 'admin' ? null : 'admin')}
-                  >
-                    관리
-                  </button>
-                  {openMenu === 'admin' && (
-                    <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
+                  관리
+                </button>
+                {openMenu === 'admin' && (
+                  <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
+                    {isAdminOrLeader && (
                       <Link href="/projects" className={styles.dropdownItem} onClick={closeAll}>프로젝트</Link>
+                    )}
+                    {isAdminOrLeader && (
                       <Link href="/inquiries" className={styles.dropdownItem} onClick={closeAll}>문의 관리</Link>
-                      {user?.role === 'ADMIN' && (
-                        <Link href="/users" className={styles.dropdownItem} onClick={closeAll}>팀원관리</Link>
-                      )}
-                      {has('stats') && (
-                        <Link href="/stats" className={styles.dropdownItem} onClick={closeAll}>통계</Link>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
+                    <Link href="/announcements" className={styles.dropdownItem} onClick={closeAll}>공지/알림</Link>
+                    {user?.role === 'ADMIN' && (
+                      <Link href="/users" className={styles.dropdownItem} onClick={closeAll}>팀원관리</Link>
+                    )}
+                    {isAdminOrLeader && has('stats') && (
+                      <Link href="/stats" className={styles.dropdownItem} onClick={closeAll}>통계</Link>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {(user?.role === 'ADMIN' || has('calendar_sync')) && (
                 <div

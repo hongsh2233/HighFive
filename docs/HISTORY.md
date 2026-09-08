@@ -927,3 +927,12 @@ npx prisma migrate resolve --applied 20260907000000_init
 - `POST /api/tasks`에서 `githubEnabled` 필드 저장(그룹 업무 하위 추가 포함).
 - `prisma/migrations/20260908030000_add_task_github_enabled/migration.sql` 추가.
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-08 (6차) — 공지/알림을 협업에서 관리 메뉴로 재이동 (WORKER도 관리 메뉴 접근 허용)
+
+이전 라운드에서 "공지사항 → 관리 메뉴로 이동" 요청에 대해 WORKER 노출 문제로 협업 메뉴에 유지하는 쪽으로 갔으나, 사용자가 관리 메뉴 이동을 재확인 — "관리로 이동하되, WORKER도 관리 메뉴 자체를 볼 수 있게 허용"으로 결정.
+
+- `src/components/AppHeader.tsx`: "관리" 메뉴 래퍼를 `isAdminOrLeader` 조건 없이 모든 로그인 사용자에게 노출하도록 변경. 대신 그 안의 개별 항목("프로젝트", "문의 관리", "통계")에 `isAdminOrLeader` 체크를 각각 추가해 기존 권한 범위를 유지("팀원관리"는 기존처럼 ADMIN 전용 유지). "공지/알림"은 관리 메뉴 안에서 모든 역할에게 노출.
+- "협업" 메뉴에서 "공지/알림" 항목 제거(관리 메뉴로 완전히 이동).
+- 결과: WORKER는 "관리" 메뉴를 열 수 있지만 그 안에는 "공지/알림"만 보이고, ADMIN/LEADER는 기존과 동일하게 전체 항목이 보임.
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
