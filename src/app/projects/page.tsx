@@ -62,11 +62,6 @@ export default function ProjectsPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  // PM/역할 담당자 드롭다운은 조직 전체가 아니라 "이 프로젝트에 이미 속한 멤버"만 보여준다.
-  // 신규 생성 시에는 아직 멤버가 없으므로 조직 전체 목록을 사용.
-  const memberOptions: AllUser[] = editingProject
-    ? editingProject.members.map(m => m.user)
-    : allUsers;
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -251,7 +246,7 @@ export default function ProjectsPage() {
                     style={{ ...inputStyle, marginBottom: 6 }}
                   >
                     <option value="">팀원에서 선택...</option>
-                    {memberOptions.map(u => (
+                    {allUsers.map(u => (
                       <option key={u.id} value={u.name}>{u.name}</option>
                     ))}
                   </select>
@@ -325,7 +320,7 @@ export default function ProjectsPage() {
                           style={inputStyle}
                         >
                           <option value="">팀원에서 선택...</option>
-                          {memberOptions.map(u => (
+                          {allUsers.map(u => (
                             <option key={u.id} value={u.id}>{u.name}</option>
                           ))}
                         </select>
