@@ -38,6 +38,7 @@ export interface Task {
   isGroup: boolean;
   timeCounterEnabled: boolean;
   githubEnabled: boolean;
+  quickRegister: boolean;
   parentTaskId: number | null;
   projectId: number | null;
   createdAt: string;

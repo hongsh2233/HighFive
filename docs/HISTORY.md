@@ -957,3 +957,13 @@ npx prisma migrate resolve --applied 20260907000000_init
 - `src/app/tasks/page.tsx`: 담당자 후보 목록을 `/users?role=WORKER`(WORKER만)에서 `/users`(전체) 조회로 변경, ADMIN 제외 필터 제거.
 - `src/app/tasks/create/page.tsx`: `assignableWorkers`/담당자 기본값 계산에서 `role !== 'ADMIN'` 필터 두 곳 제거.
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-09 (3차) — 간편 등록 업무는 목록에서 "+ 하위 업무" 버튼 숨김
+
+간편 등록으로 만든 업무는 하위 업무 추가(그룹 업무 전환) 기능도 노출하지 않도록 개선.
+
+- `prisma/schema.prisma`: `Task.quickRegister Boolean @default(false)` 추가 — 등록 화면의 "간편 등록" 체크 여부를 업무별로 저장.
+- `POST /api/tasks`: `quickRegister` 값을 받아 저장(그룹 업무 하위 추가 포함).
+- `src/app/tasks/page.tsx`: 업무 목록 행의 "+ 하위 업무" 버튼을 `task.quickRegister`가 true면 숨김.
+- `prisma/migrations/20260909000000_add_task_quick_register/migration.sql` 추가.
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.

@@ -275,6 +275,7 @@ function TaskCreateForm() {
         isGroup: !parentTask && isGroup,
         timeCounterEnabled,
         githubEnabled,
+        quickRegister,
         subTasks: (!parentTask && isGroup) ? validSubTasks.map(s => ({
           title: s.title.trim(),
           workerId: parseInt(s.workerId),

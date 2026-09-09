@@ -868,7 +868,7 @@ function ProjectTaskSection({
                 상세보기
               </Link>
             )}
-            {!isChild && (
+            {!isChild && !task.quickRegister && (
               <button
                 type="button"
                 className={styles.addSubBtnSmall}

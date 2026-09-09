@@ -167,6 +167,7 @@ model Task {
   isGroup            Boolean   @default(false)
   timeCounterEnabled Boolean   @default(true)
   githubEnabled      Boolean   @default(false)
+  quickRegister      Boolean   @default(false)
   parentTaskId       Int?
   sourceType         String    @default("DIRECT") // DIRECT / INQUIRY (홈페이지 문의에서 전환된 업무 출처 추적)
   sourceId           Int?
