@@ -23,6 +23,7 @@ interface Worker {
 interface ProjectMeta {
   id: number;
   name: string;
+  members?: { user: Worker }[];
 }
 
 // 작업시간 계산 함수
@@ -459,6 +460,9 @@ function ProjectTaskSection({
   const router = useRouter();
   const { confirm } = useDialog();
   const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
+  // 담당자 변경 드롭다운은 조직 전체가 아니라 "이 업무가 속한 프로젝트의 멤버"만 노출.
+  // 프로젝트가 없는(미지정) 업무는 프로젝트 범위가 없으므로 기존처럼 조직 전체 목록을 사용.
+  const projectAssignableWorkers = project?.members ? project.members.map((m) => m.user) : assignableWorkers;
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
   const [editingTitleId, setEditingTitleId] = useState<number | null>(null);
   const [titleDraft, setTitleDraft] = useState('');
@@ -816,9 +820,9 @@ function ProjectTaskSection({
               onChange={(e) => updateTask(task.id, { workerId: parseInt(e.target.value) } as any)}
               className={styles.statusSelect}
             >
-              {(task.worker && !assignableWorkers.find(w => w.id === (task.worker as any).id)
-                ? [{ id: (task.worker as any).id, name: (task.worker as any).name } as Worker, ...assignableWorkers]
-                : assignableWorkers
+              {(task.worker && !projectAssignableWorkers.find(w => w.id === (task.worker as any).id)
+                ? [{ id: (task.worker as any).id, name: (task.worker as any).name } as Worker, ...projectAssignableWorkers]
+                : projectAssignableWorkers
               ).map((w) => (
                 <option key={w.id} value={w.id}>{w.name}</option>
               ))}
@@ -1105,9 +1109,9 @@ function ProjectTaskSection({
                         onChange={(e) => setNewTaskWorkerId(e.target.value)}
                         className={styles.addTaskWorkerSelect}
                       >
-                        {(!assignableWorkers.find(w => w.id === currentUserId)
-                          ? [{ id: currentUserId, name: '나(본인)' } as Worker, ...assignableWorkers]
-                          : assignableWorkers
+                        {(!projectAssignableWorkers.find(w => w.id === currentUserId)
+                          ? [{ id: currentUserId, name: '나(본인)' } as Worker, ...projectAssignableWorkers]
+                          : projectAssignableWorkers
                         ).map((w) => (
                           <option key={w.id} value={w.id}>{w.name}</option>
                         ))}
