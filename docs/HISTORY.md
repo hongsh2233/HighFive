@@ -967,3 +967,11 @@ npx prisma migrate resolve --applied 20260907000000_init
 - `src/app/tasks/page.tsx`: 업무 목록 행의 "+ 하위 업무" 버튼을 `task.quickRegister`가 true면 숨김.
 - `prisma/migrations/20260909000000_add_task_quick_register/migration.sql` 추가.
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-09 (4차) — PM/역할 담당자 드롭다운을 프로젝트 멤버로 제한
+
+프로젝트 수정 화면의 PM/역할 담당자 드롭다운이 조직 전체 사용자를 보여줘서, 그 프로젝트와 무관한 사람(예: 다른 프로젝트에만 속한 팀원)까지 노출되어 혼란을 주는 문제.
+
+- `src/app/projects/page.tsx`: `memberOptions` 계산 추가 — 프로젝트 수정 중에는 `editingProject.members`(현재 프로젝트 멤버)만, 신규 생성 중에는 아직 멤버가 없으므로 조직 전체 목록(`allUsers`)을 사용. PM 선택/역할 담당자 선택 드롭다운 모두 `memberOptions`로 교체.
+- **주의**: 프로젝트 멤버가 아닌 사람을 역할에 새로 지정하려면 여전히 "이름 직접 입력" 칸을 사용해야 함(계정과 연결되지 않는 자유 텍스트). 실제 계정과 연결해 새 멤버를 프로젝트에 들이는 UI는 현재 없음(이전 라운드에서 우측 멤버 패널을 삭제하면서 함께 사라짐) — 필요 시 별도로 복원 가능.
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
