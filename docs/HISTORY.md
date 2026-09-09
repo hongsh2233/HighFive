@@ -944,3 +944,16 @@ npx prisma migrate resolve --applied 20260907000000_init
 - `src/app/projects/page.tsx`: 우측 멤버 패널(멤버 목록 + 멤버 추가 드롭다운) 전체 제거. 이에 따라 `selectedProject` 상태, `handleSelectProject`/`handleAddMember`/`handleRemoveMember`, `nonMembers`/`memberIds` 계산, 프로젝트 카드 클릭 시 패널을 열던 로직과 `isAdmin` 변수(더 이상 사용처 없음)도 함께 정리.
 - 결과: 프로젝트 카드는 이제 목록 형태로만 표시되고 클릭해도 아무 동작 없음. **주의**: 이 화면을 통한 프로젝트 멤버 추가/삭제 기능은 완전히 제거됨 — 별도 요청 시 다른 방식(예: 역할 지정 시 자동으로 멤버 등록)으로 재구현 가능.
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-09 (2차) — 프로젝트 역할 지정 시 자동 멤버 등록 + 담당자 후보에 ADMIN 포함
+
+### 역할 지정 시 자동으로 프로젝트 멤버 등록
+직전에 우측 멤버 패널을 삭제하면서, 프로젝트 멤버 추가의 유일한 경로가 사라진 문제를 보완. 이번 신고("역할에 한지아를 지정했는데 업무 등록 화면 담당자 목록에 안 보인다")의 원인도 동일 — 담당자 후보 목록은 `ProjectMember` 기준인데, 역할(`ProjectRole`) 지정은 별도 테이블이라 자동으로 멤버가 되지 않았음.
+- `POST /api/projects`, `PATCH /api/projects/[id]`: 역할에서 "팀원에서 선택"으로 지정한 사용자(`userId`가 있는 경우)는 자동으로 해당 프로젝트의 `ProjectMember`로도 등록되도록 수정.
+- 기존에 이미 역할만 지정되어 있던 프로젝트(예: AI Content Hub)는 소급 반영되지 않으므로, 프로젝트 수정 화면을 한번 열어 그대로 "수정" 버튼을 눌러 저장하면 이 로직이 실행되어 멤버로 등록됨.
+
+### 담당자 후보에서 ADMIN 제외 규칙 삭제
+"업무 목록의 담당자 변경 드롭다운에서 본인(ADMIN 계정)을 선택할 수 없다"는 신고 — 여러 화면에 걸쳐 있던 "ADMIN은 담당자가 될 수 없다"는 규칙을 전부 제거.
+- `src/app/tasks/page.tsx`: 담당자 후보 목록을 `/users?role=WORKER`(WORKER만)에서 `/users`(전체) 조회로 변경, ADMIN 제외 필터 제거.
+- `src/app/tasks/create/page.tsx`: `assignableWorkers`/담당자 기본값 계산에서 `role !== 'ADMIN'` 필터 두 곳 제거.
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.

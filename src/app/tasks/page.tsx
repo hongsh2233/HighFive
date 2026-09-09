@@ -139,7 +139,7 @@ function TaskListContent() {
     if (!canEditTitle) return;
     const fetchWorkers = async () => {
       try {
-        const res = await apiClient.get<{ data: Worker[] }>('/users?role=WORKER');
+        const res = await apiClient.get<{ data: Worker[] }>('/users');
         setAssignableWorkers(res.data.data || []);
       } catch (err) {
         console.error(err);

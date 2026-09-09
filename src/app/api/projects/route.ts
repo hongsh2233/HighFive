@@ -91,8 +91,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // 생성자 + 역할에 팀원에서 선택한 사용자를 자동으로 프로젝트 멤버로 등록
+    // (담당자 지정 드롭다운 등은 ProjectMember 기준으로 노출되므로, 역할만 지정하고
+    // 별도로 멤버 추가를 하지 않아도 업무 등록 시 담당자로 선택 가능해야 한다)
+    const memberUserIds = Array.from(new Set([userId, ...Array.from(validRoleUserIds)]));
     await prisma.projectMember.createMany({
-      data: [{ projectId: project.id, userId }],
+      data: memberUserIds.map((uid) => ({ projectId: project.id, userId: uid })),
       skipDuplicates: true,
     });
 

@@ -90,6 +90,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (toCreate.length > 0) {
         await prisma.projectRole.createMany({ data: toCreate });
       }
+
+      // 역할에 팀원에서 선택한 사용자를 자동으로 프로젝트 멤버로 등록
+      if (validRoleUserIds.size > 0) {
+        await prisma.projectMember.createMany({
+          data: Array.from(validRoleUserIds).map((uid) => ({ projectId, userId: uid })),
+          skipDuplicates: true,
+        });
+      }
     }
 
     const project = await prisma.project.findUnique({

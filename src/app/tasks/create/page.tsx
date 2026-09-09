@@ -135,7 +135,7 @@ function TaskCreateForm() {
     setSubTasks(prev => prev.map((s, i) => i === idx ? { ...s, ...patch } : s));
   };
 
-  const assignableWorkers = workers.filter(w => w.role !== 'ADMIN');
+  const assignableWorkers = workers;
 
   const selectedProjectMeta = projects.find(p => p.id === parseInt(projectId));
   const labelOptions: { code: string; text: string }[] = selectedProjectMeta?.customLabels
@@ -186,7 +186,7 @@ function TaskCreateForm() {
   // 기본 담당자로 자동 선택한다(목록에 없으면 비움). 이전에는 담당자 목록이 바뀔 때마다
   // 무조건 선택을 초기화해 "선택이 풀리는" 문제가 있었다.
   useEffect(() => {
-    const selectable = workers.filter(w => w.role !== 'ADMIN');
+    const selectable = workers;
     if (selectable.length === 0) return;
     const stillValid = selectable.some(w => String(w.id) === workerId);
     if (stillValid) return;
