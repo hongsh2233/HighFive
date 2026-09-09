@@ -53,12 +53,10 @@ const emptyForm = {
 export default function ProjectsPage() {
   const { user } = useAuth();
   const { confirm } = useDialog();
-  const isAdmin = user?.role === 'ADMIN';
   const canManage = ['ADMIN', 'LEADER'].includes(user?.role || '');
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   type AllUser = { id: number; name: string; email: string; role: string };
   const [allUsers, setAllUsers] = useState<AllUser[]>([]);
 
@@ -168,7 +166,6 @@ export default function ProjectsPage() {
       await apiClient.patch(`/projects/${projectId}`, { status: 'CLOSED' });
       setMessage({ type: 'success', text: '프로젝트가 종료되었습니다.' });
       await fetchProjects();
-      if (selectedProject?.id === projectId) setSelectedProject(p => p ? { ...p, status: 'CLOSED' } : null);
     } catch { setMessage({ type: 'error', text: '종료 실패' }); }
   };
 
@@ -178,30 +175,6 @@ export default function ProjectsPage() {
       setMessage({ type: 'success', text: '재개되었습니다.' });
       await fetchProjects();
     } catch { setMessage({ type: 'error', text: '재개 실패' }); }
-  };
-
-  const handleAddMember = async (projectId: number, userId: number) => {
-    try {
-      await apiClient.post(`/projects/${projectId}/members`, { userId });
-      const res = await apiClient.get<{ data: Project }>(`/projects/${projectId}`);
-      setSelectedProject(res.data.data);
-      await fetchProjects();
-    } catch { setMessage({ type: 'error', text: '멤버 추가 실패' }); }
-  };
-
-  const handleRemoveMember = async (projectId: number, userId: number) => {
-    try {
-      await apiClient.delete(`/projects/${projectId}/members?userId=${userId}`);
-      const res = await apiClient.get<{ data: Project }>(`/projects/${projectId}`);
-      setSelectedProject(res.data.data);
-      await fetchProjects();
-    } catch { setMessage({ type: 'error', text: '멤버 제거 실패' }); }
-  };
-
-  const handleSelectProject = async (project: Project) => {
-    if (selectedProject?.id === project.id) { setSelectedProject(null); return; }
-    const res = await apiClient.get<{ data: Project }>(`/projects/${project.id}`);
-    setSelectedProject(res.data.data);
   };
 
   const statusBadge = (status: string): React.CSSProperties => ({
@@ -225,8 +198,6 @@ export default function ProjectsPage() {
     textTransform: 'uppercase', letterSpacing: '0.05em',
   };
 
-  const memberIds = new Set(selectedProject?.members.map(m => m.user.id) || []);
-  const nonMembers = allUsers.filter(u => !memberIds.has(u.id));
 
   return (
     <div className={styles.page}>
@@ -391,7 +362,7 @@ export default function ProjectsPage() {
           </div>
         )}
 
-        <div className={`${styles.layout} ${selectedProject ? styles.layoutWithPanel : ''}`}>
+        <div className={styles.layout}>
           {/* 프로젝트 목록 */}
           <div>
             {loading ? (
@@ -403,8 +374,7 @@ export default function ProjectsPage() {
                 {projects.map(p => (
                   <div
                     key={p.id}
-                    onClick={() => handleSelectProject(p)}
-                    style={{ backgroundColor: 'var(--bg-surface)', border: `1px solid ${selectedProject?.id === p.id ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 10, padding: '16px 20px', cursor: 'pointer', transition: 'border-color 0.15s' }}
+                    style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '16px 20px', transition: 'border-color 0.15s' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                       <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', flex: 1 }}>{p.name}</span>
@@ -444,47 +414,6 @@ export default function ProjectsPage() {
             )}
           </div>
 
-          {/* 멤버 패널 */}
-          {selectedProject && (
-            <div className={styles.memberPanel}>
-              <div className={styles.memberPanelHeader}>
-                <div>
-                  <div className={styles.memberPanelTitle}>{selectedProject.name}</div>
-                  <div className={styles.memberPanelCount}>멤버 {selectedProject.members.length}명</div>
-                </div>
-                <button onClick={() => setSelectedProject(null)} className={styles.memberPanelClose}>✕</button>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-                {selectedProject.members.map(m => (
-                  <div key={m.user.id} className={styles.memberItem}>
-                    <div className={styles.memberAvatar}>{m.user.name[0]}</div>
-                    <div className={styles.memberInfo}>
-                      <div className={styles.memberName}>{m.user.name}</div>
-                    </div>
-                    {isAdmin && (
-                      <button onClick={() => handleRemoveMember(selectedProject.id, m.user.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-muted)', padding: 4 }}>✕</button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {isAdmin && nonMembers.length > 0 && (
-                <div>
-                  <div className={styles.addMemberLabel}>멤버 추가</div>
-                  <select
-                    onChange={e => { if (e.target.value) handleAddMember(selectedProject.id, parseInt(e.target.value)); e.target.value = ''; }}
-                    style={{ width: '100%', padding: '8px 10px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 7, fontFamily: 'inherit', backgroundColor: 'var(--bg-surface)', color: 'var(--text-primary)' }}
-                  >
-                    <option value="">사용자 선택...</option>
-                    {nonMembers.map(u => (
-                      <option key={u.id} value={u.id}>{u.name} ({u.role === 'LEADER' ? '리더' : '작업자'})</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </div>
