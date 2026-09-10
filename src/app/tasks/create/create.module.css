@@ -361,7 +361,19 @@
 }
 
 @media (max-width: 640px) {
+  .page {
+    padding: var(--space-4) var(--space-3);
+  }
+
   .basicGrid {
     grid-template-columns: 1fr;
+  }
+
+  .btnRow {
+    flex-direction: column;
+  }
+
+  .btnRow > * {
+    width: 100%;
   }
 }

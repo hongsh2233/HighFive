@@ -298,4 +298,19 @@
   .kpiGrid {
     grid-template-columns: 1fr;
   }
+
+  .taskItem {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
+  .taskTitle {
+    flex-basis: 100%;
+    white-space: normal;
+  }
+
+  .linkRow .actionLink {
+    flex: 1 1 calc(50% - var(--space-2));
+    text-align: center;
+  }
 }

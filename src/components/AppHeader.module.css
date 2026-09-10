@@ -166,6 +166,10 @@
 }
 
 @media (max-width: 768px) {
+  .inner {
+    padding: 0 12px;
+  }
+
   .mobileToggle {
     display: flex;
   }
