@@ -1002,3 +1002,15 @@ npx prisma migrate resolve --applied 20260907000000_init
   - `components/AppHeader.module.css`: 모바일에서 헤더 좌우 여백 24px→12px로 축소.
 - 업무 목록 테이블(카드형 전환)과 업무 상세의 타임로그 테이블(가로 스크롤 래퍼)은 기존 처리로 충분하다고 판단해 변경하지 않음.
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-13 — 하이파이브 브랜드 로고를 로그인 화면/파비콘에 반영
+
+새로 디자인한 하이파이브(High5) 심볼(숫자 5의 획을 손가락처럼 펼치고 위쪽에 하이파이브 임팩트 궤적 3개를 얹은 마크)을 실제 사이트에 적용.
+
+- `src/app/icon.tsx`(브라우저 탭 파비콘): 기존 보라색 그라디언트 배경의 "H" 글자를 잉크 그린 배경(#142B2B) + 코랄색(#FF6B4A) "5" 숫자로 교체.
+- `src/app/login/page.tsx`(최고관리자 로그인), `src/app/[slug]/login/page.tsx`(조직별 로그인 — 실제 사용자들이 보는 화면): 로고 아이콘의 "H" 텍스트를 새 심볼 SVG(숫자 5 + 골드 임팩트 궤적 3개)로 교체.
+- `src/app/login/login.module.css`: `.logoIcon` 배경을 기존 보라색 그라디언트(`--accent-gradient`)에서 심볼과 어울리는 잉크 그린(#142B2B)으로 변경, 아이콘 크기 확대(40→44px). 더 이상 안 쓰는 `.logoIconText` 규칙 제거(단, `register` 페이지가 별도 `register.module.css`의 동일 이름 규칙을 계속 사용하므로 그쪽은 영향 없음).
+- 심볼의 "5" 숫자에 쓰인 Fraunces 서체를 로그인 화면에서만 로드하도록 Google Fonts 링크 추가(앱 전역 로딩은 하지 않음).
+- `src/app/page.tsx`(서비스 소개/랜딩 페이지) 상단 네비게이션 로고도 동일한 심볼로 교체, `landing.module.css`의 `.navLogoIcon` 배경도 잉크 그린으로 변경.
+- **참고**: 이번 반영은 로그인 화면·소개 페이지·브라우저 파비콘까지만 적용. 회원가입 페이지(`register`)/헤더 앱 내 로고/OG 이미지/이메일 템플릿 등 나머지 화면은 기존 보라색 브랜딩을 그대로 유지(범위 외, 필요 시 별도 요청).
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.

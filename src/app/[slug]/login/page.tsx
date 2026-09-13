@@ -83,13 +83,21 @@ export default function OrgLoginPage() {
 
   return (
     <div className={styles.wrapper}>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&display=swap" />
       <div className={styles.brandPanel}>
         <div className={styles.bgDecorTop} />
         <div className={styles.bgDecorBottom} />
         <div className={styles.bgGlow} />
         <div className={styles.logoArea}>
           <div className={styles.logoIcon}>
-            <span className={styles.logoIconText}>H</span>
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <text x="34" y="150" fontFamily="Fraunces, Georgia, serif" fontWeight="600" fontSize="156" fill="#FF6B4A">5</text>
+              <g stroke="#FFB238" strokeWidth="9" strokeLinecap="round" fill="none">
+                <line x1="118" y1="46" x2="132" y2="30" />
+                <line x1="140" y1="58" x2="160" y2="46" />
+                <line x1="150" y1="76" x2="174" y2="72" />
+              </g>
+            </svg>
           </div>
           <h1 className={styles.brandTitle}>High5</h1>
           <p className={styles.brandDesc}>{orgName || slug}</p>

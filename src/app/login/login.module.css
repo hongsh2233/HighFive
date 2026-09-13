@@ -40,18 +40,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: var(--accent-gradient);
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #142B2B;
   flex-shrink: 0;
   margin-bottom: 0;
 }
 
-.logoIconText {
-  color: var(--header-text);
-  font-size: 18px;
-  font-weight: 800;
+.logoIcon svg {
+  width: 30px;
+  height: 30px;
 }
 
 .brandTitle {

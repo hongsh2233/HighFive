@@ -81,7 +81,17 @@ export default function LandingPage() {
       <header className={styles.nav}>
         <div className={styles.navInner}>
           <div className={styles.navLogo}>
-            <span className={styles.navLogoIcon}>H</span>
+            <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&display=swap" />
+            <span className={styles.navLogoIcon}>
+              <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <text x="34" y="150" fontFamily="Fraunces, Georgia, serif" fontWeight="600" fontSize="156" fill="#FF6B4A">5</text>
+                <g stroke="#FFB238" strokeWidth="9" strokeLinecap="round" fill="none">
+                  <line x1="118" y1="46" x2="132" y2="30" />
+                  <line x1="140" y1="58" x2="160" y2="46" />
+                  <line x1="150" y1="76" x2="174" y2="72" />
+                </g>
+              </svg>
+            </span>
             <span className={styles.navLogoText}>High5</span>
           </div>
           <div className={styles.navActions}>
