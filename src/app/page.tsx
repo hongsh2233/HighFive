@@ -103,7 +103,7 @@ export default function LandingPage() {
             </p>
             <div className={styles.heroActions}>
               <Link href="/register" className={styles.btnPrimary}>무료로 시작하기</Link>
-              <button onClick={openDemoModal} className={styles.btnSecondaryHero}>무료 데모 신청</button>
+              <button onClick={openDemoModal} className={styles.btnSecondary}>무료 데모 신청</button>
             </div>
           </div>
 

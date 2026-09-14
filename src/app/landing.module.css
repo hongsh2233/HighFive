@@ -78,7 +78,7 @@
 .hero {
   position: relative;
   padding: 88px var(--space-8) 96px;
-  background: linear-gradient(125deg, #13282A 0%, #1D3634 42%, #3E3630 72%, #5C4438 100%);
+  background: var(--bg-base);
   overflow: hidden;
 }
 
@@ -94,8 +94,8 @@
   display: inline-block;
   padding: 6px 14px;
   border-radius: var(--radius-full);
-  background: rgba(255,255,255,0.12);
-  color: #E8C9A0;
+  background: var(--accent-light);
+  color: var(--accent);
   font-size: 12px;
   font-weight: 700;
   margin-bottom: var(--space-6);
@@ -106,18 +106,18 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.32;
-  color: #FFFFFF;
+  color: var(--text-primary);
   margin-bottom: var(--space-5);
 }
 
 .heroAccent {
-  color: #E3A868;
+  color: #E85434;
 }
 
 .heroSubtitle {
   font-size: 16px;
   line-height: 1.7;
-  color: rgba(255,255,255,0.72);
+  color: var(--text-secondary);
   margin-bottom: var(--space-8);
 }
 
@@ -143,22 +143,6 @@
   text-decoration: none;
 }
 
-.btnSecondaryHero {
-  padding: 12px 24px;
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-  border-radius: var(--radius-md, 8px);
-  background: rgba(255,255,255,0.1);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.35);
-  cursor: pointer;
-}
-
-.btnSecondaryHero:hover {
-  background: rgba(255,255,255,0.18);
-}
-
 /* Hero floating decorative bubbles */
 .heroBubble {
   position: absolute;
@@ -168,12 +152,12 @@
   gap: 6px;
   padding: 8px 14px;
   border-radius: var(--radius-full);
-  background: rgba(255,255,255,0.14);
-  border: 1px solid rgba(255,255,255,0.2);
-  color: #fff;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
   font-size: 12px;
   font-weight: 600;
-  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 16px -6px rgba(20,43,43,0.18);
 }
 
 .heroBubble1 { top: 18%; left: 8%; }
@@ -594,7 +578,7 @@
   }
 
   .heroActions .btnPrimary,
-  .heroActions .btnSecondaryHero {
+  .heroActions .btnSecondary {
     width: 100%;
   }
 
