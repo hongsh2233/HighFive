@@ -1105,3 +1105,15 @@ npx prisma migrate resolve --applied 20260907000000_init
 - `src/app/landing.module.css`: `.pricing*` 스타일 신규, `.navLink`에 `text-decoration: none` 추가(앵커 태그에도 재사용).
 - Playwright 스크린샷으로 확인 후 반영.
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-14 (12차) — 플랜별 메뉴 권한 설정 화면에 "이름"/"가격" 관리 추가, 새 요금제와 FREE/PRO/ENTERPRISE 연결
+
+랜딩 페이지에 새로 만든 "베이직(9,900원)"/"프로(29,800원)" 요금제가 기존 조직 플랜 시스템(FREE/PRO/ENTERPRISE, 메뉴 노출 권한을 좌우하는 내부 코드)과 연결되어 있지 않던 것을 정리. 기존 슈퍼관리자 "플랜별 메뉴 권한 설정" 화면(그대로 유지, 재구축 아님)에 "이름"/"가격" 행을 추가해 각 내부 플랜 코드에 실제 표시 이름과 가격을 부여할 수 있게 함.
+
+- `prisma/schema.prisma`: `SystemConfig.planMeta Json?` 추가 — 플랜별 `{name, price}` 저장.
+- `src/app/api/plan-config/route.ts`: 기본값을 FREE=무료/0원, PRO=베이직/9,900원, ENTERPRISE=프로/29,800원으로 설정. GET(슈퍼관리자)/PUT에서 `planFeatures`와 `planMeta`를 함께 다루도록 확장.
+- `src/app/superadmin/plan-config/page.tsx`: 기존 메뉴 권한 체크박스 표 맨 위에 "이름"/"가격(원/인/월)" 입력 행 추가(같은 표 구조 그대로 유지, 열 순서도 FREE/PRO/ENTERPRISE 그대로).
+- 즉 내부적으로 PRO 코드 = 마케팅상 "베이직" 요금제, ENTERPRISE 코드 = "프로" 요금제로 매핑됨 — 랜딩 페이지의 가격(9,900원/29,800원)과 일치.
+- `prisma/migrations/20260914000000_add_system_config_plan_meta/migration.sql` 추가.
+- **참고**: 랜딩 페이지 요금 카드는 아직 이 설정값을 실시간으로 읽어오지 않고 하드코딩되어 있음(랜딩은 비로그인 공개 페이지라 별도 공개 API 필요) — 필요 시 다음 라운드에서 연결 가능.
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.

@@ -8,9 +8,18 @@ const DEFAULT_FEATURES = {
   ENTERPRISE: ['info', 'requests', 'wiki', 'tasks', 'search', 'stats', 'calendar_sync', 'integrations'],
 };
 
+const DEFAULT_META = {
+  FREE: { name: '무료', price: 0 },
+  PRO: { name: '베이직', price: 9900 },
+  ENTERPRISE: { name: '프로', price: 29800 },
+};
+
 async function getConfig() {
   const config = await prisma.systemConfig.findUnique({ where: { id: 1 } });
-  return (config?.planFeatures as Record<string, string[]>) ?? DEFAULT_FEATURES;
+  return {
+    planFeatures: (config?.planFeatures as Record<string, string[]>) ?? DEFAULT_FEATURES,
+    planMeta: (config?.planMeta as Record<string, { name: string; price: number }>) ?? DEFAULT_META,
+  };
 }
 
 export async function GET(_req: NextRequest) {
@@ -19,10 +28,10 @@ export async function GET(_req: NextRequest) {
     if (error) return error;
 
     const role = (session!.user as any).role;
-    const planFeatures = await getConfig();
+    const { planFeatures, planMeta } = await getConfig();
 
     if (role === 'SUPERADMIN') {
-      return successResponse(planFeatures);
+      return successResponse({ planFeatures, planMeta });
     }
 
     const plan: string = (session!.user as any).organizationPlan ?? 'FREE';
@@ -45,19 +54,28 @@ export async function PUT(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { planFeatures } = body;
+    const { planFeatures, planMeta } = body;
 
-    if (!planFeatures || typeof planFeatures !== 'object') {
+    if (planFeatures !== undefined && typeof planFeatures !== 'object') {
       return errorResponse('올바른 플랜 설정 데이터가 필요합니다.', 400);
     }
+    if (planMeta !== undefined && typeof planMeta !== 'object') {
+      return errorResponse('올바른 플랜 정보 데이터가 필요합니다.', 400);
+    }
+
+    const existing = await getConfig();
+    const data = {
+      planFeatures: planFeatures ?? existing.planFeatures,
+      planMeta: planMeta ?? existing.planMeta,
+    };
 
     const config = await prisma.systemConfig.upsert({
       where: { id: 1 },
-      update: { planFeatures },
-      create: { id: 1, planFeatures },
+      update: data,
+      create: { id: 1, ...data },
     });
 
-    return successResponse(config.planFeatures);
+    return successResponse({ planFeatures: config.planFeatures, planMeta: config.planMeta });
   } catch {
     return errorResponse('서버 오류가 발생했습니다.', 500);
   }

@@ -19,6 +19,7 @@ const MENU_ITEMS = [
 ];
 
 type PlanFeatures = Record<string, string[]>;
+type PlanMeta = Record<string, { name: string; price: number }>;
 
 export default function PlanConfigPage() {
   const { user, isLoading } = useAuth();
@@ -27,6 +28,11 @@ export default function PlanConfigPage() {
     FREE: [],
     PRO: [],
     ENTERPRISE: [],
+  });
+  const [meta, setMeta] = useState<PlanMeta>({
+    FREE: { name: '무료', price: 0 },
+    PRO: { name: '베이직', price: 9900 },
+    ENTERPRISE: { name: '프로', price: 29800 },
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -39,7 +45,12 @@ export default function PlanConfigPage() {
   useEffect(() => {
     fetch('/api/plan-config')
       .then((r) => r.json())
-      .then((d) => { if (d.success) setFeatures(d.data); })
+      .then((d) => {
+        if (d.success) {
+          setFeatures(d.data.planFeatures);
+          setMeta(d.data.planMeta);
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -57,6 +68,27 @@ export default function PlanConfigPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ planFeatures: newFeatures }),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateMeta = (plan: string, field: 'name' | 'price', value: string) => {
+    const next = { ...meta, [plan]: { ...meta[plan], [field]: field === 'price' ? Number(value) || 0 : value } };
+    setMeta(next);
+  };
+
+  const saveMeta = async () => {
+    setSaving(true);
+    setSaved(false);
+    try {
+      await fetch('/api/plan-config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planMeta: meta }),
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
@@ -88,6 +120,34 @@ export default function PlanConfigPage() {
             </tr>
           </thead>
           <tbody>
+            <tr>
+              <td>이름</td>
+              {PLANS.map((plan) => (
+                <td key={plan} style={{ textAlign: 'center' }}>
+                  <input
+                    type="text"
+                    value={meta[plan]?.name ?? ''}
+                    onChange={(e) => updateMeta(plan, 'name', e.target.value)}
+                    onBlur={saveMeta}
+                    style={{ width: 90, textAlign: 'center', border: '1px solid var(--border)', borderRadius: 4, padding: '4px 6px' }}
+                  />
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td>가격 (원/인/월)</td>
+              {PLANS.map((plan) => (
+                <td key={plan} style={{ textAlign: 'center' }}>
+                  <input
+                    type="number"
+                    value={meta[plan]?.price ?? 0}
+                    onChange={(e) => updateMeta(plan, 'price', e.target.value)}
+                    onBlur={saveMeta}
+                    style={{ width: 90, textAlign: 'center', border: '1px solid var(--border)', borderRadius: 4, padding: '4px 6px' }}
+                  />
+                </td>
+              ))}
+            </tr>
             {MENU_ITEMS.map((item) => (
               <tr key={item.key}>
                 <td>{item.label}</td>

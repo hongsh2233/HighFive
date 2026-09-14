@@ -699,6 +699,7 @@ model AuditLog {
 model SystemConfig {
   id           Int      @id @default(1)
   planFeatures Json
+  planMeta     Json?
   updatedAt    DateTime @updatedAt
 
   @@map("system_config")
