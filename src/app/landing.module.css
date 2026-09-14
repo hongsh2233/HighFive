@@ -172,7 +172,23 @@
   margin: 48px auto 0;
 }
 
+.heroGlow {
+  position: absolute;
+  z-index: 0;
+  top: -70px;
+  left: -60px;
+  right: -60px;
+  height: 380px;
+  border-radius: 50%;
+  background: linear-gradient(120deg, #A7BEF0 0%, #CBB8EA 45%, #EFC9DE 100%);
+  opacity: 0.75;
+  filter: blur(56px);
+  pointer-events: none;
+}
+
 .mockWindow {
+  position: relative;
+  z-index: 1;
   background: var(--bg-surface);
   border-radius: 14px;
   border: 1px solid rgba(20,43,43,0.1);

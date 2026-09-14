@@ -1071,3 +1071,10 @@ npx prisma migrate resolve --applied 20260907000000_init
 업무 목록 상단 필터에 "완료 업무 제외" 체크박스 추가, 기본값 체크됨. 체크 시 각 업무가 속한 프로젝트의 상태 정의를 참조해 `isDone`인 상태의 업무를 목록에서 제외.
 - `src/app/tasks/page.tsx`: `hideCompleted` 상태(기본 true) 추가, 상태 필터 select 옆에 체크박스 UI 배치, 필터 체인에 반영.
 - `npx tsc --noEmit` 오류 0개.
+
+## 2026-09-14 (8차) — 히어로 목업 뒤에 은은한 파스텔 그라디언트 도형 추가
+
+전체 배경은 색 없이 유지하되, 사용자가 공유한 잔디 "지식베이스" 스크린샷의 톤(목업 뒤에만 번지는 파스텔 블루→라벤더 그라디언트)을 참고해 히어로의 업무 목록 목업 뒤에 흐릿한 파스텔 그라디언트 도형(blob) 추가.
+- `src/app/landing.module.css`: `.heroGlow` 신규(블러 처리된 파스텔 블루→라벤더→핑크 그라디언트, 목업보다 크게 배치해 가장자리로 살짝 번지도록). `.mockWindow`에 `z-index`를 줘서 도형 위에 목업이 뜨도록 함.
+- Playwright 스크린샷으로 확인 후 반영.
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.

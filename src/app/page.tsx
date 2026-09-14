@@ -108,6 +108,7 @@ export default function LandingPage() {
           </div>
 
           <div className={styles.heroVisual}>
+            <div className={styles.heroGlow} aria-hidden="true" />
             <div className={styles.mockWindow}>
               <div className={styles.mockWindowBar}>
                 <span className={styles.mockDot} />
