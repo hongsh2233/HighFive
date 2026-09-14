@@ -6,6 +6,14 @@ import apiClient from '@/lib/api-client';
 import styles from './ai.module.css';
 import Spinner from '@/components/common/Spinner';
 
+type LlmProvider = 'ANTHROPIC' | 'OPENAI' | 'GEMINI';
+
+const PROVIDER_LABEL: Record<LlmProvider, string> = {
+  ANTHROPIC: 'Anthropic (Claude)',
+  OPENAI: 'OpenAI (GPT)',
+  GEMINI: 'Google (Gemini)',
+};
+
 const FEATURE_META: { key: string; label: string; hint: string; needsWeather?: boolean }[] = [
   { key: 'meetingSummary', label: '회의록 자동요약', hint: '회의록 본문에서 액션아이템/결정사항을 요약합니다.' },
   { key: 'meetingToTask', label: '회의록 → 업무 변환', hint: '요약된 액션아이템을 업무로 바로 생성합니다.' },
@@ -19,10 +27,13 @@ const FEATURE_META: { key: string; label: string; hint: string; needsWeather?: b
 
 interface AiSettingsData {
   hasAnthropicKey: boolean;
+  hasOpenaiKey: boolean;
+  hasGeminiKey: boolean;
   hasWeatherKey: boolean;
   hasGithubToken: boolean;
   weatherCity: string | null;
   features: Record<string, boolean>;
+  featureProviders: Partial<Record<string, LlmProvider>>;
   updatedAt: string | null;
 }
 
@@ -32,6 +43,8 @@ export default function AiSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [anthropicKeyInput, setAnthropicKeyInput] = useState('');
+  const [openaiKeyInput, setOpenaiKeyInput] = useState('');
+  const [geminiKeyInput, setGeminiKeyInput] = useState('');
   const [weatherKeyInput, setWeatherKeyInput] = useState('');
   const [weatherCityInput, setWeatherCityInput] = useState('');
   const [githubTokenInput, setGithubTokenInput] = useState('');
@@ -54,18 +67,31 @@ export default function AiSettingsPage() {
     else if (!authLoading) setLoading(false);
   }, [authLoading, user]);
 
+  const availableProviders = (): LlmProvider[] => {
+    if (!data) return [];
+    const list: LlmProvider[] = [];
+    if (data.hasAnthropicKey) list.push('ANTHROPIC');
+    if (data.hasOpenaiKey) list.push('OPENAI');
+    if (data.hasGeminiKey) list.push('GEMINI');
+    return list;
+  };
+
   const saveKeys = async () => {
     setSaving(true);
     setMessage(null);
     try {
       const body: any = {};
       if (anthropicKeyInput.trim()) body.anthropicKey = anthropicKeyInput.trim();
+      if (openaiKeyInput.trim()) body.openaiKey = openaiKeyInput.trim();
+      if (geminiKeyInput.trim()) body.geminiKey = geminiKeyInput.trim();
       if (weatherKeyInput.trim()) body.weatherKey = weatherKeyInput.trim();
       if (githubTokenInput.trim()) body.githubToken = githubTokenInput.trim();
       body.weatherCity = weatherCityInput.trim() || null;
       const res = await apiClient.put<{ data: AiSettingsData }>('/settings/ai', body);
       setData(res.data.data);
       setAnthropicKeyInput('');
+      setOpenaiKeyInput('');
+      setGeminiKeyInput('');
       setWeatherKeyInput('');
       setGithubTokenInput('');
       setMessage({ type: 'success', text: 'API 키가 저장되었습니다.' });
@@ -91,6 +117,21 @@ export default function AiSettingsPage() {
     }
   };
 
+  const changeFeatureProvider = async (key: string, provider: LlmProvider) => {
+    if (!data) return;
+    setSaving(true);
+    setMessage(null);
+    try {
+      const nextFeatureProviders = { ...data.featureProviders, [key]: provider };
+      const res = await apiClient.put<{ data: AiSettingsData }>('/settings/ai', { featureProviders: nextFeatureProviders });
+      setData(res.data.data);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.response?.data?.message || '프로바이더 변경에 실패했습니다.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (authLoading || loading) {
     return <div className={styles.loading}><Spinner /></div>;
   }
@@ -101,12 +142,14 @@ export default function AiSettingsPage() {
 
   if (!data) return null;
 
+  const providers = availableProviders();
+
   return (
     <div className={styles.page}>
       <div className={styles.inner}>
         <div className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>AI 설정</h1>
-          <p className={styles.pageSubtitle}>API 키를 등록하고 기능별로 AI 자동화를 켜고 끌 수 있습니다.</p>
+          <p className={styles.pageSubtitle}>사용할 AI 프로바이더(Anthropic/OpenAI/Gemini)의 API 키를 등록하고, 기능별로 어떤 프로바이더를 쓸지 선택할 수 있습니다.</p>
         </div>
 
         {message && (
@@ -116,9 +159,9 @@ export default function AiSettingsPage() {
         )}
 
         <div className={styles.card}>
-          <h2 className={styles.cardTitle}>Anthropic API 키</h2>
+          <h2 className={styles.cardTitle}>Anthropic API 키 (Claude)</h2>
           <p className={styles.cardHint}>
-            {data.hasAnthropicKey ? '✅ 설정됨 — 교체하려면 새 키를 입력 후 저장하세요.' : '미설정 — AI 기능을 사용하려면 키를 입력하세요.'}
+            {data.hasAnthropicKey ? '✅ 설정됨 — 교체하려면 새 키를 입력 후 저장하세요.' : '미설정 — 사용하려면 키를 입력하세요.'}
           </p>
           <div className={styles.fieldGrid}>
             <div>
@@ -128,6 +171,44 @@ export default function AiSettingsPage() {
                 value={anthropicKeyInput}
                 onChange={(e) => setAnthropicKeyInput(e.target.value)}
                 placeholder={data.hasAnthropicKey ? '새 키로 교체하려면 입력' : 'sk-ant-...'}
+                className={styles.input}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.card}>
+          <h2 className={styles.cardTitle}>OpenAI API 키 (GPT)</h2>
+          <p className={styles.cardHint}>
+            {data.hasOpenaiKey ? '✅ 설정됨 — 교체하려면 새 키를 입력 후 저장하세요.' : '미설정 — 사용하려면 키를 입력하세요.'}
+          </p>
+          <div className={styles.fieldGrid}>
+            <div>
+              <label className={styles.label}>API 키</label>
+              <input
+                type="password"
+                value={openaiKeyInput}
+                onChange={(e) => setOpenaiKeyInput(e.target.value)}
+                placeholder={data.hasOpenaiKey ? '새 키로 교체하려면 입력' : 'sk-...'}
+                className={styles.input}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.card}>
+          <h2 className={styles.cardTitle}>Google API 키 (Gemini)</h2>
+          <p className={styles.cardHint}>
+            {data.hasGeminiKey ? '✅ 설정됨 — 교체하려면 새 키를 입력 후 저장하세요.' : '미설정 — 사용하려면 키를 입력하세요.'}
+          </p>
+          <div className={styles.fieldGrid}>
+            <div>
+              <label className={styles.label}>API 키</label>
+              <input
+                type="password"
+                value={geminiKeyInput}
+                onChange={(e) => setGeminiKeyInput(e.target.value)}
+                placeholder={data.hasGeminiKey ? '새 키로 교체하려면 입력' : 'AIza...'}
                 className={styles.input}
               />
             </div>
@@ -197,7 +278,8 @@ export default function AiSettingsPage() {
         <div className={styles.list}>
           {FEATURE_META.map((f) => {
             const enabled = !!data.features[f.key];
-            const keyMissing = f.needsWeather ? !data.hasWeatherKey : !data.hasAnthropicKey;
+            const keyMissing = f.needsWeather ? !data.hasWeatherKey : providers.length === 0;
+            const selectedProvider = (data.featureProviders[f.key] as LlmProvider | undefined) || providers[0];
             return (
               <div key={f.key} className={styles.featureCard}>
                 <div>
@@ -205,8 +287,21 @@ export default function AiSettingsPage() {
                   <p className={styles.featureHint}>{f.hint}</p>
                   {keyMissing && !enabled && (
                     <p className={styles.featureWarn}>
-                      {f.needsWeather ? '날씨 API 키/도시를 먼저 설정하세요.' : 'Anthropic API 키를 먼저 설정하세요.'}
+                      {f.needsWeather ? '날씨 API 키/도시를 먼저 설정하세요.' : 'API 키를 먼저 설정하세요.'}
                     </p>
+                  )}
+                  {!f.needsWeather && !keyMissing && (
+                    <select
+                      value={selectedProvider}
+                      onChange={(e) => changeFeatureProvider(f.key, e.target.value as LlmProvider)}
+                      disabled={saving}
+                      className={styles.input}
+                      style={{ marginTop: 6, maxWidth: 220 }}
+                    >
+                      {providers.map((p) => (
+                        <option key={p} value={p}>{PROVIDER_LABEL[p]}</option>
+                      ))}
+                    </select>
                   )}
                 </div>
                 <label className={styles.toggle}>

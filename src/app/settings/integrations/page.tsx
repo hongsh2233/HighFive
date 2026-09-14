@@ -1,10 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './integrations.module.css';
 import Spinner from '@/components/common/Spinner';
+
+const GOOGLE_SHORTCUTS = [
+  { key: 'calendar', label: '구글 캘린더', hint: '일정을 구글 캘린더와 자동 동기화합니다.', icon: '📅', iconBg: '#1A73E8', href: '/settings/calendar-sync' },
+  { key: 'drive', label: '구글 드라이브', hint: '파일을 구글 드라이브에 저장하고 바로 열어봅니다.', icon: '📁', iconBg: '#0F9D58', href: '/settings/drive' },
+];
 
 type Channel = 'SLACK' | 'JANDI' | 'TEAMS' | 'TELEGRAM' | 'KAKAO';
 
@@ -33,6 +39,7 @@ const FIELD_LABEL: Record<string, string> = {
 
 export default function IntegrationsSettingsPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const router = useRouter();
   const [configs, setConfigs] = useState<IntegrationConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<Channel | null>(null);
@@ -119,6 +126,20 @@ export default function IntegrationsSettingsPage() {
         )}
 
         <div className={styles.grid}>
+          {GOOGLE_SHORTCUTS.map((g) => (
+            <div key={g.key} className={styles.card}>
+              <div className={styles.cardTop}>
+                <span className={styles.cardIcon} style={{ background: g.iconBg }}>{g.icon}</span>
+                <div className={styles.cardTopText}>
+                  <h2 className={styles.cardTitle}>{g.label}</h2>
+                  <p className={styles.cardHint}>{g.hint}</p>
+                </div>
+                <button type="button" onClick={() => router.push(g.href)} className={styles.btnConnect}>
+                  바로가기
+                </button>
+              </div>
+            </div>
+          ))}
           {configs.map((config) => {
             const meta = CHANNEL_META[config.channel];
             const isOpen = expanded === config.channel;

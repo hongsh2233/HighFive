@@ -71,11 +71,12 @@ function TaskCreateForm() {
   const searchParams = useSearchParams();
   const parentTaskIdParam = searchParams.get('parentTaskId');
   const projectIdParam = searchParams.get('projectId');
+  const assigneeIdParam = searchParams.get('assigneeId');
   const { user, isLoading: authLoading } = useAuth();
 
   const [parentTask, setParentTask] = useState<{ id: number; title: string } | null>(null);
   const [title, setTitle] = useState('');
-  const [workerId, setWorkerId] = useState('');
+  const [workerId, setWorkerId] = useState(assigneeIdParam || '');
   const [targetDate, setTargetDate] = useState('');
   const [notes, setNotes] = useState('');
   const [projectId, setProjectId] = useState(projectIdParam || '');

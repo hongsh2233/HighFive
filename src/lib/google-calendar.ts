@@ -1,7 +1,10 @@
 import { google } from 'googleapis';
 import { prisma } from './db';
 
-const SCOPES = ['https://www.googleapis.com/auth/calendar.events'];
+const SCOPES = [
+  'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/drive.file',
+];
 
 function getOAuthClient() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -34,7 +37,7 @@ export async function exchangeCodeForTokens(code: string) {
   return tokens;
 }
 
-async function getAuthorizedClient(userId: number) {
+export async function getAuthorizedClient(userId: number) {
   const client = getOAuthClient();
   if (!client) return null;
 

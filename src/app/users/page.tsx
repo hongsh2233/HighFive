@@ -20,6 +20,7 @@ interface User {
   isActive: boolean;
   leaveDate?: string | null;
   affiliation?: string | null;
+  orgUnit?: string | null;
   createdAt: string;
   lastLoginAt?: string;
   managerId?: number | null;
@@ -48,11 +49,13 @@ export default function UsersPage() {
     leaveDate: '',
     affiliation: '',
     managerId: '',
+    orgUnit: '',
     projectIds: [] as number[],
   });
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'orgchart'>('list');
 
   const fetchUsers = async () => {
     try {
@@ -79,7 +82,7 @@ export default function UsersPage() {
     }
   }, [authLoading, currentUser]);
 
-  const resetForm = () => setFormData({ email: '', name: '', role: 'WORKER', leaveDate: '', affiliation: '', managerId: '', projectIds: [] });
+  const resetForm = () => setFormData({ email: '', name: '', role: 'WORKER', leaveDate: '', affiliation: '', managerId: '', orgUnit: '', projectIds: [] });
 
   const openCreateForm = () => {
     setEditingUser(null);
@@ -96,6 +99,7 @@ export default function UsersPage() {
       leaveDate: u.leaveDate ? u.leaveDate.slice(0, 10) : '',
       affiliation: u.affiliation || '',
       managerId: u.managerId ? String(u.managerId) : '',
+      orgUnit: u.orgUnit || '',
       projectIds: u.projectMembers?.map(pm => pm.project.id) || [],
     });
     setShowForm(true);
@@ -112,6 +116,7 @@ export default function UsersPage() {
         leaveDate: formData.leaveDate || null,
         affiliation: formData.affiliation || null,
         managerId: formData.managerId || null,
+        orgUnit: formData.orgUnit || null,
         projectIds: formData.projectIds,
       };
 
@@ -187,11 +192,29 @@ export default function UsersPage() {
             <h1 className={styles.pageTitle}>팀원 관리</h1>
             <p className={styles.pageSubtitle}>팀원을 추가하고 관리합니다.</p>
           </div>
-          {!showForm && (
-            <button onClick={openCreateForm} className={styles.btnPrimary}>
-              + 팀원 추가
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 7, overflow: 'hidden' }}>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                style={{ padding: '7px 14px', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', backgroundColor: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)' }}
+              >
+                목록으로 보기
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('orgchart')}
+                style={{ padding: '7px 14px', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', backgroundColor: viewMode === 'orgchart' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'orgchart' ? '#fff' : 'var(--text-secondary)' }}
+              >
+                조직도로 보기
+              </button>
+            </div>
+            {!showForm && (
+              <button onClick={openCreateForm} className={styles.btnPrimary}>
+                + 팀원 추가
+              </button>
+            )}
+          </div>
         </div>
 
         {message && (
@@ -240,13 +263,17 @@ export default function UsersPage() {
                   <input type="date" value={formData.leaveDate} onChange={e => setFormData(p => ({ ...p, leaveDate: e.target.value }))} className={styles.input} />
                 </div>
                 <div>
-                  <label className={styles.label}>담당 리더</label>
+                  <label className={styles.label}>팀 리더</label>
                   <select value={formData.managerId} onChange={e => setFormData(p => ({ ...p, managerId: e.target.value }))} className={styles.input}>
                     <option value="">지정 안함</option>
                     {leaderCandidates.map(u => (
                       <option key={u.id} value={u.id}>{u.name} ({roleLabel(u.role)})</option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label className={styles.label}>소속 그룹 <span className={styles.labelNote}>(직군/프로젝트팀 등 자유 입력)</span></label>
+                  <input type="text" value={formData.orgUnit} onChange={e => setFormData(p => ({ ...p, orgUnit: e.target.value }))} className={styles.input} placeholder="예: 개발팀, 디자인 직군" />
                 </div>
               </div>
 
@@ -285,12 +312,45 @@ export default function UsersPage() {
           </div>
         )}
 
+        {viewMode === 'orgchart' && (
+          <div className={styles.tableCard} style={{ padding: 20 }}>
+            {(() => {
+              const groups = new Map<string, User[]>();
+              for (const u of users) {
+                const key = u.orgUnit?.trim() || '미지정';
+                if (!groups.has(key)) groups.set(key, []);
+                groups.get(key)!.push(u);
+              }
+              const sortedKeys = Array.from(groups.keys()).sort((a, b) => a === '미지정' ? 1 : b === '미지정' ? -1 : a.localeCompare(b));
+              return sortedKeys.map(key => (
+                <div key={key} style={{ marginBottom: 24 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {key}
+                    <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)' }}>{groups.get(key)!.length}명</span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                    {groups.get(key)!.map(u => (
+                      <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', backgroundColor: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: 20 }}>
+                        <span className={styles.memberAvatar}>{u.name[0]}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600 }}>{u.name}</span>
+                        <span className={styles.roleBadge} data-role={u.role} style={{ fontSize: 10 }}>{roleLabel(u.role)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ));
+            })()}
+            {users.length === 0 && <div className={styles.emptyState}>등록된 팀원이 없습니다.</div>}
+          </div>
+        )}
+
+        {viewMode === 'list' && (
         <div className={styles.tableCard}>
           <div className={styles.tableScroll}>
             <table className={styles.table}>
               <thead>
                 <tr>
-                  {['멤버', '역할', '소속', '담당 리더', '상태', '철수일', '소속 프로젝트', '가입일', ''].map(h => (
+                  {['멤버', '역할', '소속', '팀 리더', '소속 그룹', '상태', '철수일', '소속 프로젝트', '가입일', ''].map(h => (
                     <th key={h} className={styles.th}>{h}</th>
                   ))}
                 </tr>
@@ -312,6 +372,7 @@ export default function UsersPage() {
                     </td>
                     <td className={styles.tdSecondary}>{u.affiliation || '-'}</td>
                     <td className={styles.tdSecondary}>{u.manager?.name || '-'}</td>
+                    <td className={styles.tdSecondary}>{u.orgUnit || '-'}</td>
                     <td className={styles.td}>
                       <span className={u.isActive ? styles.statusActive : styles.statusInactive} data-active={u.isActive ? 'true' : 'false'}>
                         {u.isActive ? '활성' : '비활성'}
@@ -359,6 +420,7 @@ export default function UsersPage() {
             <div className={styles.emptyState}>등록된 팀원이 없습니다.</div>
           )}
         </div>
+        )}
       </div>
 
       <Modal open={!!tempPassword} onClose={() => setTempPassword(null)} title="팀원 생성 완료">

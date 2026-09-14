@@ -11,6 +11,7 @@ import styles from './detail.module.css';
 import { actionLabel } from '@/lib/task-history';
 import Spinner from '@/components/common/Spinner';
 import { useDialog } from '@/components/common/DialogProvider';
+import UserQuickMenu from '@/components/common/UserQuickMenu';
 import { TASK_PRIORITY_LIST, TASK_PRIORITY_TEXT } from '@/lib/constants';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
@@ -806,7 +807,13 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             </div>
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>담당자</span>
-              <span className={styles.infoVal}>{task.worker?.name || '-'}</span>
+              <span className={styles.infoVal}>
+                {task.worker?.name && task.workerId ? (
+                  <UserQuickMenu userId={task.workerId}>{task.worker.name}</UserQuickMenu>
+                ) : (
+                  task.worker?.name || '-'
+                )}
+              </span>
             </div>
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>등록자</span>

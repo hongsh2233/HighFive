@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
-import { callClaude } from '@/lib/ai';
-import { getOrgAnthropicKey, isFeatureEnabled } from '@/lib/ai-settings';
+import { callLLM } from '@/lib/ai';
+import { getFeatureProvider, isFeatureEnabled } from '@/lib/ai-settings';
 
 async function checkAccess(projectId: number, userId: number, role: string) {
   if (role === 'ADMIN') return true;
@@ -61,8 +61,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     const note = await prisma.meetingNote.findFirst({ where: { id: noteId, projectId } });
     if (!note) return errorResponse('회의록을 찾을 수 없습니다.', 404);
 
-    const apiKey = await getOrgAnthropicKey(organizationId);
-    if (!apiKey) return errorResponse('Anthropic API 키가 설정되지 않았습니다.', 400, 'AI_KEY_MISSING');
+    const providerInfo = await getFeatureProvider(organizationId, 'meetingSummary');
+    if (!providerInfo) return errorResponse('API 키가 설정되지 않았습니다.', 400, 'AI_KEY_MISSING');
 
     const prompt = `다음은 회의록 본문이다. 이 내용을 분석해 아래 JSON 형식으로만 응답하라(다른 설명 텍스트 없이 JSON만 출력):
 {
@@ -75,7 +75,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 회의록 본문:
 ${note.content}`;
 
-    const raw = await callClaude(prompt, 1024, apiKey);
+    const raw = await callLLM(providerInfo.provider, prompt, 1024, providerInfo.apiKey);
     const parsed = parseSummaryJson(raw);
 
     const updated = await prisma.meetingNote.update({

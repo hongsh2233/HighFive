@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
 import { requireRole, successResponse, errorResponse } from '@/lib/utils';
 import { computeWorkloadStats } from '@/lib/workload';
-import { callClaude } from '@/lib/ai';
-import { getOrgAnthropicKey, isFeatureEnabled } from '@/lib/ai-settings';
+import { callLLM } from '@/lib/ai';
+import { getFeatureProvider, isFeatureEnabled } from '@/lib/ai-settings';
 
 // POST /api/ai/workload-insight - 담당자별 업무 부하 AI 인사이트 (ADMIN/LEADER)
 export async function POST(req: NextRequest) {
@@ -14,8 +14,8 @@ export async function POST(req: NextRequest) {
       return errorResponse('AI 업무 부하 분석 기능이 비활성화되어 있습니다. 관리자에게 문의하세요.', 403, 'AI_DISABLED');
     }
 
-    const apiKey = await getOrgAnthropicKey(organizationId);
-    if (!apiKey) return errorResponse('Anthropic API 키가 설정되지 않았습니다.', 400, 'AI_KEY_MISSING');
+    const providerInfo = await getFeatureProvider(organizationId, 'workloadInsight');
+    if (!providerInfo) return errorResponse('API 키가 설정되지 않았습니다.', 400, 'AI_KEY_MISSING');
 
     const { searchParams } = new URL(req.url);
     const from = searchParams.get('from') ? new Date(searchParams.get('from')!) : undefined;
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
 ${lines}`;
 
-    const insight = await callClaude(prompt, 512, apiKey);
+    const insight = await callLLM(providerInfo.provider, prompt, 512, providerInfo.apiKey);
 
     return successResponse({ insight }, 'AI 부하 분석 완료');
   } catch (err: any) {

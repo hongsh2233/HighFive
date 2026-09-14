@@ -80,7 +80,8 @@ model User {
   isActive       Boolean   @default(true)
   leaveDate      DateTime?
   affiliation    String?   // 정규 | 프리
-  managerId      Int?      // 결재 라인상의 담당 리더(상급자)
+  managerId      Int?      // 결재 라인상의 팀 리더(상급자)
+  orgUnit        String?   // 조직도 보기용 소속 그룹(직군/프로젝트팀 등 자유 입력)
   totpSecret     String?
   totpEnabled    Boolean   @default(false)
   createdAt      DateTime  @default(now())
@@ -545,10 +546,13 @@ model AiSettings {
   id               Int      @id @default(autoincrement())
   organizationId   Int      @unique
   anthropicKeyEnc  String?  // AES-256-GCM 암호화된 Anthropic API 키
+  openaiKeyEnc     String?  // AES-256-GCM 암호화된 OpenAI API 키
+  geminiKeyEnc     String?  // AES-256-GCM 암호화된 Google Gemini API 키
   weatherKeyEnc    String?  // AES-256-GCM 암호화된 날씨 API 키
   githubTokenEnc   String?  // AES-256-GCM 암호화된 GitHub Personal Access Token
   weatherCity      String?  // 조직 기본 도시 (날씨 인사말용)
   features         Json     @default("{}")  // { taskDraft, taskSummary, aiSearch, weeklyReport, workloadInsight, meetingSummary, meetingToTask, weatherGreeting }
+  featureProviders Json     @default("{}")  // { taskDraft: "ANTHROPIC" | "OPENAI" | "GEMINI", ... } — 값 없으면 등록된 키 중 사용 가능한 것으로 폴백
   updatedAt        DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)

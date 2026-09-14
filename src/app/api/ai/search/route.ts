@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
-import { callClaude } from '@/lib/ai';
-import { getOrgAnthropicKey, isFeatureEnabled } from '@/lib/ai-settings';
+import { callLLM } from '@/lib/ai';
+import { getFeatureProvider, isFeatureEnabled } from '@/lib/ai-settings';
 import { runSearch } from '@/lib/search';
 
 // POST /api/ai/search - 자연어 질의에서 검색 키워드를 추출해 기존 검색을 재활용
@@ -14,8 +14,8 @@ export async function POST(req: NextRequest) {
       return errorResponse('AI 자연어 검색 기능이 비활성화되어 있습니다. 관리자에게 문의하세요.', 403, 'AI_DISABLED');
     }
 
-    const apiKey = await getOrgAnthropicKey(organizationId);
-    if (!apiKey) return errorResponse('Anthropic API 키가 설정되지 않았습니다.', 400, 'AI_KEY_MISSING');
+    const providerInfo = await getFeatureProvider(organizationId, 'aiSearch');
+    if (!providerInfo) return errorResponse('API 키가 설정되지 않았습니다.', 400, 'AI_KEY_MISSING');
 
     const body = await req.json();
     const query: string = (body.query || '').trim();
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
 검색 요청: ${query}`;
 
-    const keyword = (await callClaude(prompt, 64, apiKey)).trim().replace(/^["']|["']$/g, '');
+    const keyword = (await callLLM(providerInfo.provider, prompt, 64, providerInfo.apiKey)).trim().replace(/^["']|["']$/g, '');
     const results = await runSearch(organizationId, keyword || query);
 
     return successResponse({ keyword: keyword || query, ...results }, 'AI 검색 완료');

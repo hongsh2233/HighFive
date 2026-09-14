@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
-import { callClaude } from '@/lib/ai';
-import { getOrgAnthropicKey, isFeatureEnabled } from '@/lib/ai-settings';
+import { callLLM } from '@/lib/ai';
+import { getFeatureProvider, isFeatureEnabled } from '@/lib/ai-settings';
 import { TASK_LABEL_LIST } from '@/lib/constants';
 
 // POST /api/ai/task-draft - 업무 제목만으로 상세내용 초안 + 라벨 추천 생성
@@ -14,8 +14,8 @@ export async function POST(req: NextRequest) {
       return errorResponse('AI 업무 생성 보조 기능이 비활성화되어 있습니다. 관리자에게 문의하세요.', 403, 'AI_DISABLED');
     }
 
-    const apiKey = await getOrgAnthropicKey(organizationId);
-    if (!apiKey) return errorResponse('Anthropic API 키가 설정되지 않았습니다.', 400, 'AI_KEY_MISSING');
+    const providerInfo = await getFeatureProvider(organizationId, 'taskDraft');
+    if (!providerInfo) return errorResponse('API 키가 설정되지 않았습니다.', 400, 'AI_KEY_MISSING');
 
     const body = await req.json();
     const { title, projectContext } = body as { title?: string; projectContext?: string };
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 업무 제목: ${title.trim()}
 ${projectContext ? `프로젝트 컨텍스트: ${projectContext}` : ''}`;
 
-    const raw = await callClaude(prompt, 512, apiKey);
+    const raw = await callLLM(providerInfo.provider, prompt, 512, providerInfo.apiKey);
     let notes = '';
     let suggestedLabels: string[] = [];
     try {

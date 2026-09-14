@@ -1,5 +1,14 @@
 import { prisma } from './db';
 import { decryptSecret } from './crypto';
+import type { LlmProvider } from './ai';
+
+export const LLM_PROVIDERS: LlmProvider[] = ['ANTHROPIC', 'OPENAI', 'GEMINI'];
+
+export const LLM_PROVIDER_LABEL: Record<LlmProvider, string> = {
+  ANTHROPIC: 'Anthropic (Claude)',
+  OPENAI: 'OpenAI (GPT)',
+  GEMINI: 'Google (Gemini)',
+};
 
 export const AI_FEATURE_KEYS = [
   'taskDraft',
@@ -32,6 +41,51 @@ export async function getOrgAnthropicKey(organizationId?: number): Promise<strin
   const settings = await getOrgAiSettings(organizationId);
   if (!settings?.anthropicKeyEnc) return null;
   return decryptSecret(settings.anthropicKeyEnc);
+}
+
+const PROVIDER_KEY_FIELD: Record<LlmProvider, 'anthropicKeyEnc' | 'openaiKeyEnc' | 'geminiKeyEnc'> = {
+  ANTHROPIC: 'anthropicKeyEnc',
+  OPENAI: 'openaiKeyEnc',
+  GEMINI: 'geminiKeyEnc',
+};
+
+export async function getOrgProviderKey(organizationId: number | undefined, provider: LlmProvider): Promise<string | null> {
+  const settings = await getOrgAiSettings(organizationId);
+  const enc = settings?.[PROVIDER_KEY_FIELD[provider]];
+  if (!enc) return null;
+  return decryptSecret(enc);
+}
+
+// 등록된 키가 있는 프로바이더 목록 (등록 순서: Anthropic > OpenAI > Gemini)
+export async function getAvailableProviders(organizationId?: number): Promise<LlmProvider[]> {
+  const settings = await getOrgAiSettings(organizationId);
+  if (!settings) return [];
+  const result: LlmProvider[] = [];
+  if (settings.anthropicKeyEnc) result.push('ANTHROPIC');
+  if (settings.openaiKeyEnc) result.push('OPENAI');
+  if (settings.geminiKeyEnc) result.push('GEMINI');
+  return result;
+}
+
+// 기능별 사용 프로바이더를 조회하고, 없으면 등록된 키 중 첫번째로 폴백한다.
+// 반환값이 null이면 사용 가능한 프로바이더/키가 전혀 없다는 뜻.
+export async function getFeatureProvider(
+  organizationId: number | undefined,
+  featureKey: string
+): Promise<{ provider: LlmProvider; apiKey: string } | null> {
+  const settings = await getOrgAiSettings(organizationId);
+  if (!settings) return null;
+
+  const featureProviders = (settings.featureProviders as Record<string, LlmProvider>) || {};
+  const preferred = featureProviders[featureKey];
+
+  const available = await getAvailableProviders(organizationId);
+  if (available.length === 0) return null;
+
+  const provider = preferred && available.includes(preferred) ? preferred : available[0];
+  const apiKey = await getOrgProviderKey(organizationId, provider);
+  if (!apiKey) return null;
+  return { provider, apiKey };
 }
 
 export async function getOrgGithubToken(organizationId?: number): Promise<string | null> {

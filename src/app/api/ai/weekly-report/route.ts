@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireRole, successResponse, errorResponse } from '@/lib/utils';
-import { callClaude } from '@/lib/ai';
-import { getOrgAnthropicKey, isFeatureEnabled } from '@/lib/ai-settings';
+import { callLLM } from '@/lib/ai';
+import { getFeatureProvider, isFeatureEnabled } from '@/lib/ai-settings';
 import { computeWorkloadStats } from '@/lib/workload';
 
 // POST /api/ai/weekly-report - 이번 주 완료/진행 업무 + 팀별 공수 기반 AI 주간 보고서 (ADMIN/LEADER)
@@ -15,8 +15,8 @@ export async function POST(req: NextRequest) {
       return errorResponse('AI 주간 보고서 기능이 비활성화되어 있습니다. 관리자에게 문의하세요.', 403, 'AI_DISABLED');
     }
 
-    const apiKey = await getOrgAnthropicKey(organizationId);
-    if (!apiKey) return errorResponse('Anthropic API 키가 설정되지 않았습니다.', 400, 'AI_KEY_MISSING');
+    const providerInfo = await getFeatureProvider(organizationId, 'weeklyReport');
+    if (!providerInfo) return errorResponse('API 키가 설정되지 않았습니다.', 400, 'AI_KEY_MISSING');
 
     const body = await req.json().catch(() => ({}));
     const weekStart = body.weekStart ? new Date(body.weekStart) : new Date();
@@ -58,7 +58,7 @@ ${progressLines || '(없음)'}
 [팀별 공수]
 ${hoursLines || '(데이터 없음)'}`;
 
-    const report = await callClaude(prompt, 1024, apiKey);
+    const report = await callLLM(providerInfo.provider, prompt, 1024, providerInfo.apiKey);
 
     return successResponse({ report, weekStart: weekStart.toISOString(), weekEnd: weekEnd.toISOString() }, 'AI 주간 보고서 생성 완료');
   } catch (err: any) {

@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
-import { callClaude } from '@/lib/ai';
-import { getOrgAnthropicKey, isFeatureEnabled } from '@/lib/ai-settings';
+import { callLLM } from '@/lib/ai';
+import { getFeatureProvider, isFeatureEnabled } from '@/lib/ai-settings';
 
 // POST /api/ai/task-summary - 업무 히스토리+댓글 기반 현황 요약
 export async function POST(req: NextRequest) {
@@ -14,8 +14,8 @@ export async function POST(req: NextRequest) {
       return errorResponse('AI 업무 요약 기능이 비활성화되어 있습니다. 관리자에게 문의하세요.', 403, 'AI_DISABLED');
     }
 
-    const apiKey = await getOrgAnthropicKey(organizationId);
-    if (!apiKey) return errorResponse('Anthropic API 키가 설정되지 않았습니다.', 400, 'AI_KEY_MISSING');
+    const providerInfo = await getFeatureProvider(organizationId, 'taskSummary');
+    if (!providerInfo) return errorResponse('API 키가 설정되지 않았습니다.', 400, 'AI_KEY_MISSING');
 
     const body = await req.json();
     const taskId = parseInt(body.taskId);
@@ -69,7 +69,7 @@ ${historyLines || '(없음)'}
 [최근 댓글]
 ${commentLines || '(없음)'}`;
 
-    const summary = await callClaude(prompt, 512, apiKey);
+    const summary = await callLLM(providerInfo.provider, prompt, 512, providerInfo.apiKey);
     return successResponse({ summary }, 'AI 요약 완료');
   } catch (err: any) {
     console.error(err);

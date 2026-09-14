@@ -1,6 +1,28 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireRole, successResponse, errorResponse } from '@/lib/utils';
+import { requireRole, requireAuth, successResponse, errorResponse } from '@/lib/utils';
+
+// GET /api/users/[id] - 프로필 조회 (같은 조직 내 누구나)
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { error, organizationId } = await requireAuth();
+    if (error) return error;
+
+    const { id } = await params;
+    const user = await prisma.user.findFirst({
+      where: { id: parseInt(id), organizationId },
+      select: {
+        id: true, name: true, email: true, role: true, affiliation: true, orgUnit: true,
+        manager: { select: { id: true, name: true } },
+      },
+    });
+    if (!user) return errorResponse('사용자를 찾을 수 없습니다.', 404);
+    return successResponse(user);
+  } catch (err) {
+    console.error(err);
+    return errorResponse('사용자 조회 중 오류가 발생했습니다.', 500);
+  }
+}
 
 // PATCH /api/users/[id]
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -15,7 +37,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const target = await prisma.user.findFirst({ where: { id: userId, organizationId } });
     if (!target) return errorResponse('사용자를 찾을 수 없습니다.', 404);
     const body = await req.json();
-    const { name, email, role, isActive, leaveDate, affiliation, projectIds, managerId } = body;
+    const { name, email, role, isActive, leaveDate, affiliation, projectIds, managerId, orgUnit } = body;
 
     if (managerId !== undefined && managerId !== null && parseInt(managerId) === userId) {
       return errorResponse('본인을 담당 리더로 지정할 수 없습니다.', 400, 'VALID_400');
@@ -35,9 +57,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(isActive !== undefined && { isActive }),
         ...(leaveDate !== undefined && { leaveDate: leaveDate ? new Date(leaveDate) : null }),
         ...(affiliation !== undefined && { affiliation: affiliation || null }),
+        ...(orgUnit !== undefined && { orgUnit: orgUnit || null }),
         ...(managerId !== undefined && { managerId: managerId ? parseInt(managerId) : null }),
       },
-      select: { id: true, email: true, name: true, role: true, isActive: true, leaveDate: true, affiliation: true, managerId: true },
+      select: { id: true, email: true, name: true, role: true, isActive: true, leaveDate: true, affiliation: true, orgUnit: true, managerId: true },
     });
 
     if (projectIds !== undefined) {

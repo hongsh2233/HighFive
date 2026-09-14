@@ -55,6 +55,7 @@ export async function GET(req: NextRequest) {
         isActive: true,
         leaveDate: true,
         affiliation: true,
+        orgUnit: true,
         createdAt: true,
         lastLoginAt: true,
         managerId: true,
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest) {
     if (error) return error;
 
     const body = await req.json();
-    const { email, name, role, leaveDate, affiliation, projectIds, managerId } = body;
+    const { email, name, role, leaveDate, affiliation, projectIds, managerId, orgUnit } = body;
 
     if (!email || !name) {
       return errorResponse('이메일과 이름은 필수입니다.', 400, 'VALID_400');
@@ -116,6 +117,7 @@ export async function POST(req: NextRequest) {
         isActive: true,
         leaveDate: leaveDate ? new Date(leaveDate) : null,
         affiliation: affiliation || null,
+        orgUnit: orgUnit || null,
         managerId: managerId ? parseInt(managerId) : null,
         organizationId,
       },

@@ -1117,3 +1117,31 @@ npx prisma migrate resolve --applied 20260907000000_init
 - `prisma/migrations/20260914000000_add_system_config_plan_meta/migration.sql` 추가.
 - **참고**: 랜딩 페이지 요금 카드는 아직 이 설정값을 실시간으로 읽어오지 않고 하드코딩되어 있음(랜딩은 비로그인 공개 페이지라 별도 공개 API 필요) — 필요 시 다음 라운드에서 연결 가능.
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-14 (13차) — 설정 화면 5종 개선: 구글캘린더/드라이브 진입점, AI 멀티 프로바이더, 조직도 보기, 이름 클릭 퀵메뉴
+
+사용자가 한번에 요청한 5가지 중 4가지 구현(디자인 개편은 검토/제안만, 이번 라운드 구현 범위 아님):
+
+1. **구글 캘린더/드라이브 진입점**: `/settings/integrations`에 "구글 캘린더"(`/settings/calendar-sync`), "구글 드라이브"(`/settings/drive`) 바로가기 카드 추가.
+2. **AI 설정 멀티 프로바이더**: Anthropic 단일 키만 받던 것을 OpenAI(GPT)/Google(Gemini)도 등록 가능하게 확장.
+   - `prisma/schema.prisma`: `AiSettings.openaiKeyEnc`/`geminiKeyEnc`/`featureProviders`(Json, 기능별 사용 프로바이더) 추가.
+   - `src/lib/ai.ts`: `callClaude` 단일 함수를 `callLLM(provider, ...)`로 확장, Anthropic/OpenAI/Gemini 3개 어댑터. `callClaude`는 하위호환 wrapper로 유지.
+   - `src/lib/ai-settings.ts`: `getOrgProviderKey`, `getAvailableProviders`, `getFeatureProvider`(기능별 프로바이더 조회, 없으면 등록된 키로 폴백) 추가.
+   - `/api/settings/ai`, 6개 `/api/ai/*` 라우트 + 미팅 요약 라우트: 전부 provider 인자 방식으로 교체. 에러 문구 "Anthropic API 키를 먼저 설정하세요" → "API 키를 먼저 설정하세요"로 일반화.
+   - `src/app/settings/ai/page.tsx`: OpenAI/Gemini 키 입력 카드 추가, 기능별 카드에 "사용 프로바이더" select 추가.
+   - `package.json`: `openai`, `@google/generative-ai` 의존성 추가.
+3. **구글 드라이브 연동 신규 구현**: 저장(업로드)/목록/바로 열기(webViewLink) 전부 지원.
+   - `src/lib/google-calendar.ts`: OAuth scope에 `drive.file` 추가(기존 연결 사용자는 재연결 1회 필요), `getAuthorizedClient` export.
+   - `src/lib/google-drive.ts`(신규): `uploadFileToDrive`/`listDriveFiles`/`deleteDriveFile` — "High5 첨부파일" 앱 전용 폴더 안에서만 관리.
+   - `src/app/api/drive/files/route.ts`, `[id]/route.ts`(신규): 업로드/목록/삭제 API.
+   - `src/app/settings/drive/page.tsx`(신규): 연동 상태 카드 + 업로드 input + 파일 목록(열기/삭제).
+4. **조직도 보기 + "담당 리더" 라벨 정리**: `User.orgUnit String?`(자유 텍스트, 직군/프로젝트팀 등) 추가.
+   - `/users`: "담당 리더" 라벨을 "팀 리더"로 변경, 폼에 "소속 그룹" 입력 추가, "목록으로 보기"/"조직도로 보기" 토글 — 조직도 뷰는 `orgUnit` 값별로 그룹핑한 카드 나열(트리 시각화 아님, 미지정은 "미지정" 그룹).
+5. **이름 클릭 퀵메뉴** (업무 상세 담당자 이름): `src/components/common/UserQuickMenu.tsx`(신규) — 클릭 시 "업무 요청하기"(`/tasks/create?assigneeId=`로 담당자 프리필)/"프로필 보기"(모달)/"쪽지 보내기"(기존 `UserNotification` 재사용, 새 모델 없음) 팝업. `POST /api/users/[id]/note`, `GET /api/users/[id]`(프로필 조회) 신규.
+6. **프로젝트 목록 화면 재정비 시** 놓쳤던 "상태 관리" 진입점(`/projects/[id]/statuses`, 고아 페이지였음)도 이번 라운드 직전에 복구 완료(별도 커밋).
+
+마이그레이션: `prisma/migrations/20260914010000_add_orgunit_and_ai_providers/migration.sql` (`users.orgUnit`, `ai_settings.openaiKeyEnc/geminiKeyEnc/featureProviders`).
+
+`npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+**보류(구현 안 함, 제안만 전달)**: 좌측 메뉴 + 상단 헤더(ChatGPT/Claude.ai 스타일) 디자인 개편 — 전체 페이지 반응형/컨테이너 값 재조정이 필요해 작업량이 크므로 사용자가 명시적으로 요청할 때 별도 라운드로 진행하기로 함.

@@ -1,0 +1,126 @@
+.loadingPage {
+  padding: var(--space-8);
+}
+
+.container {
+  padding: var(--space-8);
+  max-width: var(--width-narrow);
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-8);
+}
+
+.errorBox {
+  padding: var(--space-3);
+  background-color: var(--danger-light);
+  border: 1px solid var(--color-danger);
+  border-radius: 6px;
+  color: var(--danger);
+  margin-bottom: var(--space-4);
+}
+
+.hintMuted {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  margin-bottom: var(--space-6);
+}
+
+.cardTitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: var(--space-2);
+}
+
+.cardDesc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+  line-height: 1.7;
+}
+
+.btnGenerate {
+  composes: btn btn-primary from global;
+  padding: 8px 18px;
+}
+
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: var(--space-4);
+}
+
+.fileRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.fileIcon {
+  font-size: 18px;
+}
+
+.fileInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.fileName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileMeta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.fileActions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btnOpen {
+  composes: btn btn-secondary from global;
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+.btnDelete {
+  composes: btn btn-secondary from global;
+  padding: 5px 12px;
+  font-size: 12px;
+  color: var(--color-danger);
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 20px 14px;
+  }
+}

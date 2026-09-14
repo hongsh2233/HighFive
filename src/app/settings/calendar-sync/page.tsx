@@ -120,6 +120,7 @@ function CalendarSyncContent() {
         <p className={styles.cardDesc}>
           Google 계정을 연결하면 업무 등록/수정/삭제, 휴가 승인이 실시간으로 내 Google 캘린더에 반영됩니다.
           (구글 → High5 방향 반영은 지원하지 않습니다. Google Calendar에서 직접 수정한 내용은 High5에 반영되지 않습니다.)
+          구글 드라이브 연동(설정 &gt; 구글 드라이브)을 새로 사용하려면 권한 추가를 위해 재연결이 1회 필요합니다.
         </p>
 
         {googleLoading ? (
