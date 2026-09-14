@@ -80,6 +80,7 @@ export default function LandingPage() {
             <span className={styles.navLogoText}>High5</span>
           </div>
           <div className={styles.navActions}>
+            <a href="#pricing" className={styles.navLink}>요금안내</a>
             <button onClick={openDemoModal} className={styles.navLink}>무료 데모 신청</button>
             <Link href="/register" className={styles.navCta}>무료로 시작하기</Link>
           </div>
@@ -208,6 +209,39 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section id="pricing" className={styles.pricing}>
+          <div className={styles.pricingInner}>
+            <h2 className={styles.pricingTitle}>합리적인 요금제</h2>
+            <p className={styles.pricingSubtitle}>오픈 기념으로 모든 플랜을 무료로 사용해보세요.</p>
+            <div className={styles.pricingGrid}>
+              <div className={styles.pricingCard}>
+                <span className={styles.pricingBadge}>🎉 오픈 기념 행사중</span>
+                <h3 className={styles.pricingPlanName}>베이직</h3>
+                <p className={styles.pricingPlanDesc}>소규모 팀의 업무·프로젝트 관리에 필요한 핵심 기능</p>
+                <div className={styles.pricingPriceRow}>
+                  <span className={styles.pricingOriginal}>9,900원</span>
+                  <span className={styles.pricingCurrent}>0원</span>
+                  <span className={styles.pricingUnit}>/ 인 / 월</span>
+                </div>
+                <Link href="/register" className={styles.btnPrimary}>무료로 시작하기</Link>
+              </div>
+
+              <div className={`${styles.pricingCard} ${styles.pricingCardHighlight}`}>
+                <span className={styles.pricingBadge}>🎉 오픈 기념 행사중</span>
+                <h3 className={styles.pricingPlanName}>프로</h3>
+                <p className={styles.pricingPlanDesc}>AI 자동화·외부 연동까지 필요한 성장하는 팀을 위한 플랜</p>
+                <div className={styles.pricingPriceRow}>
+                  <span className={styles.pricingOriginal}>29,800원</span>
+                  <span className={styles.pricingCurrent}>0원</span>
+                  <span className={styles.pricingUnit}>/ 인 / 월</span>
+                </div>
+                <Link href="/register" className={styles.btnPrimary}>무료로 시작하기</Link>
+              </div>
+            </div>
+            <p className={styles.pricingNote}>* 행사 기간 및 조건은 별도 안내 없이 변경될 수 있습니다.</p>
           </div>
         </section>
 

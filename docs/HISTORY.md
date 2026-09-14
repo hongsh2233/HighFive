@@ -1095,3 +1095,13 @@ npx prisma migrate resolve --applied 20260907000000_init
 - `src/app/api/calendar/google-events/route.ts` 신규 API — 로그인한 사용자가 구글 캘린더 연동 중이면 해당 월의 일정을 날짜별로 반환, 연동 안 되어 있으면 `connected: false`.
 - `src/app/calendar/page.tsx`: 구글 캘린더 일정을 조회해 날짜 셀에 📅 배지로 함께 표시. 연동되어 있으면 헤더에 "📅 구글 캘린더 연동됨" 배지 노출. 날짜를 클릭하면 우측 패널에 그 날짜의 업무 목록(담당자 포함)·휴가·구글 일정을 함께 보여주도록 개편(기존엔 클릭 상호작용이 전혀 없었음).
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공. 이 화면도 로그인 세션이 필요해 Playwright 렌더링 확인은 생략(구글 연동은 실제 OAuth 토큰이 있어야 해서 이 환경에서 직접 검증 불가).
+
+## 2026-09-14 (11차) — 랜딩 페이지에 요금 안내 섹션 추가 (오픈 기념 0원 행사)
+
+랜딩 페이지에 요금제 섹션이 아예 없어서 신규 추가.
+
+- `src/app/page.tsx`: "합리적인 요금제" 섹션(`#pricing`) 신규 — 베이직(9,900원/인/월), 프로(29,800원/인/월) 2개 카드. 각 카드에 정가를 취소선으로 표시하고 그 옆에 "0원"을 크게 강조, "🎉 오픈 기념 행사중" 배지 부착.
+- 상단 네비게이션에 "요금안내" 링크 추가(`#pricing`으로 스크롤).
+- `src/app/landing.module.css`: `.pricing*` 스타일 신규, `.navLink`에 `text-decoration: none` 추가(앵커 태그에도 재사용).
+- Playwright 스크린샷으로 확인 후 반영.
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
