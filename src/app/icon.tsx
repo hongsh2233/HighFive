@@ -13,14 +13,23 @@ export default function Icon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#142B2B',
-          borderRadius: 7,
-          color: '#FF6B4A',
-          fontSize: 22,
-          fontWeight: 700,
+          position: 'relative',
+          background: 'transparent',
         }}
       >
-        5
+        <span style={{ color: '#FF6B4A', fontSize: 26, fontWeight: 700 }}>5</span>
+        <div
+          style={{
+            display: 'flex',
+            position: 'absolute',
+            top: 3,
+            right: 2,
+            width: 8,
+            height: 8,
+            background: '#FFB238',
+            clipPath: 'polygon(0% 100%, 100% 0%, 70% 0%, 0% 80%)',
+          }}
+        />
       </div>
     ),
     { ...size }
