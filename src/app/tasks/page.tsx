@@ -113,6 +113,7 @@ function TaskListContent() {
   const [sortBy, setSortBy] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
   const [viewTab, setViewTab] = useState<'all' | 'mine' | 'mentioned'>('all');
+  const [hideCompleted, setHideCompleted] = useState(true);
   const [mentionedTaskIds, setMentionedTaskIds] = useState<number[] | null>(null);
   const currentUserIdForView = parseInt((user as any)?.id || '0');
 
@@ -202,6 +203,12 @@ function TaskListContent() {
   } else if (viewTab === 'mentioned') {
     const ids = new Set(mentionedTaskIds || []);
     filteredTasks = filteredTasks.filter((task: any) => ids.has(task.id));
+  }
+  if (hideCompleted) {
+    filteredTasks = filteredTasks.filter((task: any) => {
+      const doneCodes = new Set(getStatuses(task.projectId).filter((s) => s.isDone).map((s) => s.code));
+      return !doneCodes.has(task.status);
+    });
   }
   if (selectedPriority) {
     filteredTasks = filteredTasks.filter((task: any) => (task.priority || 'NORMAL') === selectedPriority);
@@ -356,6 +363,15 @@ function TaskListContent() {
             </option>
           ))}
         </select>
+
+        <label className={styles.hideCompletedLabel}>
+          <input
+            type="checkbox"
+            checked={hideCompleted}
+            onChange={(e) => setHideCompleted(e.target.checked)}
+          />
+          완료 업무 제외
+        </label>
 
         <select
           value={selectedWorker}

@@ -1065,3 +1065,9 @@ npx prisma migrate resolve --applied 20260907000000_init
 - 히어로 전용으로 만들었던 `.btnSecondaryHero`(반투명 흰 테두리 버튼) 삭제, 다시 표준 `.btnSecondary` 사용.
 - Playwright 스크린샷으로 확인 후 반영.
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-14 (7차) — 업무 목록에 "완료 업무 제외" 체크박스 추가(기본 체크)
+
+업무 목록 상단 필터에 "완료 업무 제외" 체크박스 추가, 기본값 체크됨. 체크 시 각 업무가 속한 프로젝트의 상태 정의를 참조해 `isDone`인 상태의 업무를 목록에서 제외.
+- `src/app/tasks/page.tsx`: `hideCompleted` 상태(기본 true) 추가, 상태 필터 select 옆에 체크박스 UI 배치, 필터 체인에 반영.
+- `npx tsc --noEmit` 오류 0개.
