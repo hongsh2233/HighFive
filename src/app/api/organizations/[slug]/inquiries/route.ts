@@ -19,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     }
 
     const body = await req.json();
-    const { name, contact, type, content } = body;
+    const { name, contact, type, content, source } = body;
 
     if (!name || !contact || !type || !content) {
       return errorResponse('모든 필드를 입력해주세요.', 400);
@@ -32,6 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
         contact,
         type,
         content,
+        ...(source ? { source: String(source).slice(0, 100) } : {}),
       },
     });
 
