@@ -14,7 +14,7 @@ export default function Icon() {
           alignItems: 'center',
           justifyContent: 'center',
           position: 'relative',
-          background: 'transparent',
+          background: '#FFFFFF',
         }}
       >
         <span style={{ color: '#FF6B4A', fontSize: 26, fontWeight: 700 }}>5</span>
