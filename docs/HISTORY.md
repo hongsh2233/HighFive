@@ -1023,3 +1023,11 @@ npx prisma migrate resolve --applied 20260907000000_init
 - 기존 `src/app/icon.tsx`(동적 PNG 아이콘, 최신 브라우저의 `<link rel="icon" type="image/png">`용)는 그대로 유지 — 두 방식을 병행.
 - **참고**: 그래도 안 보이면 브라우저가 이전 favicon.ico를 디스크에 캐싱해둔 상태일 수 있음 — 시크릿 창으로 확인하거나, 사이트 데이터 삭제 후 재접속 권장.
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-14 (2차) — 로그인/랜딩 로고 아이콘의 검은 배경 박스 제거
+
+로그인 화면 배포 후 스크린샷 확인 — 아이콘에 씌운 짙은 잉크색 사각 배경이 흰 패널 위에서 붕 떠 보여 디자인 밸런스가 깨진다는 피드백. 실제로 `.brandPanel`/`.nav`는 모두 흰 배경(`background: none` 또는 `--bg-surface: #FFFFFF`)이라, 심볼 자체가 이미 배경 없이도 완결된 형태(코랄 5 + 골드 궤적)인데 불필요하게 검은 박스를 덧씌운 것이 원인.
+
+- `src/app/login/login.module.css`의 `.logoIcon`, `src/app/landing.module.css`의 `.navLogoIcon`에서 배경색/모서리 둥글기를 제거하고 SVG를 그 자리에 꽉 채워 흰 패널 위에 심볼만 자연스럽게 놓이도록 수정.
+- 브라우저 탭 파비콘(`icon.tsx`, `favicon.ico`)은 작은 크기에서 배경이 있어야 눈에 잘 띄므로 그대로 유지(이번 변경 대상 아님).
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
