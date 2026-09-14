@@ -290,7 +290,7 @@ export default function UsersPage() {
             <table className={styles.table}>
               <thead>
                 <tr>
-                  {['이름', '이메일', '역할', '소속', '담당 리더', '상태', '철수일', '소속 프로젝트', '가입일', ''].map(h => (
+                  {['멤버', '역할', '소속', '담당 리더', '상태', '철수일', '소속 프로젝트', '가입일', ''].map(h => (
                     <th key={h} className={styles.th}>{h}</th>
                   ))}
                 </tr>
@@ -298,8 +298,15 @@ export default function UsersPage() {
               <tbody>
                 {users.map(u => (
                   <tr key={u.id} className={styles.tr}>
-                    <td className={styles.tdName}>{u.name}</td>
-                    <td className={styles.tdSecondary}>{u.email}</td>
+                    <td className={styles.tdName}>
+                      <div className={styles.memberCell}>
+                        <span className={styles.memberAvatar}>{u.name[0]}</span>
+                        <div className={styles.memberCellText}>
+                          <span className={styles.memberCellName}>{u.name}</span>
+                          <span className={styles.memberCellEmail}>{u.email}</span>
+                        </div>
+                      </div>
+                    </td>
                     <td className={styles.td}>
                       <span className={styles.roleBadge} data-role={u.role}>{roleLabel(u.role)}</span>
                     </td>

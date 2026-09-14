@@ -17,12 +17,12 @@ interface IntegrationConfig {
   updatedAt: string | null;
 }
 
-const CHANNEL_META: Record<Channel, { label: string; fields: ('webhookUrl' | 'botToken' | 'chatId')[]; hint: string }> = {
-  SLACK: { label: 'Slack', fields: ['webhookUrl'], hint: 'Slack Incoming Webhook URL을 입력하세요.' },
-  JANDI: { label: '잔디', fields: ['webhookUrl'], hint: '잔디 Incoming Webhook URL을 입력하세요.' },
-  TEAMS: { label: 'Microsoft Teams', fields: ['webhookUrl'], hint: 'Teams 채널의 Incoming Webhook URL을 입력하세요.' },
-  TELEGRAM: { label: '텔레그램', fields: ['botToken', 'chatId'], hint: '봇 토큰과 메시지를 받을 채팅방(chat id)을 입력하세요.' },
-  KAKAO: { label: '카카오톡', fields: ['webhookUrl'], hint: '카카오톡 알림 발송용 Webhook URL을 입력하세요.' },
+const CHANNEL_META: Record<Channel, { label: string; fields: ('webhookUrl' | 'botToken' | 'chatId')[]; hint: string; icon: string; iconBg: string }> = {
+  SLACK: { label: 'Slack', fields: ['webhookUrl'], hint: 'Slack Incoming Webhook URL을 입력하세요.', icon: '💬', iconBg: '#4A154B' },
+  JANDI: { label: '잔디', fields: ['webhookUrl'], hint: '잔디 Incoming Webhook URL을 입력하세요.', icon: '🟢', iconBg: '#00C4B3' },
+  TEAMS: { label: 'Microsoft Teams', fields: ['webhookUrl'], hint: 'Teams 채널의 Incoming Webhook URL을 입력하세요.', icon: '👥', iconBg: '#5B5FC7' },
+  TELEGRAM: { label: '텔레그램', fields: ['botToken', 'chatId'], hint: '봇 토큰과 메시지를 받을 채팅방(chat id)을 입력하세요.', icon: '✈️', iconBg: '#229ED9' },
+  KAKAO: { label: '카카오톡', fields: ['webhookUrl'], hint: '카카오톡 알림 발송용 Webhook URL을 입력하세요.', icon: '💛', iconBg: '#FEE500' },
 };
 
 const FIELD_LABEL: Record<string, string> = {
@@ -38,6 +38,7 @@ export default function IntegrationsSettingsPage() {
   const [saving, setSaving] = useState<Channel | null>(null);
   const [testing, setTesting] = useState<Channel | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [expanded, setExpanded] = useState<Channel | null>(null);
 
   const fetchConfigs = async () => {
     try {
@@ -117,52 +118,66 @@ export default function IntegrationsSettingsPage() {
           </div>
         )}
 
-        <div className={styles.list}>
+        <div className={styles.grid}>
           {configs.map((config) => {
             const meta = CHANNEL_META[config.channel];
+            const isOpen = expanded === config.channel;
             return (
-              <div key={config.channel} className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <div>
+              <div key={config.channel} className={`${styles.card} ${isOpen ? styles.cardOpen : ''}`}>
+                <div className={styles.cardTop}>
+                  <span className={styles.cardIcon} style={{ background: meta.iconBg }}>{meta.icon}</span>
+                  <div className={styles.cardTopText}>
                     <h2 className={styles.cardTitle}>{meta.label}</h2>
                     <p className={styles.cardHint}>{meta.hint}</p>
                   </div>
-                  <label className={styles.enableToggle}>
-                    <input
-                      type="checkbox"
-                      checked={config.isEnabled}
-                      onChange={(e) => updateField(config.channel, 'isEnabled', e.target.checked)}
-                    />
-                    사용
-                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setExpanded(isOpen ? null : config.channel)}
+                    className={config.isEnabled ? styles.btnConnected : styles.btnConnect}
+                  >
+                    {config.isEnabled ? '연동됨' : '연동하기'}
+                  </button>
                 </div>
 
-                <div className={styles.fieldGrid}>
-                  {meta.fields.map((field) => (
-                    <div key={field}>
-                      <label className={styles.label}>{FIELD_LABEL[field]}</label>
+                {isOpen && (
+                  <div className={styles.cardExpanded}>
+                    <label className={styles.enableToggle}>
                       <input
-                        type="text"
-                        value={(config as any)[field] || ''}
-                        onChange={(e) => updateField(config.channel, field, e.target.value)}
-                        placeholder={FIELD_LABEL[field]}
-                        className={styles.input}
+                        type="checkbox"
+                        checked={config.isEnabled}
+                        onChange={(e) => updateField(config.channel, 'isEnabled', e.target.checked)}
                       />
-                    </div>
-                  ))}
-                </div>
+                      이 채널 사용
+                    </label>
 
-                <div className={styles.cardActions}>
-                  <button onClick={() => handleSave(config)} disabled={saving === config.channel} className={styles.btnSave}>
-                    {saving === config.channel ? '저장 중...' : '저장'}
-                  </button>
-                  <button onClick={() => handleTest(config)} disabled={testing === config.channel} className={styles.btnTest}>
-                    {testing === config.channel ? '발송 중...' : '테스트 발송'}
-                  </button>
-                  {config.updatedAt && (
-                    <span className={styles.updatedAt}>최근 저장: {new Date(config.updatedAt).toLocaleString('ko-KR')}</span>
-                  )}
-                </div>
+                    <div className={styles.fieldGrid}>
+                      {meta.fields.map((field) => (
+                        <div key={field}>
+                          <label className={styles.label}>{FIELD_LABEL[field]}</label>
+                          <input
+                            type="text"
+                            value={(config as any)[field] || ''}
+                            onChange={(e) => updateField(config.channel, field, e.target.value)}
+                            placeholder={FIELD_LABEL[field]}
+                            className={styles.input}
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className={styles.cardActions}>
+                      <button onClick={() => handleSave(config)} disabled={saving === config.channel} className={styles.btnSave}>
+                        {saving === config.channel ? '저장 중...' : '저장'}
+                      </button>
+                      <button onClick={() => handleTest(config)} disabled={testing === config.channel} className={styles.btnTest}>
+                        {testing === config.channel ? '발송 중...' : '테스트 발송'}
+                      </button>
+                      {config.updatedAt && (
+                        <span className={styles.updatedAt}>최근 저장: {new Date(config.updatedAt).toLocaleString('ko-KR')}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

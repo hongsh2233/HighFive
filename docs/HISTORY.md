@@ -1078,3 +1078,11 @@ npx prisma migrate resolve --applied 20260907000000_init
 - `src/app/landing.module.css`: `.heroGlow` 신규(블러 처리된 파스텔 블루→라벤더→핑크 그라디언트, 목업보다 크게 배치해 가장자리로 살짝 번지도록). `.mockWindow`에 `z-index`를 줘서 도형 위에 목업이 뜨도록 함.
 - Playwright 스크린샷으로 확인 후 반영.
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-14 (9차) — 외부연동/팀원관리 화면을 잔디 스타일 참고해 개편
+
+사용자가 공유한 잔디 커넥트(연동 목록 그리드+상세 연동 화면)와 멤버 관리(사진+이름/이메일 결합 셀 구조의 테이블) 스크린샷을 참고해 반영. 이 두 화면은 로그인 세션과 실제 DB 데이터가 필요해 이 환경에서 직접 렌더링 확인은 못 했고, `tsc`/`next build`로만 검증함 — 배포 후 실제 화면 확인 필요.
+
+- `src/app/settings/integrations/page.tsx`, `integrations.module.css`: 세로로 나열되던 연동 채널 카드를 아이콘+이름+설명+"연동하기/연동됨" 버튼이 있는 그리드 카드로 변경. 카드를 클릭하면 그 자리에서 확장되어(아코디언) 기존의 Webhook URL/토큰 입력 폼이 나타나는 구조로 개편(별도 페이지 이동 없이 한 화면에서 처리).
+- `src/app/users/page.tsx`, `users.module.css`: 테이블의 "이름"/"이메일" 두 컬럼을 하나의 "멤버" 컬럼으로 합치고, 이니셜 아바타 원 + 이름(굵게)/이메일(회색, 작은 글씨) 2줄 구조로 변경(잔디 멤버 관리 테이블 참고).
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공(로그인 필요 화면이라 Playwright 렌더링 확인은 생략).
