@@ -1086,3 +1086,12 @@ npx prisma migrate resolve --applied 20260907000000_init
 - `src/app/settings/integrations/page.tsx`, `integrations.module.css`: 세로로 나열되던 연동 채널 카드를 아이콘+이름+설명+"연동하기/연동됨" 버튼이 있는 그리드 카드로 변경. 카드를 클릭하면 그 자리에서 확장되어(아코디언) 기존의 Webhook URL/토큰 입력 폼이 나타나는 구조로 개편(별도 페이지 이동 없이 한 화면에서 처리).
 - `src/app/users/page.tsx`, `users.module.css`: 테이블의 "이름"/"이메일" 두 컬럼을 하나의 "멤버" 컬럼으로 합치고, 이니셜 아바타 원 + 이름(굵게)/이메일(회색, 작은 글씨) 2줄 구조로 변경(잔디 멤버 관리 테이블 참고).
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공(로그인 필요 화면이라 Playwright 렌더링 확인은 생략).
+
+## 2026-09-14 (10차) — 캘린더 기능 보완: 날짜 클릭 시 상세 패널 + 구글 캘린더 일정 표시
+
+잔디 캘린더 화면(날짜 클릭 시 우측에 그 날의 업무 목록이 뜨는 구조) 참고해 반영. "구글이랑 연동되면 구글 캘린더도 표시되게 해달라"는 요청에 따라 기존에 하이파이브→구글 방향(업무/휴가를 구글 캘린더에 자동 등록)으로만 있던 연동에, 구글 캘린더의 일정을 읽어와 우리 캘린더에 함께 보여주는 반대 방향 조회 기능을 신규 추가.
+
+- `src/lib/google-calendar.ts`: `listGoogleCalendarEvents(userId, timeMin, timeMax)` 신규 — 연동된 사용자의 구글 캘린더 일정을 기간 내에서 조회.
+- `src/app/api/calendar/google-events/route.ts` 신규 API — 로그인한 사용자가 구글 캘린더 연동 중이면 해당 월의 일정을 날짜별로 반환, 연동 안 되어 있으면 `connected: false`.
+- `src/app/calendar/page.tsx`: 구글 캘린더 일정을 조회해 날짜 셀에 📅 배지로 함께 표시. 연동되어 있으면 헤더에 "📅 구글 캘린더 연동됨" 배지 노출. 날짜를 클릭하면 우측 패널에 그 날짜의 업무 목록(담당자 포함)·휴가·구글 일정을 함께 보여주도록 개편(기존엔 클릭 상호작용이 전혀 없었음).
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공. 이 화면도 로그인 세션이 필요해 Playwright 렌더링 확인은 생략(구글 연동은 실제 OAuth 토큰이 있어야 해서 이 환경에서 직접 검증 불가).

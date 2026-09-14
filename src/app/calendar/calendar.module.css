@@ -12,7 +12,21 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
   margin-bottom: var(--space-8);
+}
+
+.googleBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1A73E8;
+  background: #E8F0FE;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
 }
 
 .title {
@@ -111,11 +125,111 @@
   color: var(--color-gray-600);
 }
 
+.calendarLayout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: var(--space-4);
+  align-items: start;
+}
+
 .calendarCard {
   background-color: var(--bg-surface);
   border-radius: var(--radius-card);
   border: 1px solid var(--border);
   padding: var(--space-4);
+}
+
+.dayPanel {
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  padding: var(--space-5);
+  max-height: 620px;
+  overflow-y: auto;
+  position: sticky;
+  top: var(--space-4);
+}
+
+.dayPanelHeader {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.dayPanelCount {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: var(--space-4);
+}
+
+.dayPanelSection {
+  margin-bottom: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dayPanelEmpty {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.dayPanelLeave {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--success);
+}
+
+.dayPanelGoogleEvent {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1A73E8;
+}
+
+.dayPanelTask {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.dayPanelTaskDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.dayPanelTaskBody {
+  min-width: 0;
+}
+
+.dayPanelTaskTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dayPanelTaskMeta {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.googleEventItem {
+  font-size: 11px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: 3px;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background-color: #E8F0FE;
+  color: #1A73E8;
+  font-weight: 600;
 }
 
 .dayHeaderGrid {
@@ -145,6 +259,12 @@
   border: 1px solid var(--border);
   border-radius: 4px;
   background-color: var(--bg-surface);
+  cursor: pointer;
+}
+
+.day[data-selected="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 
 .day[data-current-month="false"] {
@@ -188,6 +308,17 @@
   background-color: var(--success-light);
   color: var(--success);
   font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .calendarLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .dayPanel {
+    position: static;
+    max-height: none;
+  }
 }
 
 @media (max-width: 640px) {

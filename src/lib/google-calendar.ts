@@ -80,6 +80,45 @@ interface UpsertEventParams {
   description?: string;
 }
 
+export interface GoogleCalendarListEvent {
+  id: string;
+  title: string;
+  date: string; // YYYY-MM-DD (종일 일정 기준 시작일)
+}
+
+// 연동된 사용자의 구글 캘린더 일정을 기간 내에서 읽어와 날짜별로 반환 (하이파이브 → 구글 방향과 반대인 조회 전용 경로)
+export async function listGoogleCalendarEvents(userId: number, timeMin: Date, timeMax: Date): Promise<GoogleCalendarListEvent[]> {
+  try {
+    const client = await getAuthorizedClient(userId);
+    if (!client) return [];
+
+    const conn = await prisma.googleCalendarConnection.findUnique({ where: { userId } });
+    if (!conn) return [];
+
+    const calendar = google.calendar({ version: 'v3', auth: client });
+    const res = await calendar.events.list({
+      calendarId: conn.calendarId,
+      timeMin: timeMin.toISOString(),
+      timeMax: timeMax.toISOString(),
+      singleEvents: true,
+      orderBy: 'startTime',
+      maxResults: 250,
+    });
+
+    return (res.data.items || [])
+      .filter((ev) => ev.id && ev.summary)
+      .map((ev) => ({
+        id: ev.id!,
+        title: ev.summary!,
+        date: (ev.start?.date || ev.start?.dateTime || '').slice(0, 10),
+      }))
+      .filter((ev) => ev.date);
+  } catch (e) {
+    console.error('[google-calendar] list failed:', e);
+    return [];
+  }
+}
+
 export async function upsertGoogleCalendarEvent(params: UpsertEventParams): Promise<void> {
   try {
     const client = await getAuthorizedClient(params.userId);

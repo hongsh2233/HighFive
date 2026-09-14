@@ -22,12 +22,17 @@ interface CalendarData {
   month: number;
 }
 
+interface GoogleEvent { id: string; title: string; }
+
 export default function CalendarPage() {
   const { isLoading: authLoading } = useAuth();
   const [data, setData] = useState<CalendarData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [aiNotice, setAiNotice] = useState(false);
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [googleEventsByDate, setGoogleEventsByDate] = useState<{ [key: string]: GoogleEvent[] }>({});
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const handleAiSummary = () => {
     setAiNotice(true);
@@ -36,10 +41,19 @@ export default function CalendarPage() {
   useEffect(() => {
     const fetchCalendarData = async () => {
       try {
-        const response = await apiClient.get<{ data: CalendarData }>(
-          `/tasks/calendar?year=${currentDate.getFullYear()}&month=${currentDate.getMonth() + 1}`
-        );
-        setData(response.data.data);
+        const [tasksRes, googleRes] = await Promise.all([
+          apiClient.get<{ data: CalendarData }>(
+            `/tasks/calendar?year=${currentDate.getFullYear()}&month=${currentDate.getMonth() + 1}`
+          ),
+          apiClient.get<{ data: { connected: boolean; eventsByDate: { [key: string]: GoogleEvent[] } } }>(
+            `/calendar/google-events?year=${currentDate.getFullYear()}&month=${currentDate.getMonth() + 1}`
+          ).catch(() => null),
+        ]);
+        setData(tasksRes.data.data);
+        if (googleRes) {
+          setGoogleConnected(googleRes.data.data.connected);
+          setGoogleEventsByDate(googleRes.data.data.eventsByDate || {});
+        }
       } catch (err) {
         console.error('Failed to fetch calendar data:', err);
       } finally {
@@ -51,6 +65,12 @@ export default function CalendarPage() {
       fetchCalendarData();
     }
   }, [currentDate, authLoading]);
+
+  const todayKey = new Date().toISOString().split('T')[0];
+  const activeDateKey = selectedDate || todayKey;
+  const activeDayTasks = data?.tasksByDate[activeDateKey] || [];
+  const activeDayLeaves = data?.leavesByDate[activeDateKey] || [];
+  const activeDayGoogleEvents = googleEventsByDate[activeDateKey] || [];
 
   if (authLoading || loading) {
     return <div className={styles.loadingPage}><Spinner /></div>;
@@ -103,6 +123,9 @@ export default function CalendarPage() {
             ✨ 이번 주 AI 요약
           </button>
         </div>
+        {googleConnected && (
+          <span className={styles.googleBadge}>📅 구글 캘린더 연동됨</span>
+        )}
       </div>
 
       {aiNotice && (
@@ -149,60 +172,118 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* 캘린더 */}
-      <div className={styles.calendarCard}>
-        <div className={styles.dayHeaderGrid}>
-          {weekDays.map((day) => (
-            <div key={day} className={styles.dayLabel}>
-              {day}
-            </div>
-          ))}
+      {/* 캘린더 + 선택한 날짜 상세 */}
+      <div className={styles.calendarLayout}>
+        <div className={styles.calendarCard}>
+          <div className={styles.dayHeaderGrid}>
+            {weekDays.map((day) => (
+              <div key={day} className={styles.dayLabel}>
+                {day}
+              </div>
+            ))}
+          </div>
+
+          <div className={styles.calendarGrid}>
+            {daysArray.map((date, idx) => {
+              const dateKey = date.toISOString().split('T')[0];
+              const dayTasks = data?.tasksByDate[dateKey] || [];
+              const dayLeaves = data?.leavesByDate[dateKey] || [];
+              const dayGoogleEvents = googleEventsByDate[dateKey] || [];
+              const isCurrentMonth = date.getMonth() === currentDate.getMonth();
+              const isSelected = dateKey === activeDateKey;
+
+              return (
+                <div
+                  key={idx}
+                  className={styles.day}
+                  data-current-month={isCurrentMonth ? 'true' : 'false'}
+                  data-has-events={(dayTasks.length > 0 || dayLeaves.length > 0 || dayGoogleEvents.length > 0) ? 'true' : 'false'}
+                  data-selected={isSelected ? 'true' : 'false'}
+                  onClick={() => setSelectedDate(dateKey)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className={styles.dayNumber}>
+                    {date.getDate()}
+                  </div>
+                  <div>
+                    {dayLeaves.map((name) => (
+                      <div key={name} className={styles.leaveItem} title={`${name} 휴가`}>
+                        🌴 {name}
+                      </div>
+                    ))}
+                    {dayGoogleEvents.slice(0, 1).map((ev) => (
+                      <div key={ev.id} className={styles.googleEventItem} title={ev.title}>
+                        📅 {ev.title}
+                      </div>
+                    ))}
+                    {dayTasks.slice(0, 2).map((task) => (
+                      <div
+                        key={task.id}
+                        className={styles.taskItem}
+                        style={{
+                          backgroundColor: statusColors[task.status] || 'var(--color-primary-light)',
+                        }}
+                        title={task.title}
+                      >
+                        {task.title}
+                      </div>
+                    ))}
+                    {dayTasks.length > 2 && (
+                      <div className={styles.moreCount}>
+                        +{dayTasks.length - 2}개
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        <div className={styles.calendarGrid}>
-          {daysArray.map((date, idx) => {
-            const dateKey = date.toISOString().split('T')[0];
-            const dayTasks = data?.tasksByDate[dateKey] || [];
-            const dayLeaves = data?.leavesByDate[dateKey] || [];
-            const isCurrentMonth = date.getMonth() === currentDate.getMonth();
+        <div className={styles.dayPanel}>
+          <div className={styles.dayPanelHeader}>
+            {new Date(activeDateKey).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
+          </div>
+          <div className={styles.dayPanelCount}>
+            해당 일의 업무 {activeDayTasks.length}건
+            {googleConnected && activeDayGoogleEvents.length > 0 && ` · 구글 일정 ${activeDayGoogleEvents.length}건`}
+          </div>
 
-            return (
-              <div
-                key={idx}
-                className={styles.day}
-                data-current-month={isCurrentMonth ? 'true' : 'false'}
-                data-has-events={(dayTasks.length > 0 || dayLeaves.length > 0) ? 'true' : 'false'}
-              >
-                <div className={styles.dayNumber}>
-                  {date.getDate()}
+          {activeDayLeaves.length > 0 && (
+            <div className={styles.dayPanelSection}>
+              {activeDayLeaves.map((name) => (
+                <div key={name} className={styles.dayPanelLeave}>🌴 {name} 휴가</div>
+              ))}
+            </div>
+          )}
+
+          {activeDayGoogleEvents.length > 0 && (
+            <div className={styles.dayPanelSection}>
+              {activeDayGoogleEvents.map((ev) => (
+                <div key={ev.id} className={styles.dayPanelGoogleEvent}>📅 {ev.title}</div>
+              ))}
+            </div>
+          )}
+
+          <div className={styles.dayPanelSection}>
+            {activeDayTasks.length === 0 ? (
+              <p className={styles.dayPanelEmpty}>이 날짜에 등록된 업무가 없습니다.</p>
+            ) : (
+              activeDayTasks.map((task: any) => (
+                <div key={task.id} className={styles.dayPanelTask}>
+                  <span
+                    className={styles.dayPanelTaskDot}
+                    style={{ backgroundColor: statusColors[task.status] || 'var(--color-primary-light)' }}
+                  />
+                  <div className={styles.dayPanelTaskBody}>
+                    <div className={styles.dayPanelTaskTitle}>{task.title}</div>
+                    <div className={styles.dayPanelTaskMeta}>{task.worker?.name || '미배정'}</div>
+                  </div>
                 </div>
-                <div>
-                  {dayLeaves.map((name) => (
-                    <div key={name} className={styles.leaveItem} title={`${name} 휴가`}>
-                      🌴 {name}
-                    </div>
-                  ))}
-                  {dayTasks.slice(0, 2).map((task) => (
-                    <div
-                      key={task.id}
-                      className={styles.taskItem}
-                      style={{
-                        backgroundColor: statusColors[task.status] || 'var(--color-primary-light)',
-                      }}
-                      title={task.title}
-                    >
-                      {task.title}
-                    </div>
-                  ))}
-                  {dayTasks.length > 2 && (
-                    <div className={styles.moreCount}>
-                      +{dayTasks.length - 2}개
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
