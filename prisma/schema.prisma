@@ -508,6 +508,7 @@ model Inquiry {
   contact         String
   type            String
   content         String   @db.Text
+  source          String?  // 문의 출처 사이트 (예: ExaWave, companyA)
   status          String   @default("NEW") // NEW / IN_REVIEW / CONVERTED / CLOSED
   closeReason     String?
   convertedTaskId Int?
