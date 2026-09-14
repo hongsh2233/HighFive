@@ -1014,3 +1014,12 @@ npx prisma migrate resolve --applied 20260907000000_init
 - `src/app/page.tsx`(서비스 소개/랜딩 페이지) 상단 네비게이션 로고도 동일한 심볼로 교체, `landing.module.css`의 `.navLogoIcon` 배경도 잉크 그린으로 변경.
 - **참고**: 이번 반영은 로그인 화면·소개 페이지·브라우저 파비콘까지만 적용. 회원가입 페이지(`register`)/헤더 앱 내 로고/OG 이미지/이메일 템플릿 등 나머지 화면은 기존 보라색 브랜딩을 그대로 유지(범위 외, 필요 시 별도 요청).
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-14 — 파비콘이 반영 안 되는 문제 대응 (정적 favicon.ico 추가)
+
+배포 후에도 브라우저 탭 아이콘이 예전 보라색 "H"로 계속 보인다는 신고. 코드는 정상 반영되어 있었고(`src/app/icon.tsx`가 이미 새 심볼을 생성), 원인은 브라우저의 파비콘 캐싱이 페이지 캐시보다 훨씬 끈질겨서(URL이 그대로면 서버 콘텐츠가 바뀌어도 오래 재요청하지 않는 경우가 흔함) 발생한 것으로 보임.
+
+- `src/app/favicon.ico` 신규 추가 — Pillow로 새 심볼(잉크 그린 배경 + 코랄 5)을 16/32/48px 멀티 사이즈 ICO로 직접 렌더링. Next.js는 `app/favicon.ico` 정적 파일을 자동으로 `/favicon.ico`에 서빙하며, 많은 브라우저가 `<link rel="icon">` 메타 태그와 무관하게 이 경로를 우선/보조로 요청하기 때문에 반영 가능성을 높임.
+- 기존 `src/app/icon.tsx`(동적 PNG 아이콘, 최신 브라우저의 `<link rel="icon" type="image/png">`용)는 그대로 유지 — 두 방식을 병행.
+- **참고**: 그래도 안 보이면 브라우저가 이전 favicon.ico를 디스크에 캐싱해둔 상태일 수 있음 — 시크릿 창으로 확인하거나, 사이트 데이터 삭제 후 재접속 권장.
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
