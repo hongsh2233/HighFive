@@ -2,12 +2,13 @@ import { prisma } from './db';
 import { decryptSecret } from './crypto';
 import type { LlmProvider } from './ai';
 
-export const LLM_PROVIDERS: LlmProvider[] = ['ANTHROPIC', 'OPENAI', 'GEMINI'];
+export const LLM_PROVIDERS: LlmProvider[] = ['ANTHROPIC', 'OPENAI', 'GEMINI', 'GROQ'];
 
 export const LLM_PROVIDER_LABEL: Record<LlmProvider, string> = {
   ANTHROPIC: 'Anthropic (Claude)',
   OPENAI: 'OpenAI (GPT)',
   GEMINI: 'Google (Gemini)',
+  GROQ: 'Groq',
 };
 
 export const AI_FEATURE_KEYS = [
@@ -43,10 +44,11 @@ export async function getOrgAnthropicKey(organizationId?: number): Promise<strin
   return decryptSecret(settings.anthropicKeyEnc);
 }
 
-const PROVIDER_KEY_FIELD: Record<LlmProvider, 'anthropicKeyEnc' | 'openaiKeyEnc' | 'geminiKeyEnc'> = {
+const PROVIDER_KEY_FIELD: Record<LlmProvider, 'anthropicKeyEnc' | 'openaiKeyEnc' | 'geminiKeyEnc' | 'groqKeyEnc'> = {
   ANTHROPIC: 'anthropicKeyEnc',
   OPENAI: 'openaiKeyEnc',
   GEMINI: 'geminiKeyEnc',
+  GROQ: 'groqKeyEnc',
 };
 
 export async function getOrgProviderKey(organizationId: number | undefined, provider: LlmProvider): Promise<string | null> {
@@ -64,6 +66,7 @@ export async function getAvailableProviders(organizationId?: number): Promise<Ll
   if (settings.anthropicKeyEnc) result.push('ANTHROPIC');
   if (settings.openaiKeyEnc) result.push('OPENAI');
   if (settings.geminiKeyEnc) result.push('GEMINI');
+  if (settings.groqKeyEnc) result.push('GROQ');
   return result;
 }
 

@@ -6,12 +6,13 @@ import apiClient from '@/lib/api-client';
 import styles from './ai.module.css';
 import Spinner from '@/components/common/Spinner';
 
-type LlmProvider = 'ANTHROPIC' | 'OPENAI' | 'GEMINI';
+type LlmProvider = 'ANTHROPIC' | 'OPENAI' | 'GEMINI' | 'GROQ';
 
 const PROVIDER_LABEL: Record<LlmProvider, string> = {
   ANTHROPIC: 'Anthropic (Claude)',
   OPENAI: 'OpenAI (GPT)',
   GEMINI: 'Google (Gemini)',
+  GROQ: 'Groq',
 };
 
 const FEATURE_META: { key: string; label: string; hint: string; needsWeather?: boolean }[] = [
@@ -29,6 +30,7 @@ interface AiSettingsData {
   hasAnthropicKey: boolean;
   hasOpenaiKey: boolean;
   hasGeminiKey: boolean;
+  hasGroqKey: boolean;
   hasWeatherKey: boolean;
   hasGithubToken: boolean;
   weatherCity: string | null;
@@ -45,6 +47,7 @@ export default function AiSettingsPage() {
   const [anthropicKeyInput, setAnthropicKeyInput] = useState('');
   const [openaiKeyInput, setOpenaiKeyInput] = useState('');
   const [geminiKeyInput, setGeminiKeyInput] = useState('');
+  const [groqKeyInput, setGroqKeyInput] = useState('');
   const [weatherKeyInput, setWeatherKeyInput] = useState('');
   const [weatherCityInput, setWeatherCityInput] = useState('');
   const [githubTokenInput, setGithubTokenInput] = useState('');
@@ -73,6 +76,7 @@ export default function AiSettingsPage() {
     if (data.hasAnthropicKey) list.push('ANTHROPIC');
     if (data.hasOpenaiKey) list.push('OPENAI');
     if (data.hasGeminiKey) list.push('GEMINI');
+    if (data.hasGroqKey) list.push('GROQ');
     return list;
   };
 
@@ -84,6 +88,7 @@ export default function AiSettingsPage() {
       if (anthropicKeyInput.trim()) body.anthropicKey = anthropicKeyInput.trim();
       if (openaiKeyInput.trim()) body.openaiKey = openaiKeyInput.trim();
       if (geminiKeyInput.trim()) body.geminiKey = geminiKeyInput.trim();
+      if (groqKeyInput.trim()) body.groqKey = groqKeyInput.trim();
       if (weatherKeyInput.trim()) body.weatherKey = weatherKeyInput.trim();
       if (githubTokenInput.trim()) body.githubToken = githubTokenInput.trim();
       body.weatherCity = weatherCityInput.trim() || null;
@@ -92,6 +97,7 @@ export default function AiSettingsPage() {
       setAnthropicKeyInput('');
       setOpenaiKeyInput('');
       setGeminiKeyInput('');
+      setGroqKeyInput('');
       setWeatherKeyInput('');
       setGithubTokenInput('');
       setMessage({ type: 'success', text: 'API 키가 저장되었습니다.' });
@@ -209,6 +215,25 @@ export default function AiSettingsPage() {
                 value={geminiKeyInput}
                 onChange={(e) => setGeminiKeyInput(e.target.value)}
                 placeholder={data.hasGeminiKey ? '새 키로 교체하려면 입력' : 'AIza...'}
+                className={styles.input}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.card}>
+          <h2 className={styles.cardTitle}>Groq API 키</h2>
+          <p className={styles.cardHint}>
+            {data.hasGroqKey ? '✅ 설정됨 — 교체하려면 새 키를 입력 후 저장하세요.' : '미설정 — 사용하려면 키를 입력하세요. (console.groq.com에서 발급)'}
+          </p>
+          <div className={styles.fieldGrid}>
+            <div>
+              <label className={styles.label}>API 키</label>
+              <input
+                type="password"
+                value={groqKeyInput}
+                onChange={(e) => setGroqKeyInput(e.target.value)}
+                placeholder={data.hasGroqKey ? '새 키로 교체하려면 입력' : 'gsk_...'}
                 className={styles.input}
               />
             </div>

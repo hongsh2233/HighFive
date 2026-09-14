@@ -23,6 +23,7 @@ export async function GET() {
       hasAnthropicKey: !!settings?.anthropicKeyEnc,
       hasOpenaiKey: !!settings?.openaiKeyEnc,
       hasGeminiKey: !!settings?.geminiKeyEnc,
+      hasGroqKey: !!settings?.groqKeyEnc,
       hasWeatherKey: !!settings?.weatherKeyEnc,
       hasGithubToken: !!settings?.githubTokenEnc,
       weatherCity: settings?.weatherCity ?? null,
@@ -44,10 +45,11 @@ export async function PUT(req: NextRequest) {
     if (!organizationId) return errorResponse('조직 정보를 확인할 수 없습니다.', 400, 'VALID_400');
 
     const body = await req.json();
-    const { anthropicKey, openaiKey, geminiKey, weatherKey, githubToken, weatherCity, features, featureProviders } = body as {
+    const { anthropicKey, openaiKey, geminiKey, groqKey, weatherKey, githubToken, weatherCity, features, featureProviders } = body as {
       anthropicKey?: string | null;
       openaiKey?: string | null;
       geminiKey?: string | null;
+      groqKey?: string | null;
       weatherKey?: string | null;
       githubToken?: string | null;
       weatherCity?: string | null;
@@ -67,6 +69,7 @@ export async function PUT(req: NextRequest) {
     const anthropicKeyEnc = resolveKey(anthropicKey, existing?.anthropicKeyEnc);
     const openaiKeyEnc = resolveKey(openaiKey, existing?.openaiKeyEnc);
     const geminiKeyEnc = resolveKey(geminiKey, existing?.geminiKeyEnc);
+    const groqKeyEnc = resolveKey(groqKey, existing?.groqKeyEnc);
     const weatherKeyEnc = resolveKey(weatherKey, existing?.weatherKeyEnc);
     const githubTokenEnc = resolveKey(githubToken, existing?.githubTokenEnc);
 
@@ -78,7 +81,7 @@ export async function PUT(req: NextRequest) {
       ...(featureProviders || {}),
     };
 
-    const hasAnyLlmKey = !!(anthropicKeyEnc || openaiKeyEnc || geminiKeyEnc);
+    const hasAnyLlmKey = !!(anthropicKeyEnc || openaiKeyEnc || geminiKeyEnc || groqKeyEnc);
 
     // 키가 없는 상태에서 기능을 켜려는 시도는 거부
     for (const key of AI_FEATURE_KEYS) {
@@ -99,14 +102,15 @@ export async function PUT(req: NextRequest) {
 
     const saved = await prisma.aiSettings.upsert({
       where: { organizationId },
-      update: { anthropicKeyEnc, openaiKeyEnc, geminiKeyEnc, weatherKeyEnc, githubTokenEnc, weatherCity: finalCity, features: requestedFeatures, featureProviders: requestedFeatureProviders },
-      create: { organizationId, anthropicKeyEnc, openaiKeyEnc, geminiKeyEnc, weatherKeyEnc, githubTokenEnc, weatherCity: finalCity, features: requestedFeatures, featureProviders: requestedFeatureProviders },
+      update: { anthropicKeyEnc, openaiKeyEnc, geminiKeyEnc, groqKeyEnc, weatherKeyEnc, githubTokenEnc, weatherCity: finalCity, features: requestedFeatures, featureProviders: requestedFeatureProviders },
+      create: { organizationId, anthropicKeyEnc, openaiKeyEnc, geminiKeyEnc, groqKeyEnc, weatherKeyEnc, githubTokenEnc, weatherCity: finalCity, features: requestedFeatures, featureProviders: requestedFeatureProviders },
     });
 
     return successResponse({
       hasAnthropicKey: !!saved.anthropicKeyEnc,
       hasOpenaiKey: !!saved.openaiKeyEnc,
       hasGeminiKey: !!saved.geminiKeyEnc,
+      hasGroqKey: !!saved.groqKeyEnc,
       hasWeatherKey: !!saved.weatherKeyEnc,
       hasGithubToken: !!saved.githubTokenEnc,
       weatherCity: saved.weatherCity,

@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-export type LlmProvider = 'ANTHROPIC' | 'OPENAI' | 'GEMINI';
+export type LlmProvider = 'ANTHROPIC' | 'OPENAI' | 'GEMINI' | 'GROQ';
 
 let envAnthropicClient: Anthropic | null = null;
 
@@ -40,6 +40,20 @@ async function callOpenAI(prompt: string, maxTokens: number, apiKey?: string | n
   return response.choices[0]?.message?.content || '';
 }
 
+async function callGroq(prompt: string, maxTokens: number, apiKey?: string | null): Promise<string> {
+  const key = apiKey || process.env.GROQ_API_KEY;
+  if (!key) {
+    throw new Error('AI 기능을 사용하려면 조직 설정(AI 설정)에 Groq API 키를 등록해야 합니다.');
+  }
+  const client = new OpenAI({ apiKey: key, baseURL: 'https://api.groq.com/openai/v1' });
+  const response = await client.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    max_tokens: maxTokens,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  return response.choices[0]?.message?.content || '';
+}
+
 async function callGemini(prompt: string, maxTokens: number, apiKey?: string | null): Promise<string> {
   const key = apiKey || process.env.GEMINI_API_KEY;
   if (!key) {
@@ -63,6 +77,8 @@ export async function callLLM(
       return callOpenAI(prompt, maxTokens, apiKeyOverride);
     case 'GEMINI':
       return callGemini(prompt, maxTokens, apiKeyOverride);
+    case 'GROQ':
+      return callGroq(prompt, maxTokens, apiKeyOverride);
     case 'ANTHROPIC':
     default:
       return callAnthropic(prompt, maxTokens, apiKeyOverride);
