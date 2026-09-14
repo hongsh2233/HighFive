@@ -11,21 +11,6 @@ const FEATURES = [
     desc: '칸반보드, 우선순위, 체크리스트, 선후행 의존관계까지 — 업무 상태 변경에 맞춰 작업시간을 자동으로 기록합니다.',
   },
   {
-    icon: '📖',
-    title: '프로젝트 협업',
-    desc: '프로젝트별 위키와 회의록. 음성 받아쓰기로 회의록을 작성하고, AI가 결정사항·액션아이템을 자동 요약해 업무로 바로 변환합니다.',
-  },
-  {
-    icon: '📊',
-    title: '일정 & 리포트',
-    desc: '캘린더(구글 캘린더 연동), 통계 대시보드, AI가 작성하는 주간 보고서로 팀 현황을 한눈에 파악합니다.',
-  },
-  {
-    icon: '🤖',
-    title: 'AI 자동화',
-    desc: '업무 초안 작성, 업무 요약, 자연어 검색, 업무 부하 분석까지 — 관리자가 API 키만 등록하면 기능별로 바로 켤 수 있습니다.',
-  },
-  {
     icon: '🔔',
     title: '알림 & 보안',
     desc: '업무·프로젝트 단위 알림 음소거, 조직 간 완전 데이터 격리, 역할 기반 권한(관리자/리더/작업자)으로 안전하게 운영합니다.',
@@ -103,8 +88,12 @@ export default function LandingPage() {
 
       <main>
         <section className={styles.hero}>
+          <span className={`${styles.heroBubble} ${styles.heroBubble1}`}>💬 회의록 자동 요약</span>
+          <span className={`${styles.heroBubble} ${styles.heroBubble2}`}>✅ 오늘 할 일 3건</span>
+          <span className={`${styles.heroBubble} ${styles.heroBubble3}`}>📅 D-2 마감 알림</span>
+
           <div className={styles.heroInner}>
-            <span className={styles.heroBadge}>노션보다 단순하게, 지라보다 가볍게</span>
+            <span className={styles.heroBadge}>협업이 잘되면, 5시에 웃으며 퇴근한다</span>
             <h1 className={styles.heroTitle}>
               팀 업무 관리부터<br />AI 자동화까지, <span className={styles.heroAccent}>High5</span> 하나로
             </h1>
@@ -114,7 +103,94 @@ export default function LandingPage() {
             </p>
             <div className={styles.heroActions}>
               <Link href="/register" className={styles.btnPrimary}>무료로 시작하기</Link>
-              <button onClick={openDemoModal} className={styles.btnSecondary}>무료 데모 신청</button>
+              <button onClick={openDemoModal} className={styles.btnSecondaryHero}>무료 데모 신청</button>
+            </div>
+          </div>
+
+          <div className={styles.heroVisual}>
+            <div className={styles.mockWindow}>
+              <div className={styles.mockWindowBar}>
+                <span className={styles.mockDot} />
+                <span className={styles.mockDot} />
+                <span className={styles.mockDot} />
+              </div>
+              <div className={styles.mockWindowBody}>
+                <div className={styles.mockSidebar}>
+                  <span className={`${styles.mockSidebarItem} ${styles.active}`} style={{ width: '70%' }} />
+                  <span className={styles.mockSidebarItem} style={{ width: '55%' }} />
+                  <span className={styles.mockSidebarItem} style={{ width: '60%' }} />
+                  <span className={styles.mockSidebarItem} style={{ width: '45%' }} />
+                </div>
+                <div className={styles.mockMain}>
+                  {[85, 62, 74, 50].map((w, i) => (
+                    <div key={i} className={styles.mockRow}>
+                      <span className={styles.mockCheck} />
+                      <span className={styles.mockBar} style={{ width: `${w}%`, flex: 1 }} />
+                      <span className={styles.mockBadge}>진행중</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className={`${styles.floatingCard} ${styles.floatingCard1}`}>
+              <div className={styles.floatingCardTag}>✦ 주간 보고서 AI</div>
+              <p className={styles.floatingCardText}>
+                이번 주 완료 12건, 진행중 5건. 마감 임박 업무 2건은 담당자에게 리마인드했습니다.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.spotlights}>
+          <div className={styles.spotlightRow}>
+            <div>
+              <span className={styles.eyebrow}>✦ AI 자동화</span>
+              <h2 className={styles.spotlightTitle}>업무 초안부터 주간 보고서까지, AI가 먼저 씁니다</h2>
+              <p className={styles.spotlightDesc}>
+                제목만 입력하면 AI가 업무 초안을 잡아주고, 쌓인 업무 로그를 모아 주간 보고서를 자동으로 작성합니다.
+                관리자가 API 키만 등록하면 기능별로 바로 켤 수 있습니다.
+              </p>
+              <div className={styles.chipRow}>
+                <span className={styles.chip}><span className={styles.chipIcon}>✎</span>이번 주 우리 팀 진행 업무를 요약해줘</span>
+                <span className={styles.chip}><span className={styles.chipIcon}>✎</span>이번 달에 완료해야 하는 업무 알려줘</span>
+              </div>
+            </div>
+            <div className={styles.spotlightVisual}>
+              <div className={styles.aiCard}>
+                <div className={styles.aiCardHeader}>✦ 주간 보고서 AI</div>
+                <div className={styles.aiCardLine} style={{ width: '92%' }} />
+                <div className={styles.aiCardLine} style={{ width: '78%' }} />
+                <div className={styles.aiCardLine} style={{ width: '85%' }} />
+                <div className={styles.aiCardLine} style={{ width: '60%' }} />
+              </div>
+            </div>
+          </div>
+
+          <div className={`${styles.spotlightRow} ${styles.reverse}`}>
+            <div>
+              <span className={styles.eyebrow}>✦ 프로젝트 협업</span>
+              <h2 className={styles.spotlightTitle}>회의록은 받아쓰고, 액션아이템은 업무로 바로</h2>
+              <p className={styles.spotlightDesc}>
+                프로젝트별 위키와 회의록을 한 곳에서 관리합니다. 음성 받아쓰기로 회의록을 작성하면,
+                AI가 결정사항과 액션아이템을 자동으로 뽑아 업무로 바로 변환합니다.
+              </p>
+              <div className={styles.chipRow}>
+                <span className={styles.chip}><span className={styles.chipIcon}>✎</span>오늘 회의에서 나온 액션아이템 정리해줘</span>
+                <span className={styles.chip}><span className={styles.chipIcon}>✎</span>이 프로젝트 캘린더 일정 알려줘</span>
+              </div>
+            </div>
+            <div className={styles.spotlightVisual}>
+              <div className={styles.calendarMock}>
+                <div className={styles.aiCardHeader}>📅 프로젝트 캘린더</div>
+                <div className={styles.calendarGrid}>
+                  {Array.from({ length: 21 }).map((_, i) => (
+                    <span
+                      key={i}
+                      className={`${styles.calendarCell} ${i === 9 ? styles.today : [3, 12, 17].includes(i) ? styles.marked : ''}`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </section>

@@ -76,10 +76,15 @@
 
 /* Hero */
 .hero {
-  padding: 96px var(--space-8) 64px;
+  position: relative;
+  padding: 88px var(--space-8) 96px;
+  background: linear-gradient(125deg, #142B2B 0%, #1E3B3A 38%, #C6472E 78%, #FF6B4A 100%);
+  overflow: hidden;
 }
 
 .heroInner {
+  position: relative;
+  z-index: 2;
   max-width: 720px;
   margin: 0 auto;
   text-align: center;
@@ -89,33 +94,30 @@
   display: inline-block;
   padding: 6px 14px;
   border-radius: var(--radius-full);
-  background: var(--accent-light);
-  color: var(--accent);
+  background: rgba(255,255,255,0.14);
+  color: #FFD9A8;
   font-size: 12px;
   font-weight: 700;
   margin-bottom: var(--space-6);
 }
 
 .heroTitle {
-  font-size: 40px;
+  font-size: 42px;
   font-weight: 800;
   letter-spacing: -0.02em;
-  line-height: 1.3;
-  color: var(--text-primary);
+  line-height: 1.32;
+  color: #FFFFFF;
   margin-bottom: var(--space-5);
 }
 
 .heroAccent {
-  background: var(--accent-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: #FFB238;
 }
 
 .heroSubtitle {
   font-size: 16px;
   line-height: 1.7;
-  color: var(--text-secondary);
+  color: rgba(255,255,255,0.72);
   margin-bottom: var(--space-8);
 }
 
@@ -141,6 +143,311 @@
   text-decoration: none;
 }
 
+.btnSecondaryHero {
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--radius-md, 8px);
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.35);
+  cursor: pointer;
+}
+
+.btnSecondaryHero:hover {
+  background: rgba(255,255,255,0.18);
+}
+
+/* Hero floating decorative bubbles */
+.heroBubble {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  backdrop-filter: blur(6px);
+}
+
+.heroBubble1 { top: 18%; left: 8%; }
+.heroBubble2 { top: 30%; right: 10%; }
+.heroBubble3 { bottom: 8%; left: 6%; }
+
+/* Hero product mockup */
+.heroVisual {
+  position: relative;
+  z-index: 2;
+  max-width: 880px;
+  margin: 48px auto 0;
+}
+
+.mockWindow {
+  background: var(--bg-surface);
+  border-radius: 14px;
+  border: 1px solid rgba(20,43,43,0.1);
+  box-shadow: 0 30px 60px -20px rgba(20,43,43,0.5);
+  overflow: hidden;
+}
+
+.mockWindowBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+}
+
+.mockDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.mockWindowBody {
+  display: flex;
+  gap: 0;
+}
+
+.mockSidebar {
+  width: 160px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mockSidebarItem {
+  height: 10px;
+  border-radius: 4px;
+  background: var(--bg-subtle);
+}
+
+.mockSidebarItem.active {
+  background: #FF6B4A;
+  opacity: 0.85;
+}
+
+.mockMain {
+  flex: 1;
+  padding: 18px 22px;
+}
+
+.mockRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--bg-subtle);
+}
+
+.mockCheck {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1.5px solid var(--border);
+  flex-shrink: 0;
+}
+
+.mockBar {
+  height: 9px;
+  border-radius: 4px;
+  background: var(--bg-subtle);
+}
+
+.mockBadge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  background: #E7F5EE;
+  color: #1C8A5A;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.floatingCard {
+  position: absolute;
+  z-index: 3;
+  width: 220px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 16px 32px -12px rgba(20,43,43,0.35);
+}
+
+.floatingCard1 {
+  top: -18px;
+  right: -28px;
+}
+
+.floatingCardTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #FF6B4A;
+  margin-bottom: 6px;
+}
+
+.floatingCardText {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+/* Spotlight (alternating feature showcase) */
+.spotlights {
+  padding: 40px var(--space-8) 24px;
+  max-width: var(--width-wide);
+  margin: 0 auto;
+}
+
+.spotlightRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: center;
+  padding: 56px 0;
+}
+
+.spotlightRow:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.spotlightRow.reverse {
+  direction: rtl;
+}
+
+.spotlightRow.reverse > * {
+  direction: ltr;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #E85434;
+  background: #FFEDE7;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  margin-bottom: 16px;
+}
+
+.spotlightTitle {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.spotlightDesc {
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  max-width: 46ch;
+}
+
+.chipRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+}
+
+.chipIcon { color: #FF6B4A; }
+
+/* Spotlight mock cards */
+.spotlightVisual {
+  position: relative;
+  min-height: 260px;
+}
+
+.aiCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  box-shadow: 0 20px 40px -18px rgba(20,43,43,0.22);
+  max-width: 380px;
+}
+
+.aiCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #E85434;
+  margin-bottom: 12px;
+}
+
+.aiCardLine {
+  height: 9px;
+  border-radius: 4px;
+  background: var(--bg-subtle);
+  margin-bottom: 8px;
+}
+
+.calendarMock {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 20px 40px -18px rgba(20,43,43,0.22);
+  max-width: 380px;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.calendarCell {
+  aspect-ratio: 1;
+  border-radius: 5px;
+  background: var(--bg-subtle);
+}
+
+.calendarCell.marked {
+  background: #FFB238;
+}
+
+.calendarCell.today {
+  background: #FF6B4A;
+}
+
 /* Features */
 .features {
   padding: 64px var(--space-8);
@@ -163,7 +470,7 @@
 
 .featureGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--space-5);
 }
 
@@ -287,8 +594,46 @@
   }
 
   .heroActions .btnPrimary,
-  .heroActions .btnSecondary {
+  .heroActions .btnSecondaryHero {
     width: 100%;
+  }
+
+  .heroBubble {
+    display: none;
+  }
+
+  .heroVisual {
+    margin-top: 32px;
+  }
+
+  .mockSidebar {
+    display: none;
+  }
+
+  .floatingCard {
+    display: none;
+  }
+
+  .spotlights {
+    padding: 24px var(--space-4) 8px;
+  }
+
+  .spotlightRow {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 32px 0;
+  }
+
+  .spotlightRow.reverse {
+    direction: ltr;
+  }
+
+  .spotlightTitle {
+    font-size: 21px;
+  }
+
+  .spotlightDesc {
+    max-width: none;
   }
 
   .features {
