@@ -9,7 +9,7 @@ import { markManualLogout } from '@/lib/logout-flag';
 import GlobalSearchModal from './GlobalSearchModal';
 import styles from './AppHeader.module.css';
 
-type MenuName = 'task' | 'collab' | 'admin' | 'settings' | 'account' | null;
+type MenuName = 'task' | 'collab' | 'admin' | 'agent' | 'settings' | 'account' | null;
 
 export default function AppHeader() {
   const router = useRouter();
@@ -244,14 +244,42 @@ export default function AppHeader() {
                 )}
               </div>
 
-              {(user?.role === 'ADMIN' || has('calendar_sync')) && (
+              {(has('calendar_sync') || (user?.role === 'ADMIN' && has('integrations'))) && (
+                <div
+                  className={styles.menuWrapper}
+                  onMouseEnter={() => handleMenuEnter('agent')}
+                  onMouseLeave={handleMenuLeave}
+                >
+                  <button
+                    className={navClass(openMenu === 'agent' || pathname.startsWith('/settings/calendar-sync') || pathname.startsWith('/settings/integrations') || pathname.startsWith('/settings/ai'))}
+                    onClick={() => setOpenMenu(openMenu === 'agent' ? null : 'agent')}
+                  >
+                    에이전트 관리
+                  </button>
+                  {openMenu === 'agent' && (
+                    <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
+                      {user?.role === 'ADMIN' && (
+                        <Link href="/settings/ai" className={styles.dropdownItem} onClick={closeAll}>AI 설정</Link>
+                      )}
+                      {has('calendar_sync') && (
+                        <Link href="/settings/calendar-sync" className={styles.dropdownItem} onClick={closeAll}>구글 캘린더 연동</Link>
+                      )}
+                      {user?.role === 'ADMIN' && has('integrations') && (
+                        <Link href="/settings/integrations" className={styles.dropdownItem} onClick={closeAll}>외부연동</Link>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {user?.role === 'ADMIN' && (
                 <div
                   className={styles.menuWrapper}
                   onMouseEnter={() => handleMenuEnter('settings')}
                   onMouseLeave={handleMenuLeave}
                 >
                   <button
-                    className={navClass(openMenu === 'settings' || pathname.startsWith('/settings'))}
+                    className={navClass(openMenu === 'settings' || pathname.startsWith('/settings/organization') || pathname.startsWith('/settings/audit'))}
                     onClick={() => setOpenMenu(openMenu === 'settings' ? null : 'settings')}
                   >
                     설정
@@ -260,15 +288,6 @@ export default function AppHeader() {
                     <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
                       {user?.role === 'ADMIN' && (
                         <Link href="/settings/organization" className={styles.dropdownItem} onClick={closeAll}>조직 설정</Link>
-                      )}
-                      {has('calendar_sync') && (
-                        <Link href="/settings/calendar-sync" className={styles.dropdownItem} onClick={closeAll}>구글 캘린더 연동</Link>
-                      )}
-                      {user?.role === 'ADMIN' && has('integrations') && (
-                        <Link href="/settings/integrations" className={styles.dropdownItem} onClick={closeAll}>외부연동</Link>
-                      )}
-                      {user?.role === 'ADMIN' && (
-                        <Link href="/settings/ai" className={styles.dropdownItem} onClick={closeAll}>AI 설정</Link>
                       )}
                       {user?.role === 'ADMIN' && (
                         <Link href="/settings/audit" className={styles.dropdownItem} onClick={closeAll}>감사 로그</Link>

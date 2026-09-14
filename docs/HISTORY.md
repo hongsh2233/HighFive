@@ -1031,3 +1031,10 @@ npx prisma migrate resolve --applied 20260907000000_init
 - `src/app/login/login.module.css`의 `.logoIcon`, `src/app/landing.module.css`의 `.navLogoIcon`에서 배경색/모서리 둥글기를 제거하고 SVG를 그 자리에 꽉 채워 흰 패널 위에 심볼만 자연스럽게 놓이도록 수정.
 - 브라우저 탭 파비콘(`icon.tsx`, `favicon.ico`)은 작은 크기에서 배경이 있어야 눈에 잘 띄므로 그대로 유지(이번 변경 대상 아님).
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-14 (3차) — AI/외부연동을 "에이전트 관리" 메뉴로 분리
+
+기존 "설정" 메뉴에 있던 AI 설정/구글 캘린더 연동/외부연동을 별도의 "에이전트 관리" 메뉴로 분리. "설정" 메뉴에는 조직 설정/감사 로그만 남김.
+
+- `src/components/AppHeader.tsx`: `MenuName` 타입에 `'agent'` 추가. "에이전트 관리" 메뉴 신규(칼렌더 연동 권한 또는 ADMIN+외부연동 권한이 있을 때 노출) — AI 설정(ADMIN), 구글 캘린더 연동(권한자), 외부연동(ADMIN+권한) 포함. 기존 "설정" 메뉴는 ADMIN 전용으로 좁히고 조직 설정/감사 로그만 유지.
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
