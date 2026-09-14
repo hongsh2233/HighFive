@@ -26,6 +26,10 @@ export const metadata: Metadata = {
     title: "High5 - 업무 관리 시스템",
     description: "노션보다 단순하게, 지라보다 가볍게 — AI가 자동화하는 팀 협업 플랫폼",
   },
+  icons: {
+    icon: "/favicon.ico?v=3",
+    shortcut: "/favicon.ico?v=3",
+  },
 };
 
 const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
