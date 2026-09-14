@@ -1049,3 +1049,9 @@ npx prisma migrate resolve --applied 20260907000000_init
 - **버그 수정(발견 즉시 수정)**: 히어로용으로 새로 스타일링한 `.btnSecondary`(반투명 흰 테두리, 어두운 배경 전용)가 하단 CTA 섹션·모달 취소 버튼에도 재사용되면서 밝은 배경 위에서 흰 글씨가 거의 안 보이는 문제 발견 — `.btnSecondaryHero`로 분리하고 `.btnSecondary`는 기존 전역 스타일로 원복.
 - Playwright로 실제 렌더링 스크린샷 확인 후 반영(이 문서 확인 절차 준수).
 - `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-14 (5차) — 랜딩 히어로 그라디언트 색감 톤다운
+
+히어로의 잉크→코랄→골드 대각선 그라디언트가 너무 부담스럽다는 피드백. 채도 높은 코랄/골드 구간을 빼고 잉크 그린에서 은은한 다갈색으로만 이어지는 차분한 그라디언트로 변경(`#13282A → #1D3634 → #3E3630 → #5C4438`). "High5" 강조색과 상단 배지 색도 각각 muted amber(#E3A868)/muted tan(#E8C9A0)으로 함께 낮춤.
+- Playwright 스크린샷으로 확인 후 반영.
+- `npx tsc --noEmit` 오류 0개, `npx next build` 성공.

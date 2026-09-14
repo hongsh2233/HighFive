@@ -78,7 +78,7 @@
 .hero {
   position: relative;
   padding: 88px var(--space-8) 96px;
-  background: linear-gradient(125deg, #142B2B 0%, #1E3B3A 38%, #C6472E 78%, #FF6B4A 100%);
+  background: linear-gradient(125deg, #13282A 0%, #1D3634 42%, #3E3630 72%, #5C4438 100%);
   overflow: hidden;
 }
 
@@ -94,8 +94,8 @@
   display: inline-block;
   padding: 6px 14px;
   border-radius: var(--radius-full);
-  background: rgba(255,255,255,0.14);
-  color: #FFD9A8;
+  background: rgba(255,255,255,0.12);
+  color: #E8C9A0;
   font-size: 12px;
   font-weight: 700;
   margin-bottom: var(--space-6);
@@ -111,7 +111,7 @@
 }
 
 .heroAccent {
-  color: #FFB238;
+  color: #E3A868;
 }
 
 .heroSubtitle {
