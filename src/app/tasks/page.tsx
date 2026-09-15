@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useTasks } from '@/hooks/useTask';
@@ -12,6 +11,7 @@ import apiClient from '@/lib/api-client';
 import { ProjectField, FieldType } from '@/types';
 import styles from './tasks.module.css';
 import Spinner from '@/components/common/Spinner';
+import TaskDetailPanel from '@/components/TaskDetailPanel';
 import { useDialog } from '@/components/common/DialogProvider';
 import { TASK_PRIORITY_LIST, TASK_PRIORITY_TEXT, TASK_PRIORITY_COLOR } from '@/lib/constants';
 
@@ -95,6 +95,7 @@ interface SharedHandlers {
   selectedIds: Set<number>;
   toggleSelect: (id: number) => void;
   toggleSelectAll: (ids: number[]) => void;
+  onOpenTask: (id: number) => void;
 }
 
 function TaskListContent() {
@@ -308,7 +309,38 @@ function TaskListContent() {
     setBulkSaving(false);
   };
 
-  const handlers: SharedHandlers = { canEditTitle, canDelete, currentUserId: parseInt((user as any)?.id || '0'), assignableWorkers, getStatuses, updateStatus, updateTask, deleteTask, createTask, selectedIds, toggleSelect, toggleSelectAll };
+  const [panelWidth, setPanelWidth] = useState(420);
+  const selectedTaskId = searchParams.get('task') ? parseInt(searchParams.get('task')!) : null;
+
+  const openTask = (id: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('task', String(id));
+    router.push(`/tasks?${params.toString()}`, { scroll: false });
+  };
+
+  const closeTask = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('task');
+    router.push(params.toString() ? `/tasks?${params.toString()}` : '/tasks', { scroll: false });
+  };
+
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = panelWidth;
+    const onMove = (ev: MouseEvent) => {
+      const next = Math.min(window.innerWidth * 0.8, Math.max(360, startWidth + (startX - ev.clientX)));
+      setPanelWidth(next);
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
+  const handlers: SharedHandlers = { canEditTitle, canDelete, currentUserId: parseInt((user as any)?.id || '0'), assignableWorkers, getStatuses, updateStatus, updateTask, deleteTask, createTask, selectedIds, toggleSelect, toggleSelectAll, onOpenTask: openTask };
 
   return (
     <div className={styles.container}>
@@ -516,6 +548,20 @@ function TaskListContent() {
           )}
         </>
       )}
+
+      {selectedTaskId && (
+        <TaskDetailPanel
+          taskId={selectedTaskId}
+          onClose={closeTask}
+          getStatuses={getStatuses}
+          workers={assignableWorkers}
+          canEdit={canEditTitle}
+          onUpdateStatus={updateStatus}
+          onUpdateTask={updateTask}
+          width={panelWidth}
+          onResizeStart={handleResizeStart}
+        />
+      )}
     </div>
   );
 }
@@ -535,6 +581,7 @@ function ProjectTaskSection({
   selectedIds,
   toggleSelect,
   toggleSelectAll,
+  onOpenTask,
   isCollapsed,
   onToggleCollapse,
   sortBy,
@@ -951,9 +998,13 @@ function ProjectTaskSection({
               )
             )}
             {!isGroupRow && (
-              <Link href={`/tasks/${task.id}`} className={styles.detailBtn}>
+              <button
+                type="button"
+                className={styles.detailBtn}
+                onClick={(e) => { e.stopPropagation(); onOpenTask(task.id); }}
+              >
                 상세보기
-              </Link>
+              </button>
             )}
             {!isChild && !task.quickRegister && (
               <button
