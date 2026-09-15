@@ -307,8 +307,8 @@
   padding: 2px 8px;
   border-radius: 5px;
   font-size: 11px;
-  background-color: rgba(94,106,210,0.08);
-  color: #5E6AD2;
+  background-color: var(--accent-light);
+  color: var(--accent);
 }
 
 .tagEmpty {

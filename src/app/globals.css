@@ -12,6 +12,11 @@
   /* Sidebar / Topbar shell */
   --sidebar-width: 232px;
   --topbar-height: 56px;
+  --sidebar-bg:        #FAF9F5;
+  --sidebar-text:      #3D3D3A;
+  --sidebar-text-dim:  rgba(61, 61, 58, 0.6);
+  --sidebar-active-bg: #F0EEE6;
+  --sidebar-border:    #EBE9E1;
 
   /* Text */
   --text-primary:   #09090B;
@@ -22,10 +27,10 @@
   --border:        #E4E4E7;
   --border-strong: #D4D4D8;
 
-  /* Accent (Linear indigo) */
-  --accent:       #5E6AD2;
-  --accent-hover: #4B55BF;
-  --accent-light: #EEF0FF;
+  /* Accent (Claude clay/terracotta) */
+  --accent:       #C15F3C;
+  --accent-hover: #A94F30;
+  --accent-light: #FBEEE8;
 
   /* Semantic */
   --success: #059669;
@@ -44,7 +49,7 @@
   --info-border:   #BFDBFE;
 
   /* Accent gradient — selective use only (hero/brand panels, primary CTA emphasis) */
-  --accent-gradient: linear-gradient(135deg, #5E6AD2 0%, #7C86E8 100%);
+  --accent-gradient: linear-gradient(135deg, #C15F3C 0%, #E08355 100%);
 
   /* Card elevation — selective use only (KPI/summary cards, modals, dropdowns) */
   --shadow-card: 0 1px 2px rgba(9, 9, 11, 0.04), 0 1px 3px rgba(9, 9, 11, 0.06);

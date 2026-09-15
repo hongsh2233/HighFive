@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { signOut } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { markManualLogout } from '@/lib/logout-flag';
-import GlobalSearchModal from './GlobalSearchModal';
+import TopSearch from './TopSearch';
 import styles from './AppShell.module.css';
 
 interface NavItem { href: string; label: string; icon: string }
@@ -17,24 +17,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [enabledFeatures, setEnabledFeatures] = useState<string[]>([
     'info', 'requests', 'wiki', 'tasks', 'search', 'stats', 'calendar_sync', 'integrations',
   ]);
   const [knowledgeBaseMode, setKnowledgeBaseMode] = useState<'WIKI' | 'INFO'>('WIKI');
   const [orgName, setOrgName] = useState<string>('High5');
   const [orgLogo, setOrgLogo] = useState<string | null>(null);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setSearchOpen((v) => !v);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -148,12 +136,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </Link>
 
         <nav className={styles.nav}>
-          {!isSuperAdmin && has('search') && (
-            <button className={styles.navItem} onClick={() => { setSearchOpen(true); closeMobile(); }}>
-              <span className={styles.navIcon}>🔍</span>검색
-            </button>
-          )}
-
           <Link href="/dashboard" className={pathname === '/dashboard' ? styles.navItemActive : styles.navItem} onClick={closeMobile}>
             <span className={styles.navIcon}>🏠</span>대시보드
           </Link>
@@ -192,20 +174,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className={styles.main}>
         <header className={styles.topbar}>
-          {!isSuperAdmin && has('search') ? (
-            <button className={styles.searchBox} onClick={() => setSearchOpen(true)}>
-              <span>🔍</span>
-              <span className={styles.searchPlaceholder}>업무, 프로젝트, 위키 검색... (Ctrl+K)</span>
-            </button>
-          ) : <div />}
+          {!isSuperAdmin && has('search') ? <TopSearch /> : <div />}
 
           <div className={styles.topbarRight}>
             <span className={styles.userName}>{user?.name}</span>
             <button onClick={handleLogout} className={styles.logoutBtn}>로그아웃</button>
           </div>
         </header>
-
-        {searchOpen && <GlobalSearchModal onClose={() => setSearchOpen(false)} />}
 
         <div className={styles.content}>{children}</div>
       </div>
