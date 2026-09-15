@@ -329,6 +329,12 @@
   composes: btn btn-sm btn-ghost from global;
 }
 
+.groupToggleBtn {
+  composes: btn btn-sm btn-ghost from global;
+  width: 28px;
+  padding: 0;
+}
+
 .notesToggleBtnActive {
   background: var(--accent-light);
   color: var(--accent);

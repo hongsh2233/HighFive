@@ -43,6 +43,14 @@ function PlusIcon() {
   );
 }
 
+function ChevronIcon({ direction }: { direction: 'up' | 'down' }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      {direction === 'down' ? <path d="m6 9 6 6 6-6" /> : <path d="m18 15-6-6-6 6" />}
+    </svg>
+  );
+}
+
 function TrashIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -987,10 +995,12 @@ function ProjectTaskSection({
           <div className={styles.notesBtns}>
             {isGroupRow ? (
               <button
-                className={`${styles.notesToggleBtn} ${isGroupExpanded ? styles.notesToggleBtnActive : ''}`}
+                className={`${styles.groupToggleBtn} ${isGroupExpanded ? styles.notesToggleBtnActive : ''}`}
                 onClick={(e) => { e.stopPropagation(); toggleGroup(task.id); }}
+                title={isGroupExpanded ? '하위업무 접기' : '하위업무 보기'}
+                aria-label={isGroupExpanded ? '하위업무 접기' : '하위업무 보기'}
               >
-                {isGroupExpanded ? '하위업무 접기' : '하위업무 보기'}
+                <ChevronIcon direction={isGroupExpanded ? 'up' : 'down'} />
               </button>
             ) : (
               hasNotes && (
