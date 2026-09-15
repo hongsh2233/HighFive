@@ -40,6 +40,7 @@ export const authOptions: NextAuthOptions = {
         const identifier = credentials.email.toLowerCase();
         const lockStatus = isLocked(identifier);
         if (lockStatus.locked) {
+          console.warn(`[auth] 로그인 실패: 계정 잠김 (email=${identifier})`);
           return null;
         }
 
@@ -62,13 +63,25 @@ export const authOptions: NextAuthOptions = {
 
         if (!user || !accountValid || !slugValid || !isPasswordValid) {
           recordFailure(identifier);
+          const reason = !user
+            ? '계정 없음'
+            : !accountValid
+              ? '계정 또는 조직 비활성'
+              : !slugValid
+                ? `조직 불일치 (요청 slug=${slug || '(없음)'}, 실제 소속=${user.organization?.slug ?? (user.role === 'SUPERADMIN' ? 'SUPERADMIN' : '없음')})`
+                : '비밀번호 불일치';
+          console.warn(`[auth] 로그인 실패: ${reason} (email=${identifier})`);
           return null;
         }
 
         // TOTP check
         if (user.totpEnabled && user.totpSecret) {
           const rawToken = (credentials.totp || '').replace(/\s/g, '');
-          if (!rawToken) { recordFailure(identifier); return null; }
+          if (!rawToken) {
+            recordFailure(identifier);
+            console.warn(`[auth] 로그인 실패: OTP 코드 미입력 (email=${identifier})`);
+            return null;
+          }
           const totp = new OTPAuth.TOTP({
             algorithm: 'SHA1',
             digits: 6,
@@ -76,7 +89,11 @@ export const authOptions: NextAuthOptions = {
             secret: OTPAuth.Secret.fromBase32(user.totpSecret),
           });
           const delta = totp.validate({ token: rawToken, window: 1 });
-          if (delta === null) { recordFailure(identifier); return null; }
+          if (delta === null) {
+            recordFailure(identifier);
+            console.warn(`[auth] 로그인 실패: OTP 코드 불일치/만료 (email=${identifier})`);
+            return null;
+          }
         }
 
         recordSuccess(identifier);
