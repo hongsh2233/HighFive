@@ -269,6 +269,7 @@ export default function DashboardPage() {
         {weatherGreeting && <p className={styles.weatherGreeting}>{weatherGreeting}</p>}
       </div>
 
+      {user?.role !== 'ADMIN' && (
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>
           오늘의 일정
@@ -296,16 +297,6 @@ export default function DashboardPage() {
           </ul>
         )}
       </div>
-
-      {user?.role === 'ADMIN' && (
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>관리 기능</h2>
-          <div>
-            <Link href="/users" className={styles.actionLink}>
-              팀원관리
-            </Link>
-          </div>
-        </div>
       )}
 
       {user?.role === 'ADMIN' && (
