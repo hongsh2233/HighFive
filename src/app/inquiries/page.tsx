@@ -39,7 +39,7 @@ export default function InquiriesPage() {
     try {
       const [inqRes, workerRes, projectRes] = await Promise.all([
         apiClient.get<{ data: InquiryItem[] }>('/inquiries'),
-        apiClient.get<{ data: WorkerOption[] }>('/users?role=WORKER'),
+        apiClient.get<{ data: WorkerOption[] }>('/users'),
         apiClient.get<{ data: ProjectOption[] }>('/projects'),
       ]);
       setInquiries(inqRes.data.data);
