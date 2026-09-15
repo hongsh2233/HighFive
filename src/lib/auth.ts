@@ -140,7 +140,6 @@ export const authOptions: NextAuthOptions = {
           organizationSlug: user.organization?.slug ?? undefined,
           organizationPlan: user.organization?.plan ?? undefined,
           organizationName: user.organization?.displayName || user.organization?.name || undefined,
-          organizationLogo: user.organization?.logoUrl ?? undefined,
         };
       },
     }),
@@ -155,7 +154,6 @@ export const authOptions: NextAuthOptions = {
         token.organizationSlug = (user as any).organizationSlug;
         token.organizationPlan = (user as any).organizationPlan;
         token.organizationName = (user as any).organizationName;
-        token.organizationLogo = (user as any).organizationLogo;
       }
       return token;
     },
@@ -168,7 +166,6 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).organizationSlug = token.organizationSlug as string | undefined;
         (session.user as any).organizationPlan = token.organizationPlan as string | undefined;
         (session.user as any).organizationName = token.organizationName as string | undefined;
-        (session.user as any).organizationLogo = token.organizationLogo as string | undefined;
       }
       return session;
     },
