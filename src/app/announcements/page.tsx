@@ -11,8 +11,16 @@ interface Announcement {
   id: number;
   content: string;
   isActive: boolean;
+  expiresAt: string | null;
   createdAt: string;
   author: { id: number; name: string };
+}
+
+function toLocalDatetimeInput(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export default function AnnouncementsPage() {
@@ -26,6 +34,7 @@ export default function AnnouncementsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Announcement | null>(null);
   const [content, setContent] = useState('');
+  const [expiresAt, setExpiresAt] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -48,12 +57,14 @@ export default function AnnouncementsPage() {
   const openCreateForm = () => {
     setEditingItem(null);
     setContent('');
+    setExpiresAt('');
     setShowForm(true);
   };
 
   const openEditForm = (item: Announcement) => {
     setEditingItem(item);
     setContent(item.content);
+    setExpiresAt(toLocalDatetimeInput(item.expiresAt));
     setShowForm(true);
   };
 
@@ -62,11 +73,12 @@ export default function AnnouncementsPage() {
     setSubmitting(true);
     setMessage(null);
     try {
+      const expiresAtPayload = expiresAt ? new Date(expiresAt).toISOString() : null;
       if (editingItem) {
-        await apiClient.patch(`/announcements/${editingItem.id}`, { content });
+        await apiClient.patch(`/announcements/${editingItem.id}`, { content, expiresAt: expiresAtPayload });
         setMessage({ type: 'success', text: '수정되었습니다.' });
       } else {
-        await apiClient.post('/announcements', { content });
+        await apiClient.post('/announcements', { content, expiresAt: expiresAtPayload });
         setMessage({ type: 'success', text: '공지가 등록되었습니다.' });
       }
       setShowForm(false);
@@ -141,6 +153,15 @@ export default function AnnouncementsPage() {
                   className={styles.textarea}
                 />
               </div>
+              <div className={styles.formGroupLast}>
+                <label className={styles.label}>만료 일시 (선택 — 지정하면 이후 자동으로 숨김)</label>
+                <input
+                  type="datetime-local"
+                  value={expiresAt}
+                  onChange={(e) => setExpiresAt(e.target.value)}
+                  className={styles.textarea}
+                />
+              </div>
               <div className={styles.formActions}>
                 <button type="submit" disabled={submitting} className={styles.btnSubmit}>
                   {submitting ? '저장 중...' : (editingItem ? '수정' : '등록')}
@@ -163,6 +184,7 @@ export default function AnnouncementsPage() {
                   <div className={styles.itemContent}>{item.content}</div>
                   <div className={styles.itemMeta}>
                     {item.author.name} · {new Date(item.createdAt).toLocaleString('ko-KR')}
+                    {item.expiresAt && ` · 만료: ${new Date(item.expiresAt).toLocaleString('ko-KR')}`}
                     {!item.isActive && <span className={styles.inactiveTag}>비활성</span>}
                   </div>
                 </div>

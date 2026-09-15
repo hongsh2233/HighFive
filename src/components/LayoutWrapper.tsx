@@ -5,7 +5,6 @@ import { useSession } from 'next-auth/react';
 import AppShell from './AppShell';
 import AnnouncementBanner from './AnnouncementBanner';
 import WikiSearchButton from './WikiSearchButton';
-import NotificationBell from './NotificationBell';
 
 const AUTH_REQUIRED_PATHS = ['/dashboard', '/tasks', '/calendar', '/stats', '/users', '/profile', '/info', '/projects', '/announcements', '/requests', '/settings', '/wiki'];
 
@@ -30,7 +29,6 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
       <AnnouncementBanner />
       {children}
       <WikiSearchButton />
-      {status === 'authenticated' && <NotificationBell />}
     </AppShell>
   );
 }

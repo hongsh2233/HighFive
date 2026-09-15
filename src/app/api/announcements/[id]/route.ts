@@ -25,13 +25,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const body = await req.json();
-    const { content, isActive } = body;
+    const { content, isActive, expiresAt } = body;
 
     const announcement = await prisma.announcement.update({
       where: { id: announcementId },
       data: {
         ...(content !== undefined && { content: content.trim() }),
         ...(isActive !== undefined && { isActive }),
+        ...(expiresAt !== undefined && { expiresAt: expiresAt ? new Date(expiresAt) : null }),
       },
       include: { author: { select: { id: true, name: true } } },
     });

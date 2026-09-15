@@ -7,6 +7,7 @@ import { signOut } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { markManualLogout } from '@/lib/logout-flag';
 import TopSearch from './TopSearch';
+import NotificationBell from './NotificationBell';
 import styles from './AppShell.module.css';
 
 interface NavItem { href: string; label: string; icon: string }
@@ -120,6 +121,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const isGroupActive = (group: NavGroup) => group.items.some((i) => pathname.startsWith(i.href));
 
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const toggleGroup = (key: string) => setCollapsedGroups((prev) => {
+    const next = new Set(prev);
+    next.has(key) ? next.delete(key) : next.add(key);
+    return next;
+  });
+
   return (
     <div className={styles.shell}>
       <button className={styles.mobileToggle} aria-label="메뉴 열기" onClick={() => setMobileOpen((v) => !v)}>
@@ -146,23 +154,31 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
           )}
 
-          {groups.map((g) => (
-            <div key={g.key} className={styles.navGroup}>
-              <div className={`${styles.navGroupLabel} ${isGroupActive(g) ? styles.navGroupLabelActive : ''}`}>
-                <span className={styles.navIcon}>{g.icon}</span>{g.label}
-              </div>
-              {g.items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={pathname.startsWith(item.href) ? styles.navSubItemActive : styles.navSubItem}
-                  onClick={closeMobile}
+          {groups.map((g) => {
+            const collapsed = collapsedGroups.has(g.key);
+            return (
+              <div key={g.key} className={styles.navGroup}>
+                <button
+                  type="button"
+                  className={`${styles.navGroupLabel} ${isGroupActive(g) ? styles.navGroupLabelActive : ''}`}
+                  onClick={() => toggleGroup(g.key)}
                 >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          ))}
+                  <span className={styles.navIcon}>{g.icon}</span>{g.label}
+                  <span className={styles.navGroupChevron}>{collapsed ? '▶' : '▼'}</span>
+                </button>
+                {!collapsed && g.items.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={pathname.startsWith(item.href) ? styles.navSubItemActive : styles.navSubItem}
+                    onClick={closeMobile}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            );
+          })}
         </nav>
 
         <div className={styles.sidebarFooter}>
@@ -177,6 +193,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           {!isSuperAdmin && has('search') ? <TopSearch /> : <div />}
 
           <div className={styles.topbarRight}>
+            {user && <NotificationBell />}
             <span className={styles.userName}>{user?.name}</span>
             <button onClick={handleLogout} className={styles.logoutBtn}>로그아웃</button>
           </div>

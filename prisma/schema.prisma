@@ -422,6 +422,7 @@ model Announcement {
   authorId       Int
   isActive       Boolean  @default(true)
   requestId      Int?     @unique
+  expiresAt      DateTime? // 이 시각 이후로는 배너/목록에서 자동으로 숨김
   createdAt      DateTime @default(now())
 
   organization Organization? @relation(fields: [organizationId], references: [id])

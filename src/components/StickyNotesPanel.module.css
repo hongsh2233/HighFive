@@ -2,7 +2,7 @@
   position: fixed;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 45;
+  z-index: 250;
   writing-mode: vertical-rl;
   padding: 14px 6px;
   background-color: var(--accent);
@@ -36,7 +36,7 @@
   top: 0;
   bottom: 0;
   width: 260px;
-  z-index: 44;
+  z-index: 249;
   background-color: var(--bg-surface);
   border: 1px solid var(--border);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);

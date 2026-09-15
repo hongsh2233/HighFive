@@ -106,6 +106,7 @@
   width: 36px;
   text-align: center;
   padding: var(--space-2);
+  border-bottom: 1px solid var(--color-gray-100);
 }
 
 .thId {
@@ -157,6 +158,51 @@
   font-weight: 600;
   color: var(--text-secondary);
   margin-right: var(--space-2);
+}
+
+.filterChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: var(--space-4);
+}
+
+.filterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.filterChip button {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+}
+
+.collapseIcon {
+  font-size: 10px;
+  color: var(--text-muted);
+  width: 12px;
+  flex-shrink: 0;
+}
+
+.thSortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.thSortable:hover {
+  color: var(--accent);
 }
 
 .hideCompletedLabel {
@@ -257,6 +303,7 @@
 
 .tdId {
   color: var(--color-gray-500);
+  border-bottom: 1px solid var(--color-gray-100);
 }
 
 .tdHours {

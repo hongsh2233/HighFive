@@ -38,11 +38,12 @@ export async function GET(req: NextRequest) {
       return successResponse(announcements, '공지 목록 조회 완료');
     }
 
-    // 일반 사용자: 자기 조직 공지 + 시스템 공지(organizationId=null) 모두 표시
+    // 일반 사용자: 자기 조직 공지 + 시스템 공지(organizationId=null) 모두 표시 (만료된 공지 제외)
     const announcements = await prisma.announcement.findMany({
       where: {
         isActive: true,
         OR: [{ organizationId }, { organizationId: null }],
+        AND: [{ OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] }],
       },
       include: { author: { select: { id: true, name: true } } },
       orderBy: { createdAt: 'desc' },
@@ -59,18 +60,20 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { content } = body;
+    const { content, expiresAt } = body;
 
     if (!content?.trim()) {
       return errorResponse('공지 내용을 입력해주세요.', 400, 'VALID_400');
     }
+
+    const expiresAtDate = expiresAt ? new Date(expiresAt) : null;
 
     // SUPERADMIN: organizationId=null 시스템 공지
     const superAdminAuth = await requireSuperAdmin();
     if (!superAdminAuth.error) {
       const authorId = parseInt((superAdminAuth.session!.user as any).id || '0');
       const announcement = await prisma.announcement.create({
-        data: { content: content.trim(), authorId, organizationId: null },
+        data: { content: content.trim(), authorId, organizationId: null, expiresAt: expiresAtDate },
         include: { author: { select: { id: true, name: true } } },
       });
       return successResponse(announcement, '공지가 등록되었습니다.', 201);
@@ -82,7 +85,7 @@ export async function POST(req: NextRequest) {
 
     const authorId = parseInt((session!.user as any).id || '0');
     const announcement = await prisma.announcement.create({
-      data: { content: content.trim(), authorId, organizationId },
+      data: { content: content.trim(), authorId, organizationId, expiresAt: expiresAtDate },
       include: { author: { select: { id: true, name: true } } },
     });
 

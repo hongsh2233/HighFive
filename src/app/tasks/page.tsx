@@ -266,6 +266,19 @@ function TaskListContent() {
     projectSections = projectSections.filter(({ project }) => project.id === pid);
   }
 
+  const [collapsedSections, setCollapsedSections] = useState<Set<number>>(new Set());
+  const toggleSection = (key: number) => setCollapsedSections((prev) => {
+    const next = new Set(prev);
+    next.has(key) ? next.delete(key) : next.add(key);
+    return next;
+  });
+  const allSectionKeys = [
+    ...projectSections.map(({ project }) => project.id),
+    ...(!selectedProject && unassignedTasks.length > 0 ? [-1] : []),
+  ];
+  const allCollapsed = allSectionKeys.length > 0 && allSectionKeys.every((k) => collapsedSections.has(k));
+  const toggleCollapseAll = () => setCollapsedSections(allCollapsed ? new Set() : new Set(allSectionKeys));
+
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkStatus, setBulkStatus] = useState('');
   const [bulkWorker, setBulkWorker] = useState('');
@@ -416,7 +429,49 @@ function TaskListContent() {
           <option value="title_asc">제목순</option>
           <option value="createdAt_desc">최근 등록순</option>
         </select>
+
+        {allSectionKeys.length > 0 && (
+          <label className={styles.hideCompletedLabel}>
+            <input type="checkbox" checked={allCollapsed} onChange={toggleCollapseAll} />
+            모두 접기
+          </label>
+        )}
       </div>
+
+      {(selectedProject || selectedStatus || selectedWorker || selectedPriority || searchQuery.trim()) && (
+        <div className={styles.filterChips}>
+          {selectedProject && (
+            <span className={styles.filterChip}>
+              프로젝트: {myProjects.find((p) => String(p.id) === selectedProject)?.name || selectedProject}
+              <button type="button" onClick={() => handleProjectFilterChange('')}>×</button>
+            </span>
+          )}
+          {selectedStatus && (
+            <span className={styles.filterChip}>
+              상태: {statusOptions.find(([code]) => code === selectedStatus)?.[1] || selectedStatus}
+              <button type="button" onClick={() => setSelectedStatus('')}>×</button>
+            </span>
+          )}
+          {selectedWorker && (
+            <span className={styles.filterChip}>
+              담당자: {workers.find((w: any) => String(w.id) === selectedWorker)?.name || selectedWorker}
+              <button type="button" onClick={() => setSelectedWorker('')}>×</button>
+            </span>
+          )}
+          {selectedPriority && (
+            <span className={styles.filterChip}>
+              우선순위: {TASK_PRIORITY_TEXT[selectedPriority] || selectedPriority}
+              <button type="button" onClick={() => setSelectedPriority('')}>×</button>
+            </span>
+          )}
+          {searchQuery.trim() && (
+            <span className={styles.filterChip}>
+              검색: {searchQuery}
+              <button type="button" onClick={() => setSearchQuery('')}>×</button>
+            </span>
+          )}
+        </div>
+      )}
 
       {error && (
         <div className={styles.errorBox}>
@@ -441,6 +496,10 @@ function TaskListContent() {
               key={project.id}
               project={project}
               tasks={projTasks}
+              isCollapsed={collapsedSections.has(project.id)}
+              onToggleCollapse={() => toggleSection(project.id)}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
               {...handlers}
             />
           ))}
@@ -448,6 +507,10 @@ function TaskListContent() {
             <ProjectTaskSection
               project={null}
               tasks={unassignedTasks}
+              isCollapsed={collapsedSections.has(-1)}
+              onToggleCollapse={() => toggleSection(-1)}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
               {...handlers}
             />
           )}
@@ -472,7 +535,11 @@ function ProjectTaskSection({
   selectedIds,
   toggleSelect,
   toggleSelectAll,
-}: SharedHandlers & { project: ProjectMeta | null; tasks: any[] }) {
+  isCollapsed,
+  onToggleCollapse,
+  sortBy,
+  onSortChange,
+}: SharedHandlers & { project: ProjectMeta | null; tasks: any[]; isCollapsed: boolean; onToggleCollapse: () => void; sortBy: string; onSortChange: (v: string) => void }) {
   const router = useRouter();
   const { confirm } = useDialog();
   const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
@@ -958,15 +1025,29 @@ function ProjectTaskSection({
     return rows;
   };
 
+  const sortArrow = (ascKey: string, descKey: string) => {
+    if (sortBy === ascKey) return ' ▲';
+    if (sortBy === descKey) return ' ▼';
+    return '';
+  };
+  const toggleSort = (ascKey: string, descKey: string) => {
+    if (ascKey === descKey) { onSortChange(sortBy === ascKey ? '' : ascKey); return; }
+    if (sortBy === ascKey) onSortChange(descKey);
+    else if (sortBy === descKey) onSortChange('');
+    else onSortChange(ascKey);
+  };
+
   return (
     <div className={styles.projectSection}>
-      <div className={styles.projectSectionHeader}>
+      <div className={styles.projectSectionHeader} onClick={onToggleCollapse} style={{ cursor: 'pointer' }}>
+        <span className={styles.collapseIcon}>{isCollapsed ? '▶' : '▼'}</span>
         <h2 className={styles.projectSectionTitle}>
           {project ? `${project.name} 리스트` : '미지정 업무'}
         </h2>
         <span className={styles.projectSectionCount}>{tasks.length}건</span>
       </div>
 
+      {!isCollapsed && (
       <div className={styles.tableWrapper}>
         <table
           className={styles.table}
@@ -985,10 +1066,10 @@ function ProjectTaskSection({
                 />
               </th>
               <th className={`${styles.th} ${styles.thId}`}>ID</th>
-              <th className={`${styles.th} ${styles.thTitle}`}>제목</th>
+              <th className={`${styles.th} ${styles.thTitle} ${styles.thSortable}`} onClick={() => toggleSort('title_asc', 'title_asc')}>제목{sortArrow('title_asc', 'title_asc')}</th>
               <th className={`${styles.th} ${styles.thAssignee}`}>담당자</th>
-              <th className={`${styles.th} ${styles.thCreatedAt}`}>등록일자</th>
-              <th className={`${styles.th} ${styles.thTarget}`}>목표일</th>
+              <th className={`${styles.th} ${styles.thCreatedAt} ${styles.thSortable}`} onClick={() => toggleSort('createdAt_desc', 'createdAt_desc')}>등록일자{sortArrow('createdAt_desc', 'createdAt_desc')}</th>
+              <th className={`${styles.th} ${styles.thTarget} ${styles.thSortable}`} onClick={() => toggleSort('targetDate_asc', 'targetDate_desc')}>목표일{sortArrow('targetDate_asc', 'targetDate_desc')}</th>
               <th className={`${styles.th} ${styles.thNotes}`}>비고</th>
               {showHours && <th className={`${styles.th} ${styles.thHours}`}>작업시간</th>}
               <th className={`${styles.th} ${styles.thStatus}`}>상태</th>
@@ -1154,6 +1235,7 @@ function ProjectTaskSection({
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 }
