@@ -98,32 +98,37 @@ export const authOptions: NextAuthOptions = {
 
         recordSuccess(identifier);
 
-        const ip =
-          (req as any)?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
-          (req as any)?.headers?.['x-real-ip'] ||
-          undefined;
-        const ua = (req as any)?.headers?.['user-agent'];
+        try {
+          const ip =
+            (req as any)?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
+            (req as any)?.headers?.['x-real-ip'] ||
+            undefined;
+          const ua = (req as any)?.headers?.['user-agent'];
 
-        // persist session record + lastLoginAt
-        await Promise.all([
-          prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }),
-          prisma.userSession.create({
-            data: {
-              userId: user.id,
-              deviceName: parseDeviceName(ua),
-              ipAddress: ip,
-            },
-          }),
-          prisma.auditLog.create({
-            data: {
-              organizationId: user.organizationId ?? null,
-              userId: user.id,
-              userEmail: user.email,
-              action: 'USER_LOGIN',
-              ipAddress: ip,
-            },
-          }),
-        ]);
+          // persist session record + lastLoginAt
+          await Promise.all([
+            prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }),
+            prisma.userSession.create({
+              data: {
+                userId: user.id,
+                deviceName: parseDeviceName(ua),
+                ipAddress: ip,
+              },
+            }),
+            prisma.auditLog.create({
+              data: {
+                organizationId: user.organizationId ?? null,
+                userId: user.id,
+                userEmail: user.email,
+                action: 'USER_LOGIN',
+                ipAddress: ip,
+              },
+            }),
+          ]);
+        } catch (e) {
+          console.error(`[auth] 로그인 처리 중 예외 발생 (email=${identifier}):`, e);
+          throw e;
+        }
 
         return {
           id: user.id.toString(),
