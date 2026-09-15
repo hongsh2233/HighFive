@@ -68,6 +68,8 @@ export default function OrgLoginPage() {
     }
   };
 
+  const isDemo = slug?.toLowerCase() === 'demo';
+
   if (notFound) {
     return (
       <div className={styles.wrapper}>
@@ -78,6 +80,17 @@ export default function OrgLoginPage() {
               <p className={styles.formSubtitle}>
                 <strong>{slug}</strong> 슬러그에 해당하는 조직이 없습니다.
               </p>
+              {isDemo && (
+                <div style={{ marginTop: 24, padding: 16, border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg-subtle)', textAlign: 'left' }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: 'var(--text-secondary)' }}>데모 조직/계정이 아직 서버에 생성되지 않았습니다. 아래 계정으로 생성해주세요.</p>
+                  {DEMO_ACCOUNTS.map((acc) => (
+                    <p key={acc.email} style={{ fontSize: 12, margin: '4px 0', color: 'var(--text-primary)' }}>
+                      {acc.role} · {acc.name} · {acc.email}
+                    </p>
+                  ))}
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>비밀번호: {DEMO_PASSWORD}</p>
+                </div>
+              )}
             </div>
             <p className={styles.formFooter}>
               <a href="/login" style={{ color: 'var(--accent)' }}>← 메인으로</a>
@@ -185,7 +198,7 @@ export default function OrgLoginPage() {
 
           <p className={styles.formFooter}>계정 문의는 조직 관리자에게 연락하세요</p>
 
-          {slug === 'demo' && (
+          {isDemo && (
             <div style={{ marginTop: 24, padding: 16, border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg-subtle)' }}>
               <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: 'var(--text-secondary)' }}>데모 계정 (클릭하면 자동 입력)</p>
               {DEMO_ACCOUNTS.map((acc) => (
