@@ -34,6 +34,9 @@ export default function TaskDetailPanel({
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [comments, setComments] = useState<any[]>([]);
+  const [commentInput, setCommentInput] = useState('');
+  const [commentSaving, setCommentSaving] = useState(false);
 
   const fetchTask = () => {
     setLoading(true);
@@ -43,9 +46,29 @@ export default function TaskDetailPanel({
       .finally(() => setLoading(false));
   };
 
+  const fetchComments = () => {
+    apiClient.get<{ data: any[] }>(`/tasks/${taskId}/comments`)
+      .then((res) => setComments(res.data.data))
+      .catch(() => setComments([]));
+  };
+
   useEffect(() => {
     fetchTask();
+    fetchComments();
   }, [taskId]);
+
+  const handleCommentSubmit = async () => {
+    const content = commentInput.trim();
+    if (!content || commentSaving) return;
+    setCommentSaving(true);
+    try {
+      const res = await apiClient.post<{ data: any }>(`/tasks/${taskId}/comments`, { content });
+      setComments((prev) => [...prev, res.data.data]);
+      setCommentInput('');
+    } finally {
+      setCommentSaving(false);
+    }
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -158,19 +181,48 @@ export default function TaskDetailPanel({
             <span>{task.registrant?.name || '-'}</span>
           </div>
 
-          {task._count && (
-            <div className={styles.fieldRow}>
-              <span className={styles.fieldLabel}>댓글</span>
-              <span>{task._count.comments ?? 0}건</span>
-            </div>
-          )}
-
           {task.notes && task.notes.trim() !== '<p><br></p>' && (
             <div className={styles.notesSection}>
               <span className={styles.fieldLabel}>비고</span>
               <div className={styles.notesPreview} dangerouslySetInnerHTML={{ __html: task.notes }} />
             </div>
           )}
+
+          <div className={styles.notesSection}>
+            <span className={styles.fieldLabel}>댓글 {comments.length > 0 ? `${comments.length}건` : ''}</span>
+            {comments.length === 0 ? (
+              <p className={styles.emptyComments}>아직 댓글이 없습니다.</p>
+            ) : (
+              <ul className={styles.commentList}>
+                {comments.map((c) => (
+                  <li key={c.id} className={styles.commentItem}>
+                    <div className={styles.commentMeta}>
+                      <span className={styles.commentAuthor}>{c.author?.name || '알 수 없음'}</span>
+                      <span className={styles.commentDate}>{new Date(c.createdAt).toLocaleString('ko-KR')}</span>
+                    </div>
+                    <div className={styles.commentContent}>{c.content}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className={styles.commentForm}>
+              <textarea
+                value={commentInput}
+                onChange={(e) => setCommentInput(e.target.value)}
+                placeholder="댓글을 입력하세요..."
+                className={styles.commentInput}
+                rows={2}
+              />
+              <button
+                type="button"
+                onClick={handleCommentSubmit}
+                disabled={commentSaving || !commentInput.trim()}
+                className={styles.commentSubmitBtn}
+              >
+                등록
+              </button>
+            </div>
+          </div>
 
           <Link href={`/tasks/${taskId}`} className={styles.fullPageLink}>전체 상세 화면에서 보기 →</Link>
         </div>

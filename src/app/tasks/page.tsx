@@ -26,6 +26,32 @@ interface ProjectMeta {
   members?: { user: Worker }[];
 }
 
+function EyeIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z" />
+      <path d="M10 11v6M14 11v6" />
+    </svg>
+  );
+}
+
 // 작업시간 계산 함수
 function getDday(targetDate: string | null | undefined, isDone: boolean): { label: string; urgent: boolean; overdue: boolean } | null {
   if (!targetDate || isDone) return null;
@@ -110,7 +136,6 @@ function TaskListContent() {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedWorker, setSelectedWorker] = useState('');
   const [selectedProject, setSelectedProject] = useState(searchParams.get('projectId') || '');
-  const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
   const [viewTab, setViewTab] = useState<'all' | 'mine' | 'mentioned'>('all');
@@ -213,12 +238,6 @@ function TaskListContent() {
   }
   if (selectedPriority) {
     filteredTasks = filteredTasks.filter((task: any) => (task.priority || 'NORMAL') === selectedPriority);
-  }
-  if (searchQuery.trim()) {
-    const q = searchQuery.trim().toLowerCase();
-    filteredTasks = filteredTasks.filter((task: any) =>
-      task.title?.toLowerCase().includes(q) || task.notes?.toLowerCase().includes(q)
-    );
   }
   if (sortBy) {
     filteredTasks = [...filteredTasks].sort((a: any, b: any) => {
@@ -401,7 +420,7 @@ function TaskListContent() {
           onChange={(e) => setSelectedStatus(e.target.value)}
           className={styles.statusFilterSelect}
         >
-          <option value="">전체 상태</option>
+          <option value="">상태</option>
           {statusOptions.map(([code, label]) => (
             <option key={code} value={code}>
               {label}
@@ -423,7 +442,7 @@ function TaskListContent() {
           onChange={(e) => setSelectedWorker(e.target.value)}
           className={styles.workerSelect}
         >
-          <option value="">모든 담당자</option>
+          <option value="">담당자</option>
           {workers.map((worker) => (
             <option key={worker.id} value={worker.id}>
               {worker.name}
@@ -436,19 +455,11 @@ function TaskListContent() {
           onChange={(e) => setSelectedPriority(e.target.value)}
           className={styles.statusFilterSelect}
         >
-          <option value="">전체 우선순위</option>
+          <option value="">중요도</option>
           {TASK_PRIORITY_LIST.map((code) => (
             <option key={code} value={code}>{TASK_PRIORITY_TEXT[code]}</option>
           ))}
         </select>
-
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="제목/비고 검색..."
-          className={styles.searchInput}
-        />
 
         <select
           value={sortBy}
@@ -470,7 +481,7 @@ function TaskListContent() {
         )}
       </div>
 
-      {(selectedProject || selectedStatus || selectedWorker || selectedPriority || searchQuery.trim()) && (
+      {(selectedProject || selectedStatus || selectedWorker || selectedPriority) && (
         <div className={styles.filterChips}>
           {selectedProject && (
             <span className={styles.filterChip}>
@@ -494,12 +505,6 @@ function TaskListContent() {
             <span className={styles.filterChip}>
               우선순위: {TASK_PRIORITY_TEXT[selectedPriority] || selectedPriority}
               <button type="button" onClick={() => setSelectedPriority('')}>×</button>
-            </span>
-          )}
-          {searchQuery.trim() && (
-            <span className={styles.filterChip}>
-              검색: {searchQuery}
-              <button type="button" onClick={() => setSearchQuery('')}>×</button>
             </span>
           )}
         </div>
@@ -1005,7 +1010,7 @@ function ProjectTaskSection({
                 aria-label="상세보기"
                 onClick={(e) => { e.stopPropagation(); onOpenTask(task.id); }}
               >
-                👁
+                <EyeIcon />
               </button>
             )}
             {!isChild && !task.quickRegister && (
@@ -1020,7 +1025,7 @@ function ProjectTaskSection({
                   router.push(`/tasks/create?parentTaskId=${task.id}`);
                 }}
               >
-                ➕
+                <PlusIcon />
               </button>
             )}
             {canDelete && (
@@ -1031,7 +1036,7 @@ function ProjectTaskSection({
                 aria-label="삭제"
                 onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
               >
-                🗑
+                <TrashIcon />
               </button>
             )}
           </div>

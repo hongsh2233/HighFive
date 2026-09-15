@@ -221,6 +221,7 @@
   border: 1px solid var(--color-gray-300);
   border-radius: 6px;
   font-size: 14px;
+  min-width: 96px;
   margin-left: auto;
 }
 
@@ -229,15 +230,7 @@
   border: 1px solid var(--color-gray-300);
   border-radius: 6px;
   font-size: 14px;
-  min-width: 140px;
-}
-
-.searchInput {
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-gray-300);
-  border-radius: 6px;
-  font-size: 14px;
-  min-width: 200px;
+  min-width: 96px;
 }
 
 .sortSelect {
@@ -695,7 +688,6 @@
 
   .workerSelect,
   .statusFilterSelect,
-  .searchInput,
   .sortSelect,
   .projectFilterSelect {
     min-width: 0;
