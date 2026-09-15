@@ -8,7 +8,8 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
-  const limit = 50;
+  const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '50')));
+  const skipCount = limit <= 10;
   const action = searchParams.get('action') || undefined;
   const from = searchParams.get('from');
   const to = searchParams.get('to');
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
   }
 
   const [total, logs] = await Promise.all([
-    prisma.auditLog.count({ where }),
+    skipCount ? Promise.resolve(null) : prisma.auditLog.count({ where }),
     prisma.auditLog.findMany({
       where,
       orderBy: { createdAt: 'desc' },
@@ -41,5 +42,5 @@ export async function GET(req: NextRequest) {
     }),
   ]);
 
-  return successResponse({ logs, total, page, totalPages: Math.ceil(total / limit) });
+  return successResponse({ logs, total, page, totalPages: total === null ? null : Math.ceil(total / limit) });
 }

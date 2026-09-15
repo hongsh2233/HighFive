@@ -27,6 +27,24 @@ interface PlatformStats {
   }[];
 }
 
+interface AuditLogEntry {
+  id: number;
+  action: string;
+  userEmail: string | null;
+  createdAt: string;
+}
+
+const AUDIT_ACTION_LABELS: Record<string, string> = {
+  USER_LOGIN: '로그인',
+  USER_CREATED: '사용자 생성',
+  USER_DELETED: '사용자 삭제',
+  USER_ROLE_CHANGED: '역할 변경',
+  '2FA_ENABLED': '2FA 활성화',
+  '2FA_DISABLED': '2FA 비활성화',
+  ORG_DELETED: '조직 삭제',
+  SETTING_CHANGED: '설정 변경',
+};
+
 function SuperAdminDashboard({ userName }: { userName: string }) {
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -139,6 +157,16 @@ export default function DashboardPage() {
   const [parentMap, setParentMap] = useState<Map<number, Task>>(new Map());
   const [loadingTasks, setLoadingTasks] = useState(true);
   const [weatherGreeting, setWeatherGreeting] = useState<string | null>(null);
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [loadingAudit, setLoadingAudit] = useState(true);
+
+  useEffect(() => {
+    if (isLoading || !user || user.role !== 'ADMIN') { setLoadingAudit(false); return; }
+    apiClient.get<{ data: { logs: AuditLogEntry[] } }>('/settings/audit?limit=5')
+      .then((res) => setAuditLogs(res.data.data.logs))
+      .catch(() => {})
+      .finally(() => setLoadingAudit(false));
+  }, [isLoading, user]);
 
   useEffect(() => {
     if (isLoading || !user) return;
@@ -277,6 +305,32 @@ export default function DashboardPage() {
               팀원관리
             </Link>
           </div>
+        </div>
+      )}
+
+      {user?.role === 'ADMIN' && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>최근 감사 로그</h2>
+          {loadingAudit ? (
+            <Spinner />
+          ) : auditLogs.length === 0 ? (
+            <p className={styles.emptyDesc}>최근 활동이 없습니다.</p>
+          ) : (
+            <>
+              <ul className={styles.taskList}>
+                {auditLogs.map((log) => (
+                  <li key={log.id} className={styles.auditRow}>
+                    <span className={styles.auditAction}>{AUDIT_ACTION_LABELS[log.action] || log.action}</span>
+                    <span className={styles.auditMeta}>{log.userEmail || '-'}</span>
+                    <span className={styles.auditMeta}>{new Date(log.createdAt).toLocaleString('ko-KR')}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/settings/audit" className={styles.actionLink}>
+                전체 보기 →
+              </Link>
+            </>
+          )}
         </div>
       )}
 

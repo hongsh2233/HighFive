@@ -106,6 +106,30 @@
   border-bottom: 1px solid var(--color-gray-100);
 }
 
+.auditRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-gray-100);
+  font-size: 13px;
+}
+
+.auditRow:last-child {
+  border-bottom: none;
+}
+
+.auditAction {
+  font-weight: 600;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.auditMeta {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
 .taskItem:last-child {
   border-bottom: none;
 }
