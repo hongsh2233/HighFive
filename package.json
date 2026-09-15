@@ -14,7 +14,8 @@
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "db:seed": "ts-node prisma/seed.ts",
-    "reset-demo-passwords": "ts-node prisma/reset-demo-passwords.ts"
+    "reset-demo-passwords": "ts-node prisma/reset-demo-passwords.ts",
+    "reset-2fa": "ts-node prisma/reset-2fa.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",
