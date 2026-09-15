@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { requireRole, successResponse, errorResponse } from '@/lib/utils';
+import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 import { INTEGRATION_CHANNELS, IntegrationChannel, sendTestMessage } from '@/lib/integrations';
 
 function isValidChannel(channel: string): channel is IntegrationChannel {
@@ -9,7 +9,7 @@ function isValidChannel(channel: string): channel is IntegrationChannel {
 // POST /api/settings/integrations/[channel]/test - 테스트 메시지 발송 (ADMIN 전용, 저장 전 값으로도 테스트 가능)
 export async function POST(req: NextRequest, { params }: { params: Promise<{ channel: string }> }) {
   try {
-    const { error } = await requireRole(['ADMIN']);
+    const { error } = await requireAuth();
     if (error) return error;
 
     const { channel } = await params;

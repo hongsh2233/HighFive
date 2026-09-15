@@ -5,6 +5,13 @@ import { useRouter, useParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import styles from '@/app/login/login.module.css';
 
+const DEMO_PASSWORD = '1234567890';
+const DEMO_ACCOUNTS = [
+  { name: '관리자', email: 'admin@demo.co.kr', role: 'ADMIN' },
+  { name: '김데모', email: 'abcd@demo.co.kr', role: 'LEADER' },
+  { name: '이데모', email: 'lee123@demo.co.kr', role: 'WORKER' },
+];
+
 export default function OrgLoginPage() {
   const router = useRouter();
   const params = useParams();
@@ -177,6 +184,24 @@ export default function OrgLoginPage() {
           </form>
 
           <p className={styles.formFooter}>계정 문의는 조직 관리자에게 연락하세요</p>
+
+          {slug === 'demo' && (
+            <div style={{ marginTop: 24, padding: 16, border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg-subtle)' }}>
+              <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: 'var(--text-secondary)' }}>데모 계정 (클릭하면 자동 입력)</p>
+              {DEMO_ACCOUNTS.map((acc) => (
+                <button
+                  key={acc.email}
+                  type="button"
+                  onClick={() => { setEmail(acc.email); setPassword(DEMO_PASSWORD); checkTotp(acc.email); }}
+                  style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '8px 4px', background: 'none', border: 'none', borderTop: '1px solid var(--border)', cursor: 'pointer', fontSize: 12, color: 'var(--text-primary)' }}
+                >
+                  <span>{acc.role} · {acc.name}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>{acc.email}</span>
+                </button>
+              ))}
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>비밀번호: {DEMO_PASSWORD}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

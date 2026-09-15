@@ -59,7 +59,7 @@ export default function IntegrationsSettingsPage() {
   };
 
   useEffect(() => {
-    if (!authLoading && user?.role === 'ADMIN') fetchConfigs();
+    if (!authLoading && user) fetchConfigs();
     else if (!authLoading) setLoading(false);
   }, [authLoading, user]);
 
@@ -107,8 +107,8 @@ export default function IntegrationsSettingsPage() {
     return <div className={styles.loading}><Spinner /></div>;
   }
 
-  if (user?.role !== 'ADMIN') {
-    return <div className={styles.loading}>관리자만 접근 가능합니다.</div>;
+  if (!user) {
+    return <div className={styles.loading}>로그인이 필요합니다.</div>;
   }
 
   return (

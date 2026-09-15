@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireRole, successResponse, errorResponse } from '@/lib/utils';
+import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 import { INTEGRATION_CHANNELS, IntegrationChannel } from '@/lib/integrations';
 
 function isValidChannel(channel: string): channel is IntegrationChannel {
@@ -10,7 +10,7 @@ function isValidChannel(channel: string): channel is IntegrationChannel {
 // PUT /api/settings/integrations/[channel] - 채널 설정 저장 (ADMIN 전용)
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ channel: string }> }) {
   try {
-    const { error, organizationId } = await requireRole(['ADMIN']);
+    const { error, organizationId } = await requireAuth();
     if (error) return error;
 
     const { channel } = await params;

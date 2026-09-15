@@ -15,7 +15,7 @@ const MENU_ITEMS = [
   { key: 'search', label: '검색' },
   { key: 'stats', label: '설정 > 통계' },
   { key: 'calendar_sync', label: '설정 > 구글 캘린더 연동' },
-  { key: 'integrations', label: '설정 > 외부연동 (ADMIN 전용)' },
+  { key: 'integrations', label: '설정 > 외부연동' },
 ];
 
 type PlanFeatures = Record<string, string[]>;

@@ -82,7 +82,7 @@ export default function LandingPage() {
           <div className={styles.navActions}>
             <a href="#pricing" className={styles.navLink}>요금안내</a>
             <button onClick={openDemoModal} className={styles.navLink}>무료 데모 신청</button>
-            <Link href="/register" className={styles.navCta}>무료로 시작하기</Link>
+            <Link href="/demo/login" className={styles.navCta}>데모 보기</Link>
           </div>
         </div>
       </header>
@@ -103,7 +103,7 @@ export default function LandingPage() {
               AI가 업무 초안 작성부터 주간 보고서까지 자동으로 처리합니다.
             </p>
             <div className={styles.heroActions}>
-              <Link href="/register" className={styles.btnPrimary}>무료로 시작하기</Link>
+              <Link href="/demo/login" className={styles.btnPrimary}>데모 보기</Link>
               <button onClick={openDemoModal} className={styles.btnSecondary}>무료 데모 신청</button>
             </div>
           </div>
@@ -218,6 +218,16 @@ export default function LandingPage() {
             <p className={styles.pricingSubtitle}>오픈 기념으로 모든 플랜을 무료로 사용해보세요.</p>
             <div className={styles.pricingGrid}>
               <div className={styles.pricingCard}>
+                <h3 className={styles.pricingPlanName}>무료</h3>
+                <p className={styles.pricingPlanDesc}>개인/소규모 팀이 가볍게 써보기 좋은 기본 기능</p>
+                <div className={styles.pricingPriceRow}>
+                  <span className={styles.pricingCurrent}>0원</span>
+                  <span className={styles.pricingUnit}>/ 인 / 월</span>
+                </div>
+                <Link href="/demo/login" className={styles.btnPrimary}>데모 보기</Link>
+              </div>
+
+              <div className={styles.pricingCard}>
                 <span className={styles.pricingBadge}>🎉 오픈 기념 행사중</span>
                 <h3 className={styles.pricingPlanName}>베이직</h3>
                 <p className={styles.pricingPlanDesc}>소규모 팀의 업무·프로젝트 관리에 필요한 핵심 기능</p>
@@ -226,7 +236,7 @@ export default function LandingPage() {
                   <span className={styles.pricingCurrent}>0원</span>
                   <span className={styles.pricingUnit}>/ 인 / 월</span>
                 </div>
-                <Link href="/register" className={styles.btnPrimary}>무료로 시작하기</Link>
+                <Link href="/demo/login" className={styles.btnPrimary}>데모 보기</Link>
               </div>
 
               <div className={`${styles.pricingCard} ${styles.pricingCardHighlight}`}>
@@ -238,7 +248,7 @@ export default function LandingPage() {
                   <span className={styles.pricingCurrent}>0원</span>
                   <span className={styles.pricingUnit}>/ 인 / 월</span>
                 </div>
-                <Link href="/register" className={styles.btnPrimary}>무료로 시작하기</Link>
+                <Link href="/demo/login" className={styles.btnPrimary}>데모 보기</Link>
               </div>
             </div>
             <p className={styles.pricingNote}>* 행사 기간 및 조건은 별도 안내 없이 변경될 수 있습니다.</p>
@@ -250,7 +260,7 @@ export default function LandingPage() {
             <h2 className={styles.ctaTitle}>지금 바로 팀과 함께 시작해보세요</h2>
             <p className={styles.ctaSubtitle}>회사명과 이메일만 있으면 1분 안에 조직을 만들 수 있습니다. 먼저 체험해보고 싶다면 무료 데모를 신청하세요.</p>
             <div className={styles.heroActions}>
-              <Link href="/register" className={styles.btnPrimary}>무료로 시작하기</Link>
+              <Link href="/demo/login" className={styles.btnPrimary}>데모 보기</Link>
               <button onClick={openDemoModal} className={styles.btnSecondary}>무료 데모 신청</button>
             </div>
           </div>

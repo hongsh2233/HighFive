@@ -244,7 +244,7 @@ export default function AppHeader() {
                 )}
               </div>
 
-              {(has('calendar_sync') || (user?.role === 'ADMIN' && has('integrations'))) && (
+              {(user?.role === 'ADMIN' || has('integrations')) && (
                 <div
                   className={styles.menuWrapper}
                   onMouseEnter={() => handleMenuEnter('agent')}
@@ -261,10 +261,7 @@ export default function AppHeader() {
                       {user?.role === 'ADMIN' && (
                         <Link href="/settings/ai" className={styles.dropdownItem} onClick={closeAll}>AI 설정</Link>
                       )}
-                      {has('calendar_sync') && user?.role !== 'ADMIN' && (
-                        <Link href="/settings/calendar-sync" className={styles.dropdownItem} onClick={closeAll}>구글 캘린더 연동</Link>
-                      )}
-                      {user?.role === 'ADMIN' && has('integrations') && (
+                      {has('integrations') && (
                         <Link href="/settings/integrations" className={styles.dropdownItem} onClick={closeAll}>외부연동</Link>
                       )}
                     </div>

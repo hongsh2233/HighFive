@@ -1,11 +1,11 @@
 import { prisma } from '@/lib/db';
-import { requireRole, successResponse, errorResponse } from '@/lib/utils';
+import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 import { INTEGRATION_CHANNELS } from '@/lib/integrations';
 
 // GET /api/settings/integrations - 외부연동 채널 설정 목록 (ADMIN 전용)
 export async function GET() {
   try {
-    const { error, organizationId } = await requireRole(['ADMIN']);
+    const { error, organizationId } = await requireAuth();
     if (error) return error;
 
     const rows = await prisma.integration.findMany({ where: { organizationId } });
