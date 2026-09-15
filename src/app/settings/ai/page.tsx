@@ -6,13 +6,14 @@ import apiClient from '@/lib/api-client';
 import styles from './ai.module.css';
 import Spinner from '@/components/common/Spinner';
 
-type LlmProvider = 'ANTHROPIC' | 'OPENAI' | 'GEMINI' | 'GROQ';
+type LlmProvider = 'ANTHROPIC' | 'OPENAI' | 'GEMINI' | 'GROQ' | 'NVIDIA';
 
 const PROVIDER_LABEL: Record<LlmProvider, string> = {
   ANTHROPIC: 'Anthropic (Claude)',
   OPENAI: 'OpenAI (GPT)',
   GEMINI: 'Google (Gemini)',
   GROQ: 'Groq',
+  NVIDIA: 'NVIDIA NIM',
 };
 
 const FEATURE_META: { key: string; label: string; hint: string; needsWeather?: boolean }[] = [
@@ -31,6 +32,7 @@ interface AiSettingsData {
   hasOpenaiKey: boolean;
   hasGeminiKey: boolean;
   hasGroqKey: boolean;
+  hasNvidiaKey: boolean;
   hasWeatherKey: boolean;
   hasGithubToken: boolean;
   weatherCity: string | null;
@@ -41,6 +43,7 @@ interface AiSettingsData {
 
 export default function AiSettingsPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const isFreePlan = ((user as any)?.organizationPlan ?? 'FREE') === 'FREE';
   const [data, setData] = useState<AiSettingsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,6 +51,7 @@ export default function AiSettingsPage() {
   const [openaiKeyInput, setOpenaiKeyInput] = useState('');
   const [geminiKeyInput, setGeminiKeyInput] = useState('');
   const [groqKeyInput, setGroqKeyInput] = useState('');
+  const [nvidiaKeyInput, setNvidiaKeyInput] = useState('');
   const [weatherKeyInput, setWeatherKeyInput] = useState('');
   const [weatherCityInput, setWeatherCityInput] = useState('');
   const [githubTokenInput, setGithubTokenInput] = useState('');
@@ -77,6 +81,7 @@ export default function AiSettingsPage() {
     if (data.hasOpenaiKey) list.push('OPENAI');
     if (data.hasGeminiKey) list.push('GEMINI');
     if (data.hasGroqKey) list.push('GROQ');
+    if (data.hasNvidiaKey && isFreePlan) list.push('NVIDIA');
     return list;
   };
 
@@ -89,6 +94,7 @@ export default function AiSettingsPage() {
       if (openaiKeyInput.trim()) body.openaiKey = openaiKeyInput.trim();
       if (geminiKeyInput.trim()) body.geminiKey = geminiKeyInput.trim();
       if (groqKeyInput.trim()) body.groqKey = groqKeyInput.trim();
+      if (nvidiaKeyInput.trim()) body.nvidiaKey = nvidiaKeyInput.trim();
       if (weatherKeyInput.trim()) body.weatherKey = weatherKeyInput.trim();
       if (githubTokenInput.trim()) body.githubToken = githubTokenInput.trim();
       body.weatherCity = weatherCityInput.trim() || null;
@@ -98,6 +104,7 @@ export default function AiSettingsPage() {
       setOpenaiKeyInput('');
       setGeminiKeyInput('');
       setGroqKeyInput('');
+      setNvidiaKeyInput('');
       setWeatherKeyInput('');
       setGithubTokenInput('');
       setMessage({ type: 'success', text: 'API 키가 저장되었습니다.' });
@@ -222,6 +229,27 @@ export default function AiSettingsPage() {
             </div>
           </div>
         </div>
+
+        {isFreePlan && (
+        <div className={styles.card}>
+          <h2 className={styles.cardTitle}>NVIDIA NIM API 키 <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)' }}>무료 플랜 전용</span></h2>
+          <p className={styles.cardHint}>
+            {data.hasNvidiaKey ? '✅ 설정됨 — 교체하려면 새 키를 입력 후 저장하세요.' : '미설정 — build.nvidia.com에서 무료 API 키를 발급받아 입력하세요.'}
+          </p>
+          <div className={styles.fieldGrid}>
+            <div>
+              <label className={styles.label}>API 키</label>
+              <input
+                type="password"
+                value={nvidiaKeyInput}
+                onChange={(e) => setNvidiaKeyInput(e.target.value)}
+                placeholder={data.hasNvidiaKey ? '새 키로 교체하려면 입력' : 'nvapi-...'}
+                className={styles.input}
+              />
+            </div>
+          </div>
+        </div>
+        )}
 
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>Groq API 키</h2>

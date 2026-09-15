@@ -549,6 +549,7 @@ model AiSettings {
   openaiKeyEnc     String?  // AES-256-GCM 암호화된 OpenAI API 키
   geminiKeyEnc     String?  // AES-256-GCM 암호화된 Google Gemini API 키
   groqKeyEnc       String?  // AES-256-GCM 암호화된 Groq API 키
+  nvidiaKeyEnc     String?  // AES-256-GCM 암호화된 NVIDIA NIM API 키
   weatherKeyEnc    String?  // AES-256-GCM 암호화된 날씨 API 키
   githubTokenEnc   String?  // AES-256-GCM 암호화된 GitHub Personal Access Token
   weatherCity      String?  // 조직 기본 도시 (날씨 인사말용)
