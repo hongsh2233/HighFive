@@ -47,7 +47,7 @@ async function callGroq(prompt: string, maxTokens: number, apiKey?: string | nul
   }
   const client = new OpenAI({ apiKey: key, baseURL: 'https://api.groq.com/openai/v1' });
   const response = await client.chat.completions.create({
-    model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
+    model: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
     max_tokens: maxTokens,
     messages: [{ role: 'user', content: prompt }],
   });
