@@ -348,6 +348,7 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {user?.role !== 'ADMIN' && (
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>나의 업무</h2>
         {loadingTasks ? (
@@ -381,6 +382,7 @@ export default function DashboardPage() {
           </ul>
         )}
       </div>
+      )}
 
       <div>
         <h2 className={styles.sectionTitle}>최근 활동</h2>
