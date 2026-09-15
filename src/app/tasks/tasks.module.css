@@ -341,14 +341,23 @@
 
 .detailBtn {
   composes: btn btn-sm btn-secondary from global;
+  width: 28px;
+  padding: 0;
+  font-size: 13px;
 }
 
 .addSubBtnSmall {
   composes: btn btn-sm btn-success from global;
+  width: 28px;
+  padding: 0;
+  font-size: 13px;
 }
 
 .deleteBtnSmall {
   composes: btn btn-sm btn-danger from global;
+  width: 28px;
+  padding: 0;
+  font-size: 13px;
 }
 
 .titleCell {
@@ -580,6 +589,8 @@
   font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
+  margin: 0;
+  line-height: 1.2;
 }
 
 .projectSectionCount {

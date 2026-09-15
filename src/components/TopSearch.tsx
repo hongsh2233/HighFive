@@ -139,7 +139,7 @@ export default function TopSearch() {
           onChange={handleChange}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder={aiMode ? '자연어로 검색하고 Enter를 누르세요...' : '업무, 프로젝트, 위키 검색... (Ctrl+K)'}
+          placeholder={aiMode ? '자연어로 검색... (Enter)' : '검색 (Ctrl+K)'}
           className={styles.input}
         />
         {aiSearchEnabled && (
@@ -148,7 +148,7 @@ export default function TopSearch() {
             onClick={() => { setAiMode((v) => !v); setAiKeyword(null); }}
             title="AI 자연어 검색"
           >
-            ✨ AI
+            ✨
           </button>
         )}
         {loading && <span className={styles.loadingDot}>⋯</span>}

@@ -1001,9 +1001,11 @@ function ProjectTaskSection({
               <button
                 type="button"
                 className={styles.detailBtn}
+                title="상세보기"
+                aria-label="상세보기"
                 onClick={(e) => { e.stopPropagation(); onOpenTask(task.id); }}
               >
-                상세보기
+                👁
               </button>
             )}
             {!isChild && !task.quickRegister && (
@@ -1011,22 +1013,25 @@ function ProjectTaskSection({
                 type="button"
                 className={styles.addSubBtnSmall}
                 disabled={hasNotes}
-                title={hasNotes ? '비고가 있는 업무는 하위 업무를 등록할 수 없습니다.' : undefined}
+                title={hasNotes ? '비고가 있는 업무는 하위 업무를 등록할 수 없습니다.' : '하위 업무 추가'}
+                aria-label="하위 업무 추가"
                 onClick={async () => {
                   if (!isGroupRow && !(await confirm('하위 업무를 등록하면 이 업무는 그룹 업무로 전환됩니다. 계속하시겠습니까?'))) return;
                   router.push(`/tasks/create?parentTaskId=${task.id}`);
                 }}
               >
-                + 하위 업무
+                ➕
               </button>
             )}
             {canDelete && (
               <button
                 type="button"
                 className={styles.deleteBtnSmall}
+                title="삭제"
+                aria-label="삭제"
                 onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
               >
-                삭제
+                🗑
               </button>
             )}
           </div>
