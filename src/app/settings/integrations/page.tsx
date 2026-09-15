@@ -9,7 +9,8 @@ import Spinner from '@/components/common/Spinner';
 
 const GOOGLE_SHORTCUTS = [
   { key: 'calendar', label: '구글 캘린더', hint: '일정을 구글 캘린더와 자동 동기화합니다.', icon: '📅', iconBg: '#1A73E8', href: '/settings/calendar-sync' },
-  { key: 'drive', label: '구글 드라이브', hint: '파일을 구글 드라이브에 저장하고 바로 열어봅니다.', icon: '📁', iconBg: '#0F9D58', href: '/settings/drive' },
+  // 구글 드라이브: 당장 안 쓰기로 해서 진입점만 숨김 (코드는 그대로 유지, 필요시 주석 해제)
+  // { key: 'drive', label: '구글 드라이브', hint: '파일을 구글 드라이브에 저장하고 바로 열어봅니다.', icon: '📁', iconBg: '#0F9D58', href: '/settings/drive' },
 ];
 
 type Channel = 'SLACK' | 'JANDI' | 'TEAMS' | 'TELEGRAM' | 'KAKAO';
