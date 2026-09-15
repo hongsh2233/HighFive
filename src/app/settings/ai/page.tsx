@@ -243,6 +243,9 @@ export default function AiSettingsPage() {
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>날씨 API 키 (날씨 인사말용)</h2>
           <p className={styles.cardHint}>
+            OpenWeatherMap(openweathermap.org) API 키를 사용합니다. 해당 사이트에서 무료로 발급받을 수 있습니다.
+          </p>
+          <p className={styles.cardHint}>
             {data.hasWeatherKey ? '✅ 설정됨 — 교체하려면 새 키를 입력 후 저장하세요.' : '미설정 — 날씨 인사말 기능을 사용하려면 키와 도시를 입력하세요.'}
           </p>
           <div className={styles.fieldGrid}>
