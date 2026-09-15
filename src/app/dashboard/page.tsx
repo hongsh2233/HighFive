@@ -260,12 +260,6 @@ export default function DashboardPage() {
         <h1 className={styles.title}>
           안녕하세요, {user?.name}님
         </h1>
-        <p className={styles.subtitle}>
-          {user?.role === 'ADMIN' && '관리자'}
-          {user?.role === 'LEADER' && '리더'}
-          {user?.role === 'WORKER' && '작업자'}
-          {' '}계정입니다.
-        </p>
         {weatherGreeting && <p className={styles.weatherGreeting}>{weatherGreeting}</p>}
       </div>
 
