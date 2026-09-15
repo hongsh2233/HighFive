@@ -303,6 +303,7 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--color-primary);
+  border-bottom: 1px solid var(--color-gray-100);
 }
 
 .statusSelect {
@@ -313,6 +314,8 @@
 .tdNotes {
   white-space: normal;
   min-width: 150px;
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-gray-100);
 }
 
 .notesBtns {
