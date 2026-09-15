@@ -146,16 +146,14 @@ export default function AiSettingsPage() {
     return <div className={styles.loading}>관리자만 접근 가능합니다.</div>;
   }
 
-  if (!data) return null;
-
-  const providers = availableProviders();
+  const providers = data ? availableProviders() : [];
 
   return (
     <div className={styles.page}>
       <div className={styles.inner}>
         <div className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>AI 설정</h1>
-          <p className={styles.pageSubtitle}>사용할 AI 프로바이더(Anthropic/OpenAI/Gemini)의 API 키를 등록하고, 기능별로 어떤 프로바이더를 쓸지 선택할 수 있습니다.</p>
+          <p className={styles.pageSubtitle}>사용할 AI 프로바이더(Anthropic/OpenAI/Gemini/Groq)의 API 키를 등록하고, 기능별로 어떤 프로바이더를 쓸지 선택할 수 있습니다.</p>
         </div>
 
         {message && (
@@ -164,6 +162,10 @@ export default function AiSettingsPage() {
           </div>
         )}
 
+        {!data && !message && <p className={styles.cardHint}>불러오는 중...</p>}
+
+        {data && (
+        <>
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>Anthropic API 키 (Claude)</h2>
           <p className={styles.cardHint}>
@@ -345,6 +347,8 @@ export default function AiSettingsPage() {
             );
           })}
         </div>
+        </>
+        )}
       </div>
     </div>
   );
