@@ -269,21 +269,21 @@ export default function DashboardPage() {
         {weatherGreeting && <p className={styles.weatherGreeting}>{weatherGreeting}</p>}
       </div>
 
-      {user?.role !== 'ADMIN' && (
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>
-          오늘의 일정
-          {isOnLeaveToday && <span className={styles.leaveBadge}>오늘 휴가</span>}
-        </h2>
-        {loadingTasks ? (
+      {user?.role !== 'ADMIN' && loadingTasks && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>오늘의 일정</h2>
           <div className={styles.emptyState}>
             <p className={styles.emptyDesc}>불러오는 중...</p>
           </div>
-        ) : todayTasks.length === 0 ? (
-          <div className={styles.emptyState}>
-            <p className={styles.emptyDesc}>오늘 예정된 업무가 없습니다.</p>
-          </div>
-        ) : (
+        </div>
+      )}
+
+      {user?.role !== 'ADMIN' && !loadingTasks && todayTasks.length > 0 && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>
+            오늘의 일정
+            {isOnLeaveToday && <span className={styles.leaveBadge}>오늘 휴가</span>}
+          </h2>
           <ul className={styles.taskList}>
             {todayTasks.map((t) => (
               <li key={t.id} className={styles.taskItem}>
@@ -295,8 +295,7 @@ export default function DashboardPage() {
               </li>
             ))}
           </ul>
-        )}
-      </div>
+        </div>
       )}
 
       {user?.role === 'ADMIN' && (
@@ -325,19 +324,24 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {user?.role === 'LEADER' && (
+      {['LEADER', 'WORKER'].includes(user?.role || '') && (
         <div className={styles.section}>
-          <div className={styles.linkRow}>
-            <Link href="/tasks" className={styles.actionLink}>
+          <h2 className={styles.sectionTitle}>바로가기</h2>
+          <div className={styles.quickLinkGrid}>
+            <Link href="/tasks" className={styles.quickLinkCard}>
+              <span className={styles.quickLinkIcon}>📋</span>
               업무 배정
             </Link>
-            <Link href="/stats" className={styles.actionLink}>
+            <Link href="/stats" className={styles.quickLinkCard}>
+              <span className={styles.quickLinkIcon}>📊</span>
               통계 조회
             </Link>
-            <Link href="/calendar" className={styles.actionLink}>
+            <Link href="/calendar" className={styles.quickLinkCard}>
+              <span className={styles.quickLinkIcon}>📅</span>
               캘린더
             </Link>
-            <Link href="/requests" className={styles.actionLink}>
+            <Link href="/requests" className={styles.quickLinkCard}>
+              <span className={styles.quickLinkIcon}>📝</span>
               신규 신청
             </Link>
           </div>

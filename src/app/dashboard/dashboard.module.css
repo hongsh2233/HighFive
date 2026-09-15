@@ -60,6 +60,37 @@
   padding: 8px 16px;
 }
 
+.quickLinkGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-3);
+}
+
+.quickLinkCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 12px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  text-decoration: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.quickLinkCard:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.quickLinkIcon {
+  font-size: 22px;
+}
+
 .emptyState {
   text-align: center;
   padding: var(--space-12);
