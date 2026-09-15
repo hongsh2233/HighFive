@@ -9,6 +9,10 @@
   --header-bg:   #18181B;
   --header-text: #FAFAFA;
 
+  /* Sidebar / Topbar shell */
+  --sidebar-width: 232px;
+  --topbar-height: 56px;
+
   /* Text */
   --text-primary:   #09090B;
   --text-secondary: #71717A;

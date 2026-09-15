@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import AppHeader from './AppHeader';
+import AppShell from './AppShell';
 import AnnouncementBanner from './AnnouncementBanner';
 import WikiSearchButton from './WikiSearchButton';
 import NotificationBell from './NotificationBell';
@@ -21,13 +21,16 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     return null;
   }
 
+  if (isLoginPage) {
+    return <div>{children}</div>;
+  }
+
   return (
-    <div>
-      {!isLoginPage && <AppHeader />}
-      {!isLoginPage && <AnnouncementBanner />}
+    <AppShell>
+      <AnnouncementBanner />
       {children}
-      {!isLoginPage && <WikiSearchButton />}
-      {!isLoginPage && status === 'authenticated' && <NotificationBell />}
-    </div>
+      <WikiSearchButton />
+      {status === 'authenticated' && <NotificationBell />}
+    </AppShell>
   );
 }
