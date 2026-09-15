@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: "standalone",
   experimental: {
-    optimizePackageImports: ["lucide-react"],
+    optimizePackageImports: ["lucide-react", "googleapis", "openai", "@google/generative-ai", "react-quill-new"],
   },
 };
 
