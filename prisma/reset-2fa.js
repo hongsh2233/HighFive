@@ -1,11 +1,11 @@
-import { PrismaClient } from '@prisma/client';
+const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
 async function main() {
   const email = process.argv[2];
   if (!email) {
-    console.error('사용법: npx ts-node prisma/reset-2fa.ts <email>');
+    console.error('사용법: node prisma/reset-2fa.js <email>');
     process.exit(1);
   }
   const user = await prisma.user.findUnique({ where: { email } });
