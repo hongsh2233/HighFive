@@ -253,6 +253,7 @@ model TaskAttachment {
   size         Int
   data         Bytes
   uploadedById Int
+  aiSummary    String?  @db.Text
   createdAt    DateTime @default(now())
 
   task       Task @relation(fields: [taskId], references: [id], onDelete: Cascade)

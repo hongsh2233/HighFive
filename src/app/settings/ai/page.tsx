@@ -24,6 +24,7 @@ const FEATURE_META: { key: string; label: string; hint: string; needsWeather?: b
   { key: 'taskSummary', label: 'AI 업무 요약', hint: '업무 히스토리/댓글을 바탕으로 현황을 요약합니다.' },
   { key: 'aiSearch', label: 'AI 자연어 검색', hint: '자연어 질의에서 검색 키워드/필터를 추출합니다.' },
   { key: 'weeklyReport', label: 'AI 주간 보고서', hint: '이번 주 완료/진행 업무 기반 보고서를 생성합니다.' },
+  { key: 'docSummary', label: 'AI 문서 요약', hint: '업무에 첨부된 docx/xlsx 문서 내용을 요약합니다.' },
   { key: 'weatherGreeting', label: '날씨 기반 인사말', hint: '대시보드에 날씨 기반 인사 문구를 표시합니다.', needsWeather: true },
 ];
 

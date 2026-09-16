@@ -129,6 +129,32 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     }
   };
 
+  const [summarizingId, setSummarizingId] = useState<number | null>(null);
+  const [summaryError, setSummaryError] = useState('');
+
+  const DOC_SUMMARY_MIME_TYPES = [
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel',
+  ];
+
+  const handleAttachSummarize = async (attachmentId: number) => {
+    if (!task) return;
+    setSummaryError('');
+    setSummarizingId(attachmentId);
+    try {
+      const res = await apiClient.post<{ data: { summary: string } }>(`/tasks/${task.id}/attachments/${attachmentId}/summarize`);
+      setTask(prev => prev ? {
+        ...prev,
+        attachments: (prev.attachments || []).map(a => a.id === attachmentId ? { ...a, aiSummary: res.data.data.summary } : a),
+      } : prev);
+    } catch (err: any) {
+      setSummaryError(err?.response?.data?.message || 'AI 요약 중 오류가 발생했습니다.');
+    } finally {
+      setSummarizingId(null);
+    }
+  };
+
   const handleAttachDelete = async (attachmentId: number) => {
     if (!task) return;
     const ok = await confirm('첨부파일을 삭제하시겠습니까?');
@@ -1024,6 +1050,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             </label>
           </div>
           {attachError && <p className={styles.hintError}>{attachError}</p>}
+          {summaryError && <p className={styles.hintError}>{summaryError}</p>}
           {task.attachments && task.attachments.length > 0 ? (
             <ul className={styles.fileList}>
               {task.attachments.map(a => (
@@ -1032,7 +1059,21 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                     {a.filename}
                   </a>
                   <span className={styles.fileSize}>{formatFileSize(a.size)}</span>
+                  {DOC_SUMMARY_MIME_TYPES.includes(a.mimeType) && !a.aiSummary && (
+                    <button
+                      type="button"
+                      className={styles.fileRemoveBtn}
+                      onClick={() => handleAttachSummarize(a.id)}
+                      disabled={summarizingId === a.id}
+                      title="AI 요약"
+                    >
+                      {summarizingId === a.id ? '...' : '✨'}
+                    </button>
+                  )}
                   <button type="button" className={styles.fileRemoveBtn} onClick={() => handleAttachDelete(a.id)}>✕</button>
+                  {a.aiSummary && (
+                    <p className={styles.attachSummary}>{a.aiSummary}</p>
+                  )}
                 </li>
               ))}
             </ul>

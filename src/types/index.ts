@@ -83,6 +83,7 @@ export interface TaskAttachment {
   size: number;
   createdAt: string;
   uploadedBy?: { id: number; name: string };
+  aiSummary?: string | null;
 }
 
 // 프로젝트별 커스텀 필드 (노션식 자유 속성)

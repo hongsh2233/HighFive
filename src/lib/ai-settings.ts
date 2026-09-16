@@ -21,6 +21,7 @@ export const AI_FEATURE_KEYS = [
   'meetingSummary',
   'meetingToTask',
   'weatherGreeting',
+  'docSummary',
 ] as const;
 
 export type AiFeatureKey = (typeof AI_FEATURE_KEYS)[number];
