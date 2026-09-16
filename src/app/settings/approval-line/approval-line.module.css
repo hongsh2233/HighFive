@@ -1,0 +1,160 @@
+.page {
+  padding: var(--space-8);
+  max-width: 100%;
+}
+
+.inner {
+  max-width: var(--width-standard);
+  margin: 0 auto;
+}
+
+.pageHeader {
+  margin-bottom: 20px;
+}
+
+.pageTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.pageSubtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.message {
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.messageSuccess {
+  background-color: var(--success-light);
+  color: var(--success);
+  border: 1px solid var(--success-light);
+}
+
+.messageError {
+  background-color: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+}
+
+.empty {
+  text-align: center;
+  padding: 40px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.stepList {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stepItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  flex-wrap: wrap;
+}
+
+.stepOrder {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stepLabelInput {
+  composes: field-input from global;
+  width: 160px;
+}
+
+.stepSelect {
+  composes: field-select from global;
+  width: 160px;
+}
+
+.finalizeLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.stepActions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.moveBtn {
+  composes: btn btn-sm btn-secondary from global;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+}
+
+.removeBtn {
+  composes: btn btn-sm btn-danger from global;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+}
+
+.actionsRow {
+  display: flex;
+  gap: 10px;
+}
+
+.btnPrimary {
+  composes: btn btn-primary from global;
+  padding: 8px 20px;
+}
+
+.btnSecondary {
+  composes: btn btn-secondary from global;
+  padding: 8px 16px;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 20px 14px;
+  }
+  .stepLabelInput, .stepSelect {
+    width: 100%;
+  }
+}

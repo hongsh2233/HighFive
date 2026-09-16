@@ -131,6 +131,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         ...(user?.role === 'ADMIN' ? [{
           key: 'settings', label: '설정', icon: '⚙️', items: [
             { href: '/settings/organization', label: '조직 설정', icon: '' },
+            { href: '/settings/approval-line', label: '결재선 설정', icon: '' },
             { href: '/settings/audit', label: '감사 로그', icon: '' },
           ],
         }] : []),

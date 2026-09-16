@@ -20,6 +20,30 @@ interface RequestItem {
   decidedAt: string | null;
   requester: { id: number; name: string };
   approver: { id: number; name: string } | null;
+  currentStepOrder: number | null;
+  approvals: {
+    id: number;
+    order: number;
+    label: string;
+    canFinalize: boolean;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SKIPPED';
+    approver: { id: number; name: string };
+  }[];
+}
+
+const STEP_STATUS_ICON: Record<string, string> = { PENDING: '⏳', APPROVED: '✅', REJECTED: '❌', SKIPPED: '⏭️' };
+
+function StepProgress({ approvals }: { approvals: RequestItem['approvals'] }) {
+  if (!approvals || approvals.length === 0) return null;
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+      {approvals.map((a) => (
+        <span key={a.id}>
+          {STEP_STATUS_ICON[a.status]} {a.label}({a.approver.name}){a.canFinalize && a.status === 'PENDING' ? ' [전결가능]' : ''}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 const TYPE_LABEL: Record<string, string> = { LEAVE: '휴가', SUPPLY: '비품' };
@@ -47,12 +71,12 @@ export default function RequestsPage() {
 
   const fetchAll = async () => {
     try {
-      const mineRes = await apiClient.get<{ data: RequestItem[] }>('/requests?scope=mine');
+      const [mineRes, apRes] = await Promise.all([
+        apiClient.get<{ data: RequestItem[] }>('/requests?scope=mine'),
+        apiClient.get<{ data: RequestItem[] }>('/requests?scope=approvals'),
+      ]);
       setMyRequests(mineRes.data.data);
-      if (canApprove) {
-        const apRes = await apiClient.get<{ data: RequestItem[] }>('/requests?scope=approvals');
-        setApprovals(apRes.data.data);
-      }
+      setApprovals(apRes.data.data);
     } catch {
       setMessage({ type: 'error', text: '목록 조회에 실패했습니다.' });
     } finally {
@@ -208,7 +232,7 @@ export default function RequestsPage() {
           </div>
         )}
 
-        {canApprove && (
+        {(canApprove || approvals.length > 0) && (
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>결재 대기 / 처리 내역</h2>
             {approvals.length === 0 ? (
@@ -228,6 +252,7 @@ export default function RequestsPage() {
                         신청자: {r.requester.name} · {new Date(r.createdAt).toLocaleDateString('ko-KR')}
                         {r.status === 'REJECTED' && r.rejectReason && ` · 반려 사유: ${r.rejectReason}`}
                       </div>
+                      <StepProgress approvals={r.approvals} />
                     </div>
                     {r.status === 'PENDING' && (
                       <div className={styles.itemActions}>
@@ -262,6 +287,7 @@ export default function RequestsPage() {
                       {r.approver ? `결재자: ${r.approver.name}` : '결재자 미지정'} · {new Date(r.createdAt).toLocaleDateString('ko-KR')}
                       {r.status === 'REJECTED' && r.rejectReason && ` · 반려 사유: ${r.rejectReason}`}
                     </div>
+                    <StepProgress approvals={r.approvals} />
                   </div>
                 </div>
               ))}

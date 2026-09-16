@@ -47,6 +47,7 @@ model Organization {
   inquiries      Inquiry[]
   cardTransactions    CardTransaction[]
   simpleLedgerEntries SimpleLedgerEntry[]
+  approvalLineSteps   ApprovalLineStep[]
 
   @@map("organizations")
 }
@@ -122,6 +123,8 @@ model User {
   googleCalendar    GoogleCalendarConnection?
   cardTransactions  CardTransaction[]
   simpleLedgerEntries SimpleLedgerEntry[]
+  approvalLineSteps ApprovalLineStep[]
+  requestApprovals  RequestApproval[]
   projectRoles      ProjectRole[]
 
   @@index([organizationId])
@@ -459,6 +462,7 @@ model Request {
   status         String    @default("PENDING")
   requesterId    Int
   approverId     Int?
+  currentStepOrder Int?   // 다단계 결재선 사용 시, 현재 대기 중인 단계 order (결재선 없으면 null=단일모드)
   rejectReason   String?
   decidedAt      DateTime?
   createdAt      DateTime  @default(now())
@@ -467,11 +471,50 @@ model Request {
   requester    User          @relation("requestRequester", fields: [requesterId], references: [id])
   approver     User?         @relation("requestApprover", fields: [approverId], references: [id])
   announcement Announcement?
+  approvals    RequestApproval[]
 
   @@index([organizationId, requesterId])
   @@index([approverId, status])
   @@index([type, status, startDate])
   @@map("requests")
+}
+
+// 조직 전체에 적용되는 고정 결재선(관리자가 설정) — 순서대로 승인 단계를 구성
+model ApprovalLineStep {
+  id             Int      @id @default(autoincrement())
+  organizationId Int
+  order          Int
+  label          String   // 표시용 직책/역할명 (예: PM, 기획팀장, 작업자)
+  approverId     Int
+  canFinalize    Boolean  @default(false) // 전결 권한: 이 단계에서 승인 시 나머지 단계 생략하고 즉시 최종 승인
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  approver     User         @relation(fields: [approverId], references: [id])
+
+  @@index([organizationId, order])
+  @@map("approval_line_steps")
+}
+
+// 신청 1건에 대해 결재선을 스냅샷한 단계별 승인 기록
+model RequestApproval {
+  id           Int       @id @default(autoincrement())
+  requestId    Int
+  order        Int
+  label        String
+  approverId   Int
+  canFinalize  Boolean   @default(false)
+  status       String    @default("PENDING") // PENDING | APPROVED | REJECTED | SKIPPED
+  rejectReason String?
+  decidedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  request  Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  approver User    @relation(fields: [approverId], references: [id])
+
+  @@index([requestId, order])
+  @@index([approverId, status])
+  @@map("request_approvals")
 }
 
 // ──────────────────────────────────────────────

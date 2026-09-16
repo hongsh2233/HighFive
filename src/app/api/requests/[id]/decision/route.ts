@@ -15,7 +15,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const userId = parseInt((session!.user as any).id || '0');
     const role = (session!.user as any).role;
 
-    const target = await prisma.request.findFirst({ where: { id: requestId, organizationId } });
+    const target = await prisma.request.findFirst({
+      where: { id: requestId, organizationId },
+      include: { approvals: { orderBy: { order: 'asc' } } },
+    });
     if (!target) {
       return errorResponse('신청서를 찾을 수 없습니다.', 404);
     }
@@ -23,7 +26,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return errorResponse('이미 처리된 신청입니다.', 409);
     }
 
-    const canDecide = target.approverId === userId || (target.approverId === null && role === 'ADMIN');
+    const isMultiStep = target.currentStepOrder !== null && target.approvals.length > 0;
+    const currentStep = isMultiStep
+      ? target.approvals.find((a) => a.order === target.currentStepOrder && a.status === 'PENDING')
+      : null;
+
+    const canDecide = isMultiStep
+      ? (currentStep && currentStep.approverId === userId) || role === 'ADMIN'
+      : target.approverId === userId || (target.approverId === null && role === 'ADMIN');
     if (!canDecide) {
       return errorResponse('결재 권한이 없습니다.', 403, 'AUTH_403');
     }
@@ -38,23 +48,72 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return errorResponse('반려 사유를 입력해주세요.', 400, 'VALID_400');
     }
 
-    const updated = await prisma.request.update({
-      where: { id: requestId },
-      data: {
-        status: action === 'APPROVE' ? 'APPROVED' : 'REJECTED',
-        approverId: userId,
-        rejectReason: action === 'REJECT' ? rejectReason.trim() : null,
-        decidedAt: new Date(),
-      },
-      include: {
-        requester: { select: { id: true, name: true } },
-        approver: { select: { id: true, name: true } },
-      },
-    });
+    let updated;
+
+    if (isMultiStep && currentStep) {
+      if (action === 'REJECT') {
+        await prisma.$transaction([
+          prisma.requestApproval.update({
+            where: { id: currentStep.id },
+            data: { status: 'REJECTED', rejectReason: rejectReason.trim(), decidedAt: new Date() },
+          }),
+          prisma.requestApproval.updateMany({
+            where: { requestId, status: 'PENDING' },
+            data: { status: 'SKIPPED' },
+          }),
+        ]);
+        updated = await prisma.request.update({
+          where: { id: requestId },
+          data: { status: 'REJECTED', approverId: userId, rejectReason: rejectReason.trim(), decidedAt: new Date(), currentStepOrder: null },
+          include: { requester: { select: { id: true, name: true } }, approver: { select: { id: true, name: true } } },
+        });
+      } else {
+        const finalize = currentStep.canFinalize;
+        const nextStep = !finalize
+          ? target.approvals.find((a) => a.order > currentStep.order && a.status === 'PENDING')
+          : undefined;
+
+        await prisma.requestApproval.update({
+          where: { id: currentStep.id },
+          data: { status: 'APPROVED', decidedAt: new Date() },
+        });
+        if (finalize || !nextStep) {
+          await prisma.requestApproval.updateMany({
+            where: { requestId, status: 'PENDING' },
+            data: { status: 'SKIPPED' },
+          });
+          updated = await prisma.request.update({
+            where: { id: requestId },
+            data: { status: 'APPROVED', approverId: userId, decidedAt: new Date(), currentStepOrder: null },
+            include: { requester: { select: { id: true, name: true } }, approver: { select: { id: true, name: true } } },
+          });
+        } else {
+          updated = await prisma.request.update({
+            where: { id: requestId },
+            data: { approverId: nextStep.approverId, currentStepOrder: nextStep.order },
+            include: { requester: { select: { id: true, name: true } }, approver: { select: { id: true, name: true } } },
+          });
+        }
+      }
+    } else {
+      updated = await prisma.request.update({
+        where: { id: requestId },
+        data: {
+          status: action === 'APPROVE' ? 'APPROVED' : 'REJECTED',
+          approverId: userId,
+          rejectReason: action === 'REJECT' ? rejectReason.trim() : null,
+          decidedAt: new Date(),
+        },
+        include: {
+          requester: { select: { id: true, name: true } },
+          approver: { select: { id: true, name: true } },
+        },
+      });
+    }
 
     const orgId = (session!.user as any).organizationId as number | undefined;
     const typeLabel = updated.type || '신청';
-    if (action === 'APPROVE') {
+    if (updated.status === 'APPROVED') {
       await createUserNotification(updated.requesterId, 'REQUEST_APPROVED',
         `'${updated.title}' ${typeLabel}이 승인되었습니다.`, undefined, orgId);
       if (updated.type === 'LEAVE' && updated.startDate) {
@@ -66,12 +125,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           endDate: updated.endDate ?? updated.startDate,
         }).catch(() => {});
       }
-    } else {
+    } else if (updated.status === 'REJECTED') {
       await createUserNotification(updated.requesterId, 'REQUEST_REJECTED',
         `'${updated.title}' ${typeLabel}이 반려되었습니다. 사유: ${rejectReason}`, undefined, orgId);
     }
 
-    return successResponse(updated, action === 'APPROVE' ? '승인되었습니다.' : '반려되었습니다.');
+    const message =
+      updated.status === 'APPROVED' ? '승인되었습니다.' :
+      updated.status === 'REJECTED' ? '반려되었습니다.' :
+      '다음 결재 단계로 넘어갔습니다.';
+    return successResponse(updated, message);
   } catch (err) {
     console.error(err);
     return errorResponse('결재 처리 중 오류가 발생했습니다.', 500);

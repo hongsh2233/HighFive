@@ -7,6 +7,10 @@ const REQUEST_TYPES = ['LEAVE', 'SUPPLY'];
 const requesterInclude = {
   requester: { select: { id: true, name: true } },
   approver: { select: { id: true, name: true } },
+  approvals: {
+    orderBy: { order: 'asc' as const },
+    include: { approver: { select: { id: true, name: true } } },
+  },
 } as const;
 
 // GET /api/requests
@@ -74,6 +78,11 @@ export async function POST(req: NextRequest) {
 
     const announce = !!isAnnouncement && ['ADMIN', 'LEADER'].includes(requester.role);
 
+    // 조직에 결재선이 설정돼 있으면 다단계 결재로, 없으면 기존 담당 리더 단일 결재로 진행
+    const lineSteps = announce
+      ? []
+      : await prisma.approvalLineStep.findMany({ where: { organizationId }, orderBy: { order: 'asc' } });
+
     const request = await prisma.request.create({
       data: {
         type,
@@ -83,13 +92,26 @@ export async function POST(req: NextRequest) {
         endDate: type === 'LEAVE' ? new Date(endDate) : null,
         isAnnouncement: announce,
         requesterId,
-        approverId: announce ? requesterId : requester.managerId,
+        approverId: announce ? requesterId : lineSteps[0]?.approverId ?? requester.managerId,
+        currentStepOrder: lineSteps.length > 0 ? lineSteps[0].order : null,
         status: announce ? 'APPROVED' : 'PENDING',
         decidedAt: announce ? new Date() : null,
         organizationId,
       },
       include: requesterInclude,
     });
+
+    if (lineSteps.length > 0) {
+      await prisma.requestApproval.createMany({
+        data: lineSteps.map((s) => ({
+          requestId: request.id,
+          order: s.order,
+          label: s.label,
+          approverId: s.approverId,
+          canFinalize: s.canFinalize,
+        })),
+      });
+    }
 
     if (announce) {
       const typeLabel = type === 'LEAVE' ? '휴가' : '비품';
