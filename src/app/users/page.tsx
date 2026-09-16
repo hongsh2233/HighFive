@@ -27,6 +27,7 @@ interface User {
   manager?: { id: number; name: string } | null;
   projectMembers?: ProjectInfo[];
   resumeFilename?: string | null;
+  canManageExpense?: boolean;
 }
 
 interface Project {
@@ -51,6 +52,7 @@ export default function UsersPage() {
     affiliation: '',
     managerId: '',
     orgUnit: '',
+    canManageExpense: false,
     projectIds: [] as number[],
   });
   const [submitting, setSubmitting] = useState(false);
@@ -85,7 +87,7 @@ export default function UsersPage() {
     }
   }, [authLoading, currentUser]);
 
-  const resetForm = () => setFormData({ email: '', name: '', role: 'WORKER', leaveDate: '', affiliation: '', managerId: '', orgUnit: '', projectIds: [] });
+  const resetForm = () => setFormData({ email: '', name: '', role: 'WORKER', leaveDate: '', affiliation: '', managerId: '', orgUnit: '', canManageExpense: false, projectIds: [] });
 
   const openCreateForm = () => {
     setEditingUser(null);
@@ -103,6 +105,7 @@ export default function UsersPage() {
       affiliation: u.affiliation || '',
       managerId: u.managerId ? String(u.managerId) : '',
       orgUnit: u.orgUnit || '',
+      canManageExpense: !!(u as any).canManageExpense,
       projectIds: u.projectMembers?.map(pm => pm.project.id) || [],
     });
     setShowForm(true);
@@ -158,6 +161,7 @@ export default function UsersPage() {
         affiliation: formData.affiliation || null,
         managerId: formData.managerId || null,
         orgUnit: formData.orgUnit || null,
+        canManageExpense: formData.canManageExpense,
         projectIds: formData.projectIds,
       };
 
@@ -317,6 +321,20 @@ export default function UsersPage() {
                   <input type="text" value={formData.orgUnit} onChange={e => setFormData(p => ({ ...p, orgUnit: e.target.value }))} className={styles.input} placeholder="예: 개발팀, 디자인 직군" />
                 </div>
               </div>
+
+              {formData.role === 'WORKER' && (
+                <div className={styles.resumeSection}>
+                  <label className={styles.projectCheckItem} data-checked={formData.canManageExpense ? 'true' : 'false'}>
+                    <input
+                      type="checkbox"
+                      checked={formData.canManageExpense}
+                      onChange={e => setFormData(p => ({ ...p, canManageExpense: e.target.checked }))}
+                      className={styles.projectCheckbox}
+                    />
+                    <span>비용관리(법인카드/간편장부) 접근 권한 부여</span>
+                  </label>
+                </div>
+              )}
 
               {projects.length > 0 && (
                 <div className={styles.projectSection} data-disabled={formData.role === 'ADMIN' ? 'true' : 'false'}>

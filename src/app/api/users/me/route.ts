@@ -19,7 +19,7 @@ export async function GET() {
       where: { id: userId },
       select: {
         id: true, email: true, name: true, role: true,
-        isActive: true, createdAt: true, lastLoginAt: true,
+        isActive: true, createdAt: true, lastLoginAt: true, canManageExpense: true,
       },
     });
 

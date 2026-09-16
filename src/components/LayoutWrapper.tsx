@@ -6,7 +6,7 @@ import AppShell from './AppShell';
 import AnnouncementBanner from './AnnouncementBanner';
 import WikiSearchButton from './WikiSearchButton';
 
-const AUTH_REQUIRED_PATHS = ['/dashboard', '/tasks', '/calendar', '/stats', '/users', '/profile', '/info', '/projects', '/announcements', '/requests', '/settings', '/wiki', '/weekly-reports'];
+const AUTH_REQUIRED_PATHS = ['/dashboard', '/tasks', '/calendar', '/stats', '/users', '/profile', '/info', '/projects', '/announcements', '/requests', '/settings', '/wiki', '/weekly-reports', '/expenses'];
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

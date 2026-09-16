@@ -45,6 +45,8 @@ model Organization {
   inviteTokens   InviteToken[]
   aiSettings     AiSettings?
   inquiries      Inquiry[]
+  cardTransactions    CardTransaction[]
+  simpleLedgerEntries SimpleLedgerEntry[]
 
   @@map("organizations")
 }
@@ -86,6 +88,7 @@ model User {
   resumeMimeType String?
   resumeSize     Int?
   resumeData     Bytes?
+  canManageExpense Boolean @default(false) // 비용관리(법인카드/간편장부) 접근 권한(LEADER 외 지정 사용자용)
   totpSecret     String?
   totpEnabled    Boolean   @default(false)
   createdAt      DateTime  @default(now())
@@ -116,6 +119,8 @@ model User {
   userSessions      UserSession[]
   taskAttachments   TaskAttachment[]
   googleCalendar    GoogleCalendarConnection?
+  cardTransactions  CardTransaction[]
+  simpleLedgerEntries SimpleLedgerEntry[]
   projectRoles      ProjectRole[]
 
   @@index([organizationId])
@@ -318,6 +323,7 @@ model Project {
   wikiPages    WikiPage[]
   meetingNotes MeetingNote[]
   weeklyReports WeeklyReport[]
+  cardTransactions CardTransaction[]
   statuses     ProjectStatus[]
   fields       ProjectField[]
   roles        ProjectRole[]
@@ -738,6 +744,56 @@ model SystemConfig {
   updatedAt    DateTime @updatedAt
 
   @@map("system_config")
+}
+
+model CardTransaction {
+  id            Int      @id @default(autoincrement())
+  organizationId Int
+  userId        Int      // 카드 소유자(업로더)
+  cardNumberMasked String?
+  approvedAt    DateTime // 승인일자+시간
+  amount        Int
+  merchant      String   // 거래처명
+  category      String   // 항목(식사음료/소모품비 등)
+  projectId     Int?
+  projectNameRaw String? // 업로드 원본 프로젝트명(매칭 안 될 때 보관)
+  description   String?  // 사용내역
+  address       String?
+  approvalNo    String?
+  source        String   @default("MANUAL") // UPLOAD | MANUAL
+  createdAt     DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+  project      Project?     @relation(fields: [projectId], references: [id])
+
+  @@index([organizationId, userId, approvedAt])
+  @@map("card_transactions")
+}
+
+model SimpleLedgerEntry {
+  id             Int      @id @default(autoincrement())
+  organizationId Int
+  authorId       Int
+  entryDate      DateTime
+  accountItem    String   // ①계정과목
+  description    String   // ③거래내용
+  counterparty   String?  // ④거래처
+  incomeAmount   Int      @default(0) // ⑤수입 금액
+  incomeVat      Int      @default(0) // ⑤수입 부가세
+  expenseAmount  Int      @default(0) // ⑥비용 금액
+  expenseVat     Int      @default(0) // ⑥비용 부가세
+  assetAmount    Int      @default(0) // ⑦유형/무형자산 증감 금액
+  assetVat       Int      @default(0) // ⑦유형/무형자산 증감 부가세
+  note           String?  // ⑧비고
+  source         String   @default("MANUAL") // UPLOAD | MANUAL
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  author       User         @relation(fields: [authorId], references: [id])
+
+  @@index([organizationId, entryDate])
+  @@map("simple_ledger_entries")
 }
 
 model DemoRequest {

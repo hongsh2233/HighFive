@@ -24,6 +24,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [knowledgeBaseMode, setKnowledgeBaseMode] = useState<'WIKI' | 'INFO'>('WIKI');
   const [orgName, setOrgName] = useState<string>('High5');
   const [orgLogo, setOrgLogo] = useState<string | null>(null);
+  const [canManageExpense, setCanManageExpense] = useState(false);
+
+  useEffect(() => {
+    if (!user || (user as any).role === 'SUPERADMIN' || ['ADMIN', 'LEADER'].includes(user?.role || '')) return;
+    fetch('/api/users/me')
+      .then((r) => r.json())
+      .then((d) => { if (d.success && d.data) setCanManageExpense(!!d.data.canManageExpense); })
+      .catch(() => {});
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -101,6 +110,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           key: 'admin', label: '관리', icon: '🗂️', items: [
             ...(isAdminOrLeader ? [{ href: '/projects', label: '프로젝트', icon: '' }] : []),
             ...(isAdminOrLeader ? [{ href: '/inquiries', label: '문의 관리', icon: '' }] : []),
+            ...(isAdminOrLeader || canManageExpense ? [{ href: '/expenses', label: '비용관리', icon: '' }] : []),
             { href: '/announcements', label: '공지/알림', icon: '' },
             ...(user?.role === 'ADMIN' ? [{ href: '/users', label: '팀원관리', icon: '' }] : []),
             ...(isAdminOrLeader && has('stats') ? [{ href: '/stats', label: '통계', icon: '' }] : []),
