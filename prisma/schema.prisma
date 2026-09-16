@@ -82,6 +82,10 @@ model User {
   affiliation    String?   // 정규 | 프리
   managerId      Int?      // 결재 라인상의 팀 리더(상급자)
   orgUnit        String?   // 조직도 보기용 소속 그룹(직군/프로젝트팀 등 자유 입력)
+  resumeFilename String?
+  resumeMimeType String?
+  resumeSize     Int?
+  resumeData     Bytes?
   totpSecret     String?
   totpEnabled    Boolean   @default(false)
   createdAt      DateTime  @default(now())

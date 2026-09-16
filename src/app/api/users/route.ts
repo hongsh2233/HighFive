@@ -59,6 +59,7 @@ export async function GET(req: NextRequest) {
         createdAt: true,
         lastLoginAt: true,
         managerId: true,
+        resumeFilename: true,
         manager: { select: { id: true, name: true } },
         projectMembers: {
           select: { project: { select: { id: true, name: true, status: true } } },

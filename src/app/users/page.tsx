@@ -26,6 +26,7 @@ interface User {
   managerId?: number | null;
   manager?: { id: number; name: string } | null;
   projectMembers?: ProjectInfo[];
+  resumeFilename?: string | null;
 }
 
 interface Project {
@@ -53,6 +54,8 @@ export default function UsersPage() {
     projectIds: [] as number[],
   });
   const [submitting, setSubmitting] = useState(false);
+  const [resumeUploading, setResumeUploading] = useState(false);
+  const [resumeError, setResumeError] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'orgchart'>('list');
@@ -103,6 +106,44 @@ export default function UsersPage() {
       projectIds: u.projectMembers?.map(pm => pm.project.id) || [],
     });
     setShowForm(true);
+  };
+
+  const handleResumeUpload = async (file: File | undefined) => {
+    if (!file || !editingUser) return;
+    setResumeError('');
+    if (file.size > 5 * 1024 * 1024) {
+      setResumeError('이력서 파일은 5MB를 초과할 수 없습니다.');
+      return;
+    }
+    setResumeUploading(true);
+    try {
+      const dataBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      await apiClient.post(`/users/${editingUser.id}/resume`, { filename: file.name, mimeType: file.type, dataBase64 });
+      setEditingUser(prev => prev ? { ...prev, resumeFilename: file.name } : prev);
+      await fetchUsers();
+    } catch (err: any) {
+      setResumeError(err?.response?.data?.message || '이력서 업로드 중 오류가 발생했습니다.');
+    } finally {
+      setResumeUploading(false);
+    }
+  };
+
+  const handleResumeDelete = async () => {
+    if (!editingUser) return;
+    const ok = await confirm('이력서를 삭제하시겠습니까?');
+    if (!ok) return;
+    try {
+      await apiClient.delete(`/users/${editingUser.id}/resume`);
+      setEditingUser(prev => prev ? { ...prev, resumeFilename: null } : prev);
+      await fetchUsers();
+    } catch {
+      setResumeError('이력서 삭제 중 오류가 발생했습니다.');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -297,6 +338,32 @@ export default function UsersPage() {
                       );
                     })}
                   </div>
+                </div>
+              )}
+
+              {editingUser && (
+                <div className={styles.resumeSection}>
+                  <label className={styles.label}>이력서</label>
+                  {resumeError && <p className={styles.hintError}>{resumeError}</p>}
+                  {editingUser.resumeFilename ? (
+                    <div className={styles.resumeRow}>
+                      <a href={`/api/users/${editingUser.id}/resume`} target="_blank" rel="noopener noreferrer" className={styles.resumeLink}>
+                        📄 {editingUser.resumeFilename}
+                      </a>
+                      <button type="button" onClick={handleResumeDelete} className={styles.btnCancel}>삭제</button>
+                    </div>
+                  ) : (
+                    <label className={styles.fileDropBtn}>
+                      {resumeUploading ? '업로드 중...' : '📎 이력서 첨부'}
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        style={{ display: 'none' }}
+                        onChange={e => { handleResumeUpload(e.target.files?.[0]); e.target.value = ''; }}
+                        disabled={resumeUploading}
+                      />
+                    </label>
+                  )}
                 </div>
               )}
 
