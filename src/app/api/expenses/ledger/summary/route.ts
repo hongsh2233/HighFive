@@ -1,11 +1,11 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireExpenseAccess, successResponse, errorResponse } from '@/lib/utils';
+import { requireLedgerAccess, successResponse, errorResponse } from '@/lib/utils';
 
 // GET /api/expenses/ledger/summary?year=YYYY - 월별 합계(국세청 간편장부 통계 탭과 동일한 형태)
 export async function GET(req: NextRequest) {
   try {
-    const { error, organizationId } = await requireExpenseAccess();
+    const { error, organizationId } = await requireLedgerAccess();
     if (error) return error;
 
     const { searchParams } = new URL(req.url);

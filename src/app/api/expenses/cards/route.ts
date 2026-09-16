@@ -1,11 +1,11 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireExpenseAccess, successResponse, errorResponse } from '@/lib/utils';
+import { requireCardExpenseAccess, successResponse, errorResponse } from '@/lib/utils';
 
 // GET /api/expenses/cards - 법인카드 사용내역 목록 (본인 것만, ADMIN은 전체 또는 특정 사용자 지정 조회)
 export async function GET(req: NextRequest) {
   try {
-    const { error, organizationId, userId, role } = await requireExpenseAccess();
+    const { error, organizationId, userId, role } = await requireCardExpenseAccess();
     if (error) return error;
 
     const { searchParams } = new URL(req.url);
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
 // POST /api/expenses/cards - 법인카드 사용내역 직접 등록
 export async function POST(req: NextRequest) {
   try {
-    const { error, organizationId, userId } = await requireExpenseAccess();
+    const { error, organizationId, userId } = await requireCardExpenseAccess();
     if (error) return error;
 
     const body = await req.json();

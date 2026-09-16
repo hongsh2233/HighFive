@@ -1,11 +1,11 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireExpenseAccess, successResponse, errorResponse } from '@/lib/utils';
+import { requireLedgerAccess, successResponse, errorResponse } from '@/lib/utils';
 
 // GET /api/expenses/ledger - 간편장부 목록 (조직 단위, ?year=&month=)
 export async function GET(req: NextRequest) {
   try {
-    const { error, organizationId } = await requireExpenseAccess();
+    const { error, organizationId } = await requireLedgerAccess();
     if (error) return error;
 
     const { searchParams } = new URL(req.url);
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
 // POST /api/expenses/ledger - 간편장부 항목 직접 등록
 export async function POST(req: NextRequest) {
   try {
-    const { error, organizationId, userId } = await requireExpenseAccess();
+    const { error, organizationId, userId } = await requireLedgerAccess();
     if (error) return error;
 
     const body = await req.json();

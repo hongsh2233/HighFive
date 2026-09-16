@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import * as XLSX from 'xlsx';
 import { prisma } from '@/lib/db';
-import { requireExpenseAccess, successResponse, errorResponse } from '@/lib/utils';
+import { requireCardExpenseAccess, successResponse, errorResponse } from '@/lib/utils';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -55,7 +55,7 @@ function parseDate(dateVal: unknown, timeVal: unknown): Date | null {
 // POST /api/expenses/cards/import - 법인카드 명세서 xlsx 업로드 일괄 등록
 export async function POST(req: NextRequest) {
   try {
-    const { error, organizationId, userId } = await requireExpenseAccess();
+    const { error, organizationId, userId } = await requireCardExpenseAccess();
     if (error) return error;
 
     const body = await req.json();

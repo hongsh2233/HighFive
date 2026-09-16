@@ -45,8 +45,8 @@ export async function requireAuth() {
   return { session, organizationId };
 }
 
-// 비용관리(법인카드/간편장부) 접근 권한: ADMIN/LEADER 또는 개별 지정된 사용자(canManageExpense)
-export async function requireExpenseAccess() {
+// 비용관리(법인카드/간편장부) 접근 권한: ADMIN/LEADER 또는 모듈별로 개별 지정된 사용자
+async function requireExpenseModuleAccess(field: 'canManageCardExpense' | 'canManageLedger') {
   const { session, error, organizationId } = await requireAuth();
   if (error) return { error };
 
@@ -54,11 +54,19 @@ export async function requireExpenseAccess() {
   const role = (session!.user as any).role;
   if (role === 'ADMIN' || role === 'LEADER') return { session, organizationId, userId, role };
 
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { canManageExpense: true } });
-  if (!user?.canManageExpense) {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { [field]: true } });
+  if (!(user as any)?.[field]) {
     return { error: errorResponse('비용관리 접근 권한이 없습니다.', 403, 'AUTH_403') };
   }
   return { session, organizationId, userId, role };
+}
+
+export function requireCardExpenseAccess() {
+  return requireExpenseModuleAccess('canManageCardExpense');
+}
+
+export function requireLedgerAccess() {
+  return requireExpenseModuleAccess('canManageLedger');
 }
 
 export async function requireRole(requiredRoles: string[]) {

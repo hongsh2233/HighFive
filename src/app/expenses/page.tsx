@@ -52,10 +52,48 @@ function readFileAsBase64(file: File): Promise<string> {
 
 export default function ExpensesPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const role = (user as any)?.role;
+  const isAdminOrLeader = ['ADMIN', 'LEADER'].includes(role || '');
+  const [permLoading, setPermLoading] = useState(true);
+  const [canCard, setCanCard] = useState(false);
+  const [canLedger, setCanLedger] = useState(false);
   const [mode, setMode] = useState<'card' | 'ledger' | null>(null);
 
-  if (authLoading) {
+  useEffect(() => {
+    if (!user) return;
+    if (isAdminOrLeader) {
+      setCanCard(true);
+      setCanLedger(true);
+      setPermLoading(false);
+      return;
+    }
+    apiClient.get<{ data: { canManageCardExpense: boolean; canManageLedger: boolean } }>('/users/me')
+      .then((res) => {
+        setCanCard(!!res.data.data.canManageCardExpense);
+        setCanLedger(!!res.data.data.canManageLedger);
+      })
+      .finally(() => setPermLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  useEffect(() => {
+    if (permLoading || mode) return;
+    if (canCard) setMode('card');
+    else if (canLedger) setMode('ledger');
+  }, [permLoading, canCard, canLedger, mode]);
+
+  if (authLoading || permLoading) {
     return <div className={styles.loading}><Spinner /></div>;
+  }
+
+  if (!canCard && !canLedger) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.inner}>
+          <div className={styles.empty}>비용관리 접근 권한이 없습니다. 관리자에게 문의하세요.</div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -64,20 +102,23 @@ export default function ExpensesPage() {
         <div className={styles.pageHeader}>
           <div>
             <h1 className={styles.pageTitle}>비용관리</h1>
-            <p className={styles.pageSubtitle}>법인카드 사용내역 또는 간편장부 중 관리할 항목을 선택하세요.</p>
+            <p className={styles.pageSubtitle}>법인카드 사용내역 또는 간편장부를 관리합니다.</p>
           </div>
         </div>
 
-        <div className={styles.modeTabs}>
-          <button type="button" className={mode !== 'ledger' ? styles.modeTabActive : styles.modeTab} onClick={() => setMode('card')}>
-            💳 법인카드 관리
-          </button>
-          <button type="button" className={mode === 'ledger' ? styles.modeTabActive : styles.modeTab} onClick={() => setMode('ledger')}>
-            📒 간편장부
-          </button>
-        </div>
+        {canCard && canLedger && (
+          <div className={styles.modeTabs}>
+            <button type="button" className={mode !== 'ledger' ? styles.modeTabActive : styles.modeTab} onClick={() => setMode('card')}>
+              💳 법인카드 관리
+            </button>
+            <button type="button" className={mode === 'ledger' ? styles.modeTabActive : styles.modeTab} onClick={() => setMode('ledger')}>
+              📒 간편장부
+            </button>
+          </div>
+        )}
 
-        {mode !== 'ledger' ? <CardSection userId={Number(user?.id)} role={(user as any)?.role} /> : <LedgerSection />}
+        {mode === 'card' && <CardSection userId={Number(user?.id)} role={role} />}
+        {mode === 'ledger' && <LedgerSection />}
       </div>
     </div>
   );

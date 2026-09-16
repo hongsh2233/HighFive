@@ -1,11 +1,11 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireExpenseAccess, successResponse, errorResponse } from '@/lib/utils';
+import { requireLedgerAccess, successResponse, errorResponse } from '@/lib/utils';
 
 // PATCH /api/expenses/ledger/[id] - 간편장부 항목 수정 (작성자 본인 또는 ADMIN)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { error, organizationId, userId, role } = await requireExpenseAccess();
+    const { error, organizationId, userId, role } = await requireLedgerAccess();
     if (error) return error;
 
     const { id } = await params;
@@ -50,7 +50,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 // DELETE /api/expenses/ledger/[id] - 간편장부 항목 삭제 (작성자 본인 또는 ADMIN)
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { error, organizationId, userId, role } = await requireExpenseAccess();
+    const { error, organizationId, userId, role } = await requireLedgerAccess();
     if (error) return error;
 
     const { id } = await params;

@@ -60,7 +60,8 @@ export async function GET(req: NextRequest) {
         lastLoginAt: true,
         managerId: true,
         resumeFilename: true,
-        canManageExpense: true,
+        canManageCardExpense: true,
+        canManageLedger: true,
         manager: { select: { id: true, name: true } },
         projectMembers: {
           select: { project: { select: { id: true, name: true, status: true } } },

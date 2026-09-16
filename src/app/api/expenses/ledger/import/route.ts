@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import * as XLSX from 'xlsx';
 import { prisma } from '@/lib/db';
-import { requireExpenseAccess, successResponse, errorResponse } from '@/lib/utils';
+import { requireLedgerAccess, successResponse, errorResponse } from '@/lib/utils';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -36,7 +36,7 @@ function toNum(val: unknown): number {
 // POST /api/expenses/ledger/import - 국세청 간편장부 양식 xlsx 업로드 일괄 등록
 export async function POST(req: NextRequest) {
   try {
-    const { error, organizationId, userId } = await requireExpenseAccess();
+    const { error, organizationId, userId } = await requireLedgerAccess();
     if (error) return error;
 
     const body = await req.json();
