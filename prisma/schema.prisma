@@ -105,6 +105,7 @@ model User {
   requestsToApprove Request[]       @relation("requestApprover")
   wikiPages         WikiPage[]      @relation("wikiAuthor")
   meetingNotes      MeetingNote[]   @relation("meetingAuthor")
+  weeklyReports     WeeklyReport[]  @relation("weeklyReportAuthor")
   stickyNotes       StickyNote[]
   userPages         UserPage[]
   taskComments      TaskComment[]
@@ -311,6 +312,7 @@ model Project {
   tasks        Task[]
   wikiPages    WikiPage[]
   meetingNotes MeetingNote[]
+  weeklyReports WeeklyReport[]
   statuses     ProjectStatus[]
   fields       ProjectField[]
   roles        ProjectRole[]
@@ -497,6 +499,26 @@ model MeetingNote {
 
   @@index([projectId])
   @@map("meeting_notes")
+}
+
+model WeeklyReport {
+  id           Int      @id @default(autoincrement())
+  projectId    Int
+  authorId     Int
+  periodStart  DateTime
+  periodEnd    DateTime
+  achievements Json     // [{ wbsCode, category, detail, progress, status, note }]
+  nextPlan     Json     // [{ wbsCode, category, detail, schedule, owner, note }]
+  issues       Json     // [{ type, content, impact, action, owner, dueDate }]
+  summary      String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author  User    @relation("weeklyReportAuthor", fields: [authorId], references: [id])
+
+  @@index([projectId, periodStart])
+  @@map("weekly_reports")
 }
 
 // ──────────────────────────────────────────────

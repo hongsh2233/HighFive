@@ -93,6 +93,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             ...(has('requests') ? [{ href: '/requests', label: '신청(전자결재)', icon: '' }] : []),
             ...(has('wiki') ? [{ href: '/wiki', label: '위키', icon: '' }] : []),
             { href: '/meetings', label: '회의록', icon: '' },
+            { href: '/weekly-reports', label: '주간보고', icon: '' },
             ...(has('info') ? [{ href: '/info', label: '정보(FAQ)', icon: '' }] : []),
           ],
         }] : []),
