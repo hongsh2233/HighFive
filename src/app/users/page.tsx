@@ -29,6 +29,7 @@ interface User {
   resumeFilename?: string | null;
   canManageCardExpense?: boolean;
   canManageLedger?: boolean;
+  canManageWeeklyReport?: boolean;
 }
 
 interface Project {
@@ -55,6 +56,7 @@ export default function UsersPage() {
     orgUnit: '',
     canManageCardExpense: false,
     canManageLedger: false,
+    canManageWeeklyReport: false,
     projectIds: [] as number[],
   });
   const [submitting, setSubmitting] = useState(false);
@@ -89,7 +91,7 @@ export default function UsersPage() {
     }
   }, [authLoading, currentUser]);
 
-  const resetForm = () => setFormData({ email: '', name: '', role: 'WORKER', leaveDate: '', affiliation: '', managerId: '', orgUnit: '', canManageCardExpense: false, canManageLedger: false, projectIds: [] });
+  const resetForm = () => setFormData({ email: '', name: '', role: 'WORKER', leaveDate: '', affiliation: '', managerId: '', orgUnit: '', canManageCardExpense: false, canManageLedger: false, canManageWeeklyReport: false, projectIds: [] });
 
   const openCreateForm = () => {
     setEditingUser(null);
@@ -109,6 +111,7 @@ export default function UsersPage() {
       orgUnit: u.orgUnit || '',
       canManageCardExpense: !!(u as any).canManageCardExpense,
       canManageLedger: !!(u as any).canManageLedger,
+      canManageWeeklyReport: !!(u as any).canManageWeeklyReport,
       projectIds: u.projectMembers?.map(pm => pm.project.id) || [],
     });
     setShowForm(true);
@@ -166,6 +169,7 @@ export default function UsersPage() {
         orgUnit: formData.orgUnit || null,
         canManageCardExpense: formData.canManageCardExpense,
         canManageLedger: formData.canManageLedger,
+        canManageWeeklyReport: formData.canManageWeeklyReport,
         projectIds: formData.projectIds,
       };
 
@@ -345,6 +349,15 @@ export default function UsersPage() {
                       className={styles.projectCheckbox}
                     />
                     <span>간편장부 권한 부여</span>
+                  </label>
+                  <label className={styles.projectCheckItem} data-checked={formData.canManageWeeklyReport ? 'true' : 'false'} style={{ marginTop: 8 }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.canManageWeeklyReport}
+                      onChange={e => setFormData(p => ({ ...p, canManageWeeklyReport: e.target.checked }))}
+                      className={styles.projectCheckbox}
+                    />
+                    <span>주간보고 작성 권한 부여</span>
                   </label>
                 </div>
               )}

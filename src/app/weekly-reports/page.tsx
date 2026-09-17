@@ -103,7 +103,17 @@ function RowTable<T extends Record<string, string | undefined>>({
 
 export default function WeeklyReportsPage() {
   const { user, isLoading: authLoading } = useAuth();
-  const isAdminOrLeader = ['ADMIN', 'LEADER'].includes((user as any)?.role ?? '');
+  const isAdminOrLeaderRole = ['ADMIN', 'LEADER'].includes((user as any)?.role ?? '');
+  const [canWrite, setCanWrite] = useState(false);
+  const isAdminOrLeader = isAdminOrLeaderRole || canWrite;
+
+  useEffect(() => {
+    if (!user || isAdminOrLeaderRole) return;
+    apiClient.get<{ data: { canManageWeeklyReport: boolean } }>('/users/me')
+      .then((res) => setCanWrite(!!res.data.data.canManageWeeklyReport))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [reports, setReports] = useState<WeeklyReport[]>([]);

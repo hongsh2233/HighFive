@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireAuth, requireRole, successResponse, errorResponse } from '@/lib/utils';
+import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 
 async function checkAccess(projectId: number, userId: number, role: string) {
   if (role === 'ADMIN') return true;
@@ -38,16 +38,24 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   }
 }
 
-// POST /api/projects/[id]/weekly-reports - 주간보고 작성 (ADMIN/LEADER)
+// POST /api/projects/[id]/weekly-reports - 주간보고 작성 (ADMIN/LEADER 또는 지정 권한 사용자)
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { session, error } = await requireRole(['ADMIN', 'LEADER']);
+    const { session, error } = await requireAuth();
     if (error) return error;
+
+    const userId = parseInt((session!.user as any).id || '0');
+    const role = (session!.user as any).role;
+
+    if (role !== 'ADMIN' && role !== 'LEADER') {
+      const me = await prisma.user.findUnique({ where: { id: userId }, select: { canManageWeeklyReport: true } });
+      if (!me?.canManageWeeklyReport) {
+        return errorResponse('주간보고 작성 권한이 없습니다.', 403, 'AUTH_403');
+      }
+    }
 
     const { id } = await params;
     const projectId = parseInt(id);
-    const userId = parseInt((session!.user as any).id || '0');
-    const role = (session!.user as any).role;
 
     if (!(await checkAccess(projectId, userId, role))) {
       return errorResponse('해당 프로젝트 멤버만 주간보고를 작성할 수 있습니다.', 403, 'AUTH_403');
