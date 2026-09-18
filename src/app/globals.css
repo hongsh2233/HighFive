@@ -27,10 +27,11 @@
   --border:        #E4E4E7;
   --border-strong: #D4D4D8;
 
-  /* Accent (Claude clay/terracotta) */
-  --accent:       #C15F3C;
-  --accent-hover: #A94F30;
-  --accent-light: #FBEEE8;
+  /* Accent — 중립 그레이/슬레이트 톤. 조직마다 업로드하는 로고 색상이 제각각이라(멀티테넌트),
+     특정 브랜드색(예: 테라코타) 대신 어떤 로고 색과도 무난하게 어울리는 중립 색을 기본으로 사용한다. */
+  --accent:       #3F3F46;
+  --accent-hover: #27272A;
+  --accent-light: #F4F4F5;
 
   /* Semantic */
   --success: #059669;
@@ -49,7 +50,7 @@
   --info-border:   #BFDBFE;
 
   /* Accent gradient — selective use only (hero/brand panels, primary CTA emphasis) */
-  --accent-gradient: linear-gradient(135deg, #C15F3C 0%, #E08355 100%);
+  --accent-gradient: linear-gradient(135deg, #3F3F46 0%, #52525B 100%);
 
   /* Card elevation — selective use only (KPI/summary cards, modals, dropdowns) */
   --shadow-card: 0 1px 2px rgba(9, 9, 11, 0.04), 0 1px 3px rgba(9, 9, 11, 0.06);
