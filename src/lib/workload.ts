@@ -11,9 +11,9 @@ export interface WorkloadEntry {
   averageHoursPerTask: number;
 }
 
-export async function computeWorkloadStats(organizationId: number | undefined, from?: Date, to?: Date): Promise<WorkloadEntry[]> {
+export async function computeWorkloadStats(organizationId: number | undefined, from?: Date, to?: Date, workerIds?: number[]): Promise<WorkloadEntry[]> {
   const workers = await prisma.user.findMany({
-    where: { role: 'WORKER', isActive: true, organizationId },
+    where: { role: 'WORKER', isActive: true, organizationId, ...(workerIds ? { id: { in: workerIds } } : {}) },
     include: {
       workerTasks: {
         where: from && to ? { createdAt: { gte: from, lte: to } } : {},

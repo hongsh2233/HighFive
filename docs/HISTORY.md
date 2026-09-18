@@ -1223,3 +1223,18 @@ npx prisma migrate resolve --applied 20260907000000_init
 - `GET /api/users`, `GET/PATCH /api/users/[id]`, `GET /api/users/me`가 이제 `capabilities: Record<key, boolean>` 전체 맵을 응답에 포함(기존 canManageCardExpense 등 3개 필드는 하위호환용으로 계속 유지). `/users` 팀원관리 편집 폼에 "담당 권한 묶음" 버튼 + 9개 개별 체크박스 UI 추가(WORKER 대상, 기존 3개 체크박스 아래에 배치).
 
 `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-18 (6차) — 라운드 9: 데이터 스코프 분리 (LEADER는 팀 범위, ADMIN은 조직 전체)
+
+`/api/stats/summary`, `/api/stats/workload`, `/api/tasks/export` 3개 API가 ADMIN과 LEADER에게 동일하게 조직 전체 데이터를 반환하고 있던 것을 발견 — LEADER는 본인이 담당 리더로 지정된 팀원(`User.managerId = 나`) + 본인 소속 프로젝트 범위로 자동 스코프되도록 수정(별도 쿼리 파라미터 없이 role 기반 자동 적용 — 조작 가능한 파라미터로 범위를 넓힐 수 없게 하기 위한 의도적 선택). ADMIN은 기존과 동일하게 조직 전체.
+
+- `src/lib/workload.ts`의 `computeWorkloadStats()`에 선택적 `workerIds` 필터 추가.
+- `/api/stats/workload`: LEADER 호출 시 담당 팀원 id로 필터.
+- `/api/stats/summary`: LEADER 호출 시 (소속 프로젝트 OR 담당 팀원) 범위로 업무/타임로그 필터.
+- `/api/tasks/export`: 동일한 팀 범위 스코프 적용(기존에는 LEADER도 조직 전체를 CSV/xlsx로 내려받을 수 있었음).
+- **부수 발견 및 정리**: `src/lib/services/stats.service.ts`(미사용 dead code)의 `getMonthlySummary`가 organizationId 필터 자체가 없어 실제로 연결됐다면 조직 간 데이터가 섞여 보였을 코드였음 — 어디서도 import되지 않는 것을 확인 후 삭제.
+- `/api/tasks` 목록 GET은 이미 LEADER를 소속 프로젝트로 스코프하고 있어 별도 수정 없음(기존 구현 확인).
+
+로드맵 지시대로 전체 API를 한 번에 바꾸지 않고 이번엔 위 3개만 우선 적용. 나머지 조회 API는 필요성이 확인되는 대로 후속 라운드에서 점진 적용.
+
+`npx tsc --noEmit` 오류 0개, `npx next build` 성공.

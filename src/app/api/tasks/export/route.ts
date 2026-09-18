@@ -5,9 +5,10 @@ import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 
 // GET /api/tasks/export?format=csv|xlsx&from=&to=
+// 데이터 범위: ADMIN은 조직 전체(org), LEADER는 본인 소속 프로젝트 + 담당 팀원 범위만(team)
 export async function GET(req: NextRequest) {
   try {
-    const { error, organizationId } = await requireRole(['ADMIN', 'LEADER']);
+    const { error, organizationId, session } = await requireRole(['ADMIN', 'LEADER']);
     if (error) return error;
 
     const { searchParams } = new URL(req.url);
@@ -15,12 +16,24 @@ export async function GET(req: NextRequest) {
     const from = searchParams.get('from');
     const to = searchParams.get('to');
 
+    const role = (session!.user as any).role;
+    const userId = parseInt((session!.user as any).id || '0');
+    let scopeOr: any = {};
+    if (role === 'LEADER') {
+      const [myProjects, subordinates] = await Promise.all([
+        prisma.projectMember.findMany({ where: { userId }, select: { projectId: true } }),
+        prisma.user.findMany({ where: { organizationId, managerId: userId }, select: { id: true } }),
+      ]);
+      scopeOr = { OR: [{ projectId: { in: myProjects.map((p) => p.projectId) } }, { workerId: { in: subordinates.map((s) => s.id) } }] };
+    }
+
     const tasks = await prisma.task.findMany({
       where: {
         organizationId,
         ...(from && to
           ? { createdAt: { gte: new Date(from), lte: new Date(to) } }
           : {}),
+        ...scopeOr,
       },
       orderBy: { createdAt: 'desc' },
       include: {

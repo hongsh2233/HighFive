@@ -4,9 +4,10 @@ import { requireRole, successResponse, errorResponse } from '@/lib/utils';
 import { getProjectStatuses } from '@/lib/task-status';
 
 // GET /api/stats/summary - 월간 요약 통계
+// 데이터 범위: ADMIN은 조직 전체(org), LEADER는 본인 소속 프로젝트 + 담당 팀원 범위만(team)
 export async function GET(req: NextRequest) {
   try {
-    const { error, organizationId } = await requireRole(['ADMIN', 'LEADER']);
+    const { error, organizationId, session } = await requireRole(['ADMIN', 'LEADER']);
     if (error) return error;
 
     const { searchParams } = new URL(req.url);
@@ -17,6 +18,22 @@ export async function GET(req: NextRequest) {
     const startDate = new Date(year, month, 1);
     const endDate = new Date(year, month + 1, 0, 23, 59, 59);
 
+    const role = (session!.user as any).role;
+    const userId = parseInt((session!.user as any).id || '0');
+
+    let teamScope: { projectId?: { in: number[] }; workerId?: { in: number[] } } | undefined;
+    if (role === 'LEADER') {
+      const [myProjects, subordinates] = await Promise.all([
+        prisma.projectMember.findMany({ where: { userId }, select: { projectId: true } }),
+        prisma.user.findMany({ where: { organizationId, managerId: userId }, select: { id: true } }),
+      ]);
+      teamScope = {
+        projectId: { in: myProjects.map((p) => p.projectId) },
+        workerId: { in: subordinates.map((s) => s.id) },
+      };
+    }
+    const scopeOr = teamScope ? { OR: [{ projectId: teamScope.projectId }, { workerId: teamScope.workerId }] } : {};
+
     // 월간 업무 통계
     const tasks = await prisma.task.findMany({
       where: {
@@ -25,13 +42,14 @@ export async function GET(req: NextRequest) {
           gte: startDate,
           lte: endDate,
         },
+        ...scopeOr,
       },
     });
 
-    // 월간 타임로그 통계
+    // 월간 타임로그 통계 (LEADER는 팀 범위 업무의 로그만)
     const timeLogs = await prisma.timeLog.findMany({
       where: {
-        task: { organizationId },
+        task: { organizationId, ...scopeOr },
         createdAt: {
           gte: startDate,
           lte: endDate,
