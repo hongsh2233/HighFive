@@ -4,14 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
+import { USER_ROLE_LABEL } from '@/lib/constants';
 import styles from './profile.module.css';
 import Spinner from '@/components/common/Spinner';
-
-const ROLE_LABEL: Record<string, string> = {
-  ADMIN: '관리자',
-  LEADER: '리더',
-  WORKER: '작업자',
-};
 
 interface Me {
   id: number;
@@ -58,7 +53,7 @@ export default function ProfilePage() {
           </div>
           <div className={styles.row}>
             <span className={styles.label}>역할</span>
-            <span className={styles.value}>{ROLE_LABEL[me.role] || me.role}</span>
+            <span className={styles.value}>{USER_ROLE_LABEL[me.role] || me.role}</span>
           </div>
           <div className={styles.row}>
             <span className={styles.label}>가입일</span>

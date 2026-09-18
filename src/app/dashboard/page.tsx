@@ -62,7 +62,7 @@ function SuperAdminDashboard({ userName }: { userName: string }) {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.title}>안녕하세요, {userName}님</h1>
-        <p className={styles.subtitle}>시스템관리자 계정입니다.</p>
+        <p className={styles.subtitle}>최고관리자 계정입니다.</p>
       </div>
 
       {stats && (

@@ -28,10 +28,12 @@ export const USER_ROLE = {
   WORKER: 'WORKER',
 } as const;
 
+// 2026-09-18: 리더→매니저, 작업자→팀원으로 명칭 변경(내부 role 값 ADMIN/LEADER/WORKER는 하위호환을 위해 유지, 표시 라벨만 변경).
+// SUPERADMIN은 이 맵에 없는 시스템 최상위 역할("최고관리자")이며 일반 조직 사용자 생성 대상이 아니다.
 export const USER_ROLE_LABEL: Record<string, string> = {
   ADMIN: '관리자',
-  LEADER: '리더',
-  WORKER: '작업자',
+  LEADER: '매니저',
+  WORKER: '팀원',
 };
 
 export const TASK_STATUS_ORDER = ['ASSIGNED', 'PROGRESS', 'REVIEW', 'QA', 'DONE'];

@@ -1180,3 +1180,15 @@ npx prisma migrate resolve --applied 20260907000000_init
 - `/profile` 페이지가 실제로 존재하지 않아 "내 프로필" 클릭 시 빈 화면이 되는 문제 발견 → `src/app/profile/page.tsx`(이름/이메일/역할/가입일/최근 로그인 표시 + 하위 설정 바로가기) 신규 작성.
 
 `npx tsc --noEmit` 오류 0개. `npx next build`는 백그라운드로 실행 후 확인.
+
+## 2026-09-18 (2차) — 라운드 5: 역할 표시 명칭 정리 (리더→매니저, 작업자→팀원)
+
+로드맵 Phase 1 항목 2 "역할 명칭 정리" 진행. 내부 `role` 컬럼 값(`ADMIN`/`LEADER`/`WORKER`/`SUPERADMIN`)은 코드 전반의 `role === 'LEADER'` 류 조건문이 매우 많아 그대로 유지하고, 표시 라벨만 변경(리더→매니저, 작업자→팀원).
+
+- `src/lib/constants.ts`의 `USER_ROLE_LABEL`을 단일 소스로 확정(`LEADER: '매니저'`, `WORKER: '팀원'`).
+- `src/app/users/page.tsx`, `src/components/common/UserQuickMenu.tsx`, `src/app/profile/page.tsx`에 각각 따로 있던 중복 라벨 매핑을 전부 `USER_ROLE_LABEL` 참조로 통일.
+- 위 과정에서 발견한 기존 버그: `users/page.tsx`와 `UserQuickMenu.tsx`가 조직 `ADMIN` 역할을 "최고관리자"로 표시하고 있었음 — 로드맵의 새 역할 표기(최고관리자=SUPERADMIN, 관리자=ADMIN)와 어긋나는 오기였으므로 "관리자"로 수정.
+- 일관성을 위해 SUPERADMIN을 가리키던 기존 "시스템관리자" 표기 3곳(`AppShell.tsx` 사이드바 그룹명, `/superadmin` 페이지 타이틀, 대시보드 부제)도 "최고관리자"로 통일.
+- **의도적으로 보류**: 로드맵의 "외부 사용자 → 파트너" 매핑은 실제로 구현된 역할이 아니라 Phase 2 항목 3("파트너 협업 기능")에서 신규로 만들 역할의 예정 명칭이다. 지금 `PARTNER`를 껍데기만 있는 role 값으로 추가하면 실질적으로 팀원(WORKER)과 동일한 권한을 갖게 되어(프로젝트/업무 데이터 범위 제한이 아직 없음) 오히려 보안상 오해의 소지가 있어, 실제 파트너 전용 데이터 범위 제한 작업과 함께 Phase 2에서 구현하기로 함.
+
+`npx tsc --noEmit` 오류 0개.

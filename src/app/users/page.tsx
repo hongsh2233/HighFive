@@ -7,6 +7,7 @@ import { Modal } from '@/components/common/Modal';
 import { useDialog } from '@/components/common/DialogProvider';
 import styles from './users.module.css';
 import Spinner from '@/components/common/Spinner';
+import { USER_ROLE_LABEL } from '@/lib/constants';
 
 interface ProjectInfo {
   project: { id: number; name: string; status: string };
@@ -225,7 +226,7 @@ export default function UsersPage() {
     }));
   };
 
-  const roleLabel = (role: string) => role === 'ADMIN' ? '최고관리자' : role === 'LEADER' ? '리더' : '작업자';
+  const roleLabel = (role: string) => USER_ROLE_LABEL[role] || role;
 
   const leaderCandidates = users.filter(u => ['ADMIN', 'LEADER'].includes(u.role) && u.id !== editingUser?.id);
 
@@ -297,9 +298,9 @@ export default function UsersPage() {
                     const role = e.target.value;
                     setFormData(p => ({ ...p, role, projectIds: role === 'ADMIN' ? [] : p.projectIds }));
                   }} className={styles.input}>
-                    <option value="WORKER">작업자</option>
-                    <option value="LEADER">리더</option>
-                    <option value="ADMIN">최고관리자</option>
+                    <option value="WORKER">{USER_ROLE_LABEL.WORKER}</option>
+                    <option value="LEADER">{USER_ROLE_LABEL.LEADER}</option>
+                    <option value="ADMIN">{USER_ROLE_LABEL.ADMIN}</option>
                   </select>
                 </div>
                 <div>
@@ -364,7 +365,7 @@ export default function UsersPage() {
 
               {projects.length > 0 && (
                 <div className={styles.projectSection} data-disabled={formData.role === 'ADMIN' ? 'true' : 'false'}>
-                  <label className={styles.label}>소속 프로젝트 {formData.role === 'ADMIN' && <span className={styles.labelNote}>(최고관리자는 선택 불필요)</span>}</label>
+                  <label className={styles.label}>소속 프로젝트 {formData.role === 'ADMIN' && <span className={styles.labelNote}>({USER_ROLE_LABEL.ADMIN}는 선택 불필요)</span>}</label>
                   <div className={styles.projectCheckList}>
                     {projects.map(p => {
                       const selected = formData.projectIds.includes(p.id);

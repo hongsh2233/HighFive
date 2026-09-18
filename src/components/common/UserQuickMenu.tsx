@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import apiClient from '@/lib/api-client';
 import { Modal } from './Modal';
+import { USER_ROLE_LABEL } from '@/lib/constants';
 import styles from './UserQuickMenu.module.css';
 
 interface Profile {
@@ -16,7 +17,7 @@ interface Profile {
   manager: { id: number; name: string } | null;
 }
 
-const roleLabel = (role: string) => (role === 'ADMIN' ? '최고관리자' : role === 'LEADER' ? '리더' : '작업자');
+const roleLabel = (role: string) => USER_ROLE_LABEL[role] || role;
 
 export default function UserQuickMenu({ userId, children }: { userId: number; children: React.ReactNode }) {
   const router = useRouter();

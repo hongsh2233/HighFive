@@ -11,11 +11,13 @@
 
 > 2026-09-18: 조직 슬러그 기반 최상위 인증 라우트 목록이 `src/middleware.ts`의 `orgScopedRoutes`와 `src/components/LayoutWrapper.tsx`의 `AUTH_REQUIRED_PATHS`에 중복 관리되며 반복적으로 한쪽만 갱신되는 사고가 있어, `src/lib/route-config.ts`(`ORG_SCOPED_ROUTES`/`ADMIN_ONLY_ROUTES`/`LEADER_ROUTES`)로 단일화했다. 새 최상위 라우트를 추가할 때는 이 파일 하나만 수정하면 된다(단, 사이드바 메뉴 노출 여부는 `AppShell.tsx`가 별도로 관리).
 
-| 역할 | 코드 | 접근 가능 페이지 |
+| 역할(표시 라벨) | 코드 | 접근 가능 페이지 |
 |---|---|---|
 | 관리자 | `ADMIN` | 전체 |
-| 리더 | `LEADER` | `/users` 제외 전체 (구 PLANNER/MANAGER — 2026-07-01 통일) |
-| 작업자 | `WORKER` | `/stats`, `/users` 제외 |
+| 매니저 | `LEADER` | `/users` 제외 전체 (구 PLANNER/MANAGER — 2026-07-01 통일, 2026-09-18 표시 라벨을 "리더"→"매니저"로 변경. 내부 코드값 `LEADER`는 하위호환을 위해 유지) |
+| 팀원 | `WORKER` | `/stats`, `/users` 제외 (2026-09-18 표시 라벨을 "작업자"→"팀원"으로 변경, 내부 코드값 `WORKER` 유지) |
+
+> 표시 라벨의 단일 소스는 `src/lib/constants.ts`의 `USER_ROLE_LABEL`이다. 최상위 시스템 역할 `SUPERADMIN`(표시 라벨 "최고관리자")은 이 맵과 별개로 관리되며 일반 조직 사용자 생성 대상이 아니다.
 
 ```
 /               → 누구나 접근 가능 (랜딩 페이지, src/app/page.tsx — 도메인 루트, /login으로 자동 리다이렉트하지 않음)

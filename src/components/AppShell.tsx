@@ -100,7 +100,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const groups: NavGroup[] = isSuperAdmin
     ? [
         {
-          key: 'superadmin', label: '시스템관리자', icon: '🛠️', items: [
+          key: 'superadmin', label: '최고관리자', icon: '🛠️', items: [
             { href: '/superadmin', label: '가입 현황', icon: '' },
             { href: '/superadmin/demo-requests', label: '데모 신청', icon: '' },
             { href: '/superadmin/plan-config', label: '플랜 설정', icon: '' },
