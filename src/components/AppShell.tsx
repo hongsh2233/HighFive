@@ -97,6 +97,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const isAdminOrLeader = ['ADMIN', 'LEADER'].includes(user?.role || '');
   const isSuperAdmin = (user as any)?.role === 'SUPERADMIN';
+  const isPartner = (user as any)?.role === 'PARTNER';
   const closeMobile = () => setMobileOpen(false);
 
   const groups: NavGroup[] = isSuperAdmin
@@ -106,6 +107,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             { href: '/superadmin', label: '가입 현황', icon: '' },
             { href: '/superadmin/demo-requests', label: '데모 신청', icon: '' },
             { href: '/superadmin/plan-config', label: '플랜 설정', icon: '' },
+          ],
+        },
+      ]
+    : isPartner
+    ? [
+        {
+          key: 'task', label: '업무', icon: '📋', items: [
+            { href: '/tasks', label: '업무 목록', icon: '' },
+            { href: '/calendar', label: '캘린더', icon: '' },
+          ],
+        },
+        {
+          key: 'collab', label: '프로젝트', icon: '🤝', items: [
+            { href: '/projects', label: '초대된 프로젝트', icon: '' },
           ],
         },
       ]

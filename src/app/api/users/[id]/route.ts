@@ -46,7 +46,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const target = await prisma.user.findFirst({ where: { id: userId, organizationId } });
     if (!target) return errorResponse('사용자를 찾을 수 없습니다.', 404);
     const body = await req.json();
-    const { name, email, role, isActive, leaveDate, affiliation, projectIds, managerId, orgUnit, canManageCardExpense, canManageLedger, canManageWeeklyReport, capabilities } = body;
+    const { name, email, role, isActive, leaveDate, affiliation, projectIds, managerId, orgUnit, canManageCardExpense, canManageLedger, canManageWeeklyReport, capabilities, partnerAccessUntil } = body;
+
+    if (role !== undefined && !['ADMIN', 'LEADER', 'WORKER', 'PARTNER'].includes(role)) {
+      return errorResponse('유효하지 않은 역할입니다.', 400, 'VALID_400');
+    }
 
     if (managerId !== undefined && managerId !== null && parseInt(managerId) === userId) {
       return errorResponse('본인을 담당 리더로 지정할 수 없습니다.', 400, 'VALID_400');
@@ -68,8 +72,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(affiliation !== undefined && { affiliation: affiliation || null }),
         ...(orgUnit !== undefined && { orgUnit: orgUnit || null }),
         ...(managerId !== undefined && { managerId: managerId ? parseInt(managerId) : null }),
+        ...(partnerAccessUntil !== undefined && { partnerAccessUntil: partnerAccessUntil ? new Date(partnerAccessUntil) : null }),
       },
-      select: { id: true, email: true, name: true, role: true, isActive: true, leaveDate: true, affiliation: true, orgUnit: true, managerId: true },
+      select: { id: true, email: true, name: true, role: true, isActive: true, leaveDate: true, affiliation: true, orgUnit: true, managerId: true, partnerAccessUntil: true },
     });
 
     if (canManageCardExpense !== undefined) await setCapability(userId, 'CARD_EXPENSE', !!canManageCardExpense);

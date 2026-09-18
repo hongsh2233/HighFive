@@ -54,6 +54,7 @@ interface User {
   canManageLedger?: boolean;
   canManageWeeklyReport?: boolean;
   capabilities?: Record<string, boolean>;
+  partnerAccessUntil?: string | null;
 }
 
 interface Project {
@@ -82,6 +83,7 @@ export default function UsersPage() {
     canManageLedger: false,
     canManageWeeklyReport: false,
     capabilities: {} as Partial<Record<NewCapabilityKey, boolean>>,
+    partnerAccessUntil: '',
     projectIds: [] as number[],
   });
   const [submitting, setSubmitting] = useState(false);
@@ -116,7 +118,7 @@ export default function UsersPage() {
     }
   }, [authLoading, currentUser]);
 
-  const resetForm = () => setFormData({ email: '', name: '', role: 'WORKER', leaveDate: '', affiliation: '', managerId: '', orgUnit: '', canManageCardExpense: false, canManageLedger: false, canManageWeeklyReport: false, capabilities: {}, projectIds: [] });
+  const resetForm = () => setFormData({ email: '', name: '', role: 'WORKER', leaveDate: '', affiliation: '', managerId: '', orgUnit: '', canManageCardExpense: false, canManageLedger: false, canManageWeeklyReport: false, capabilities: {}, partnerAccessUntil: '', projectIds: [] });
 
   const openCreateForm = () => {
     setEditingUser(null);
@@ -140,6 +142,7 @@ export default function UsersPage() {
       capabilities: Object.fromEntries(
         NEW_CAPABILITY_KEYS.map((k) => [k, !!(u as any).capabilities?.[k]])
       ) as Partial<Record<NewCapabilityKey, boolean>>,
+      partnerAccessUntil: (u as any).partnerAccessUntil ? (u as any).partnerAccessUntil.slice(0, 10) : '',
       projectIds: u.projectMembers?.map(pm => pm.project.id) || [],
     });
     setShowForm(true);
@@ -199,6 +202,7 @@ export default function UsersPage() {
         canManageLedger: formData.canManageLedger,
         canManageWeeklyReport: formData.canManageWeeklyReport,
         capabilities: formData.capabilities,
+        partnerAccessUntil: formData.role === 'PARTNER' ? (formData.partnerAccessUntil || null) : undefined,
         projectIds: formData.projectIds,
       };
 
@@ -329,8 +333,15 @@ export default function UsersPage() {
                     <option value="WORKER">{USER_ROLE_LABEL.WORKER}</option>
                     <option value="LEADER">{USER_ROLE_LABEL.LEADER}</option>
                     <option value="ADMIN">{USER_ROLE_LABEL.ADMIN}</option>
+                    <option value="PARTNER">{USER_ROLE_LABEL.PARTNER}</option>
                   </select>
                 </div>
+                {formData.role === 'PARTNER' && (
+                  <div>
+                    <label className={styles.label}>접근 만료일 <span className={styles.labelNote}>(지정 시 해당 일자 이후 로그인 차단, 계약 종료 대응)</span></label>
+                    <input type="date" value={formData.partnerAccessUntil} onChange={e => setFormData(p => ({ ...p, partnerAccessUntil: e.target.value }))} className={styles.input} />
+                  </div>
+                )}
                 <div>
                   <label className={styles.label}>소속</label>
                   <select value={formData.affiliation} onChange={e => setFormData(p => ({ ...p, affiliation: e.target.value }))} className={styles.input}>

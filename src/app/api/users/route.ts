@@ -61,6 +61,7 @@ export async function GET(req: NextRequest) {
         lastLoginAt: true,
         managerId: true,
         resumeFilename: true,
+        partnerAccessUntil: true,
         manager: { select: { id: true, name: true } },
         projectMembers: {
           select: { project: { select: { id: true, name: true, status: true } } },
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
     if (error) return error;
 
     const body = await req.json();
-    const { email, name, role, leaveDate, affiliation, projectIds, managerId, orgUnit } = body;
+    const { email, name, role, leaveDate, affiliation, projectIds, managerId, orgUnit, partnerAccessUntil } = body;
 
     if (!email || !name) {
       return errorResponse('이메일과 이름은 필수입니다.', 400, 'VALID_400');
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest) {
       return errorResponse('이름은 최소 2자 이상이어야 합니다.', 400, 'VALID_400');
     }
 
-    const validRoles = ['ADMIN', 'LEADER', 'WORKER'];
+    const validRoles = ['ADMIN', 'LEADER', 'WORKER', 'PARTNER'];
     if (role && !validRoles.includes(role)) {
       return errorResponse('유효하지 않은 역할입니다.', 400, 'VALID_400');
     }
@@ -133,6 +134,7 @@ export async function POST(req: NextRequest) {
         affiliation: affiliation || null,
         orgUnit: orgUnit || null,
         managerId: managerId ? parseInt(managerId) : null,
+        partnerAccessUntil: partnerAccessUntil ? new Date(partnerAccessUntil) : null,
         organizationId,
       },
       select: { id: true, email: true, name: true, role: true, leaveDate: true, affiliation: true, managerId: true },

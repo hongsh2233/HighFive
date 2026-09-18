@@ -58,7 +58,8 @@ export const authOptions: NextAuthOptions = {
           user?.passwordHash ?? DUMMY_PASSWORD_HASH
         );
 
-        const accountValid = !!user && user.isActive && (!user.organization || user.organization.isActive);
+        const partnerAccessValid = !(user?.role === 'PARTNER' && user.partnerAccessUntil && user.partnerAccessUntil < new Date());
+        const accountValid = !!user && user.isActive && (!user.organization || user.organization.isActive) && partnerAccessValid;
         const slugValid = !slug ? user?.role === 'SUPERADMIN' : user?.organization?.slug === slug;
 
         if (!user || !accountValid || !slugValid || !isPasswordValid) {

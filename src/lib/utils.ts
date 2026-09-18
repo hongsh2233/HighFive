@@ -25,10 +25,12 @@ export function errorResponse(message: string, status = 400, code = 'ERROR') {
 async function isSessionAccountActive(userId: number): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { isActive: true, organization: { select: { isActive: true } } },
+    select: { isActive: true, role: true, partnerAccessUntil: true, organization: { select: { isActive: true } } },
   });
   if (!user || !user.isActive) return false;
   if (user.organization && !user.organization.isActive) return false;
+  // PARTNER: 계약(접근 기간) 종료 시 즉시 접근 차단
+  if (user.role === 'PARTNER' && user.partnerAccessUntil && user.partnerAccessUntil < new Date()) return false;
   return true;
 }
 

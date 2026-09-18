@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import { ORG_SCOPED_ROUTES, ADMIN_ONLY_ROUTES, LEADER_ROUTES } from '@/lib/route-config';
+import { ORG_SCOPED_ROUTES, ADMIN_ONLY_ROUTES, LEADER_ROUTES, PARTNER_ALLOWED_ROUTES } from '@/lib/route-config';
 
 // 조직 slug가 URL에 붙는 라우트 (예: /exwave/dashboard). 실제 페이지는 여전히 app/dashboard 등 slug 없는 경로에 있고,
 // 아래에서 slug 유무에 따라 redirect(slug 없음 → 있음)/rewrite(있음 → 내부적으로 slug 제거)로 연결한다.
 const orgScopedRoutes: readonly string[] = ORG_SCOPED_ROUTES;
 const adminRoutes = ADMIN_ONLY_ROUTES;
 const leaderRoutes = LEADER_ROUTES;
+const partnerAllowedRoutes = PARTNER_ALLOWED_ROUTES;
 const publicRoutes = ['/login', '/register'];
 
 const CSP = [
@@ -100,6 +101,11 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(url);
     }
     if (leaderRoutes.includes(segments[1]) && !['ADMIN', 'LEADER'].includes(userRole)) {
+      const url = req.nextUrl.clone();
+      url.pathname = `/${slug}/dashboard`;
+      return NextResponse.redirect(url);
+    }
+    if (userRole === 'PARTNER' && !partnerAllowedRoutes.includes(segments[1])) {
       const url = req.nextUrl.clone();
       url.pathname = `/${slug}/dashboard`;
       return NextResponse.redirect(url);

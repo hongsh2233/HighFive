@@ -1238,3 +1238,25 @@ npx prisma migrate resolve --applied 20260907000000_init
 로드맵 지시대로 전체 API를 한 번에 바꾸지 않고 이번엔 위 3개만 우선 적용. 나머지 조회 API는 필요성이 확인되는 대로 후속 라운드에서 점진 적용.
 
 `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-18 (7차) — 라운드 10: 프로젝트 관리 고도화 + 파트너 역할 도입
+
+### 프로젝트 관리
+- `Project.healthStatus`(정상/주의/위험/보류/완료, PM이 수동 설정) 추가. `/projects` 목록에서 관리 권한자는 select로 즉시 변경, 그 외는 배지로 표시.
+- `ProjectMilestone` 모델 신규(제목/마감일/완료여부/순서) + `GET/POST /api/projects/[id]/milestones`, `PATCH/DELETE /api/projects/[id]/milestones/[milestoneId]`(ADMIN/매니저). **UI는 이번 라운드에서 API까지만 구현하고 화면 연결은 다음 라운드로 보류** — 이미 복잡한 프로젝트 수정 모달에 무리하게 끼워넣기보다 별도 UI 설계가 필요하다고 판단.
+- "지연 위험 감지"(자동), "프로젝트별 주요 결정 기록", "파일/결과물 관리"는 이번 라운드에서 보류. 지연 위험은 이미 대시보드(라운드6)의 매니저 위젯이 지연 업무 수를 보여주고 있어 자동 배지보다 PM이 healthStatus로 직접 판단하는 쪽을 우선함. 파일/결과물은 새 저장소를 만들기보다 이미 구현되어 있는 Google Drive 연동(현재 진입점만 숨겨둔 상태)을 재활성화하는 쪽이 맞다고 보고 라운드12에서 함께 검토하기로 함. 주요 결정 기록은 라운드7에서 만든 회의록 `decisions` 필드와 중복 소지가 있어 보류.
+- "종료 프로젝트 보관"은 기존 `Project.status`(ACTIVE/CLOSED)로 이미 지원되고 있어 추가 작업 없음.
+
+### 파트너 역할 신설
+- `User.role`에 `PARTNER` 추가(문자열 컬럼이라 별도 enum 마이그레이션 불필요). 팀원관리에서 역할로 선택 가능, `User.partnerAccessUntil`(접근 만료일 — 지정 시 그 이후 로그인/API 접근 자동 차단, "계약 종료 시 접근 차단") 필드 추가.
+- **로그인 차단**: `src/lib/auth.ts`의 `authorize()`와 `src/lib/utils.ts`의 `isSessionAccountActive()`(매 API 요청마다 재검증) 양쪽에서 만료 여부 확인 — 세션이 이미 발급된 상태에서도 만료 시각이 지나면 즉시 차단됨.
+- **라우트 화이트리스트**: `src/lib/route-config.ts`에 `PARTNER_ALLOWED_ROUTES`(dashboard/tasks/calendar/projects/profile/my-notes/manual/settings) 신설, `middleware.ts`가 PARTNER는 이 목록 밖의 최상위 라우트로 접근 시 대시보드로 리다이렉트. `AppShell.tsx` 사이드바도 PARTNER 전용 최소 메뉴(업무 목록/캘린더, 초대된 프로젝트)만 렌더링.
+- **업무 데이터 범위**: `Task.partnerVisible`(기본 false) 추가. `GET /api/tasks`, `GET /api/tasks/[id]`에서 PARTNER는 (초대된 프로젝트 소속) AND (본인 담당 업무 OR `partnerVisible=true`)로만 조회 가능.
+- **댓글 공개 범위**: `TaskComment.visibility`(INTERNAL 기본 / PARTNER_VISIBLE) 추가. `GET /tasks/[id]/comments`가 PARTNER 요청 시 `PARTNER_VISIBLE`만 반환(답글 포함). PARTNER가 작성하는 댓글은 항상 `PARTNER_VISIBLE`로 강제 저장, 내부 사용자는 기본 `INTERNAL`(요청 바디로 `PARTNER_VISIBLE` 지정 가능). **주의**: 내부 사용자가 특정 댓글을 "파트너 공개"로 지정하는 프런트 UI는 이번 라운드에서 만들지 않음 — 즉 지금은 안전한 기본값(아무것도 자동 공개 안 함)만 있고, 실제로 파트너에게 무언가를 공개하려면 API를 직접 호출해야 함. UI 연결은 다음 라운드 과제로 남김.
+- **초대 흐름**: 별도의 이메일 초대 시스템을 새로 만들지 않고 기존 "팀원관리에서 계정 생성 시 임시 비밀번호를 모달로 안내"하는 패턴을 그대로 재사용(PARTNER 역할 선택 + 접근 만료일 + 소속 프로젝트 체크박스로 초대 프로젝트 지정). 실제 이메일 발송 기능 자체가 이 프로젝트에 아직 없어(기존 초대 흐름도 동일), 새로 만들지 않음.
+- **부수 발견 및 수정**: `GET /api/tasks`에서 LEADER가 `projectId` 쿼리 파라미터를 직접 지정하면 소속 프로젝트 범위를 완전히 무시하고 임의 프로젝트의 업무를 조회할 수 있는 권한 우회 버그를 발견 — PARTNER 스코핑을 구현하다가 동일한 패턴이 반복될 뻔해서 발견했고, LEADER 쪽도 함께 수정(요청한 projectId가 소속 프로젝트가 아니면 빈 결과 반환).
+- **미구현으로 명시 보류**: `InviteToken`/`inviteUser`/`/api/users/invite`는 확인해보니 프런트 어디에서도 호출되지 않는 완전한 dead code였음(팀원관리는 `/api/users` POST를 직접 사용). 이번 라운드에서는 건드리지 않고 그대로 둠 — 필요하면 다음에 정리.
+
+마이그레이션: `20260918030000_add_partner_and_project_upgrades` (users.partnerAccessUntil, tasks.partnerVisible, task_comments.visibility, projects.healthStatus, project_milestones 테이블).
+
+`npx tsc --noEmit` 오류 0개, `npx next build` 성공.

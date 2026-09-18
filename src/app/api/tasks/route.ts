@@ -56,19 +56,32 @@ export async function GET(req: NextRequest) {
     if (workerId) where.workerId = parseInt(workerId);
     if (projectId) where.projectId = parseInt(projectId);
 
-    // LEADER: 소속 프로젝트 업무만 조회
+    // LEADER: 소속 프로젝트 업무만 조회 (projectId를 직접 지정해도 소속 프로젝트 범위를 벗어날 수 없음)
     if (role === 'LEADER') {
       const myProjectIds = await prisma.projectMember.findMany({
         where: { userId },
         select: { projectId: true },
       });
       const ids = myProjectIds.map((m) => m.projectId);
-      where.projectId = projectId ? parseInt(projectId) : { in: ids.length ? ids : [-1] };
+      const allowed = projectId ? (ids.includes(parseInt(projectId)) ? [parseInt(projectId)] : []) : ids;
+      where.projectId = { in: allowed.length ? allowed : [-1] };
     }
 
     // WORKER: 자신에게 배정된 업무만
     if (role === 'WORKER') {
       where.workerId = userId;
+    }
+
+    // PARTNER: 초대된(소속) 프로젝트 범위 내에서, 본인 담당 업무 또는 partnerVisible=true인 업무만
+    if (role === 'PARTNER') {
+      const myProjectIds = await prisma.projectMember.findMany({
+        where: { userId },
+        select: { projectId: true },
+      });
+      const ids = myProjectIds.map((m) => m.projectId);
+      const allowed = projectId ? (ids.includes(parseInt(projectId)) ? [parseInt(projectId)] : []) : ids;
+      where.projectId = { in: allowed.length ? allowed : [-1] };
+      where.OR = [{ workerId: userId }, { partnerVisible: true }];
     }
 
     const skip = (page - 1) * limit;

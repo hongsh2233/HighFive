@@ -31,6 +31,7 @@ interface Project {
   wikiEnabled: boolean;
   simpleMode: boolean;
   customLabels?: string | null;
+  healthStatus?: string;
   roles: ProjectRole[];
   members: ProjectMember[];
   _count: { tasks: number };
@@ -40,6 +41,14 @@ interface Project {
 interface RoleDraft { label: string; userId: string; userName: string; }
 
 const ROLE_PRESETS = ['PL', '기획리더', '디자인리더', '퍼블리싱리더', '개발리더', '시장조사리더'];
+
+const HEALTH_STATUS_META: Record<string, { label: string; bg: string; color: string }> = {
+  NORMAL: { label: '정상', bg: '#DCFCE7', color: '#166534' },
+  CAUTION: { label: '주의', bg: '#FEF9C3', color: '#854D0E' },
+  RISK: { label: '위험', bg: '#FEE2E2', color: '#991B1B' },
+  ON_HOLD: { label: '보류', bg: '#F4F4F5', color: '#52525B' },
+  COMPLETED: { label: '완료', bg: '#DBEAFE', color: '#1D4ED8' },
+};
 
 const emptyForm = {
   name: '',
@@ -177,6 +186,13 @@ export default function ProjectsPage() {
       setMessage({ type: 'success', text: '재개되었습니다.' });
       await fetchProjects();
     } catch { setMessage({ type: 'error', text: '재개 실패' }); }
+  };
+
+  const handleHealthChange = async (projectId: number, healthStatus: string) => {
+    try {
+      await apiClient.patch(`/projects/${projectId}`, { healthStatus });
+      await fetchProjects();
+    } catch { setMessage({ type: 'error', text: '상태 변경 실패' }); }
   };
 
   const statusBadge = (status: string): React.CSSProperties => ({
@@ -381,6 +397,30 @@ export default function ProjectsPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                       <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', flex: 1 }}>{p.name}</span>
                       <span style={statusBadge(p.status)}>{p.status === 'ACTIVE' ? '진행중' : '종료'}</span>
+                      {canManage ? (
+                        <select
+                          value={p.healthStatus || 'NORMAL'}
+                          onChange={(e) => { e.stopPropagation(); handleHealthChange(p.id, e.target.value); }}
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            fontSize: 11, fontWeight: 700, borderRadius: 4, padding: '2px 6px', border: 'none', cursor: 'pointer',
+                            backgroundColor: HEALTH_STATUS_META[p.healthStatus || 'NORMAL'].bg,
+                            color: HEALTH_STATUS_META[p.healthStatus || 'NORMAL'].color,
+                          }}
+                        >
+                          {Object.entries(HEALTH_STATUS_META).map(([code, meta]) => (
+                            <option key={code} value={code}>{meta.label}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span style={{
+                          display: 'inline-block', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 700,
+                          backgroundColor: HEALTH_STATUS_META[p.healthStatus || 'NORMAL'].bg,
+                          color: HEALTH_STATUS_META[p.healthStatus || 'NORMAL'].color,
+                        }}>
+                          {HEALTH_STATUS_META[p.healthStatus || 'NORMAL'].label}
+                        </span>
+                      )}
                       {canManage && (
                         <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
                           <button onClick={e => openEditForm(p, e)} style={{ padding: '3px 10px', fontSize: 11, fontWeight: 600, backgroundColor: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 5, cursor: 'pointer' }}>

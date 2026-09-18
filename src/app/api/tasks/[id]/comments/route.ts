@@ -20,19 +20,24 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await requireAuth();
+  const { session, error } = await requireAuth();
   if (error) return error;
 
   const { id } = await params;
   const taskId = parseInt(id);
   if (isNaN(taskId)) return NextResponse.json({ message: '잘못된 요청' }, { status: 400 });
 
+  const role = (session!.user as any).role;
+  // PARTNER는 "파트너 공개"로 표시된 댓글/답글만 볼 수 있음
+  const visibilityFilter = role === 'PARTNER' ? { visibility: 'PARTNER_VISIBLE' } : {};
+
   // 최상위 댓글만 조회하고 replies를 중첩 포함
   const comments = await prisma.taskComment.findMany({
-    where: { taskId, parentId: null },
+    where: { taskId, parentId: null, ...visibilityFilter },
     include: {
       author: AUTHOR_SELECT,
       replies: {
+        where: visibilityFilter,
         include: { author: AUTHOR_SELECT },
         orderBy: { createdAt: 'asc' },
       },
@@ -59,6 +64,10 @@ export async function POST(
   if (!content) return NextResponse.json({ message: '내용을 입력해주세요.' }, { status: 400 });
 
   const parentId: number | null = body.parentId ? parseInt(body.parentId) : null;
+  const role = (session!.user as any).role;
+  // PARTNER가 작성하는 댓글은 항상 파트너 공개(그 외엔 내부 전용 자료를 노출할 수 없음).
+  // 내부 사용자는 body.visibility로 선택 가능(기본 내부 전용).
+  const visibility = role === 'PARTNER' ? 'PARTNER_VISIBLE' : (body.visibility === 'PARTNER_VISIBLE' ? 'PARTNER_VISIBLE' : 'INTERNAL');
 
   const task = await prisma.task.findUnique({ where: { id: taskId } });
   if (!task) return NextResponse.json({ message: '업무를 찾을 수 없습니다.' }, { status: 404 });
@@ -72,7 +81,7 @@ export async function POST(
 
   const authorId = parseInt((session!.user as any).id || '0');
   const comment = await prisma.taskComment.create({
-    data: { taskId, authorId, content, parentId },
+    data: { taskId, authorId, content, parentId, visibility },
     include: { author: AUTHOR_SELECT },
   });
 

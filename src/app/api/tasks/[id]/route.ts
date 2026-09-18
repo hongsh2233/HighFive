@@ -14,7 +14,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error, organizationId } = await requireAuth();
+    const { error, session, organizationId } = await requireAuth();
     if (error) return error;
 
     const { id } = await params;
@@ -23,8 +23,19 @@ export async function GET(
       return errorResponse('유효하지 않은 업무 ID입니다.', 400, 'VALID_400');
     }
 
+    const role = (session!.user as any).role;
+    const userId = parseInt((session!.user as any).id || '0');
+
+    // PARTNER: 초대된 프로젝트 소속 + (본인 담당 또는 partnerVisible=true)인 업무만 조회 가능
+    let partnerScope: any = {};
+    if (role === 'PARTNER') {
+      const myProjectIds = await prisma.projectMember.findMany({ where: { userId }, select: { projectId: true } });
+      const ids = myProjectIds.map((m) => m.projectId);
+      partnerScope = { projectId: { in: ids.length ? ids : [-1] }, OR: [{ workerId: userId }, { partnerVisible: true }] };
+    }
+
     const task = await prisma.task.findFirst({
-      where: { id: taskId, organizationId },
+      where: { id: taskId, organizationId, ...partnerScope },
       include: {
         registrant: { select: { id: true, name: true, email: true } },
         worker: { select: { id: true, name: true, email: true } },
