@@ -63,8 +63,29 @@ const emptyForm = {
 export default function ProjectsPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const { confirm } = useDialog();
+  const { confirm, alertDialog } = useDialog();
   const canManage = ['ADMIN', 'LEADER'].includes(user?.role || '');
+  const [bulkImporting, setBulkImporting] = useState(false);
+
+  const handleBulkImport = async (file: File | undefined) => {
+    if (!file) return;
+    setBulkImporting(true);
+    try {
+      const dataBase64: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const res = await apiClient.post<{ data: { imported: number; skippedCount: number } }>('/projects/import', { filename: file.name, dataBase64 });
+      await alertDialog(`${res.data.data.imported}건 등록, ${res.data.data.skippedCount}건 건너뜀`);
+      await fetchProjects();
+    } catch (err: any) {
+      await alertDialog(err.response?.data?.message || '일괄 등록 중 오류가 발생했습니다.');
+    } finally {
+      setBulkImporting(false);
+    }
+  };
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -226,9 +247,15 @@ export default function ProjectsPage() {
             <p className={styles.pageSubtitle}>프로젝트를 생성하고 멤버를 관리합니다.</p>
           </div>
           {canManage && !showForm && (
-            <button onClick={openCreateForm} style={{ padding: '8px 16px', backgroundColor: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-              + 프로젝트 생성
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <label style={{ padding: '8px 16px', backgroundColor: 'var(--bg-surface)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                {bulkImporting ? '업로드 중...' : '📤 일괄 등록(xlsx)'}
+                <input type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={(e) => { handleBulkImport(e.target.files?.[0]); e.target.value = ''; }} disabled={bulkImporting} />
+              </label>
+              <button onClick={openCreateForm} style={{ padding: '8px 16px', backgroundColor: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                + 프로젝트 생성
+              </button>
+            </div>
           )}
         </div>
 

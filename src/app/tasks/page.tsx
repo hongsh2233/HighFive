@@ -136,7 +136,29 @@ function TaskListContent() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { tasks, loading, error, createTask, updateStatus, updateTask, deleteTask } = useTasks({ limit: 1000 });
+  const { tasks, loading, error, createTask, updateStatus, updateTask, deleteTask, fetchTasks } = useTasks({ limit: 1000 });
+  const { alertDialog } = useDialog();
+  const [bulkImporting, setBulkImporting] = useState(false);
+
+  const handleBulkImport = async (file: File | undefined) => {
+    if (!file) return;
+    setBulkImporting(true);
+    try {
+      const dataBase64: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const res = await apiClient.post<{ data: { imported: number; skippedCount: number } }>('/tasks/import', { filename: file.name, dataBase64 });
+      await alertDialog(`${res.data.data.imported}건 등록, ${res.data.data.skippedCount}건 건너뜀`);
+      await fetchTasks();
+    } catch (err: any) {
+      await alertDialog(err.response?.data?.message || '일괄 등록 중 오류가 발생했습니다.');
+    } finally {
+      setBulkImporting(false);
+    }
+  };
   const { getStatuses } = useProjectStatuses();
   const canEditTitle = ['ADMIN', 'LEADER'].includes((user as any)?.role ?? '');
   const canDelete = canEditTitle;
@@ -377,9 +399,15 @@ function TaskListContent() {
           <span className={styles.pageCount}>총 {filteredTasks.length}건</span>
         </div>
         {['ADMIN', 'LEADER'].includes(user?.role || '') && (
-          <button type="button" className={styles.newTaskBtn} onClick={() => router.push('/tasks/create')}>
-            <PlusIcon /> 새 업무
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <label className={styles.newTaskBtn} style={{ cursor: 'pointer', background: 'var(--bg-surface)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+              {bulkImporting ? '업로드 중...' : '📤 일괄 등록(xlsx)'}
+              <input type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={(e) => { handleBulkImport(e.target.files?.[0]); e.target.value = ''; }} disabled={bulkImporting} />
+            </label>
+            <button type="button" className={styles.newTaskBtn} onClick={() => router.push('/tasks/create')}>
+              <PlusIcon /> 새 업무
+            </button>
+          </div>
         )}
       </div>
 

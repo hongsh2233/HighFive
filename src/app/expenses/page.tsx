@@ -419,6 +419,16 @@ function LedgerSection() {
     }
   };
 
+  const handleDownload = async () => {
+    const res = await apiClient.get('/expenses/ledger/export', { responseType: 'blob' });
+    const url = URL.createObjectURL(new Blob([res.data as any]));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ledger_${Date.now()}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const grouped = entries.reduce<Record<string, LedgerEntry[]>>((acc, e) => {
     const key = e.entryDate.slice(0, 7);
     (acc[key] ??= []).push(e);
@@ -437,6 +447,9 @@ function LedgerSection() {
         </label>
         <button type="button" onClick={() => setShowForm((v) => !v)} className={styles.btnSecondary}>
           {showForm ? '취소' : '+ 직접 입력'}
+        </button>
+        <button type="button" onClick={handleDownload} className={styles.btnSecondary}>
+          ⬇️ 엑셀 다운로드
         </button>
       </div>
 

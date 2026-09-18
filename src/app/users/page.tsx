@@ -90,6 +90,7 @@ export default function UsersPage() {
   const [resumeUploading, setResumeUploading] = useState(false);
   const [resumeError, setResumeError] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [bulkImporting, setBulkImporting] = useState(false);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'orgchart'>('list');
 
@@ -101,6 +102,27 @@ export default function UsersPage() {
       setMessage({ type: 'error', text: '사용자 목록 조회에 실패했습니다.' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBulkImport = async (file: File | undefined) => {
+    if (!file) return;
+    setBulkImporting(true);
+    setMessage(null);
+    try {
+      const dataBase64: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const res = await apiClient.post<{ data: { importedCount: number; skippedCount: number } }>('/users/import', { filename: file.name, dataBase64 });
+      setMessage({ type: 'success', text: `${res.data.data.importedCount}명 등록, ${res.data.data.skippedCount}건 건너뜀(임시 비밀번호는 각 팀원 생성 시와 동일하게 개별 안내 필요)` });
+      await fetchUsers();
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.response?.data?.message || '일괄 등록 중 오류가 발생했습니다.' });
+    } finally {
+      setBulkImporting(false);
     }
   };
 
@@ -295,6 +317,10 @@ export default function UsersPage() {
                 조직도로 보기
               </button>
             </div>
+            <label className={styles.btnSecondary} style={{ cursor: 'pointer' }}>
+              {bulkImporting ? '업로드 중...' : '📤 일괄 등록(xlsx)'}
+              <input type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={(e) => { handleBulkImport(e.target.files?.[0]); e.target.value = ''; }} disabled={bulkImporting} />
+            </label>
             {!showForm && (
               <button onClick={openCreateForm} className={styles.btnPrimary}>
                 + 팀원 추가
