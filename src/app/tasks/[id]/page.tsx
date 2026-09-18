@@ -830,6 +830,11 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>상태</span>
               <span style={badgeStyle}>{currentStatusDef?.label ?? task.status}</span>
+              {(task as any).requireCompletionApproval && !currentStatusDef?.isDone && (
+                <span className={styles.infoVal} style={{ marginLeft: 6, fontSize: 11, color: 'var(--text-muted)' }}>
+                  (완료 처리는 등록자 승인 필요)
+                </span>
+              )}
             </div>
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>담당자</span>

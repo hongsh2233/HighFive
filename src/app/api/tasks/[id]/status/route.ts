@@ -43,6 +43,15 @@ export async function PATCH(
     }
     const prevStatusDef = projectStatuses.find((s) => s.code === task.status);
 
+    // "완료 시 요청자 승인 필요"가 켜진 업무는 등록자(요청자) 또는 ADMIN만 완료(isDone) 처리 가능
+    if (task.requireCompletionApproval && newStatusDef.isDone) {
+      const userId = parseInt((session!.user as any).id || '0');
+      const role = (session!.user as any).role;
+      if (role !== 'ADMIN' && userId !== task.registrantId) {
+        return errorResponse('이 업무는 요청자 승인이 필요합니다. 등록자만 완료 처리할 수 있습니다.', 403, 'AUTH_403');
+      }
+    }
+
     const blockedMessage = await assertNotBlocked(taskId, status, task.projectId);
     if (blockedMessage) {
       return errorResponse(blockedMessage, 400, 'TASK_BLOCKED');

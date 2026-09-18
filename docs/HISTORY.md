@@ -1192,3 +1192,23 @@ npx prisma migrate resolve --applied 20260907000000_init
 - **의도적으로 보류**: 로드맵의 "외부 사용자 → 파트너" 매핑은 실제로 구현된 역할이 아니라 Phase 2 항목 3("파트너 협업 기능")에서 신규로 만들 역할의 예정 명칭이다. 지금 `PARTNER`를 껍데기만 있는 role 값으로 추가하면 실질적으로 팀원(WORKER)과 동일한 권한을 갖게 되어(프로젝트/업무 데이터 범위 제한이 아직 없음) 오히려 보안상 오해의 소지가 있어, 실제 파트너 전용 데이터 범위 제한 작업과 함께 Phase 2에서 구현하기로 함.
 
 `npx tsc --noEmit` 오류 0개.
+
+## 2026-09-18 (3차) — 라운드 6: 내 업무 중심 대시보드
+
+- `GET /api/dashboard/summary`(신규) — role별로 다른 payload 반환.
+  - WORKER: 마감임박(3일내)/지연업무/나에게 요청된 업무(내가 등록자인 REVIEW 상태 업무)/읽지 않은 공지(활성 공지 전체를 내려주고 프런트가 기존 `dismissedAnnouncementIds` localStorage로 필터)/승인 결과(최근 14일 결정된 내 신청)/오늘 일정.
+  - LEADER: 담당 팀원(managerId=나) + 소속 프로젝트 범위. ADMIN: 조직 전체 범위. 프로젝트 진행률, 지연 업무, 담당자 없는 업무(계정이 비활성화된 worker로 근사 — `workerId`가 스키마상 NOT NULL이라 진짜 미배정은 표현 불가, 한계로 기록), 팀원별 업무 현황, 미작성 주간보고(이번 주 `WeeklyReport` 없는 팀원), 승인 대기.
+- `src/app/dashboard/page.tsx`에 역할별 위젯 그리드 추가(`dashboard.module.css`의 `.widget*` 클래스 신규). 기존 "오늘의 일정"/"나의 업무"/"최근 활동" 섹션은 그대로 유지.
+
+## 2026-09-18 (4차) — 라운드 7: 업무 기본기 보완 + 반복 업무 + 회의록·주간보고 연결
+
+- **완료 검토→요청자 승인**: `Task.requireCompletionApproval`(boolean, 기본 false) 추가. 켜져 있으면 `PATCH /api/tasks/[id]/status`에서 완료(isDone) 전환을 등록자 본인 또는 ADMIN만 할 수 있도록 차단. `/tasks/create`에 체크박스 추가, 업무 상세에 "(완료 처리는 등록자 승인 필요)" 안내 표시.
+- **지연 업무 강조 / 댓글 멘션 / 변경 이력**: 확인 결과 이미 구현되어 있어 추가 작업 없음(`/tasks` 목록의 D-day 뱃지가 지연 시 `.ddayOverdue`로 강조, `TaskComment` 멘션, `TaskHistory` 활동 히스토리 UI 모두 기존 기능).
+- **담당자 없는 업무 표시**: `Task.workerId`가 NOT NULL 컬럼이라 "미배정" 상태 자체가 스키마상 존재할 수 없음 — 라운드6 대시보드에서는 계정 비활성 worker로 근사 처리했고, 진짜 nullable 전환은 워커 배정 로직 전반에 영향을 주는 더 큰 작업이라 보류.
+- **반복 업무**: `RecurringTaskRule` 모델 신규(주기: DAILY/WEEKLY/MONTHLY/WEEKDAY/QUARTERLY/YEARLY/CUSTOM, `config` Json으로 세부 설정). `src/lib/recurring-tasks.ts`의 `computeNextRunAt()`이 다음 실행 시각을 계산. `src/lib/scheduler.ts`의 기존 30분 주기 배치에 `runRecurringTaskGeneration()` 추가— nextRunAt이 지난 규칙마다 Task를 생성하고 담당자에게 알림, 다음 nextRunAt을 갱신. `GET/POST /api/recurring-tasks`, `PATCH/DELETE /api/recurring-tasks/[id]`(ADMIN/LEADER, 본인이 만든 규칙 또는 ADMIN만 수정/삭제), `/settings/recurring-tasks` 관리 페이지 신규(사이드바 "조직 운영" 그룹에 노출).
+- **회의록 결정사항/후속업무 구조화**: `MeetingNote.decisions`/`actionItems`(둘 다 Json, AI 요약과 별개의 수동 입력 필드) 추가. 회의록 상세에 AI 사용 여부와 무관하게 항상 노출되는 "결정사항 · 후속 업무" 편집 UI 신규 — 후속 업무는 담당자/완료예정일을 지정하고 "업무로 생성" 버튼으로 바로 `Task`를 생성(생성되면 `taskId`를 기록해 중복 생성 방지). 기존 AI 기반 `meetingToTask` 변환 기능은 그대로 유지(별개 경로).
+- **주간보고 AI 초안 강화**: `/api/ai/weekly-report` 프롬프트에 "지연 업무"(목표일이 이번 주 이전인데 미완료)와 "다음 주 예정 업무" 섹션을 추가.
+
+마이그레이션: `20260918010000_add_recurring_tasks_and_completion_approval`(recurring_task_rules 테이블, tasks.requireCompletionApproval), `20260918020000_add_meeting_manual_structure`(meeting_notes.decisions/actionItems).
+
+`npx tsc --noEmit` 오류 0개, `npx next build` 성공.

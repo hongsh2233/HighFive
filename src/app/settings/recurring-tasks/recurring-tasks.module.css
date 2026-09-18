@@ -1,0 +1,157 @@
+.page {
+  padding: var(--space-8);
+  max-width: var(--width-narrow, 720px);
+  margin: 0 auto;
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pageTitle {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.btnPrimary {
+  composes: btn btn-primary from global;
+  font-size: 13px;
+}
+
+.errorText {
+  color: var(--danger, #DC2626);
+  font-size: 13px;
+}
+
+.form {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.formRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.input, .textarea {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+.weekdayRow {
+  display: flex;
+  gap: 6px;
+}
+
+.weekdayChip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.weekdayChip[data-checked="true"] {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.emptyText {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.ruleCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: var(--space-3) var(--space-4);
+}
+
+.ruleCard[data-inactive="true"] {
+  opacity: 0.55;
+}
+
+.ruleHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.ruleFreq {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.ruleMeta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.ruleActions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: 8px;
+}
+
+.linkBtn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.linkBtnDanger {
+  composes: linkBtn;
+  color: var(--danger, #DC2626);
+}
+
+.loading {
+  padding: var(--space-8);
+  text-align: center;
+  color: var(--text-muted);
+}

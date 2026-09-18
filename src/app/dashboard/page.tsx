@@ -140,6 +140,46 @@ function SuperAdminDashboard({ userName }: { userName: string }) {
   );
 }
 
+interface SummaryTask {
+  id: number;
+  title: string;
+  status: string;
+  targetDate: string | null;
+  worker: { id: number; name: string } | null;
+}
+
+interface WorkerSummary {
+  role: 'WORKER';
+  dueToday: SummaryTask[];
+  dueSoon: SummaryTask[];
+  overdue: SummaryTask[];
+  requestedOfMe: SummaryTask[];
+  unreadAnnouncements: { id: number; content: string; createdAt: string }[];
+  recentDecisions: { id: number; type: string; title: string; status: string; rejectReason: string | null; decidedAt: string }[];
+  todaySchedule: SummaryTask[];
+}
+
+interface ManagerSummary {
+  role: 'LEADER' | 'ADMIN';
+  projectProgress: { projectId: number; name: string; total: number; done: number; rate: number }[];
+  overdueTasks: SummaryTask[];
+  unassignedTasks: SummaryTask[];
+  byWorker: { userId: number; name: string; activeTasks: number; overdueTasks: number }[];
+  missingWeeklyReport: { id: number; name: string }[];
+  pendingApprovals: { id: number; type: string; title: string; requester: { id: number; name: string }; createdAt: string }[];
+}
+
+const REQUEST_TYPE_LABEL: Record<string, string> = { LEAVE: '휴가', SUPPLY: '비품' };
+
+function readDismissedAnnouncementIds(): number[] {
+  try {
+    const raw = localStorage.getItem('dismissedAnnouncementIds');
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
 const statusLabels: { [key: string]: string } = {
   ASSIGNED: '배정됨',
   PROGRESS: '진행중',
@@ -159,6 +199,21 @@ export default function DashboardPage() {
   const [weatherGreeting, setWeatherGreeting] = useState<string | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [loadingAudit, setLoadingAudit] = useState(true);
+  const [summary, setSummary] = useState<WorkerSummary | ManagerSummary | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState(true);
+  const [dismissedIds, setDismissedIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    setDismissedIds(readDismissedAnnouncementIds());
+  }, []);
+
+  useEffect(() => {
+    if (isLoading || !user || user.role === 'SUPERADMIN') { setLoadingSummary(false); return; }
+    apiClient.get<{ data: WorkerSummary | ManagerSummary }>('/dashboard/summary')
+      .then((res) => setSummary(res.data.data))
+      .catch(() => {})
+      .finally(() => setLoadingSummary(false));
+  }, [isLoading, user]);
 
   useEffect(() => {
     if (isLoading || !user || user.role !== 'ADMIN') { setLoadingAudit(false); return; }
@@ -262,6 +317,221 @@ export default function DashboardPage() {
         </h1>
         {weatherGreeting && <p className={styles.weatherGreeting}>{weatherGreeting}</p>}
       </div>
+
+      {!loadingSummary && summary?.role === 'WORKER' && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>지금 해야 할 일</h2>
+          <div className={styles.widgetGrid}>
+            <div className={styles.widget}>
+              <div className={styles.widgetTitle}>
+                마감 임박(3일 이내)
+                {summary.dueSoon.length > 0 && <span className={styles.widgetCount}>{summary.dueSoon.length}</span>}
+              </div>
+              {summary.dueSoon.length === 0 ? (
+                <p className={styles.widgetEmpty}>없음</p>
+              ) : (
+                <div className={styles.widgetList}>
+                  {summary.dueSoon.map((t) => (
+                    <div key={t.id} className={styles.widgetRow}>
+                      <Link href={`/tasks/${t.id}`} className={styles.widgetRowTitle}>{t.title}</Link>
+                      <span className={styles.widgetRowMeta}>{t.targetDate ? new Date(t.targetDate).toLocaleDateString('ko-KR') : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className={styles.widget}>
+              <div className={styles.widgetTitle}>
+                지연 업무
+                {summary.overdue.length > 0 && <span className={`${styles.widgetCount} ${styles.widgetCountDanger}`}>{summary.overdue.length}</span>}
+              </div>
+              {summary.overdue.length === 0 ? (
+                <p className={styles.widgetEmpty}>없음</p>
+              ) : (
+                <div className={styles.widgetList}>
+                  {summary.overdue.map((t) => (
+                    <div key={t.id} className={styles.widgetRow}>
+                      <Link href={`/tasks/${t.id}`} className={styles.widgetRowTitle}>{t.title}</Link>
+                      <span className={styles.widgetRowMeta}>{t.targetDate ? new Date(t.targetDate).toLocaleDateString('ko-KR') : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className={styles.widget}>
+              <div className={styles.widgetTitle}>
+                나에게 요청된 업무(검토)
+                {summary.requestedOfMe.length > 0 && <span className={styles.widgetCount}>{summary.requestedOfMe.length}</span>}
+              </div>
+              {summary.requestedOfMe.length === 0 ? (
+                <p className={styles.widgetEmpty}>없음</p>
+              ) : (
+                <div className={styles.widgetList}>
+                  {summary.requestedOfMe.map((t) => (
+                    <div key={t.id} className={styles.widgetRow}>
+                      <Link href={`/tasks/${t.id}`} className={styles.widgetRowTitle}>{t.title}</Link>
+                      <span className={styles.widgetRowMeta}>{t.worker?.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className={styles.widget}>
+              <div className={styles.widgetTitle}>
+                읽지 않은 공지
+                {summary.unreadAnnouncements.filter((a) => !dismissedIds.includes(a.id)).length > 0 && (
+                  <span className={styles.widgetCount}>{summary.unreadAnnouncements.filter((a) => !dismissedIds.includes(a.id)).length}</span>
+                )}
+              </div>
+              {summary.unreadAnnouncements.filter((a) => !dismissedIds.includes(a.id)).length === 0 ? (
+                <p className={styles.widgetEmpty}>없음</p>
+              ) : (
+                <div className={styles.widgetList}>
+                  {summary.unreadAnnouncements.filter((a) => !dismissedIds.includes(a.id)).slice(0, 5).map((a) => (
+                    <div key={a.id} className={styles.widgetRow}>
+                      <span className={styles.widgetRowTitle}>{a.content.slice(0, 40)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className={styles.widget}>
+              <div className={styles.widgetTitle}>승인 결과</div>
+              {summary.recentDecisions.length === 0 ? (
+                <p className={styles.widgetEmpty}>최근 결정된 신청이 없습니다.</p>
+              ) : (
+                <div className={styles.widgetList}>
+                  {summary.recentDecisions.map((r) => (
+                    <div key={r.id} className={styles.widgetRow}>
+                      <span className={styles.widgetRowTitle}>{REQUEST_TYPE_LABEL[r.type] || r.type} · {r.title}</span>
+                      <span className={styles.widgetRowMeta}>{r.status === 'APPROVED' ? '승인' : '반려'}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!loadingSummary && (summary?.role === 'LEADER' || summary?.role === 'ADMIN') && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>팀 현황</h2>
+          <div className={styles.widgetGrid}>
+            <div className={styles.widget}>
+              <div className={styles.widgetTitle}>프로젝트 진행 현황</div>
+              {summary.projectProgress.length === 0 ? (
+                <p className={styles.widgetEmpty}>소속된 프로젝트가 없습니다.</p>
+              ) : (
+                <div className={styles.widgetList}>
+                  {summary.projectProgress.map((p) => (
+                    <div key={p.projectId} className={styles.widgetList} style={{ gap: 4 }}>
+                      <div className={styles.widgetRow}>
+                        <span className={styles.widgetRowTitle}>{p.name}</span>
+                        <span className={styles.widgetRowMeta}>{p.done}/{p.total} ({p.rate}%)</span>
+                      </div>
+                      <div className={styles.progressBarTrack}>
+                        <div className={styles.progressBarFill} style={{ width: `${p.rate}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className={styles.widget}>
+              <div className={styles.widgetTitle}>
+                지연 업무
+                {summary.overdueTasks.length > 0 && <span className={`${styles.widgetCount} ${styles.widgetCountDanger}`}>{summary.overdueTasks.length}</span>}
+              </div>
+              {summary.overdueTasks.length === 0 ? (
+                <p className={styles.widgetEmpty}>없음</p>
+              ) : (
+                <div className={styles.widgetList}>
+                  {summary.overdueTasks.map((t) => (
+                    <div key={t.id} className={styles.widgetRow}>
+                      <Link href={`/tasks/${t.id}`} className={styles.widgetRowTitle}>{t.title}</Link>
+                      <span className={styles.widgetRowMeta}>{t.worker?.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className={styles.widget}>
+              <div className={styles.widgetTitle}>담당자 없는 업무</div>
+              {summary.unassignedTasks.length === 0 ? (
+                <p className={styles.widgetEmpty}>없음</p>
+              ) : (
+                <div className={styles.widgetList}>
+                  {summary.unassignedTasks.map((t) => (
+                    <div key={t.id} className={styles.widgetRow}>
+                      <Link href={`/tasks/${t.id}`} className={styles.widgetRowTitle}>{t.title}</Link>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className={styles.widget}>
+              <div className={styles.widgetTitle}>팀원별 업무 현황</div>
+              {summary.byWorker.length === 0 ? (
+                <p className={styles.widgetEmpty}>팀원이 없습니다.</p>
+              ) : (
+                <div className={styles.widgetList}>
+                  {summary.byWorker.map((w) => (
+                    <div key={w.userId} className={styles.widgetRow}>
+                      <span className={styles.widgetRowTitle}>{w.name}</span>
+                      <span className={styles.widgetRowMeta}>진행 {w.activeTasks}건{w.overdueTasks > 0 ? ` · 지연 ${w.overdueTasks}건` : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className={styles.widget}>
+              <div className={styles.widgetTitle}>
+                미작성 주간보고
+                {summary.missingWeeklyReport.length > 0 && <span className={styles.widgetCount}>{summary.missingWeeklyReport.length}</span>}
+              </div>
+              {summary.missingWeeklyReport.length === 0 ? (
+                <p className={styles.widgetEmpty}>모두 작성했습니다.</p>
+              ) : (
+                <div className={styles.widgetList}>
+                  {summary.missingWeeklyReport.map((u) => (
+                    <div key={u.id} className={styles.widgetRow}>
+                      <span className={styles.widgetRowTitle}>{u.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className={styles.widget}>
+              <div className={styles.widgetTitle}>
+                승인 대기
+                {summary.pendingApprovals.length > 0 && <span className={styles.widgetCount}>{summary.pendingApprovals.length}</span>}
+              </div>
+              {summary.pendingApprovals.length === 0 ? (
+                <p className={styles.widgetEmpty}>없음</p>
+              ) : (
+                <div className={styles.widgetList}>
+                  {summary.pendingApprovals.map((r) => (
+                    <div key={r.id} className={styles.widgetRow}>
+                      <Link href="/requests" className={styles.widgetRowTitle}>{REQUEST_TYPE_LABEL[r.type] || r.type} · {r.requester.name}</Link>
+                      <span className={styles.widgetRowMeta}>{r.title.slice(0, 20)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {user?.role !== 'ADMIN' && loadingTasks && (
         <div className={styles.section}>

@@ -11,6 +11,8 @@ import Spinner from '@/components/common/Spinner';
 import SimpleEditor from '@/components/common/SimpleEditor';
 import { useDialog } from '@/components/common/DialogProvider';
 
+interface ManualActionItem { text: string; assigneeId: number | null; dueDate: string | null; taskId?: number }
+
 interface MeetingNote {
   id: number;
   title: string;
@@ -19,6 +21,8 @@ interface MeetingNote {
   meetingDate: string | null;
   author: { id: number; name: string };
   aiSummary: string | null;
+  decisions: string[] | null;
+  actionItems: ManualActionItem[] | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -110,6 +114,11 @@ export default function ProjectMeetingsPage({ params }: { params: Promise<{ id: 
   const [itemAssignee, setItemAssignee] = useState<Record<string, number | ''>>({});
   const [convertedKeys, setConvertedKeys] = useState<Set<string>>(new Set());
   const [converting, setConverting] = useState<number | null>(null);
+  const [structureEditId, setStructureEditId] = useState<number | null>(null);
+  const [draftDecisions, setDraftDecisions] = useState<string[]>([]);
+  const [draftActionItems, setDraftActionItems] = useState<ManualActionItem[]>([]);
+  const [savingStructure, setSavingStructure] = useState(false);
+  const [creatingTaskIdx, setCreatingTaskIdx] = useState<number | null>(null);
 
   const dictation = useDictation((finalText) => {
     setFormContent((prev) => (prev ? `${prev} ${finalText}` : finalText));
@@ -181,6 +190,54 @@ export default function ProjectMeetingsPage({ params }: { params: Promise<{ id: 
       setMessage({ type: 'error', text: err.response?.data?.message || '업무 생성 중 오류가 발생했습니다.' });
     } finally {
       setConverting(null);
+    }
+  };
+
+  const openStructureEdit = (note: MeetingNote) => {
+    setStructureEditId(note.id);
+    setDraftDecisions(note.decisions?.length ? [...note.decisions] : ['']);
+    setDraftActionItems(note.actionItems?.length ? [...note.actionItems] : [{ text: '', assigneeId: null, dueDate: null }]);
+  };
+
+  const saveStructure = async (note: MeetingNote) => {
+    setSavingStructure(true);
+    try {
+      const decisions = draftDecisions.map((d) => d.trim()).filter(Boolean);
+      const actionItems = draftActionItems.filter((a) => a.text.trim());
+      const res = await apiClient.patch<{ data: MeetingNote }>(`/projects/${projectId}/meetings/${note.id}`, { decisions, actionItems });
+      setNotes((prev) => prev.map((n) => (n.id === note.id ? res.data.data : n)));
+      setStructureEditId(null);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.response?.data?.message || '저장에 실패했습니다.' });
+    } finally {
+      setSavingStructure(false);
+    }
+  };
+
+  const createTaskFromActionItem = async (note: MeetingNote, idx: number) => {
+    const item = note.actionItems?.[idx];
+    if (!item || !item.assigneeId) {
+      setMessage({ type: 'error', text: '담당자가 지정된 후속 업무만 업무로 생성할 수 있습니다.' });
+      return;
+    }
+    setCreatingTaskIdx(idx);
+    try {
+      const taskRes = await apiClient.post<{ data: { id: number } }>('/tasks', {
+        title: item.text.slice(0, 200),
+        workerId: item.assigneeId,
+        registrantId: Number(user?.id),
+        projectId,
+        targetDate: item.dueDate || undefined,
+        notes: `'${note.title}' 회의록의 후속 업무입니다.`,
+      });
+      const updatedItems = (note.actionItems || []).map((a, i) => (i === idx ? { ...a, taskId: taskRes.data.data.id } : a));
+      const res = await apiClient.patch<{ data: MeetingNote }>(`/projects/${projectId}/meetings/${note.id}`, { actionItems: updatedItems });
+      setNotes((prev) => prev.map((n) => (n.id === note.id ? res.data.data : n)));
+      setMessage({ type: 'success', text: '업무가 생성되었습니다.' });
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.response?.data?.message || '업무 생성에 실패했습니다.' });
+    } finally {
+      setCreatingTaskIdx(null);
     }
   };
 
@@ -374,6 +431,118 @@ export default function ProjectMeetingsPage({ params }: { params: Promise<{ id: 
                       <div className={styles.contentText}>{renderContent(note.content)}</div>
                       <div className={styles.contentMeta}>
                         {note.author.name} · {new Date(note.updatedAt).toLocaleString('ko-KR')}
+                      </div>
+
+                      <div className={styles.aiSummaryBlock}>
+                        <div className={styles.aiSummaryHeader}>
+                          <span className={styles.aiSummaryLabel}>결정사항 · 후속 업무</span>
+                          {structureEditId !== note.id && (
+                            <button type="button" onClick={(e) => { e.stopPropagation(); openStructureEdit(note); }} className={styles.btnAiSummary}>
+                              편집
+                            </button>
+                          )}
+                        </div>
+
+                        {structureEditId === note.id ? (
+                          <div className={styles.aiSummaryBody} onClick={(e) => e.stopPropagation()}>
+                            <div className={styles.aiSummarySection}>
+                              <span className={styles.aiSummarySectionTitle}>결정사항</span>
+                              {draftDecisions.map((d, i) => (
+                                <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
+                                  <input
+                                    className={styles.input}
+                                    value={d}
+                                    onChange={(e) => setDraftDecisions((prev) => prev.map((v, vi) => (vi === i ? e.target.value : v)))}
+                                    placeholder="결정된 사항"
+                                  />
+                                  <button type="button" onClick={() => setDraftDecisions((prev) => prev.filter((_, vi) => vi !== i))} className={styles.btnDelete}>✕</button>
+                                </div>
+                              ))}
+                              <button type="button" onClick={() => setDraftDecisions((prev) => [...prev, ''])} className={styles.btnAiSummary}>+ 결정사항 추가</button>
+                            </div>
+                            <div className={styles.aiSummarySection}>
+                              <span className={styles.aiSummarySectionTitle}>후속 업무</span>
+                              {draftActionItems.map((a, i) => (
+                                <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+                                  <input
+                                    className={styles.input}
+                                    style={{ flex: 2 }}
+                                    value={a.text}
+                                    onChange={(e) => setDraftActionItems((prev) => prev.map((v, vi) => (vi === i ? { ...v, text: e.target.value } : v)))}
+                                    placeholder="해야 할 일"
+                                  />
+                                  <select
+                                    className={styles.input}
+                                    value={a.assigneeId ?? ''}
+                                    onChange={(e) => setDraftActionItems((prev) => prev.map((v, vi) => (vi === i ? { ...v, assigneeId: e.target.value ? parseInt(e.target.value) : null } : v)))}
+                                  >
+                                    <option value="">담당자</option>
+                                    {projectMembers.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                                  </select>
+                                  <input
+                                    type="date"
+                                    className={styles.input}
+                                    value={a.dueDate ? a.dueDate.slice(0, 10) : ''}
+                                    onChange={(e) => setDraftActionItems((prev) => prev.map((v, vi) => (vi === i ? { ...v, dueDate: e.target.value || null } : v)))}
+                                  />
+                                  <button type="button" onClick={() => setDraftActionItems((prev) => prev.filter((_, vi) => vi !== i))} className={styles.btnDelete}>✕</button>
+                                </div>
+                              ))}
+                              <button type="button" onClick={() => setDraftActionItems((prev) => [...prev, { text: '', assigneeId: null, dueDate: null }])} className={styles.btnAiSummary}>+ 후속 업무 추가</button>
+                            </div>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              <button type="button" onClick={() => saveStructure(note)} disabled={savingStructure} className={styles.btnSubmit}>저장</button>
+                              <button type="button" onClick={() => setStructureEditId(null)} className={styles.btnCancel}>취소</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className={styles.aiSummaryBody}>
+                            {(note.decisions?.length ?? 0) === 0 && (note.actionItems?.length ?? 0) === 0 ? (
+                              <p className={styles.aiSummaryText}>등록된 결정사항/후속 업무가 없습니다.</p>
+                            ) : (
+                              <>
+                                {!!note.decisions?.length && (
+                                  <div className={styles.aiSummarySection}>
+                                    <span className={styles.aiSummarySectionTitle}>결정사항</span>
+                                    <ul className={styles.aiSummaryList}>
+                                      {note.decisions.map((d, i) => <li key={i}>{d}</li>)}
+                                    </ul>
+                                  </div>
+                                )}
+                                {!!note.actionItems?.length && (
+                                  <div className={styles.aiSummarySection}>
+                                    <span className={styles.aiSummarySectionTitle}>후속 업무</span>
+                                    <ul className={styles.actionItemList}>
+                                      {note.actionItems.map((a, i) => (
+                                        <li key={i} className={styles.actionItemRow}>
+                                          <span>{a.text}</span>
+                                          <span className={styles.aiSummaryText}>
+                                            {projectMembers.find((m) => m.id === a.assigneeId)?.name || '담당자 미지정'}
+                                            {a.dueDate ? ` · ${new Date(a.dueDate).toLocaleDateString('ko-KR')}` : ''}
+                                          </span>
+                                          {canConvertToTask && (
+                                            a.taskId ? (
+                                              <span className={styles.actionItemDone}>✅ 업무 생성됨</span>
+                                            ) : (
+                                              <button
+                                                type="button"
+                                                onClick={(e) => { e.stopPropagation(); createTaskFromActionItem(note, i); }}
+                                                disabled={creatingTaskIdx === i || !a.assigneeId}
+                                                className={styles.btnAiSummary}
+                                              >
+                                                {creatingTaskIdx === i ? '생성 중...' : '업무로 생성'}
+                                              </button>
+                                            )
+                                          )}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {aiEnabled.meetingSummary && (

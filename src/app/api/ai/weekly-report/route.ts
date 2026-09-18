@@ -26,7 +26,12 @@ export async function POST(req: NextRequest) {
     weekEnd.setDate(weekEnd.getDate() + 6);
     weekEnd.setHours(23, 59, 59, 999);
 
-    const [completedTasks, inProgressTasks, workload] = await Promise.all([
+    const nextWeekStart = new Date(weekEnd.getTime() + 1000);
+    const nextWeekEnd = new Date(nextWeekStart);
+    nextWeekEnd.setDate(nextWeekEnd.getDate() + 6);
+    nextWeekEnd.setHours(23, 59, 59, 999);
+
+    const [completedTasks, inProgressTasks, overdueTasks, nextWeekTasks, workload] = await Promise.all([
       prisma.task.findMany({
         where: { organizationId, status: 'DONE', updatedAt: { gte: weekStart, lte: weekEnd } },
         select: { title: true, worker: { select: { name: true } } },
@@ -37,23 +42,45 @@ export async function POST(req: NextRequest) {
         select: { title: true, status: true, worker: { select: { name: true } } },
         take: 100,
       }),
+      prisma.task.findMany({
+        where: { organizationId, status: { not: 'DONE' }, targetDate: { lt: weekStart } },
+        select: { title: true, targetDate: true, worker: { select: { name: true } } },
+        take: 100,
+      }),
+      prisma.task.findMany({
+        where: { organizationId, status: { not: 'DONE' }, targetDate: { gte: nextWeekStart, lte: nextWeekEnd } },
+        select: { title: true, targetDate: true, worker: { select: { name: true } } },
+        take: 100,
+      }),
       computeWorkloadStats(organizationId, weekStart, weekEnd),
     ]);
 
     const completedLines = completedTasks.map((t) => `- ${t.title} (${t.worker?.name ?? '미배정'})`).join('\n');
     const progressLines = inProgressTasks.map((t) => `- [${t.status}] ${t.title} (${t.worker?.name ?? '미배정'})`).join('\n');
+    const overdueLines = overdueTasks
+      .map((t) => `- ${t.title} (${t.worker?.name ?? '미배정'}, 목표일 ${t.targetDate?.toISOString().slice(0, 10)})`)
+      .join('\n');
+    const nextWeekLines = nextWeekTasks
+      .map((t) => `- ${t.title} (${t.worker?.name ?? '미배정'}, 목표일 ${t.targetDate?.toISOString().slice(0, 10)})`)
+      .join('\n');
     const hoursLines = workload
       .filter((w) => w.totalTasks > 0 || w.totalHours > 0)
       .map((w) => `- ${w.name}: ${w.totalTasks}건 (완료 ${w.completedTasks}), ${w.totalHours}시간`)
       .join('\n');
 
-    const prompt = `아래는 한 팀의 이번 주(${weekStart.toISOString().slice(0, 10)} ~ ${weekEnd.toISOString().slice(0, 10)}) 업무 현황이다. 팀 리더나 경영진이 보고 받을 수 있는 한국어 주간 보고서를 작성하라. "완료 업무", "진행 중 업무", "팀별 공수" 섹션으로 나누고 각 섹션은 간결한 불릿으로 정리하되, 마지막에 전체 총평 2~3문장을 추가하라. 수치를 임의로 지어내지 말고 주어진 데이터만 근거로 삼아라.
+    const prompt = `아래는 한 팀의 이번 주(${weekStart.toISOString().slice(0, 10)} ~ ${weekEnd.toISOString().slice(0, 10)}) 업무 현황이다. 팀 리더나 경영진이 보고 받을 수 있는 한국어 주간 보고서를 작성하라. "완료 업무", "진행 중 업무", "지연 업무", "다음 주 예정 업무", "팀별 공수" 섹션으로 나누고 각 섹션은 간결한 불릿으로 정리하되, 지연 업무 섹션에서는 지연 원인을 지어내지 말고 목표일과 담당자만 사실대로 나열하라. 마지막에 전체 총평 2~3문장을 추가하라. 수치를 임의로 지어내지 말고 주어진 데이터만 근거로 삼아라.
 
 [완료 업무]
 ${completedLines || '(없음)'}
 
 [진행 중 업무]
 ${progressLines || '(없음)'}
+
+[지연 업무 (목표일이 이번 주 이전인데 아직 미완료)]
+${overdueLines || '(없음)'}
+
+[다음 주 예정 업무 (목표일이 다음 주인 업무)]
+${nextWeekLines || '(없음)'}
 
 [팀별 공수]
 ${hoursLines || '(데이터 없음)'}`;

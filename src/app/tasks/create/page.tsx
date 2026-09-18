@@ -90,6 +90,7 @@ function TaskCreateForm() {
   const [priority, setPriority] = useState('NORMAL');
   const [isGroup, setIsGroup] = useState(false);
   const [timeCounterEnabled, setTimeCounterEnabled] = useState(true);
+  const [requireCompletionApproval, setRequireCompletionApproval] = useState(false);
   const [githubEnabled, setGithubEnabled] = useState(false);
   const [quickRegister, setQuickRegister] = useState(false);
   const [subTasks, setSubTasks] = useState<SubTaskForm[]>([{ title: '', workerId: '', targetDate: '' }]);
@@ -277,6 +278,7 @@ function TaskCreateForm() {
         timeCounterEnabled,
         githubEnabled,
         quickRegister,
+        requireCompletionApproval,
         subTasks: (!parentTask && isGroup) ? validSubTasks.map(s => ({
           title: s.title.trim(),
           workerId: parseInt(s.workerId),
@@ -433,6 +435,20 @@ function TaskCreateForm() {
                       className={styles.labelCheckbox}
                     />
                     시간카운터 사용 (상태 변경에 따라 작업 시간을 자동으로 계산합니다)
+                  </label>
+                </div>
+              )}
+
+              {!quickRegister && (
+                <div className={styles.fieldGroupWide}>
+                  <label className={styles.groupCheckLabel}>
+                    <input
+                      type="checkbox"
+                      checked={requireCompletionApproval}
+                      onChange={e => setRequireCompletionApproval(e.target.checked)}
+                      className={styles.labelCheckbox}
+                    />
+                    완료 시 요청자(등록자) 승인 필요 (담당자가 검토 단계까지만 진행할 수 있고, 최종 완료 처리는 등록자만 가능)
                   </label>
                 </div>
               )}

@@ -1,6 +1,7 @@
 import { prisma } from './db';
 import { createUserNotification } from './notify';
 import { getProjectStatuses } from './task-status';
+import { computeNextRunAt } from './recurring-tasks';
 
 const INTERVAL_MS = 30 * 60 * 1000; // 30분마다 실행
 
@@ -111,11 +112,59 @@ async function runDeadlineCheck() {
   }
 }
 
+async function runRecurringTaskGeneration() {
+  try {
+    const dueRules = await prisma.recurringTaskRule.findMany({
+      where: { isActive: true, nextRunAt: { lte: new Date() } },
+    });
+
+    for (const rule of dueRules) {
+      const [initialStatus] = await getProjectStatuses(rule.projectId);
+      const targetDate = rule.targetDaysOffset
+        ? new Date(rule.nextRunAt.getTime() + rule.targetDaysOffset * 86400000)
+        : rule.nextRunAt;
+
+      const task = await prisma.task.create({
+        data: {
+          title: rule.title,
+          notes: rule.notes,
+          workerId: rule.workerId,
+          registrantId: rule.createdById,
+          targetDate,
+          status: initialStatus.code,
+          projectId: rule.projectId,
+          organizationId: rule.organizationId,
+        },
+      });
+
+      await createUserNotification(
+        rule.workerId,
+        'WORKER_ASSIGNED',
+        `반복 업무 '${task.title}'가 자동으로 등록되었습니다.`,
+        task.id,
+        rule.organizationId
+      );
+
+      await prisma.recurringTaskRule.update({
+        where: { id: rule.id },
+        data: {
+          lastRunAt: new Date(),
+          nextRunAt: computeNextRunAt(rule.nextRunAt, rule.frequency, rule.config as any),
+        },
+      });
+    }
+  } catch (e) {
+    console.error('[scheduler] recurring task generation failed:', e);
+  }
+}
+
 let started = false;
 
 export function startScheduler() {
   if (started) return;
   started = true;
   runDeadlineCheck();
+  runRecurringTaskGeneration();
   setInterval(runDeadlineCheck, INTERVAL_MS);
+  setInterval(runRecurringTaskGeneration, INTERVAL_MS);
 }

@@ -32,7 +32,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const body = await req.json();
-    const { title, content, attendees, meetingDate } = body;
+    const { title, content, attendees, meetingDate, decisions, actionItems } = body;
 
     const updated = await prisma.meetingNote.update({
       where: { id: noteId },
@@ -41,6 +41,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(content !== undefined && { content: content.trim() }),
         ...(attendees !== undefined && { attendees: attendees?.trim() || null }),
         ...(meetingDate !== undefined && { meetingDate: meetingDate ? new Date(meetingDate) : null }),
+        ...(decisions !== undefined && { decisions }),
+        ...(actionItems !== undefined && { actionItems }),
       },
       include: { author: { select: { id: true, name: true } } },
     });
