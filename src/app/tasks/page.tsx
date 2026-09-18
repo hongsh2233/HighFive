@@ -372,8 +372,15 @@ function TaskListContent() {
   return (
     <div className={styles.container}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>업무 목록</h1>
-        <span className={styles.pageCount}>총 {filteredTasks.length}건</span>
+        <div className={styles.pageHeaderLeft}>
+          <h1 className={styles.pageTitle}>업무 목록</h1>
+          <span className={styles.pageCount}>총 {filteredTasks.length}건</span>
+        </div>
+        {['ADMIN', 'LEADER'].includes(user?.role || '') && (
+          <button type="button" className={styles.newTaskBtn} onClick={() => router.push('/tasks/create')}>
+            <PlusIcon /> 새 업무
+          </button>
+        )}
       </div>
 
       <div className={styles.viewTabs}>

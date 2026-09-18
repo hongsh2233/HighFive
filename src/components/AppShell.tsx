@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { signOut } from 'next-auth/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { markManualLogout } from '@/lib/logout-flag';
 import TopSearch from './TopSearch';
 import NotificationBell from './NotificationBell';
@@ -26,6 +26,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [orgLogo, setOrgLogo] = useState<string | null>(null);
   const [canManageCardExpense, setCanManageCardExpense] = useState(false);
   const [canManageLedger, setCanManageLedger] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [userMenuOpen]);
 
   useEffect(() => {
     if (!user || (user as any).role === 'SUPERADMIN' || ['ADMIN', 'LEADER'].includes(user?.role || '')) return;
@@ -97,41 +110,40 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     : [
         ...(has('tasks') ? [{
           key: 'task', label: '업무', icon: '📋', items: [
-            ...(isAdminOrLeader ? [{ href: '/tasks/create', label: '업무 등록', icon: '' }] : []),
             { href: '/tasks', label: '업무 목록', icon: '' },
             { href: '/tasks/kanban', label: '칸반 보드', icon: '' },
             { href: '/calendar', label: '캘린더', icon: '' },
           ],
         }] : []),
-        ...((has('requests') || has('info') || has('wiki')) ? [{
-          key: 'collab', label: '협업', icon: '🤝', items: [
-            ...(has('requests') ? [{ href: '/requests', label: '신청(전자결재)', icon: '' }] : []),
-            ...(has('wiki') ? [{ href: '/wiki', label: '위키', icon: '' }] : []),
+        ...((isAdminOrLeader || has('info') || has('wiki')) ? [{
+          key: 'collab', label: '프로젝트·협업', icon: '🤝', items: [
+            ...(isAdminOrLeader ? [{ href: '/projects', label: '프로젝트', icon: '' }] : []),
             { href: '/meetings', label: '회의록', icon: '' },
             { href: '/weekly-reports', label: '주간보고', icon: '' },
-            ...(has('info') ? [{ href: '/info', label: '정보(FAQ)', icon: '' }] : []),
+            ...(has('wiki') ? [{ href: '/wiki', label: '지식베이스', icon: '' }] : []),
+            ...(has('info') ? [{ href: '/info', label: '지식베이스', icon: '' }] : []),
           ],
         }] : []),
-        {
-          key: 'admin', label: '관리', icon: '🗂️', items: [
-            ...(isAdminOrLeader ? [{ href: '/projects', label: '프로젝트', icon: '' }] : []),
-            ...(isAdminOrLeader ? [{ href: '/inquiries', label: '문의 관리', icon: '' }] : []),
+        ...((has('requests') || isAdminOrLeader || canManageCardExpense || canManageLedger) ? [{
+          key: 'org', label: '조직 운영', icon: '🗂️', items: [
+            ...(has('requests') ? [{ href: '/requests', label: '신청·결재', icon: '' }] : []),
+            ...(isAdminOrLeader ? [{ href: '/inquiries', label: '문의', icon: '' }] : []),
             ...(isAdminOrLeader || canManageCardExpense || canManageLedger ? [{ href: '/expenses', label: '비용관리', icon: '' }] : []),
-            { href: '/announcements', label: '공지/알림', icon: '' },
-            ...(user?.role === 'ADMIN' ? [{ href: '/users', label: '팀원관리', icon: '' }] : []),
-            ...(isAdminOrLeader && has('stats') ? [{ href: '/stats', label: '통계', icon: '' }] : []),
+            { href: '/announcements', label: '공지사항', icon: '' },
           ],
-        },
-        ...((user?.role === 'ADMIN' || has('integrations')) ? [{
-          key: 'agent', label: '에이전트 관리', icon: '🔌', items: [
-            ...(user?.role === 'ADMIN' ? [{ href: '/settings/ai', label: 'AI 설정', icon: '' }] : []),
-            ...(has('integrations') ? [{ href: '/settings/integrations', label: '외부연동', icon: '' }] : []),
+        }] : []),
+        ...(isAdminOrLeader && has('stats') ? [{
+          key: 'analytics', label: '분석', icon: '📊', items: [
+            { href: '/stats', label: '통계', icon: '' },
           ],
         }] : []),
         ...(user?.role === 'ADMIN' ? [{
-          key: 'settings', label: '설정', icon: '⚙️', items: [
+          key: 'settings', label: '관리자 설정', icon: '⚙️', items: [
+            { href: '/users', label: '팀원관리', icon: '' },
             { href: '/settings/organization', label: '조직 설정', icon: '' },
             { href: '/settings/approval-line', label: '결재선 설정', icon: '' },
+            { href: '/settings/ai', label: 'AI 설정', icon: '' },
+            ...(has('integrations') ? [{ href: '/settings/integrations', label: '외부연동', icon: '' }] : []),
             { href: '/settings/audit', label: '감사 로그', icon: '' },
           ],
         }] : []),
@@ -161,10 +173,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           {orgLogo ? <img src={orgLogo} alt={orgName} className={styles.logoImg} /> : <span>{isSuperAdmin ? 'High5' : orgName}</span>}
         </Link>
 
+        {!isSuperAdmin && isAdminOrLeader && has('tasks') && (
+          <Link href="/tasks/create" className={styles.newTaskBtn} onClick={closeMobile}>
+            <span>＋</span>새 업무
+          </Link>
+        )}
+
         <nav className={styles.nav}>
           <Link href="/dashboard" className={pathname === '/dashboard' ? styles.navItemActive : styles.navItem} onClick={closeMobile}>
             <span className={styles.navIcon}>🏠</span>대시보드
           </Link>
+
+          {!isSuperAdmin && (
+            <Link href="/manual" className={pathname.startsWith('/manual') ? styles.navItemActive : styles.navItem} onClick={closeMobile}>
+              <span className={styles.navIcon}>📖</span>매뉴얼·도움말
+            </Link>
+          )}
 
           {isSuperAdmin && (
             <Link href="/announcements" className={pathname.startsWith('/announcements') ? styles.navItemActive : styles.navItem} onClick={closeMobile}>
@@ -199,11 +223,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className={styles.sidebarFooter}>
-          <Link href="/my-notes" className={styles.navSubItem} onClick={closeMobile}>내 자료</Link>
-          <Link href="/profile/password" className={styles.navSubItem} onClick={closeMobile}>비밀번호 변경</Link>
-          <Link href="/settings/security" className={styles.navSubItem} onClick={closeMobile}>보안 설정</Link>
-        </div>
       </aside>
 
       <div className={styles.main}>
@@ -212,8 +231,27 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className={styles.topbarRight}>
             {user && <NotificationBell />}
-            <span className={styles.userName}>{user?.name}</span>
-            <button onClick={handleLogout} className={styles.logoutBtn}>로그아웃</button>
+            <div className={styles.userMenu} ref={userMenuRef}>
+              <button type="button" className={styles.userMenuTrigger} onClick={() => setUserMenuOpen((v) => !v)}>
+                <span className={styles.userName}>{user?.name}</span>
+                <span className={styles.userMenuChevron}>{userMenuOpen ? '▲' : '▼'}</span>
+              </button>
+              {userMenuOpen && (
+                <div className={styles.userMenuDropdown}>
+                  {!isSuperAdmin && (
+                    <>
+                      <Link href="/profile" className={styles.userMenuItem} onClick={() => setUserMenuOpen(false)}>내 프로필</Link>
+                      <Link href="/my-notes" className={styles.userMenuItem} onClick={() => setUserMenuOpen(false)}>내 자료</Link>
+                      <Link href="/settings/calendar-sync" className={styles.userMenuItem} onClick={() => setUserMenuOpen(false)}>캘린더 연동</Link>
+                      <Link href="/profile/password" className={styles.userMenuItem} onClick={() => setUserMenuOpen(false)}>비밀번호 변경</Link>
+                      <Link href="/settings/security" className={styles.userMenuItem} onClick={() => setUserMenuOpen(false)}>보안 설정</Link>
+                      <div className={styles.userMenuDivider} />
+                    </>
+                  )}
+                  <button type="button" className={styles.userMenuItem} onClick={handleLogout}>로그아웃</button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 

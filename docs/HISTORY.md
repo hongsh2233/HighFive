@@ -1145,3 +1145,38 @@ npx prisma migrate resolve --applied 20260907000000_init
 `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
 
 **보류(구현 안 함, 제안만 전달)**: 좌측 메뉴 + 상단 헤더(ChatGPT/Claude.ai 스타일) 디자인 개편 — 전체 페이지 반응형/컨테이너 값 재조정이 필요해 작업량이 크므로 사용자가 명시적으로 요청할 때 별도 라운드로 진행하기로 함.
+
+## 2026-09-18 — 핵심 개선 로드맵 라운드 1~4 (보안/구조/권한/메뉴)
+
+사용자가 제시한 "HighFive 핵심 개선 로드맵"(Phase 1/2) 문서를 라운드 단위로 순차 진행.
+
+### 라운드 1 — 외부연동 API 보안 긴급 수정
+- `/api/settings/integrations`, `[channel]/route.ts`, `[channel]/test/route.ts`: 주석상 "ADMIN 전용"이었지만 실제로는 `requireAuth()`만 체크하던 취약점 발견 → `requireRole(['ADMIN'])`로 교체.
+- GET 응답의 `webhookUrl`/`botToken`/`chatId` 마스킹 처리, PUT 저장 시 마스킹된 값(`*` 포함) 그대로 전송되면 기존 값 유지.
+- `/settings/integrations` 페이지에도 ADMIN 아니면 접근 차단 문구 추가.
+
+### 라운드 2 — 인증 라우트 목록 중앙화
+- `src/lib/route-config.ts` 신규: `ORG_SCOPED_ROUTES`/`ADMIN_ONLY_ROUTES`/`LEADER_ROUTES` 단일 소스.
+- `middleware.ts`의 `orgScopedRoutes`, `LayoutWrapper.tsx`의 `AUTH_REQUIRED_PATHS`가 각각 따로 관리되며 새 라우트 추가 시 한쪽만 갱신하는 사고(weekly-reports/expenses 누락 사례)가 반복되어 통합.
+- 부수 발견: `LayoutWrapper.tsx`에 `my-notes`/`meetings`/`manual`/`inquiries`가 누락되어 있던 것도 함께 수정.
+
+### 라운드 3 — UserCapability 키-값 권한 모델 도입
+- `User.canManageCardExpense`/`canManageLedger`/`canManageWeeklyReport` boolean 컬럼 3개를 `UserCapability(userId, key, value)` 테이블로 일반화.
+- 마이그레이션(`20260918000000_add_user_capability`)에서 기존 값 백필 후 컬럼 삭제.
+- `lib/utils.ts`: `hasCapability`/`getCapabilities`/`requireCapabilityAccess` 공통 헬퍼로 통합(기존 `requireCardExpenseAccess`/`requireLedgerAccess` 유지, `requireWeeklyReportWriteAccess` 신규).
+- `/api/users`, `/api/users/[id]`, `/api/users/me`, `/api/projects/[id]/weekly-reports`가 capability 테이블을 읽고 쓰도록 변경. API 응답 필드명은 기존과 동일하게 유지해 프런트는 무변경.
+
+### 라운드 4 — 메뉴 구조 개편 + 명칭 변경 + 개인 메뉴
+- `src/components/AppShell.tsx` 사이드바 그룹을 로드맵 표 기준으로 재구성: 홈 / 업무 / 프로젝트·협업 / 조직 운영 / 분석 / 관리자 설정.
+  - 업무: 업무 목록·칸반 보드·캘린더 (업무 등록 항목 제거)
+  - 프로젝트·협업: 프로젝트·회의록·주간보고·지식베이스(조직의 `knowledgeBaseMode`에 따라 위키 또는 정보(FAQ)로 자동 연결되는 통합 라벨)
+  - 조직 운영: 신청·결재·문의·비용관리·공지사항
+  - 관리자 설정: 팀원관리·조직 설정·결재선 설정·AI 설정·외부연동·감사 로그
+- 명칭 변경: 신청(전자결재)→신청·결재, 정보(FAQ)/위키→지식베이스, 공지/알림→공지사항.
+- "업무 등록" 사이드바 메뉴 제거, 대신 사이드바 상단(ADMIN/LEADER)에 "+ 새 업무" 버튼 추가. `/tasks` 목록 페이지 헤더에도 동일 권한으로 "+ 새 업무" 버튼 추가.
+- 사용자 이름 클릭 시 개인 메뉴 드롭다운 신설(`userMenu*` 스타일): 내 프로필/내 자료/캘린더 연동/비밀번호 변경/보안 설정/로그아웃. 기존 사이드바 하단 고정 메뉴(`sidebarFooter`)는 제거하고 이쪽으로 흡수.
+- 구글 캘린더 연동 진입점을 관리자용 `/settings/integrations`에서 제거하고 개인 메뉴로 이동(연동 API/페이지 자체는 `/settings/calendar-sync` 그대로 유지).
+- 사이드바에 "매뉴얼·도움말"(`/manual`, 기존 페이지) 메뉴 항목 신규 노출.
+- `/profile` 페이지가 실제로 존재하지 않아 "내 프로필" 클릭 시 빈 화면이 되는 문제 발견 → `src/app/profile/page.tsx`(이름/이메일/역할/가입일/최근 로그인 표시 + 하위 설정 바로가기) 신규 작성.
+
+`npx tsc --noEmit` 오류 0개. `npx next build`는 백그라운드로 실행 후 확인.

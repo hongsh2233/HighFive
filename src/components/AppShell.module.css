@@ -164,13 +164,89 @@
   background: var(--sidebar-active-bg);
 }
 
-.sidebarFooter {
+.newTaskBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 10px 10px 0;
+  padding: 9px 10px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
   flex-shrink: 0;
-  padding: 8px 10px 14px;
-  border-top: 1px solid var(--sidebar-border);
+}
+
+.newTaskBtn:hover {
+  opacity: 0.92;
+}
+
+.userMenu {
+  position: relative;
+}
+
+.userMenuTrigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.userMenuTrigger:hover {
+  background: var(--bg-subtle, rgba(0,0,0,0.04));
+}
+
+.userMenuChevron {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.userMenuDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  padding: 6px;
   display: flex;
   flex-direction: column;
   gap: 1px;
+  z-index: 120;
+}
+
+.userMenuItem {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  text-align: left;
+  color: var(--text-primary);
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.userMenuItem:hover {
+  background: var(--sidebar-active-bg, rgba(0,0,0,0.05));
+}
+
+.userMenuDivider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 2px;
 }
 
 .main {
@@ -206,12 +282,6 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
-}
-
-.logoutBtn {
-  composes: btn btn-secondary from global;
-  padding: 6px 14px;
-  font-size: 12px;
 }
 
 .content {

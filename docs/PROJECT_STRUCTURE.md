@@ -9,6 +9,8 @@
 
 ## 1. 사용자 역할 및 라우트 가드 (`src/middleware.ts`)
 
+> 2026-09-18: 조직 슬러그 기반 최상위 인증 라우트 목록이 `src/middleware.ts`의 `orgScopedRoutes`와 `src/components/LayoutWrapper.tsx`의 `AUTH_REQUIRED_PATHS`에 중복 관리되며 반복적으로 한쪽만 갱신되는 사고가 있어, `src/lib/route-config.ts`(`ORG_SCOPED_ROUTES`/`ADMIN_ONLY_ROUTES`/`LEADER_ROUTES`)로 단일화했다. 새 최상위 라우트를 추가할 때는 이 파일 하나만 수정하면 된다(단, 사이드바 메뉴 노출 여부는 `AppShell.tsx`가 별도로 관리).
+
 | 역할 | 코드 | 접근 가능 페이지 |
 |---|---|---|
 | 관리자 | `ADMIN` | 전체 |
@@ -70,6 +72,15 @@ User (1) ──< Request [requester / approver] (1) ──< Announcement (전결
 | affiliation | String? | 정규 / 프리 |
 | managerId | Int? | 결재 라인상의 담당 리더(User 자기참조). `/requests` 신청 시 결재자로 사용 |
 | createdAt / lastLoginAt | DateTime | |
+
+> 2026-09-18: LEADER 외 사용자에게 개별 부여하는 모듈별 접근 권한(법인카드/간편장부/주간보고 등)은 더 이상 `User`의 boolean 컬럼이 아니라 별도 `UserCapability(userId, key, value)` 테이블에 저장한다(아래 참고). 새 모듈 권한이 필요하면 `src/lib/utils.ts`의 `CAPABILITY_KEYS`에 key만 추가하면 되고 스키마 마이그레이션은 필요 없다. `/api/users`, `/api/users/[id]`, `/api/users/me` API 응답 필드명(`canManageCardExpense` 등)은 하위호환을 위해 그대로 유지된다.
+
+### UserCapability
+| 필드 | 타입 | 비고 |
+|---|---|---|
+| userId | Int FK | `User` |
+| key | String | `CARD_EXPENSE` / `LEDGER` / `WEEKLY_REPORT` (자유 확장), `@@unique([userId, key])` |
+| value | Boolean | 기본 true |
 
 ### Task
 | 필드 | 타입 | 비고 |
@@ -188,8 +199,9 @@ high5/
 │   │   ├── requests/page.tsx          # 전 역할, 휴가/비품 신청 + 내 신청 목록 + (ADMIN/LEADER) 결재함
 │   │   ├── wiki/page.tsx              # 헤더 "위키" 메뉴 진입점(허브) — 소속 프로젝트 문서를 프로젝트별로 모아보기 + 프로젝트 선택 후 바로 문서 등록
 │   │   ├── settings/
-│   │   │   ├── calendar-sync/page.tsx     # 구글 캘린더 연동 안내 + 구독 URL 발급/복사 (전 역할, 헤더 메뉴는 ADMIN/LEADER 전용)
-│   │   │   └── integrations/page.tsx      # ADMIN 전용, Slack/잔디/Teams/텔레그램/카카오톡 채널별 설정+테스트 발송
+│   │   │   ├── calendar-sync/page.tsx     # 구글 캘린더 연동 안내 + 구독 URL 발급/복사 (전 역할, 사이드바 진입점은 사용자 이름 클릭 → 개인 메뉴 "캘린더 연동", 2026-09-18 라운드4)
+│   │   │   └── integrations/page.tsx      # ADMIN 전용, Slack/잔디/Teams/텔레그램/카카오톡 채널별 설정+테스트 발송 (구글 캘린더 바로가기는 개인 메뉴로 이동, 2026-09-18 라운드4)
+│   │   ├── profile/page.tsx           # 내 프로필(이름/이메일/역할/가입일/최근 로그인 조회 + 비밀번호변경/캘린더연동/보안설정/내자료 바로가기), 2026-09-18 라운드4 신규
 │   │   ├── profile/password/page.tsx
 │   │   │
 │   │   ├── tasks/
@@ -266,7 +278,7 @@ high5/
 │   │           └── github/route.ts             # GitHub PR merge 연동
 │   │
 │   ├── components/
-│   │   ├── AppHeader.tsx              # 상단 GNB (메뉴, 프로필, 모바일 햄버거 토글) — 알림 벨 제거됨. "신청"/"위키" 링크, 계정 드롭다운에 "내 자료"(/my-notes), "설정" 드롭다운(구 "관리")에 프로젝트/공지사항/팀원관리/통계/구글캘린더연동/외부연동(ADMIN)
+│   │   ├── AppShell.tsx                # 좌측 사이드바 GNB(구 AppHeader.tsx를 이 구조로 대체) + 상단바. 그룹: 홈/업무/프로젝트·협업/조직 운영/분석/관리자 설정(2026-09-18 라운드4 재편, `src/lib/route-config.ts`와는 별개로 이 파일이 메뉴 노출 자체를 정의). 상단바 사용자 이름 클릭 시 개인 메뉴 드롭다운(내 프로필/내 자료/캘린더 연동/비밀번호 변경/보안 설정/로그아웃). ADMIN/LEADER는 사이드바 상단에 "+ 새 업무" 버튼 노출(`/tasks/create`로 이동, 사이드바 메뉴 항목이었던 "업무 등록"은 제거됨)
 │   │   ├── AnnouncementBanner.tsx     # 헤더 하단 공지 배너 — 활성 공지 조회, X로 닫으면 localStorage에 dismiss 기록
 │   │   ├── WikiSearchButton.tsx       # 우하단 플로팅 버튼 — 클릭 시 위키 검색 모달, 결과 클릭 시 해당 프로젝트 위키로 이동
 │   │   ├── StickyNotesPanel.tsx       # 화면 세로 중앙 가장자리 탭 → 좌/우 슬라이드 패널, 개인 메모 스티커(최대 3개) 추가/수정/삭제/드래그 재정렬. Providers.tsx에 로그인 시 전역 렌더링

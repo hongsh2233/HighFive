@@ -11,6 +11,30 @@
   margin-bottom: var(--space-6);
 }
 
+.pageHeaderLeft {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.newTaskBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--space-2) var(--space-4);
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md, 6px);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.newTaskBtn:hover {
+  background: var(--accent-dark, var(--accent));
+}
+
 .viewTabs {
   display: flex;
   gap: 4px;

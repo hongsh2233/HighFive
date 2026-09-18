@@ -1,17 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './integrations.module.css';
 import Spinner from '@/components/common/Spinner';
 
-const GOOGLE_SHORTCUTS = [
-  { key: 'calendar', label: '구글 캘린더', hint: '일정을 구글 캘린더와 자동 동기화합니다.', icon: '📅', iconBg: '#1A73E8', href: '/settings/calendar-sync' },
-  // 구글 드라이브: 당장 안 쓰기로 해서 진입점만 숨김 (코드는 그대로 유지, 필요시 주석 해제)
-  // { key: 'drive', label: '구글 드라이브', hint: '파일을 구글 드라이브에 저장하고 바로 열어봅니다.', icon: '📁', iconBg: '#0F9D58', href: '/settings/drive' },
-];
+// 구글 캘린더 연동은 개인 메뉴(사용자 이름 클릭 → 캘린더 연동)로 이동함(라운드 4).
+// 구글 드라이브: 당장 안 쓰기로 해서 진입점 자체를 두지 않음(코드는 src/app/settings/drive/ 유지, 필요시 재노출).
 
 type Channel = 'SLACK' | 'JANDI' | 'TEAMS' | 'TELEGRAM' | 'KAKAO';
 
@@ -40,7 +36,6 @@ const FIELD_LABEL: Record<string, string> = {
 
 export default function IntegrationsSettingsPage() {
   const { user, isLoading: authLoading } = useAuth();
-  const router = useRouter();
   const [configs, setConfigs] = useState<IntegrationConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<Channel | null>(null);
@@ -131,20 +126,6 @@ export default function IntegrationsSettingsPage() {
         )}
 
         <div className={styles.grid}>
-          {GOOGLE_SHORTCUTS.map((g) => (
-            <div key={g.key} className={styles.card}>
-              <div className={styles.cardTop}>
-                <span className={styles.cardIcon} style={{ background: g.iconBg }}>{g.icon}</span>
-                <div className={styles.cardTopText}>
-                  <h2 className={styles.cardTitle}>{g.label}</h2>
-                  <p className={styles.cardHint}>{g.hint}</p>
-                </div>
-                <button type="button" onClick={() => router.push(g.href)} className={styles.btnConnect}>
-                  바로가기
-                </button>
-              </div>
-            </div>
-          ))}
           {configs.map((config) => {
             const meta = CHANNEL_META[config.channel];
             const isOpen = expanded === config.channel;
