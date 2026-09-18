@@ -202,6 +202,9 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState<WorkerSummary | ManagerSummary | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(true);
   const [dismissedIds, setDismissedIds] = useState<number[]>([]);
+  const [briefingEnabled, setBriefingEnabled] = useState(false);
+  const [briefing, setBriefing] = useState<string | null>(null);
+  const [briefingLoading, setBriefingLoading] = useState(false);
 
   useEffect(() => {
     setDismissedIds(readDismissedAnnouncementIds());
@@ -231,6 +234,10 @@ export default function DashboardPage() {
         return apiClient.get<{ data: { greeting: string } }>('/ai/weather-greeting');
       })
       .then((res) => { if (res) setWeatherGreeting(res.data.data.greeting); })
+      .catch(() => {});
+
+    apiClient.get<{ data: { features: { dailyBriefing: boolean } } }>('/settings/ai/status')
+      .then((res) => setBriefingEnabled(!!res.data.data.features.dailyBriefing))
       .catch(() => {});
   }, [isLoading, user]);
 
@@ -280,7 +287,7 @@ export default function DashboardPage() {
         const todayList = (calRes.data.data.tasksByDate[todayKey] || [])
           .filter((t) => !isStandaloneGroup(t) && t.workerId === Number(user.id));
         setTodayTasks(todayList);
-        setIsOnLeaveToday((calRes.data.data.leavesByDate[todayKey] || []).includes(user.name ?? ''));
+        setIsOnLeaveToday((calRes.data.data.leavesByDate[todayKey] || []).some((n) => n === user.name || n.startsWith(`${user.name}(`)));
       } catch (err) {
         console.error(err);
       } finally {
@@ -320,7 +327,26 @@ export default function DashboardPage() {
 
       {!loadingSummary && summary?.role === 'WORKER' && (
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>지금 해야 할 일</h2>
+          <h2 className={styles.sectionTitle}>
+            지금 해야 할 일
+            {briefingEnabled && (
+              <button
+                type="button"
+                onClick={async () => {
+                  setBriefingLoading(true);
+                  try {
+                    const res = await apiClient.post<{ data: { briefing: string } }>('/ai/daily-briefing');
+                    setBriefing(res.data.data.briefing);
+                  } catch { /* silent */ } finally { setBriefingLoading(false); }
+                }}
+                className={styles.actionLink}
+                style={{ marginLeft: 'auto', fontSize: 12 }}
+              >
+                {briefingLoading ? '생성 중...' : '✨ AI 브리핑'}
+              </button>
+            )}
+          </h2>
+          {briefing && <p className={styles.weatherGreeting}>{briefing}</p>}
           <div className={styles.widgetGrid}>
             <div className={styles.widget}>
               <div className={styles.widgetTitle}>

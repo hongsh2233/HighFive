@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 import { ensureProjectsSchema } from '@/lib/db-init';
+import { createUserNotification } from '@/lib/notify';
 
 // GET /api/projects/[id]
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -76,6 +77,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       `UPDATE projects SET ${setClauses.join(', ')} WHERE id=$${idx}`,
       ...values,
     );
+
+    // 자동화 규칙: 프로젝트 상태가 "위험"으로 바뀌면 ADMIN + 프로젝트 멤버에게 알림
+    if (healthStatus === 'RISK' && existing.healthStatus !== 'RISK') {
+      const [admins, members] = await Promise.all([
+        prisma.user.findMany({ where: { organizationId, role: 'ADMIN', isActive: true }, select: { id: true } }),
+        prisma.projectMember.findMany({ where: { projectId }, select: { userId: true } }),
+      ]);
+      const recipientIds = new Set([...admins.map((a) => a.id), ...members.map((m) => m.userId)]);
+      await Promise.all(
+        Array.from(recipientIds).map((uid) =>
+          createUserNotification(uid, 'PROJECT_RISK', `'${existing.name}' 프로젝트가 위험 상태로 변경되었습니다.`, undefined, organizationId)
+        )
+      ).catch(() => {});
+    }
 
     if (Array.isArray(roles)) {
       await prisma.projectRole.deleteMany({ where: { projectId } });

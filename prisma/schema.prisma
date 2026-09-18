@@ -114,6 +114,7 @@ model User {
   announcements     Announcement[]  @relation("announcementAuthor")
   requestsMade      Request[]       @relation("requestRequester")
   requestsToApprove Request[]       @relation("requestApprover")
+  requestsSubstitute Request[]      @relation("requestSubstitute")
   wikiPages         WikiPage[]      @relation("wikiAuthor")
   meetingNotes      MeetingNote[]   @relation("meetingAuthor")
   weeklyReports     WeeklyReport[]  @relation("weeklyReportAuthor")
@@ -514,10 +515,13 @@ model Request {
   rejectReason   String?
   decidedAt      DateTime?
   createdAt      DateTime  @default(now())
+  leaveType      String?   // type=LEAVE 전용 부재 유형: 연차/반차/외근/출장/재택/병가
+  substituteUserId Int?    // 부재 중 업무 대체자(선택)
 
   organization Organization? @relation(fields: [organizationId], references: [id])
   requester    User          @relation("requestRequester", fields: [requesterId], references: [id])
   approver     User?         @relation("requestApprover", fields: [approverId], references: [id])
+  substitute   User?         @relation("requestSubstitute", fields: [substituteUserId], references: [id])
   announcement Announcement?
   approvals    RequestApproval[]
   cardStatementPeriod CardStatementPeriod?

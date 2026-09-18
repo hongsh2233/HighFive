@@ -21,6 +21,8 @@ interface RequestItem {
   requester: { id: number; name: string };
   approver: { id: number; name: string } | null;
   currentStepOrder: number | null;
+  leaveType: string | null;
+  substituteUserId: number | null;
   approvals: {
     id: number;
     order: number;
@@ -67,7 +69,16 @@ export default function RequestsPage() {
     startDate: '',
     endDate: '',
     isAnnouncement: false,
+    leaveType: '연차',
+    substituteUserId: '',
   });
+  const [members, setMembers] = useState<{ id: number; name: string }[]>([]);
+
+  useEffect(() => {
+    apiClient.get<{ data: { id: number; name: string }[] }>('/users?minimal=true')
+      .then((res) => setMembers(res.data.data))
+      .catch(() => {});
+  }, []);
 
   const fetchAll = async () => {
     try {
@@ -88,7 +99,7 @@ export default function RequestsPage() {
     if (!authLoading) fetchAll();
   }, [authLoading, canApprove]);
 
-  const resetForm = () => setForm({ type: 'LEAVE', title: '', content: '', startDate: '', endDate: '', isAnnouncement: false });
+  const resetForm = () => setForm({ type: 'LEAVE', title: '', content: '', startDate: '', endDate: '', isAnnouncement: false, leaveType: '연차', substituteUserId: '' });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +113,8 @@ export default function RequestsPage() {
         startDate: form.type === 'LEAVE' ? form.startDate : undefined,
         endDate: form.type === 'LEAVE' ? form.endDate : undefined,
         isAnnouncement: form.isAnnouncement,
+        leaveType: form.type === 'LEAVE' ? form.leaveType : undefined,
+        substituteUserId: form.type === 'LEAVE' && form.substituteUserId ? form.substituteUserId : undefined,
       });
       setMessage({ type: 'success', text: form.isAnnouncement ? '공지로 등록되어 즉시 확정되었습니다.' : '신청이 접수되었습니다.' });
       setShowForm(false);
@@ -132,7 +145,8 @@ export default function RequestsPage() {
     if (r.type !== 'LEAVE' || !r.startDate || !r.endDate) return r.content || '-';
     const s = new Date(r.startDate).toLocaleDateString('ko-KR');
     const e = new Date(r.endDate).toLocaleDateString('ko-KR');
-    return s === e ? s : `${s} ~ ${e}`;
+    const period = s === e ? s : `${s} ~ ${e}`;
+    return r.leaveType ? `${r.leaveType} · ${period}` : period;
   };
 
   if (authLoading || loading) {
@@ -187,12 +201,25 @@ export default function RequestsPage() {
               {form.type === 'LEAVE' ? (
                 <div className={styles.formGrid}>
                   <div>
+                    <label className={styles.label}>부재 유형</label>
+                    <select value={form.leaveType} onChange={e => setForm(p => ({ ...p, leaveType: e.target.value }))} className={styles.input}>
+                      {['연차', '반차', '외근', '출장', '재택', '병가'].map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
                     <label className={styles.label}>시작일 *</label>
                     <input type="date" value={form.startDate} onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))} required className={styles.input} />
                   </div>
                   <div>
                     <label className={styles.label}>종료일 *</label>
                     <input type="date" value={form.endDate} onChange={e => setForm(p => ({ ...p, endDate: e.target.value }))} required className={styles.input} />
+                  </div>
+                  <div>
+                    <label className={styles.label}>업무 대체자</label>
+                    <select value={form.substituteUserId} onChange={e => setForm(p => ({ ...p, substituteUserId: e.target.value }))} className={styles.input}>
+                      <option value="">지정 안 함</option>
+                      {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    </select>
                   </div>
                 </div>
               ) : (

@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
       while (cursor <= last) {
         const dateKey = cursor.toISOString().split('T')[0];
         if (!leavesByDate[dateKey]) leavesByDate[dateKey] = [];
-        leavesByDate[dateKey].push(leave.requester.name);
+        leavesByDate[dateKey].push(leave.leaveType ? `${leave.requester.name}(${leave.leaveType})` : leave.requester.name);
         cursor.setDate(cursor.getDate() + 1);
       }
     });

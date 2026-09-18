@@ -26,6 +26,12 @@ const FEATURE_META: { key: string; label: string; hint: string; needsWeather?: b
   { key: 'weeklyReport', label: 'AI 주간 보고서', hint: '이번 주 완료/진행 업무 기반 보고서를 생성합니다.' },
   { key: 'docSummary', label: 'AI 문서 요약', hint: '업무에 첨부된 docx/xlsx 문서 내용을 요약합니다.' },
   { key: 'weatherGreeting', label: '날씨 기반 인사말', hint: '대시보드에 날씨 기반 인사 문구를 표시합니다.', needsWeather: true },
+  { key: 'dailyBriefing', label: '오늘의 업무 브리핑', hint: '대시보드에서 오늘 해야 할 일을 AI가 한눈에 요약해줍니다.' },
+  { key: 'delayAnalysis', label: '지연 원인 분석', hint: '지연된 업무 목록을 바탕으로 지연 경향과 원인 가설을 제안합니다.' },
+  { key: 'projectStatusSummary', label: '프로젝트 상태 요약', hint: '프로젝트의 진행률/지연/마일스톤을 종합해 한 줄 요약을 생성합니다.' },
+  { key: 'inquiryCommentSummary', label: '문의·댓글 요약', hint: '문의 내용이나 업무 댓글 스레드를 짧게 요약합니다.' },
+  { key: 'kbQA', label: '지식베이스 질의응답', hint: '위키/정보(FAQ) 문서를 근거로 질문에 답합니다.' },
+  { key: 'announcementDraft', label: '공지사항 초안 작성', hint: '핵심 내용만 입력하면 공지 문구 초안을 작성합니다.' },
 ];
 
 interface AiSettingsData {

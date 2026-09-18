@@ -28,6 +28,8 @@ export default function AnnouncementsPage() {
   const { confirm } = useDialog();
   const isSuperAdmin = (user as any)?.role === 'SUPERADMIN';
   const [hasAnnouncementCapability, setHasAnnouncementCapability] = useState(false);
+  const [draftEnabled, setDraftEnabled] = useState(false);
+  const [drafting, setDrafting] = useState(false);
   const canManage = isSuperAdmin || ['ADMIN', 'LEADER'].includes(user?.role || '') || hasAnnouncementCapability;
 
   const [items, setItems] = useState<Announcement[]>([]);
@@ -56,6 +58,27 @@ export default function AnnouncementsPage() {
       .then((res) => setHasAnnouncementCapability(!!res.data.data.capabilities?.ANNOUNCEMENT_MANAGE))
       .catch(() => {});
   }, [authLoading, user, isSuperAdmin]);
+
+  useEffect(() => {
+    if (authLoading || !canManage) return;
+    apiClient.get<{ data: { features: { announcementDraft: boolean } } }>('/settings/ai/status')
+      .then((res) => setDraftEnabled(!!res.data.data.features.announcementDraft))
+      .catch(() => {});
+  }, [authLoading, canManage]);
+
+  const handleAiDraft = async () => {
+    const points = window.prompt('공지에 담을 핵심 내용을 짧게 입력해주세요 (AI가 초안을 작성합니다)');
+    if (!points?.trim()) return;
+    setDrafting(true);
+    try {
+      const res = await apiClient.post<{ data: { draft: string } }>('/ai/announcement-draft', { points });
+      setContent(res.data.data.draft);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'AI 초안 작성 실패' });
+    } finally {
+      setDrafting(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && canManage) fetchItems();
@@ -151,7 +174,14 @@ export default function AnnouncementsPage() {
             <h2 className={styles.formTitle}>{editingItem ? '공지 수정' : '새 공지 등록'}</h2>
             <form onSubmit={handleSubmit}>
               <div className={styles.formGroupLast}>
-                <label className={styles.label}>내용</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label className={styles.label}>내용</label>
+                  {draftEnabled && (
+                    <button type="button" onClick={handleAiDraft} disabled={drafting} className={styles.linkBtn}>
+                      {drafting ? '작성 중...' : '✨ AI 초안 작성'}
+                    </button>
+                  )}
+                </div>
                 <textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}

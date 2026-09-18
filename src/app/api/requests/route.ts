@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 
 const REQUEST_TYPES = ['LEAVE', 'SUPPLY'];
+const LEAVE_TYPES = ['연차', '반차', '외근', '출장', '재택', '병가'];
 
 const requesterInclude = {
   requester: { select: { id: true, name: true } },
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     const requesterId = parseInt((session!.user as any).id || '0');
     const body = await req.json();
-    const { type, title, content, startDate, endDate, isAnnouncement } = body;
+    const { type, title, content, startDate, endDate, isAnnouncement, leaveType, substituteUserId } = body;
 
     if (!REQUEST_TYPES.includes(type)) {
       return errorResponse('유효하지 않은 신청 유형입니다.', 400, 'VALID_400');
@@ -66,6 +67,9 @@ export async function POST(req: NextRequest) {
       if (new Date(endDate) < new Date(startDate)) {
         return errorResponse('종료일은 시작일보다 빠를 수 없습니다.', 400, 'VALID_400');
       }
+      if (leaveType && !LEAVE_TYPES.includes(leaveType)) {
+        return errorResponse('유효하지 않은 부재 유형입니다.', 400, 'VALID_400');
+      }
     }
     if (type === 'SUPPLY' && !content?.trim()) {
       return errorResponse('신청 품목/사유를 입력해주세요.', 400, 'VALID_400');
@@ -77,6 +81,12 @@ export async function POST(req: NextRequest) {
     }
 
     const announce = !!isAnnouncement && ['ADMIN', 'LEADER'].includes(requester.role);
+
+    let resolvedSubstituteId: number | null = null;
+    if (type === 'LEAVE' && substituteUserId) {
+      const substitute = await prisma.user.findFirst({ where: { id: parseInt(substituteUserId), organizationId } });
+      if (substitute) resolvedSubstituteId = substitute.id;
+    }
 
     // 조직에 결재선이 설정돼 있으면 다단계 결재로, 없으면 기존 담당 리더 단일 결재로 진행
     const lineSteps = announce
@@ -96,6 +106,8 @@ export async function POST(req: NextRequest) {
         currentStepOrder: lineSteps.length > 0 ? lineSteps[0].order : null,
         status: announce ? 'APPROVED' : 'PENDING',
         decidedAt: announce ? new Date() : null,
+        leaveType: type === 'LEAVE' && leaveType ? leaveType : null,
+        substituteUserId: resolvedSubstituteId,
         organizationId,
       },
       include: requesterInclude,

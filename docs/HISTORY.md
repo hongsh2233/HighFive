@@ -1291,3 +1291,26 @@ npx prisma migrate resolve --applied 20260907000000_init
 마이그레이션: `20260918040000_add_card_statement_period`(card_statement_periods 테이블, card_transactions.periodId), `20260918050000_add_client_crm`(clients 테이블, projects.clientId, inquiries.clientId).
 
 `npx tsc --noEmit` 오류 0개, `npx next build`는 백그라운드 실행 후 확인.
+
+## 2026-09-18 (10차) — 라운드 13: 휴가·부재 관리 + AI 업무 지원 + 자동화 규칙
+
+### 휴가·부재 관리
+로드맵 지시대로 신규 모델 없이 `Request.type='LEAVE'`를 확장하는 방식으로 구현(새 부재 유형마다 새 Request.type을 쓰면 캘린더/구글캘린더 동기화 로직이 `type==='LEAVE'`를 참조하는 여러 곳이 흩어질 위험이 있어, 대신 `Request.leaveType`(연차/반차/외근/출장/재택/병가) 서브필드로 분리).
+- `Request.leaveType`, `Request.substituteUserId`(업무 대체자) 추가. 신청 폼에 부재 유형 select + 대체자 select 추가.
+- 승인(기존 결재선 그대로 재사용)되면 팀 캘린더(`/api/tasks/calendar`)에 "이름(부재유형)"으로 표시, 대체자에게는 알림 발송.
+- 급여/근태 계산은 로드맵 지시대로 포함하지 않음.
+
+### AI 업무 지원 (전부 "제안만 하고 저장은 사용자 확인 후" 원칙 — 응답을 DB에 자동 반영하지 않음)
+`AI_FEATURE_KEYS`에 6개 신규: `dailyBriefing`(오늘의 업무 브리핑), `delayAnalysis`(지연 원인 분석), `projectStatusSummary`(프로젝트 상태 요약), `inquiryCommentSummary`(문의/댓글 요약), `kbQA`(지식베이스 질의응답), `announcementDraft`(공지 초안). `/settings/ai`에 토글 추가.
+- `POST /api/ai/daily-briefing`, `/delay-analysis`, `/project-status-summary`, `/summarize-text`(문의/댓글 공용), `/kb-qa`(라운드11 `runSearch`를 재사용해 위키/FAQ에서 근거 문서를 찾아 그 내용만 근거로 답변), `/announcement-draft` 신규.
+- **UI 연결은 일부만**: 대시보드에 "✨ AI 브리핑" 버튼(WORKER), 공지 작성 폼에 "✨ AI 초안 작성" 버튼만 연결. 나머지(지연분석/프로젝트요약/문의요약/KB질의응답)는 API까지만 구현하고 화면 연결은 다음 라운드로 보류 — 각각 적절한 노출 위치(어느 화면의 어느 버튼)를 더 고민해야 해서 API 완성과 UI 배치를 분리함.
+
+### 자동화 규칙
+로드맵이 예시로 든 5개 규칙 중 실제로 안전하게 자동화할 수 있는 것들을 골라 기존 30분 주기 배치(`src/lib/scheduler.ts`)와 개별 API 지점에 직접 구현. 별도의 "규칙 관리 화면"이나 범용 `AutomationRule` 모델은 만들지 않음 — 조건/액션을 자유 조합하는 진짜 규칙 엔진은 그 자체로 별도 하위 시스템급 작업이라 이번 라운드 범위에서는 과했다고 판단.
+- **업무 지연 알림**: 기존에도 담당자에게는 알림이 가고 있었음(D-day 배치) — 매니저(`User.managerId`)에게도 알림이 가도록 추가.
+- **완료 시 검토요청 알림**: 확인해보니 이미 구현되어 있었음(상태 변경 시 등록자·담당자 모두에게 알림 가는 기존 로직이 검토 단계 진입도 포함) — 추가 작업 없음.
+- **위험 프로젝트 알림**: `PATCH /api/projects/[id]`에서 `healthStatus`가 `RISK`로 바뀌는 순간 ADMIN + 프로젝트 멤버 전원에게 알림.
+- **정기 주간보고 요청**: 매주 금요일(스케줄러 배치가 그 날 처음 도는 시점) 그 주 주간보고 미작성 프로젝트 멤버에게 리마인더(하루 1회).
+- **신청 승인 시 후속업무 생성**은 보류 — 어떤 신청 유형이 어떤 후속 업무를 자동 생성해야 하는지 구체적인 규칙이 아직 정의되지 않아, 섣불리 구현하면 원치 않는 업무가 자동 생성될 위험이 있음.
+
+`npx tsc --noEmit` 오류 0개, `npx next build`는 백그라운드 실행 후 확인.

@@ -124,6 +124,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           startDate: updated.startDate,
           endDate: updated.endDate ?? updated.startDate,
         }).catch(() => {});
+        if (updated.substituteUserId) {
+          const period = updated.startDate.toLocaleDateString('ko-KR');
+          await createUserNotification(updated.substituteUserId, 'SUBSTITUTE_ASSIGNED',
+            `${updated.requester.name}님의 부재(${period}~) 기간 업무 대체자로 지정되었습니다.`, undefined, orgId);
+        }
       }
     } else if (updated.status === 'REJECTED') {
       await createUserNotification(updated.requesterId, 'REQUEST_REJECTED',
