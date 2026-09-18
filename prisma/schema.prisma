@@ -46,9 +46,11 @@ model Organization {
   aiSettings     AiSettings?
   inquiries      Inquiry[]
   cardTransactions    CardTransaction[]
+  cardStatementPeriods CardStatementPeriod[]
   simpleLedgerEntries SimpleLedgerEntry[]
   approvalLineSteps   ApprovalLineStep[]
   recurringTaskRules  RecurringTaskRule[]
+  clients             Client[]
 
   @@map("organizations")
 }
@@ -129,6 +131,7 @@ model User {
   capabilities      UserCapability[]
   recurringTaskRulesCreated  RecurringTaskRule[] @relation("recurringTaskCreator")
   recurringTaskRulesAssigned RecurringTaskRule[] @relation("recurringTaskWorker")
+  cardStatementPeriodsSubmitted CardStatementPeriod[]
 
   @@index([organizationId])
   @@map("users")
@@ -351,6 +354,8 @@ model Project {
   meetingNotes MeetingNote[]
   weeklyReports WeeklyReport[]
   cardTransactions CardTransaction[]
+  clientId     Int?
+  client       Client?         @relation(fields: [clientId], references: [id])
   statuses     ProjectStatus[]
   fields       ProjectField[]
   roles        ProjectRole[]
@@ -515,6 +520,7 @@ model Request {
   approver     User?         @relation("requestApprover", fields: [approverId], references: [id])
   announcement Announcement?
   approvals    RequestApproval[]
+  cardStatementPeriod CardStatementPeriod?
 
   @@index([organizationId, requesterId])
   @@index([approverId, status])
@@ -636,10 +642,12 @@ model Inquiry {
   status          String   @default("NEW") // NEW / IN_REVIEW / CONVERTED / CLOSED
   closeReason     String?
   convertedTaskId Int?
+  clientId        Int?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client       Client?      @relation(fields: [clientId], references: [id])
 
   @@index([organizationId, status])
   @@map("inquiries")
@@ -851,14 +859,39 @@ model CardTransaction {
   address       String?
   approvalNo    String?
   source        String   @default("MANUAL") // UPLOAD | MANUAL
+  periodId      Int?     // 소속된 월별 명세서 입력 기간(CardStatementPeriod). 기간이 결제 승인되면 더 이상 수정 불가
   createdAt     DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id])
   user         User         @relation(fields: [userId], references: [id])
   project      Project?     @relation(fields: [projectId], references: [id])
+  period       CardStatementPeriod? @relation(fields: [periodId], references: [id])
 
   @@index([organizationId, userId, approvedAt])
   @@map("card_transactions")
+}
+
+// 법인카드 명세서 입력 기간(월 단위). 카드사 명세서가 나오는 다음달 1~5일 사이에만 해당 월
+// 거래내역을 입력/수정할 수 있고, 입력을 마치면 "결제 요청"으로 결재선을 태워 결제 완료 처리한다.
+model CardStatementPeriod {
+  id             Int       @id @default(autoincrement())
+  organizationId Int
+  statementMonth String    // 명세서 대상 월, "YYYY-MM" (예: 2026-08 명세서는 2026-09-01~05에 입력)
+  status         String    @default("DRAFT") // DRAFT(입력중) | PENDING_APPROVAL(결재중) | APPROVED | REJECTED | PAID(결제완료)
+  requestId      Int?      @unique // 결제 요청 시 생성되는 Request(type=CARD_STATEMENT)
+  submittedById  Int?
+  submittedAt    DateTime?
+  decidedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  request      Request?          @relation(fields: [requestId], references: [id])
+  submittedBy  User?             @relation(fields: [submittedById], references: [id])
+  transactions CardTransaction[]
+
+  @@unique([organizationId, statementMonth])
+  @@map("card_statement_periods")
 }
 
 model SimpleLedgerEntry {
@@ -912,6 +945,29 @@ model RecurringTaskRule {
 
   @@index([organizationId, isActive, nextRunAt])
   @@map("recurring_task_rules")
+}
+
+// 간단한 고객사 관리(CRM). 전문 CRM이 아니라 프로젝트/문의를 고객사와 연결해 보여주는 수준.
+model Client {
+  id             Int       @id @default(autoincrement())
+  organizationId Int
+  name           String
+  contactName    String?
+  contactPhone   String?
+  contactEmail   String?
+  contractStart  DateTime?
+  contractEnd    DateTime?
+  notes          String?   @db.Text
+  lastContactAt  DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  projects     Project[]
+  inquiries    Inquiry[]
+
+  @@index([organizationId])
+  @@map("clients")
 }
 
 model DemoRequest {

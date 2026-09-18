@@ -19,6 +19,7 @@ export const ORG_SCOPED_ROUTES = [
   'inquiries',
   'weekly-reports',
   'expenses',
+  'clients',
 ] as const;
 
 export const ADMIN_ONLY_ROUTES: string[] = ['users'];

@@ -46,7 +46,7 @@ function StepProgress({ approvals }: { approvals: RequestItem['approvals'] }) {
   );
 }
 
-const TYPE_LABEL: Record<string, string> = { LEAVE: '휴가', SUPPLY: '비품' };
+const TYPE_LABEL: Record<string, string> = { LEAVE: '휴가', SUPPLY: '비품', CARD_STATEMENT: '법인카드 결제' };
 const STATUS_LABEL: Record<string, string> = { PENDING: '결재 대기', APPROVED: '승인', REJECTED: '반려' };
 
 export default function RequestsPage() {

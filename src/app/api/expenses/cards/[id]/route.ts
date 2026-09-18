@@ -1,6 +1,16 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireCardExpenseAccess, successResponse, errorResponse } from '@/lib/utils';
+import { isPeriodEditable } from '@/lib/card-statement';
+
+async function assertEditable(tx: { periodId: number | null }) {
+  if (!tx.periodId) return null; // 기간 도입 이전 데이터 등 — 하위호환을 위해 그대로 허용
+  const period = await prisma.cardStatementPeriod.findUnique({ where: { id: tx.periodId } });
+  if (period && !isPeriodEditable(period)) {
+    return errorResponse('이미 결제 요청되었거나 입력 기간이 지난 내역은 수정/삭제할 수 없습니다.', 403, 'PERIOD_CLOSED');
+  }
+  return null;
+}
 
 // PATCH /api/expenses/cards/[id] - 법인카드 사용내역 수정 (작성자 본인 또는 ADMIN)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -15,6 +25,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (tx.userId !== userId && role !== 'ADMIN') {
       return errorResponse('작성자 본인 또는 관리자만 수정할 수 있습니다.', 403, 'AUTH_403');
     }
+    const lockError = await assertEditable(tx);
+    if (lockError) return lockError;
 
     const body = await req.json();
     const { cardNumberMasked, approvedAt, amount, merchant, category, projectId, description, address, approvalNo } = body;
@@ -68,6 +80,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     if (tx.userId !== userId && role !== 'ADMIN') {
       return errorResponse('작성자 본인 또는 관리자만 삭제할 수 있습니다.', 403, 'AUTH_403');
     }
+    const lockError = await assertEditable(tx);
+    if (lockError) return lockError;
 
     await prisma.cardTransaction.delete({ where: { id: txId } });
 

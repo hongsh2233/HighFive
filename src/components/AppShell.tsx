@@ -148,6 +148,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             ...(isAdminOrLeader || canManageCardExpense || canManageLedger ? [{ href: '/expenses', label: '비용관리', icon: '' }] : []),
             { href: '/announcements', label: '공지사항', icon: '' },
             ...(isAdminOrLeader ? [{ href: '/settings/recurring-tasks', label: '반복 업무', icon: '' }] : []),
+            ...(isAdminOrLeader ? [{ href: '/clients', label: '고객사', icon: '' }] : []),
           ],
         }] : []),
         ...(isAdminOrLeader && has('stats') ? [{

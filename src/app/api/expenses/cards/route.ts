@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireCardExpenseAccess, successResponse, errorResponse } from '@/lib/utils';
+import { getOrCreateEditablePeriod } from '@/lib/card-statement';
 
 // GET /api/expenses/cards - 법인카드 사용내역 목록 (본인 것만, ADMIN은 전체 또는 특정 사용자 지정 조회)
 export async function GET(req: NextRequest) {
@@ -12,8 +13,10 @@ export async function GET(req: NextRequest) {
     const year = searchParams.get('year');
     const month = searchParams.get('month');
     const targetUserId = searchParams.get('userId');
+    const periodId = searchParams.get('periodId');
 
     const where: any = { organizationId };
+    if (periodId) where.periodId = parseInt(periodId);
     if (role === 'ADMIN' && targetUserId) {
       where.userId = parseInt(targetUserId);
     } else if (role !== 'ADMIN') {
@@ -56,6 +59,11 @@ export async function POST(req: NextRequest) {
       return errorResponse('필수 항목(일시/금액/거래처/항목)을 입력해주세요.', 400, 'VALID_400');
     }
 
+    const period = await getOrCreateEditablePeriod(organizationId!);
+    if (!period) {
+      return errorResponse('법인카드 명세서 입력 기간(매월 1~5일)이 아닙니다.', 403, 'PERIOD_CLOSED');
+    }
+
     let resolvedProjectId: number | null = null;
     if (projectId) {
       const project = await prisma.project.findFirst({ where: { id: parseInt(projectId), organizationId } });
@@ -76,6 +84,7 @@ export async function POST(req: NextRequest) {
         address: address || null,
         approvalNo: approvalNo || null,
         source: 'MANUAL',
+        periodId: period.id,
       },
       include: {
         user: { select: { id: true, name: true } },

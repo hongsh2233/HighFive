@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = parseInt((session!.user as any).id || '0');
-    const { name, description, projectManagerName, wikiEnabled, simpleMode, customLabels, roles } = await req.json();
+    const { name, description, projectManagerName, wikiEnabled, simpleMode, customLabels, roles, clientId } = await req.json();
 
     if (!name?.trim()) {
       return errorResponse('프로젝트 이름을 입력해주세요.', 400);
@@ -78,6 +78,7 @@ export async function POST(req: NextRequest) {
         wikiEnabled: wikiEnabled !== false,
         simpleMode: !!simpleMode,
         customLabels: customLabels?.trim() || null,
+        clientId: clientId ? parseInt(clientId) : null,
         roles: {
           create: roleList
             .filter((r) => r.label?.trim())

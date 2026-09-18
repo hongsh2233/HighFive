@@ -130,6 +130,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         `'${updated.title}' ${typeLabel}이 반려되었습니다. 사유: ${rejectReason}`, undefined, orgId);
     }
 
+    // 법인카드 명세서 결제 요청: 최종 승인/반려 결과를 CardStatementPeriod에도 반영
+    if (updated.type === 'CARD_STATEMENT' && (updated.status === 'APPROVED' || updated.status === 'REJECTED')) {
+      await prisma.cardStatementPeriod.updateMany({
+        where: { requestId: updated.id },
+        data: { status: updated.status === 'APPROVED' ? 'PAID' : 'REJECTED', decidedAt: new Date() },
+      });
+    }
+
     const message =
       updated.status === 'APPROVED' ? '승인되었습니다.' :
       updated.status === 'REJECTED' ? '반려되었습니다.' :

@@ -124,6 +124,23 @@ export default function ExpensesPage() {
   );
 }
 
+interface CardPeriod {
+  id: number;
+  statementMonth: string;
+  status: string;
+  submittedBy: { id: number; name: string } | null;
+  submittedAt: string | null;
+  _count: { transactions: number };
+}
+
+const PERIOD_STATUS_LABEL: Record<string, string> = {
+  DRAFT: '입력중',
+  PENDING_APPROVAL: '결재중',
+  APPROVED: '승인됨',
+  REJECTED: '반려됨(재입력 가능)',
+  PAID: '결제완료',
+};
+
 function CardSection({ userId, role }: { userId: number; role: string }) {
   const [transactions, setTransactions] = useState<CardTx[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -131,6 +148,8 @@ function CardSection({ userId, role }: { userId: number; role: string }) {
   const [uploading, setUploading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [periodInfo, setPeriodInfo] = useState<{ statementMonth: string; isWindowOpen: boolean; isEditable: boolean; period: CardPeriod | null } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState({
     approvedAt: '', amount: '', merchant: '', category: '', projectId: '', description: '', address: '', approvalNo: '', cardNumberMasked: '',
@@ -138,12 +157,14 @@ function CardSection({ userId, role }: { userId: number; role: string }) {
 
   const fetchAll = async () => {
     try {
-      const [txRes, projRes] = await Promise.all([
+      const [txRes, projRes, periodRes] = await Promise.all([
         apiClient.get<{ data: CardTx[] }>('/expenses/cards'),
         apiClient.get<{ data: Project[] }>('/projects'),
+        apiClient.get<{ data: { statementMonth: string; isWindowOpen: boolean; isEditable: boolean; period: CardPeriod | null } }>('/expenses/cards/period/current'),
       ]);
       setTransactions(txRes.data.data);
       setProjects(projRes.data.data);
+      setPeriodInfo(periodRes.data.data);
     } catch {
       setMessage({ type: 'error', text: '법인카드 사용내역 조회에 실패했습니다.' });
     } finally {
@@ -152,6 +173,33 @@ function CardSection({ userId, role }: { userId: number; role: string }) {
   };
 
   useEffect(() => { fetchAll(); }, []);
+
+  const handleSubmitPeriod = async () => {
+    if (!periodInfo?.period) return;
+    setSubmitting(true);
+    setMessage(null);
+    try {
+      await apiClient.post('/expenses/cards/period/submit', { periodId: periodInfo.period.id });
+      setMessage({ type: 'success', text: '결제 요청이 접수되었습니다.' });
+      await fetchAll();
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.response?.data?.message || '결제 요청 중 오류가 발생했습니다.' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    const res = await apiClient.get('/expenses/cards/export', { responseType: 'blob' });
+    const url = URL.createObjectURL(new Blob([res.data as any]));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `card_transactions_${Date.now()}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const isEditable = periodInfo?.isEditable ?? true;
 
   const handleUpload = async (file: File | undefined) => {
     if (!file) return;
@@ -206,14 +254,34 @@ function CardSection({ userId, role }: { userId: number; role: string }) {
 
   return (
     <div>
+      {periodInfo && (
+        <div className={styles.message} style={{ background: 'var(--bg-subtle, #F4F4F5)', color: 'var(--text-secondary)' }}>
+          {periodInfo.statementMonth} 명세서
+          {periodInfo.period ? ` — ${PERIOD_STATUS_LABEL[periodInfo.period.status]} (${periodInfo.period._count.transactions}건)` : ' — 아직 입력 시작 전'}
+          {!periodInfo.isWindowOpen && (!periodInfo.period || periodInfo.period.status === 'DRAFT') && ' · 입력 기간(매월 1~5일)이 아니라 화면이 잠겨 있습니다.'}
+        </div>
+      )}
+
       <div className={styles.actionsRow}>
-        <label className={styles.uploadBtn}>
-          {uploading ? '업로드 중...' : '📤 카드사 명세서(xlsx) 업로드'}
-          <input type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={(e) => { handleUpload(e.target.files?.[0]); e.target.value = ''; }} disabled={uploading} />
-        </label>
-        <button type="button" onClick={() => setShowForm((v) => !v)} className={styles.btnSecondary}>
-          {showForm ? '취소' : '+ 직접 입력'}
+        {isEditable && (
+          <label className={styles.uploadBtn}>
+            {uploading ? '업로드 중...' : '📤 카드사 명세서(xlsx) 업로드'}
+            <input type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={(e) => { handleUpload(e.target.files?.[0]); e.target.value = ''; }} disabled={uploading} />
+          </label>
+        )}
+        {isEditable && (
+          <button type="button" onClick={() => setShowForm((v) => !v)} className={styles.btnSecondary}>
+            {showForm ? '취소' : '+ 직접 입력'}
+          </button>
+        )}
+        <button type="button" onClick={handleDownload} className={styles.btnSecondary}>
+          ⬇️ 엑셀 다운로드
         </button>
+        {isEditable && periodInfo?.period && periodInfo.period.status === 'DRAFT' && periodInfo.period._count.transactions > 0 && (
+          <button type="button" onClick={handleSubmitPeriod} disabled={submitting} className={styles.btnSubmit}>
+            {submitting ? '요청 중...' : '💳 결제 요청'}
+          </button>
+        )}
       </div>
 
       {message && (
@@ -271,7 +339,7 @@ function CardSection({ userId, role }: { userId: number; role: string }) {
                         <td>{t.description || '-'}</td>
                         {role === 'ADMIN' && <td>{t.user.name}</td>}
                         <td>
-                          {(t.user.id === userId || role === 'ADMIN') && (
+                          {isEditable && (t.user.id === userId || role === 'ADMIN') && (
                             <button type="button" onClick={() => handleDelete(t.id)} className={styles.rowDeleteBtn}>×</button>
                           )}
                         </td>

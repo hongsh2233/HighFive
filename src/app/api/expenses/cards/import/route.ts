@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import * as XLSX from 'xlsx';
 import { prisma } from '@/lib/db';
 import { requireCardExpenseAccess, successResponse, errorResponse } from '@/lib/utils';
+import { getOrCreateEditablePeriod } from '@/lib/card-statement';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -65,6 +66,11 @@ export async function POST(req: NextRequest) {
     }
     if (!/\.xlsx?$/i.test(filename)) {
       return errorResponse('xlsx 또는 xls 파일만 업로드할 수 있습니다.', 400, 'VALID_400');
+    }
+
+    const period = await getOrCreateEditablePeriod(organizationId!);
+    if (!period) {
+      return errorResponse('법인카드 명세서 입력 기간(매월 1~5일)이 아닙니다.', 403, 'PERIOD_CLOSED');
     }
 
     const base64 = dataBase64.replace(/^data:[^;]+;base64,/, '');
@@ -132,6 +138,7 @@ export async function POST(req: NextRequest) {
         projectNameRaw: resolvedProjectId ? null : (projectNameRaw ? String(projectNameRaw) : null),
         description: colMap.description !== undefined ? (row[colMap.description] ? String(row[colMap.description]) : null) : null,
         address: colMap.address !== undefined ? (row[colMap.address] ? String(row[colMap.address]) : null) : null,
+        periodId: period.id,
         approvalNo: colMap.approvalNo !== undefined ? (row[colMap.approvalNo] ? String(row[colMap.approvalNo]) : null) : null,
         source: 'UPLOAD',
       });

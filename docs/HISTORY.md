@@ -1271,3 +1271,23 @@ npx prisma migrate resolve --applied 20260907000000_init
 - "고객사" 검색은 아직 CRM 모델 자체가 없어(라운드12에서 검토 예정) 이번 라운드에는 포함하지 않음.
 
 `npx tsc --noEmit` 오류 0개, `npx next build` 성공(백그라운드 실행 확인).
+
+## 2026-09-18 (9차) — 라운드 12: 법인카드 결제 플로우 + 다운로드 + 고객사 관리(CRM)
+
+### 법인카드 명세서 결재 플로우
+사용자 확인 결과: 기존 첨부 명세서 양식(카드번호/승인일자/금액/거래처/항목/프로젝트/사용내역/주소/승인번호)은 이미 라운드3~4에서 만든 `CardTransaction` 모델·업로드 파서에 그대로 반영돼 있어 추가 매핑 작업 없이 진행. 확인받은 3가지 기준으로 구현:
+- **입력 기간**: `CardStatementPeriod` 모델(월 단위, `statementMonth`="YYYY-MM") 신규. 카드사 명세서가 다음달 초에 나오는 관행에 맞춰, "이번달 1~5일"에는 "지난달" 사용분을 입력하는 것으로 계산(`src/lib/card-statement.ts`의 `getCurrentStatementWindow()`). 1~5일 사이에만 그 달의 `DRAFT` 기간이 자동 생성되고, `POST/PATCH/DELETE /api/expenses/cards`·xlsx 업로드가 전부 이 기간에 귀속되도록 `periodId`로 연결.
+- **6일 이후 잠금**: 확인받은 대로 "전체 화면 읽기 전용" — `isPeriodEditable()`이 날짜와 상태를 함께 봐서, 기간이 `DRAFT`인데 창이 닫혔으면 수정 불가(직접입력 버튼·업로드 버튼·행 삭제 버튼 전부 숨김). 단, `REJECTED`(반려)된 기간은 예외적으로 날짜와 무관하게 재입력 가능하게 함(막히면 프로세스가 멈추므로).
+- **결제 요청 → 결재선**: 확인받은 대로 라운드3~4에서 만든 다단계 결재선(`ApprovalLineStep`)을 재사용. `/expenses` 화면에서 "💳 결제 요청" 버튼(입력 완료 후 노출) → `POST /api/expenses/cards/period/submit`이 `Request(type=CARD_STATEMENT)`를 생성하고 결재선을 스냅샷. 기존 `/requests` 결재 화면에서 그대로 승인/반려 처리하며, `PATCH /api/requests/[id]/decision`에서 최종 승인 시 기간 상태를 `PAID`로, 반려 시 `REJECTED`로 동기화.
+
+### 다운로드
+외부 저장소(Drive 등) 연동은 라운드10에서 이미 "재검토 필요"로 남겨뒀고, 이번엔 사용자가 명시적으로 "외부연동은 안 되고 있으니 다운로드로" 요청 — `GET /api/expenses/cards/export`(xlsx) 신규, `/expenses` 화면에 "⬇️ 엑셀 다운로드" 버튼 추가. Drive 재활성화는 진행하지 않음.
+
+### 고객사 관리(CRM)
+- `Client` 모델 신규(고객사명/담당자명·연락처·이메일/계약기간/메모/최근연락일). `Project.clientId`, `Inquiry.clientId`(둘 다 nullable FK)로 진행 프로젝트·문의 이력을 연결.
+- `GET/POST /api/clients`, `GET/PATCH/DELETE /api/clients/[id]`(ADMIN/LEADER, 삭제는 ADMIN 전용). `/clients` 페이지 신규(목록+등록/수정 폼+아코디언 상세에 연결된 프로젝트/문의 표시). 사이드바 "조직 운영"에 노출.
+- **의도적 보류**: `/projects` 생성·수정 폼에 고객사 선택 UI는 이번 라운드에서 연결하지 않음(API는 `clientId`를 받도록 이미 준비됨) — 이미 복잡한 프로젝트 폼에 무리하게 추가하기보다 다음 라운드에서 UI를 붙이기로 함. `/inquiries` 쪽 고객사 연결 UI도 동일한 이유로 보류.
+
+마이그레이션: `20260918040000_add_card_statement_period`(card_statement_periods 테이블, card_transactions.periodId), `20260918050000_add_client_crm`(clients 테이블, projects.clientId, inquiries.clientId).
+
+`npx tsc --noEmit` 오류 0개, `npx next build`는 백그라운드 실행 후 확인.

@@ -49,7 +49,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!existing) return errorResponse('프로젝트를 찾을 수 없습니다.', 404);
 
     const body = await req.json();
-    const { name, status, description, projectManagerName, projectLeadName, wikiEnabled, simpleMode, customLabels, roles, healthStatus } = body;
+    const { name, status, description, projectManagerName, projectLeadName, wikiEnabled, simpleMode, customLabels, roles, healthStatus, clientId } = body;
     const VALID_HEALTH_STATUSES = ['NORMAL', 'CAUTION', 'RISK', 'ON_HOLD', 'COMPLETED'];
     if (healthStatus !== undefined && !VALID_HEALTH_STATUSES.includes(healthStatus)) {
       return errorResponse('유효하지 않은 프로젝트 상태입니다.', 400, 'VALID_400');
@@ -69,6 +69,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (simpleMode !== undefined) { setClauses.push(`"simpleMode"=$${idx++}`); values.push(!!simpleMode); }
     if (customLabels !== undefined) { setClauses.push(`"customLabels"=$${idx++}`); values.push(customLabels?.trim() || null); }
     if (healthStatus !== undefined) { setClauses.push(`"healthStatus"=$${idx++}`); values.push(healthStatus); }
+    if (clientId !== undefined) { setClauses.push(`"clientId"=$${idx++}`); values.push(clientId ? parseInt(clientId) : null); }
 
     values.push(projectId);
     await prisma.$executeRawUnsafe(
