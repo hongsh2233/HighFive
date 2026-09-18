@@ -112,6 +112,10 @@ export default function IntegrationsSettingsPage() {
     return <div className={styles.loading}>로그인이 필요합니다.</div>;
   }
 
+  if ((user as any).role !== 'ADMIN') {
+    return <div className={styles.loading}>관리자만 접근할 수 있는 페이지입니다.</div>;
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.inner}>
