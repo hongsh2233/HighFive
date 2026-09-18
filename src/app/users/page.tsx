@@ -9,6 +9,28 @@ import styles from './users.module.css';
 import Spinner from '@/components/common/Spinner';
 import { USER_ROLE_LABEL } from '@/lib/constants';
 
+const NEW_CAPABILITY_KEYS = ['PROJECT_MANAGE', 'APPROVAL', 'ANNOUNCEMENT_MANAGE', 'INQUIRY_MANAGE', 'USER_MANAGE', 'STATS_VIEW', 'AI_SETTINGS', 'INTEGRATION_MANAGE', 'AUDIT_LOG_VIEW'] as const;
+type NewCapabilityKey = typeof NEW_CAPABILITY_KEYS[number];
+
+const CAPABILITY_LABEL: Record<NewCapabilityKey, string> = {
+  PROJECT_MANAGE: '프로젝트 관리',
+  APPROVAL: '결재 승인',
+  ANNOUNCEMENT_MANAGE: '공지 관리',
+  INQUIRY_MANAGE: '문의 관리',
+  USER_MANAGE: '팀원 관리',
+  STATS_VIEW: '통계 조회',
+  AI_SETTINGS: 'AI 설정',
+  INTEGRATION_MANAGE: '외부연동 관리',
+  AUDIT_LOG_VIEW: '감사 로그 조회',
+};
+
+const CAPABILITY_BUNDLES: { key: string; label: string; keys: NewCapabilityKey[] }[] = [
+  { key: 'PROJECT_MANAGER', label: '프로젝트 매니저', keys: ['PROJECT_MANAGE'] },
+  { key: 'APPROVER', label: '결재 담당자', keys: ['APPROVAL'] },
+  { key: 'CONTENT', label: '콘텐츠 담당자', keys: ['ANNOUNCEMENT_MANAGE', 'INQUIRY_MANAGE'] },
+  { key: 'SYSTEM_OPERATOR', label: '시스템 운영자', keys: ['USER_MANAGE', 'AI_SETTINGS', 'INTEGRATION_MANAGE', 'AUDIT_LOG_VIEW', 'STATS_VIEW'] },
+];
+
 interface ProjectInfo {
   project: { id: number; name: string; status: string };
 }
@@ -31,6 +53,7 @@ interface User {
   canManageCardExpense?: boolean;
   canManageLedger?: boolean;
   canManageWeeklyReport?: boolean;
+  capabilities?: Record<string, boolean>;
 }
 
 interface Project {
@@ -58,6 +81,7 @@ export default function UsersPage() {
     canManageCardExpense: false,
     canManageLedger: false,
     canManageWeeklyReport: false,
+    capabilities: {} as Partial<Record<NewCapabilityKey, boolean>>,
     projectIds: [] as number[],
   });
   const [submitting, setSubmitting] = useState(false);
@@ -92,7 +116,7 @@ export default function UsersPage() {
     }
   }, [authLoading, currentUser]);
 
-  const resetForm = () => setFormData({ email: '', name: '', role: 'WORKER', leaveDate: '', affiliation: '', managerId: '', orgUnit: '', canManageCardExpense: false, canManageLedger: false, canManageWeeklyReport: false, projectIds: [] });
+  const resetForm = () => setFormData({ email: '', name: '', role: 'WORKER', leaveDate: '', affiliation: '', managerId: '', orgUnit: '', canManageCardExpense: false, canManageLedger: false, canManageWeeklyReport: false, capabilities: {}, projectIds: [] });
 
   const openCreateForm = () => {
     setEditingUser(null);
@@ -113,6 +137,9 @@ export default function UsersPage() {
       canManageCardExpense: !!(u as any).canManageCardExpense,
       canManageLedger: !!(u as any).canManageLedger,
       canManageWeeklyReport: !!(u as any).canManageWeeklyReport,
+      capabilities: Object.fromEntries(
+        NEW_CAPABILITY_KEYS.map((k) => [k, !!(u as any).capabilities?.[k]])
+      ) as Partial<Record<NewCapabilityKey, boolean>>,
       projectIds: u.projectMembers?.map(pm => pm.project.id) || [],
     });
     setShowForm(true);
@@ -171,6 +198,7 @@ export default function UsersPage() {
         canManageCardExpense: formData.canManageCardExpense,
         canManageLedger: formData.canManageLedger,
         canManageWeeklyReport: formData.canManageWeeklyReport,
+        capabilities: formData.capabilities,
         projectIds: formData.projectIds,
       };
 
@@ -360,6 +388,36 @@ export default function UsersPage() {
                     />
                     <span>주간보고 작성 권한 부여</span>
                   </label>
+
+                  <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+                    <label className={styles.label}>담당 권한 묶음 (한 번에 적용)</label>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                      {CAPABILITY_BUNDLES.map((bundle) => (
+                        <button
+                          key={bundle.key}
+                          type="button"
+                          className={styles.btnCancel}
+                          onClick={() => setFormData((p) => ({
+                            ...p,
+                            capabilities: { ...p.capabilities, ...Object.fromEntries(bundle.keys.map((k) => [k, true])) },
+                          }))}
+                        >
+                          + {bundle.label}
+                        </button>
+                      ))}
+                    </div>
+                    {NEW_CAPABILITY_KEYS.map((key) => (
+                      <label key={key} className={styles.projectCheckItem} data-checked={formData.capabilities[key] ? 'true' : 'false'} style={{ marginTop: 6 }}>
+                        <input
+                          type="checkbox"
+                          checked={!!formData.capabilities[key]}
+                          onChange={(e) => setFormData((p) => ({ ...p, capabilities: { ...p.capabilities, [key]: e.target.checked } }))}
+                          className={styles.projectCheckbox}
+                        />
+                        <span>{CAPABILITY_LABEL[key]} 권한 부여</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               )}
 

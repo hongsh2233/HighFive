@@ -1,11 +1,11 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireRole, successResponse, errorResponse } from '@/lib/utils';
+import { requireInquiryManageAccess, successResponse, errorResponse } from '@/lib/utils';
 
 // PATCH /api/inquiries/[id] - 상태 변경 (검토중 / 종결) (ADMIN/LEADER)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { error, organizationId } = await requireRole(['ADMIN', 'LEADER']);
+    const { error, organizationId } = await requireInquiryManageAccess();
     if (error) return error;
 
     const { id } = await params;

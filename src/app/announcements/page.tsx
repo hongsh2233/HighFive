@@ -27,7 +27,8 @@ export default function AnnouncementsPage() {
   const { user, isLoading: authLoading } = useAuth();
   const { confirm } = useDialog();
   const isSuperAdmin = (user as any)?.role === 'SUPERADMIN';
-  const canManage = isSuperAdmin || ['ADMIN', 'LEADER'].includes(user?.role || '');
+  const [hasAnnouncementCapability, setHasAnnouncementCapability] = useState(false);
+  const canManage = isSuperAdmin || ['ADMIN', 'LEADER'].includes(user?.role || '') || hasAnnouncementCapability;
 
   const [items, setItems] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +49,13 @@ export default function AnnouncementsPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (authLoading || !user || isSuperAdmin || ['ADMIN', 'LEADER'].includes(user.role || '')) return;
+    apiClient.get<{ data: { capabilities?: Record<string, boolean> } }>('/users/me')
+      .then((res) => setHasAnnouncementCapability(!!res.data.data.capabilities?.ANNOUNCEMENT_MANAGE))
+      .catch(() => {});
+  }, [authLoading, user, isSuperAdmin]);
 
   useEffect(() => {
     if (!authLoading && canManage) fetchItems();

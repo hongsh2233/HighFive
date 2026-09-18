@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireAuth, requireRole, requireSuperAdmin, successResponse, errorResponse } from '@/lib/utils';
+import { requireAuth, requireSuperAdmin, requireAnnouncementManageAccess, hasCapability, successResponse, errorResponse } from '@/lib/utils';
 import { createUserNotification } from '@/lib/notify';
 
 // GET /api/announcements
@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
     }
 
     if (all) {
-      if (!['ADMIN', 'LEADER'].includes(role)) {
+      const canManage = ['ADMIN', 'LEADER'].includes(role) || (await hasCapability(userId, 'ANNOUNCEMENT_MANAGE'));
+      if (!canManage) {
         return errorResponse('권한이 없습니다.', 403, 'AUTH_403');
       }
       const where = role === 'ADMIN'
@@ -79,8 +80,8 @@ export async function POST(req: NextRequest) {
       return successResponse(announcement, '공지가 등록되었습니다.', 201);
     }
 
-    // ADMIN/LEADER: 조직 공지
-    const { session, error, organizationId } = await requireRole(['ADMIN', 'LEADER']);
+    // ADMIN/LEADER 또는 ANNOUNCEMENT_MANAGE 권한 부여된 사용자: 조직 공지
+    const { session, error, organizationId } = await requireAnnouncementManageAccess();
     if (error) return error;
 
     const authorId = parseInt((session!.user as any).id || '0');

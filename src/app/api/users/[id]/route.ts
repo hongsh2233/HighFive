@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireRole, requireAuth, successResponse, errorResponse } from '@/lib/utils';
+import { requireRole, requireAuth, successResponse, errorResponse, CAPABILITY_KEYS, getCapabilities } from '@/lib/utils';
 import type { CapabilityKey } from '@/lib/utils';
 
 async function setCapability(userId: number, key: CapabilityKey, value: boolean) {
@@ -46,7 +46,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const target = await prisma.user.findFirst({ where: { id: userId, organizationId } });
     if (!target) return errorResponse('사용자를 찾을 수 없습니다.', 404);
     const body = await req.json();
-    const { name, email, role, isActive, leaveDate, affiliation, projectIds, managerId, orgUnit, canManageCardExpense, canManageLedger, canManageWeeklyReport } = body;
+    const { name, email, role, isActive, leaveDate, affiliation, projectIds, managerId, orgUnit, canManageCardExpense, canManageLedger, canManageWeeklyReport, capabilities } = body;
 
     if (managerId !== undefined && managerId !== null && parseInt(managerId) === userId) {
       return errorResponse('본인을 담당 리더로 지정할 수 없습니다.', 400, 'VALID_400');
@@ -76,6 +76,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (canManageLedger !== undefined) await setCapability(userId, 'LEDGER', !!canManageLedger);
     if (canManageWeeklyReport !== undefined) await setCapability(userId, 'WEEKLY_REPORT', !!canManageWeeklyReport);
 
+    // 일반화된 담당 권한(capability) 묶음 — 라운드8: PROJECT_MANAGE/APPROVAL/ANNOUNCEMENT_MANAGE 등
+    if (capabilities && typeof capabilities === 'object') {
+      for (const key of CAPABILITY_KEYS) {
+        if (capabilities[key] !== undefined) {
+          await setCapability(userId, key, !!capabilities[key]);
+        }
+      }
+    }
+
     if (projectIds !== undefined) {
       await prisma.projectMember.deleteMany({ where: { userId } });
       if (projectIds.length > 0) {
@@ -86,12 +95,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
     }
 
+    const updatedCapabilities = await getCapabilities(userId);
     return successResponse(
       {
         ...user,
-        ...(canManageCardExpense !== undefined && { canManageCardExpense: !!canManageCardExpense }),
-        ...(canManageLedger !== undefined && { canManageLedger: !!canManageLedger }),
-        ...(canManageWeeklyReport !== undefined && { canManageWeeklyReport: !!canManageWeeklyReport }),
+        capabilities: updatedCapabilities,
+        canManageCardExpense: updatedCapabilities.CARD_EXPENSE,
+        canManageLedger: updatedCapabilities.LEDGER,
+        canManageWeeklyReport: updatedCapabilities.WEEKLY_REPORT,
       },
       '수정되었습니다.'
     );

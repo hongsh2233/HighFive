@@ -1212,3 +1212,14 @@ npx prisma migrate resolve --applied 20260907000000_init
 마이그레이션: `20260918010000_add_recurring_tasks_and_completion_approval`(recurring_task_rules 테이블, tasks.requireCompletionApproval), `20260918020000_add_meeting_manual_structure`(meeting_notes.decisions/actionItems).
 
 `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-18 (5차) — 라운드 8: Capability(담당 권한) 체계 확장 + 권한 묶음 UI
+
+라운드3에서 만든 `UserCapability` key-value 모델을 실제로 일반화해서 사용하기 시작.
+
+- `CAPABILITY_KEYS`에 9개 신규 key 추가: PROJECT_MANAGE, APPROVAL, ANNOUNCEMENT_MANAGE, INQUIRY_MANAGE, USER_MANAGE, STATS_VIEW, AI_SETTINGS, INTEGRATION_MANAGE, AUDIT_LOG_VIEW. `CAPABILITY_BUNDLES`(프로젝트 매니저/결재 담당자/재무 담당자/콘텐츠 담당자/시스템 운영자) 프리셋 추가.
+- 이 중 **ANNOUNCEMENT_MANAGE / INQUIRY_MANAGE는 실제로 API 권한검사에 연결**함: `/api/announcements`(POST, GET?all=true), `/api/inquiries`(GET), `/api/inquiries/[id]`, `/api/inquiries/[id]/convert`가 `requireRole(['ADMIN','LEADER'])` 대신 `requireAnnouncementManageAccess()`/`requireInquiryManageAccess()`를 사용해 WORKER도 해당 capability가 있으면 접근 가능. AppShell 사이드바("문의" 메뉴)와 `/announcements` 페이지("관리" 모드)도 이 capability를 반영하도록 수정.
+- **나머지 7개 key(PROJECT_MANAGE/APPROVAL/USER_MANAGE/STATS_VIEW/AI_SETTINGS/INTEGRATION_MANAGE/AUDIT_LOG_VIEW)는 이번 라운드에서는 팀원관리 UI에서 부여만 가능하고 아직 어떤 API도 검사하지 않는 "예약된" 키다** — 특히 USER_MANAGE/AI_SETTINGS/INTEGRATION_MANAGE/AUDIT_LOG_VIEW는 잘못 연결하면 비ADMIN이 팀원관리·AI키·외부연동 비밀값·감사로그에 접근할 수 있게 되는 민감한 권한이라, 개별 API 리뷰 없이 한 번에 연결하지 않기로 함. 로드맵상 라운드9("데이터 스코프 분리, API별 점진 적용")에서 화면 단위로 순차 연결 예정.
+- `GET /api/users`, `GET/PATCH /api/users/[id]`, `GET /api/users/me`가 이제 `capabilities: Record<key, boolean>` 전체 맵을 응답에 포함(기존 canManageCardExpense 등 3개 필드는 하위호환용으로 계속 유지). `/users` 팀원관리 편집 폼에 "담당 권한 묶음" 버튼 + 9개 개별 체크박스 UI 추가(WORKER 대상, 기존 3개 체크박스 아래에 배치).
+
+`npx tsc --noEmit` 오류 0개, `npx next build` 성공.

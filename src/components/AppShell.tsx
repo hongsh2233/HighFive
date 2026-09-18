@@ -26,6 +26,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [orgLogo, setOrgLogo] = useState<string | null>(null);
   const [canManageCardExpense, setCanManageCardExpense] = useState(false);
   const [canManageLedger, setCanManageLedger] = useState(false);
+  const [canManageInquiry, setCanManageInquiry] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -48,6 +49,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         if (d.success && d.data) {
           setCanManageCardExpense(!!d.data.canManageCardExpense);
           setCanManageLedger(!!d.data.canManageLedger);
+          setCanManageInquiry(!!d.data.capabilities?.INQUIRY_MANAGE);
         }
       })
       .catch(() => {});
@@ -124,10 +126,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             ...(has('info') ? [{ href: '/info', label: '지식베이스', icon: '' }] : []),
           ],
         }] : []),
-        ...((has('requests') || isAdminOrLeader || canManageCardExpense || canManageLedger) ? [{
+        ...((has('requests') || isAdminOrLeader || canManageCardExpense || canManageLedger || canManageInquiry) ? [{
           key: 'org', label: '조직 운영', icon: '🗂️', items: [
             ...(has('requests') ? [{ href: '/requests', label: '신청·결재', icon: '' }] : []),
-            ...(isAdminOrLeader ? [{ href: '/inquiries', label: '문의', icon: '' }] : []),
+            ...(isAdminOrLeader || canManageInquiry ? [{ href: '/inquiries', label: '문의', icon: '' }] : []),
             ...(isAdminOrLeader || canManageCardExpense || canManageLedger ? [{ href: '/expenses', label: '비용관리', icon: '' }] : []),
             { href: '/announcements', label: '공지사항', icon: '' },
             ...(isAdminOrLeader ? [{ href: '/settings/recurring-tasks', label: '반복 업무', icon: '' }] : []),

@@ -1,11 +1,11 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireRole, successResponse, errorResponse } from '@/lib/utils';
+import { requireInquiryManageAccess, successResponse, errorResponse } from '@/lib/utils';
 
 // GET /api/inquiries - 문의 목록 (ADMIN/LEADER)
 export async function GET(req: NextRequest) {
   try {
-    const { error, organizationId } = await requireRole(['ADMIN', 'LEADER']);
+    const { error, organizationId } = await requireInquiryManageAccess();
     if (error) return error;
 
     const { searchParams } = new URL(req.url);

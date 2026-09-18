@@ -1,13 +1,13 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireRole, successResponse, errorResponse } from '@/lib/utils';
+import { requireInquiryManageAccess, successResponse, errorResponse } from '@/lib/utils';
 import { getProjectStatuses } from '@/lib/task-status';
 import { addHistory } from '@/lib/task-history';
 
 // POST /api/inquiries/[id]/convert - 문의를 업무로 전환 (ADMIN/LEADER)
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { error, organizationId, session } = await requireRole(['ADMIN', 'LEADER']);
+    const { error, organizationId, session } = await requireInquiryManageAccess();
     if (error) return error;
 
     const { id } = await params;

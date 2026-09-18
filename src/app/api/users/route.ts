@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireAuth, requireRole, successResponse, errorResponse, hashPassword, generateTempPassword } from '@/lib/utils';
+import { requireAuth, requireRole, successResponse, errorResponse, hashPassword, generateTempPassword, CAPABILITY_KEYS } from '@/lib/utils';
 import type { CapabilityKey } from '@/lib/utils';
 import { createAuditLog } from '@/lib/audit';
 
@@ -77,6 +77,7 @@ export async function GET(req: NextRequest) {
         canManageCardExpense: keys.has('CARD_EXPENSE'),
         canManageLedger: keys.has('LEDGER'),
         canManageWeeklyReport: keys.has('WEEKLY_REPORT'),
+        capabilities: Object.fromEntries(CAPABILITY_KEYS.map((k) => [k, keys.has(k)])) as Record<CapabilityKey, boolean>,
       };
     });
 

@@ -39,6 +39,8 @@ export async function GET() {
       {
         ...user,
         tasks,
+        capabilities: caps,
+        // 하위호환: 기존에 이 3개 필드만 보고 있던 화면들(expenses/weekly-reports)을 위해 유지
         canManageCardExpense: caps.CARD_EXPENSE,
         canManageLedger: caps.LEDGER,
         canManageWeeklyReport: caps.WEEKLY_REPORT,

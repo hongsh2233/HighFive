@@ -45,9 +45,50 @@ export async function requireAuth() {
   return { session, organizationId };
 }
 
-// LEADER 외 사용자에게 개별 부여 가능한 모듈별 권한 key. 새 모듈이 추가되면 여기에만 추가하면 됨.
-export const CAPABILITY_KEYS = ['CARD_EXPENSE', 'LEDGER', 'WEEKLY_REPORT'] as const;
+// LEADER 외 사용자에게 개별 부여 가능한 담당 권한(capability) key. 새 권한이 필요하면 여기에만
+// 추가하면 되고 스키마 마이그레이션은 필요 없다(UserCapability가 key-value로 일반화되어 있음).
+// 실제 API 단에서 이 key를 검사하도록 연결된 것: CARD_EXPENSE/LEDGER/WEEKLY_REPORT/ANNOUNCEMENT_MANAGE/
+// INQUIRY_MANAGE. 나머지(PROJECT_MANAGE 등)는 2026-09-18 기준 UI에서 부여만 가능하고 아직 API
+// 권한검사에 연결되지 않은 "예약된" 키다(라운드8~9에서 점진 적용 예정) — docs/HISTORY.md 참고.
+export const CAPABILITY_KEYS = [
+  'CARD_EXPENSE',
+  'LEDGER',
+  'WEEKLY_REPORT',
+  'PROJECT_MANAGE',
+  'APPROVAL',
+  'ANNOUNCEMENT_MANAGE',
+  'INQUIRY_MANAGE',
+  'USER_MANAGE',
+  'STATS_VIEW',
+  'AI_SETTINGS',
+  'INTEGRATION_MANAGE',
+  'AUDIT_LOG_VIEW',
+] as const;
 export type CapabilityKey = typeof CAPABILITY_KEYS[number];
+
+// 팀원관리에서 "권한 묶음"으로 한 번에 부여할 수 있는 프리셋
+export const CAPABILITY_BUNDLES: Record<string, { label: string; keys: CapabilityKey[] }> = {
+  PROJECT_MANAGER: { label: '프로젝트 매니저', keys: ['PROJECT_MANAGE'] },
+  APPROVER: { label: '결재 담당자', keys: ['APPROVAL'] },
+  FINANCE: { label: '재무 담당자', keys: ['CARD_EXPENSE', 'LEDGER'] },
+  CONTENT: { label: '콘텐츠 담당자', keys: ['ANNOUNCEMENT_MANAGE', 'INQUIRY_MANAGE'] },
+  SYSTEM_OPERATOR: { label: '시스템 운영자', keys: ['USER_MANAGE', 'AI_SETTINGS', 'INTEGRATION_MANAGE', 'AUDIT_LOG_VIEW', 'STATS_VIEW'] },
+};
+
+export const CAPABILITY_LABEL: Record<CapabilityKey, string> = {
+  CARD_EXPENSE: '법인카드 관리',
+  LEDGER: '간편장부 관리',
+  WEEKLY_REPORT: '주간보고 작성',
+  PROJECT_MANAGE: '프로젝트 관리',
+  APPROVAL: '결재 승인',
+  ANNOUNCEMENT_MANAGE: '공지 관리',
+  INQUIRY_MANAGE: '문의 관리',
+  USER_MANAGE: '팀원 관리',
+  STATS_VIEW: '통계 조회',
+  AI_SETTINGS: 'AI 설정',
+  INTEGRATION_MANAGE: '외부연동 관리',
+  AUDIT_LOG_VIEW: '감사 로그 조회',
+};
 
 export async function hasCapability(userId: number, key: CapabilityKey): Promise<boolean> {
   const row = await prisma.userCapability.findUnique({
@@ -79,6 +120,14 @@ async function requireCapabilityAccess(key: CapabilityKey, deniedMessage: string
 
 export function requireCardExpenseAccess() {
   return requireCapabilityAccess('CARD_EXPENSE', '비용관리 접근 권한이 없습니다.');
+}
+
+export function requireAnnouncementManageAccess() {
+  return requireCapabilityAccess('ANNOUNCEMENT_MANAGE', '공지 관리 권한이 없습니다.');
+}
+
+export function requireInquiryManageAccess() {
+  return requireCapabilityAccess('INQUIRY_MANAGE', '문의 관리 권한이 없습니다.');
 }
 
 export function requireLedgerAccess() {
