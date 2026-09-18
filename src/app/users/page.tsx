@@ -305,14 +305,14 @@ export default function UsersPage() {
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
-                style={{ padding: '7px 14px', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', backgroundColor: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)' }}
+                style={{ padding: '7px 14px', fontSize: 13, fontWeight: 600, lineHeight: 1.4, border: 'none', cursor: 'pointer', backgroundColor: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)' }}
               >
                 목록으로 보기
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('orgchart')}
-                style={{ padding: '7px 14px', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', backgroundColor: viewMode === 'orgchart' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'orgchart' ? '#fff' : 'var(--text-secondary)' }}
+                style={{ padding: '7px 14px', fontSize: 13, fontWeight: 600, lineHeight: 1.4, border: 'none', cursor: 'pointer', backgroundColor: viewMode === 'orgchart' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'orgchart' ? '#fff' : 'var(--text-secondary)' }}
               >
                 조직도로 보기
               </button>
@@ -396,7 +396,7 @@ export default function UsersPage() {
                 </div>
               </div>
 
-              {formData.role === 'WORKER' && (
+              {formData.role !== 'ADMIN' && (
                 <div className={styles.resumeSection}>
                   <label className={styles.projectCheckItem} data-checked={formData.canManageCardExpense ? 'true' : 'false'}>
                     <input

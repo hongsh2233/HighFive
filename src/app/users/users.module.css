@@ -41,12 +41,10 @@
 
 .btnPrimary {
   composes: btn btn-primary from global;
-  padding: 9px 18px;
 }
 
 .btnSecondary {
   composes: btn btn-secondary from global;
-  padding: 9px 18px;
 }
 
 .message {
