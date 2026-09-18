@@ -1260,3 +1260,14 @@ npx prisma migrate resolve --applied 20260907000000_init
 마이그레이션: `20260918030000_add_partner_and_project_upgrades` (users.partnerAccessUntil, tasks.partnerVisible, task_comments.visibility, projects.healthStatus, project_milestones 테이블).
 
 `npx tsc --noEmit` 오류 0개, `npx next build` 성공.
+
+## 2026-09-18 (8차) — 라운드 11: 통합 검색 확장 + 접근권한 스코핑
+
+기존 `src/lib/search.ts`(`/api/search`, `/api/ai/search`가 공용 사용)는 업무/위키 2종류만 검색했고, **역할 기반 접근 제어가 전혀 없어서 WORKER가 검색하면 조직 전체 업무·모든 프로젝트의 위키가 다 노출되는 문제**가 있었음(업무 목록/위키 페이지 자체는 이미 제대로 스코프돼 있었는데 검색만 예외였음). 이번 라운드에서 검색 범위를 확장하면서 이 문제도 함께 고쳤다.
+
+- `runSearch()`가 이제 `(organizationId, q, { userId, role }, filters?)` 시그니처로 호출됨(`/api/search`, `/api/ai/search` 양쪽 다 수정). 결과 타입: 업무/프로젝트/지식베이스(위키)/회의록/주간보고/공지사항/파일(업무 첨부파일명)/팀원 8종.
+- **접근 범위**: ADMIN은 전체, LEADER/WORKER/PARTNER는 각자 기존 목록 화면과 동일한 규칙으로 스코프(WORKER는 본인 담당·등록 업무 + 그 업무가 속한 프로젝트, LEADER/PARTNER는 소속 프로젝트). PARTNER는 댓글 검색 결과도 `PARTNER_VISIBLE`만, 팀원 검색도 같은 프로젝트 소속자로 제한.
+- 필터: `projectId`/`authorId`/`from`~`to`/`types`(콤마 구분) 쿼리 파라미터로 지원. `TopSearch.tsx`에 "⚙️" 필터 토글(유형/프로젝트/작성자 드롭다운) 추가.
+- "고객사" 검색은 아직 CRM 모델 자체가 없어(라운드12에서 검토 예정) 이번 라운드에는 포함하지 않음.
+
+`npx tsc --noEmit` 오류 0개, `npx next build` 성공(백그라운드 실행 확인).

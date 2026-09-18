@@ -7,8 +7,10 @@ import { runSearch } from '@/lib/search';
 // POST /api/ai/search - 자연어 질의에서 검색 키워드를 추출해 기존 검색을 재활용
 export async function POST(req: NextRequest) {
   try {
-    const { error, organizationId } = await requireAuth();
+    const { error, organizationId, session } = await requireAuth();
     if (error) return error;
+    const userId = parseInt((session!.user as any).id || '0');
+    const role = (session!.user as any).role;
 
     if (!(await isFeatureEnabled(organizationId, 'aiSearch'))) {
       return errorResponse('AI 자연어 검색 기능이 비활성화되어 있습니다. 관리자에게 문의하세요.', 403, 'AI_DISABLED');
@@ -26,7 +28,7 @@ export async function POST(req: NextRequest) {
 검색 요청: ${query}`;
 
     const keyword = (await callLLM(providerInfo.provider, prompt, 64, providerInfo.apiKey)).trim().replace(/^["']|["']$/g, '');
-    const results = await runSearch(organizationId, keyword || query);
+    const results = await runSearch(organizationId, keyword || query, { userId, role });
 
     return successResponse({ keyword: keyword || query, ...results }, 'AI 검색 완료');
   } catch (err: any) {
