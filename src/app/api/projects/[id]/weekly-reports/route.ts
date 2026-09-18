@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
+import { requireAuth, hasCapability, successResponse, errorResponse } from '@/lib/utils';
 
 async function checkAccess(projectId: number, userId: number, role: string) {
   if (role === 'ADMIN') return true;
@@ -48,8 +48,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const role = (session!.user as any).role;
 
     if (role !== 'ADMIN' && role !== 'LEADER') {
-      const me = await prisma.user.findUnique({ where: { id: userId }, select: { canManageWeeklyReport: true } });
-      if (!me?.canManageWeeklyReport) {
+      if (!(await hasCapability(userId, 'WEEKLY_REPORT'))) {
         return errorResponse('주간보고 작성 권한이 없습니다.', 403, 'AUTH_403');
       }
     }

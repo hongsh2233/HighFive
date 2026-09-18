@@ -1,6 +1,15 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireRole, requireAuth, successResponse, errorResponse } from '@/lib/utils';
+import type { CapabilityKey } from '@/lib/utils';
+
+async function setCapability(userId: number, key: CapabilityKey, value: boolean) {
+  await prisma.userCapability.upsert({
+    where: { userId_key: { userId, key } },
+    update: { value },
+    create: { userId, key, value },
+  });
+}
 
 // GET /api/users/[id] - 프로필 조회 (같은 조직 내 누구나)
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -59,12 +68,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(affiliation !== undefined && { affiliation: affiliation || null }),
         ...(orgUnit !== undefined && { orgUnit: orgUnit || null }),
         ...(managerId !== undefined && { managerId: managerId ? parseInt(managerId) : null }),
-        ...(canManageCardExpense !== undefined && { canManageCardExpense: !!canManageCardExpense }),
-        ...(canManageLedger !== undefined && { canManageLedger: !!canManageLedger }),
-        ...(canManageWeeklyReport !== undefined && { canManageWeeklyReport: !!canManageWeeklyReport }),
       },
-      select: { id: true, email: true, name: true, role: true, isActive: true, leaveDate: true, affiliation: true, orgUnit: true, managerId: true, canManageCardExpense: true, canManageLedger: true, canManageWeeklyReport: true },
+      select: { id: true, email: true, name: true, role: true, isActive: true, leaveDate: true, affiliation: true, orgUnit: true, managerId: true },
     });
+
+    if (canManageCardExpense !== undefined) await setCapability(userId, 'CARD_EXPENSE', !!canManageCardExpense);
+    if (canManageLedger !== undefined) await setCapability(userId, 'LEDGER', !!canManageLedger);
+    if (canManageWeeklyReport !== undefined) await setCapability(userId, 'WEEKLY_REPORT', !!canManageWeeklyReport);
 
     if (projectIds !== undefined) {
       await prisma.projectMember.deleteMany({ where: { userId } });
@@ -76,7 +86,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
     }
 
-    return successResponse(user, '수정되었습니다.');
+    return successResponse(
+      {
+        ...user,
+        ...(canManageCardExpense !== undefined && { canManageCardExpense: !!canManageCardExpense }),
+        ...(canManageLedger !== undefined && { canManageLedger: !!canManageLedger }),
+        ...(canManageWeeklyReport !== undefined && { canManageWeeklyReport: !!canManageWeeklyReport }),
+      },
+      '수정되었습니다.'
+    );
   } catch (e) {
     console.error(e);
     return errorResponse('수정 실패', 500);

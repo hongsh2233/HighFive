@@ -89,9 +89,6 @@ model User {
   resumeMimeType String?
   resumeSize     Int?
   resumeData     Bytes?
-  canManageCardExpense Boolean @default(false) // 법인카드 관리 접근 권한(LEADER 외 지정 사용자용)
-  canManageLedger      Boolean @default(false) // 간편장부 접근 권한(LEADER 외 지정 사용자용)
-  canManageWeeklyReport Boolean @default(false) // 주간보고 작성 권한(LEADER 외 지정 사용자용)
   totpSecret     String?
   totpEnabled    Boolean   @default(false)
   createdAt      DateTime  @default(now())
@@ -127,9 +124,27 @@ model User {
   approvalLineSteps ApprovalLineStep[]
   requestApprovals  RequestApproval[]
   projectRoles      ProjectRole[]
+  capabilities      UserCapability[]
 
   @@index([organizationId])
   @@map("users")
+}
+
+// LEADER 외 사용자에게 개별 부여하는 모듈별 접근 권한(법인카드/간편장부/주간보고 등).
+// 기능 하나마다 boolean 컬럼을 추가하는 대신 key-value로 일반화해, 새 모듈 권한이 추가돼도
+// 스키마 마이그레이션 없이 key만 늘리면 되도록 함.
+model UserCapability {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  key       String   // CARD_EXPENSE | LEDGER | WEEKLY_REPORT ...
+  value     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+  @@map("user_capabilities")
 }
 
 model GoogleCalendarConnection {

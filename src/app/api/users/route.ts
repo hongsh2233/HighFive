@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, requireRole, successResponse, errorResponse, hashPassword, generateTempPassword } from '@/lib/utils';
+import type { CapabilityKey } from '@/lib/utils';
 import { createAuditLog } from '@/lib/audit';
 
 // GET /api/users
@@ -60,18 +61,26 @@ export async function GET(req: NextRequest) {
         lastLoginAt: true,
         managerId: true,
         resumeFilename: true,
-        canManageCardExpense: true,
-        canManageLedger: true,
-        canManageWeeklyReport: true,
         manager: { select: { id: true, name: true } },
         projectMembers: {
           select: { project: { select: { id: true, name: true, status: true } } },
         },
+        capabilities: { where: { value: true }, select: { key: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return successResponse(users, '사용자 목록 조회 완료');
+    const result = users.map(({ capabilities, ...u }) => {
+      const keys = new Set(capabilities.map((c) => c.key as CapabilityKey));
+      return {
+        ...u,
+        canManageCardExpense: keys.has('CARD_EXPENSE'),
+        canManageLedger: keys.has('LEDGER'),
+        canManageWeeklyReport: keys.has('WEEKLY_REPORT'),
+      };
+    });
+
+    return successResponse(result, '사용자 목록 조회 완료');
   } catch (err) {
     console.error(err);
     return errorResponse('사용자 목록 조회 중 오류가 발생했습니다.', 500);

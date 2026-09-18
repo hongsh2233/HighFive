@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { successResponse, errorResponse } from '@/lib/utils';
+import { successResponse, errorResponse, getCapabilities } from '@/lib/utils';
 
 export async function GET() {
   try {
@@ -19,7 +19,7 @@ export async function GET() {
       where: { id: userId },
       select: {
         id: true, email: true, name: true, role: true,
-        isActive: true, createdAt: true, lastLoginAt: true, canManageCardExpense: true, canManageLedger: true, canManageWeeklyReport: true,
+        isActive: true, createdAt: true, lastLoginAt: true,
       },
     });
 
@@ -34,7 +34,17 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     });
 
-    return successResponse({ ...user, tasks }, '내 정보 조회 완료');
+    const caps = await getCapabilities(userId);
+    return successResponse(
+      {
+        ...user,
+        tasks,
+        canManageCardExpense: caps.CARD_EXPENSE,
+        canManageLedger: caps.LEDGER,
+        canManageWeeklyReport: caps.WEEKLY_REPORT,
+      },
+      '내 정보 조회 완료'
+    );
   } catch (err) {
     console.error(err);
     return errorResponse('내 정보 조회 중 오류가 발생했습니다.', 500);

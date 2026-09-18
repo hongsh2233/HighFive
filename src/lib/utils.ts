@@ -45,8 +45,25 @@ export async function requireAuth() {
   return { session, organizationId };
 }
 
-// 비용관리(법인카드/간편장부) 접근 권한: ADMIN/LEADER 또는 모듈별로 개별 지정된 사용자
-async function requireExpenseModuleAccess(field: 'canManageCardExpense' | 'canManageLedger') {
+// LEADER 외 사용자에게 개별 부여 가능한 모듈별 권한 key. 새 모듈이 추가되면 여기에만 추가하면 됨.
+export const CAPABILITY_KEYS = ['CARD_EXPENSE', 'LEDGER', 'WEEKLY_REPORT'] as const;
+export type CapabilityKey = typeof CAPABILITY_KEYS[number];
+
+export async function hasCapability(userId: number, key: CapabilityKey): Promise<boolean> {
+  const row = await prisma.userCapability.findUnique({
+    where: { userId_key: { userId, key } },
+  });
+  return !!row?.value;
+}
+
+export async function getCapabilities(userId: number): Promise<Record<CapabilityKey, boolean>> {
+  const rows = await prisma.userCapability.findMany({ where: { userId, value: true } });
+  const set = new Set(rows.map((r) => r.key));
+  return Object.fromEntries(CAPABILITY_KEYS.map((k) => [k, set.has(k)])) as Record<CapabilityKey, boolean>;
+}
+
+// 모듈별 접근 권한 체크: ADMIN/LEADER는 항상 통과, 그 외에는 개별 부여된 capability 필요
+async function requireCapabilityAccess(key: CapabilityKey, deniedMessage: string) {
   const { session, error, organizationId } = await requireAuth();
   if (error) return { error };
 
@@ -54,19 +71,22 @@ async function requireExpenseModuleAccess(field: 'canManageCardExpense' | 'canMa
   const role = (session!.user as any).role;
   if (role === 'ADMIN' || role === 'LEADER') return { session, organizationId, userId, role };
 
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { [field]: true } });
-  if (!(user as any)?.[field]) {
-    return { error: errorResponse('비용관리 접근 권한이 없습니다.', 403, 'AUTH_403') };
+  if (!(await hasCapability(userId, key))) {
+    return { error: errorResponse(deniedMessage, 403, 'AUTH_403') };
   }
   return { session, organizationId, userId, role };
 }
 
 export function requireCardExpenseAccess() {
-  return requireExpenseModuleAccess('canManageCardExpense');
+  return requireCapabilityAccess('CARD_EXPENSE', '비용관리 접근 권한이 없습니다.');
 }
 
 export function requireLedgerAccess() {
-  return requireExpenseModuleAccess('canManageLedger');
+  return requireCapabilityAccess('LEDGER', '비용관리 접근 권한이 없습니다.');
+}
+
+export function requireWeeklyReportWriteAccess() {
+  return requireCapabilityAccess('WEEKLY_REPORT', '주간보고 작성 권한이 없습니다.');
 }
 
 export async function requireRole(requiredRoles: string[]) {
