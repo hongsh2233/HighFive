@@ -76,7 +76,8 @@ function TaskCreateForm() {
 
   const [parentTask, setParentTask] = useState<{ id: number; title: string } | null>(null);
   const [title, setTitle] = useState('');
-  const [workerId, setWorkerId] = useState(assigneeIdParam || '');
+  const [workerIds, setWorkerIds] = useState<string[]>(assigneeIdParam ? [assigneeIdParam] : []);
+  const toggleWorker = (id: string) => setWorkerIds(prev => prev.includes(id) ? prev.filter(w => w !== id) : [...prev, id]);
   const [targetDate, setTargetDate] = useState('');
   const [notes, setNotes] = useState('');
   const [projectId, setProjectId] = useState(projectIdParam || '');
@@ -190,11 +191,14 @@ function TaskCreateForm() {
   useEffect(() => {
     const selectable = workers;
     if (selectable.length === 0) return;
-    const stillValid = selectable.some(w => String(w.id) === workerId);
-    if (stillValid) return;
+    const stillValid = workerIds.filter(id => selectable.some(w => String(w.id) === id));
+    if (stillValid.length > 0) {
+      if (stillValid.length !== workerIds.length) setWorkerIds(stillValid);
+      return;
+    }
     const currentUserId = user?.id ? String(user.id) : '';
     const defaultWorker = selectable.find(w => String(w.id) === currentUserId);
-    setWorkerId(defaultWorker ? currentUserId : '');
+    setWorkerIds(defaultWorker ? [currentUserId] : []);
   }, [workers]);
 
   const fetchProjects = async () => {
@@ -259,39 +263,44 @@ function TaskCreateForm() {
 
     try {
       if (!title.trim()) { setError('업무 제목을 입력해주세요.'); setLoading(false); return; }
-      if (!workerId) { setError('담당자를 선택해주세요.'); setLoading(false); return; }
+      if (workerIds.length === 0) { setError('담당자를 선택해주세요.'); setLoading(false); return; }
       if (isLeader && !projectId) { setError('프로젝트를 선택해주세요.'); setLoading(false); return; }
 
       const validSubTasks = subTasks.filter(s => s.title.trim() && s.workerId);
 
-      await axios.post('/api/tasks', {
-        title: title.trim(),
-        workerId: parseInt(workerId),
-        registrantId: user?.id,
-        targetDate: targetDate ? new Date(targetDate) : null,
-        notes: (!parentTask && isGroup) ? '' : notes.trim(),
-        projectId: projectId ? parseInt(projectId) : null,
-        labels,
-        priority,
-        parentTaskId: parentTask ? parentTask.id : undefined,
-        isGroup: !parentTask && isGroup,
-        timeCounterEnabled,
-        githubEnabled,
-        quickRegister,
-        requireCompletionApproval,
-        subTasks: (!parentTask && isGroup) ? validSubTasks.map(s => ({
-          title: s.title.trim(),
-          workerId: parseInt(s.workerId),
-          targetDate: s.targetDate || null,
-        })) : undefined,
-        attachments: (!isGroup || parentTask) ? stagedFiles.map(f => ({
-          filename: f.file.name,
-          mimeType: f.file.type,
-          dataBase64: f.dataBase64,
-        })) : undefined,
-      });
+      // 담당자를 여러 명 선택하면(그룹 업무가 아닌 경우) 동일한 내용으로 담당자별 업무를 각각 생성한다.
+      const targetWorkerIds = (!parentTask && isGroup) ? [workerIds[0]] : workerIds;
 
-      setSuccess(parentTask ? '하위 업무가 추가되었습니다.' : '업무가 등록되었습니다.');
+      for (const wid of targetWorkerIds) {
+        await axios.post('/api/tasks', {
+          title: title.trim(),
+          workerId: parseInt(wid),
+          registrantId: user?.id,
+          targetDate: targetDate ? new Date(targetDate) : null,
+          notes: (!parentTask && isGroup) ? '' : notes.trim(),
+          projectId: projectId ? parseInt(projectId) : null,
+          labels,
+          priority,
+          parentTaskId: parentTask ? parentTask.id : undefined,
+          isGroup: !parentTask && isGroup,
+          timeCounterEnabled,
+          githubEnabled,
+          quickRegister,
+          requireCompletionApproval,
+          subTasks: (!parentTask && isGroup) ? validSubTasks.map(s => ({
+            title: s.title.trim(),
+            workerId: parseInt(s.workerId),
+            targetDate: s.targetDate || null,
+          })) : undefined,
+          attachments: (!isGroup || parentTask) ? stagedFiles.map(f => ({
+            filename: f.file.name,
+            mimeType: f.file.type,
+            dataBase64: f.dataBase64,
+          })) : undefined,
+        });
+      }
+
+      setSuccess(parentTask ? '하위 업무가 추가되었습니다.' : (targetWorkerIds.length > 1 ? `업무가 ${targetWorkerIds.length}건 등록되었습니다.` : '업무가 등록되었습니다.'));
       const redirectUrl = projectId ? `/tasks?projectId=${projectId}` : '/tasks';
       setTimeout(() => router.push(redirectUrl), 1000);
     } catch (err: any) {
@@ -348,14 +357,22 @@ function TaskCreateForm() {
                 </select>
               </div>
 
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>담당자 <span className={styles.required}>*</span></label>
-                <select value={workerId} onChange={e => setWorkerId(e.target.value)} className={styles.input} disabled={loading}>
-                  <option value="">담당자를 선택해주세요.</option>
+              <div className={styles.fieldGroupWide}>
+                <label className={styles.label}>담당자 <span className={styles.required}>*</span> <span className={styles.hint} style={{ display: 'inline', marginLeft: 4 }}>(복수 선택 시 각 담당자별로 동일한 업무가 각각 생성됩니다)</span></label>
+                <div className={styles.labelRow}>
                   {assignableWorkers.map(w => (
-                    <option key={w.id} value={w.id}>{w.name}</option>
+                    <label key={w.id} className={styles.labelChip} data-checked={workerIds.includes(String(w.id)) ? 'true' : 'false'}>
+                      <input
+                        type="checkbox"
+                        checked={workerIds.includes(String(w.id))}
+                        onChange={() => toggleWorker(String(w.id))}
+                        className={styles.labelCheckbox}
+                        disabled={loading}
+                      />
+                      {w.name}
+                    </label>
                   ))}
-                </select>
+                </div>
                 {projectId && assignableWorkers.length === 0 && (
                   <p className={styles.hintError}>선택한 프로젝트에 작업자가 없습니다.</p>
                 )}

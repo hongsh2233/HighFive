@@ -209,6 +209,12 @@
   transition: border-color 0.15s, background-color 0.15s, color 0.15s;
 }
 
+.labelChip[data-checked="true"]:not([data-label]) {
+  border-color: var(--accent);
+  background-color: var(--accent-light);
+  color: var(--accent);
+}
+
 .labelChip[data-checked="true"][data-label="URGENT"] {
   border-color: var(--danger-border);
   background-color: rgba(220,38,38,0.08);
