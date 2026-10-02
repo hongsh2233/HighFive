@@ -1328,3 +1328,20 @@ npx prisma migrate resolve --applied 20260907000000_init
 **Phase 1(라운드1~7) + Phase 2(라운드8~14) 로드맵 전체 완료.**
 
 `npx tsc --noEmit` 오류 0개, `npx next build`는 백그라운드 실행 후 확인.
+
+## 2026-10-02 — JIA 연동 준비 H5-00: 조직/프로젝트 범위 권한 검사 누락 수정
+
+외부 "JIA" 에이전트가 HighFive를 읽기 전용으로 연동하기 전 준비 작업(H5-00~H5-08) 중 H5-00(권한 검사 통일) 착수. 업무·프로젝트·댓글·상태 관련 전체 엔드포인트를 감사해 조직 격리(organizationId) 또는 프로젝트 소속 검사가 아예 빠진 9개 라우트를 찾아 최소 수정(기존 라우트들이 쓰는 `findFirst({ where: { id, organizationId } })` 패턴과 동일하게 맞춤, 역할/캐퍼빌리티 로직은 그대로 유지):
+
+- `GET/POST /api/tasks/[id]/comments` — taskId만으로 조회/작성, 조직 검사 없음 → task가 본인 조직 소속인지 확인 추가.
+- `GET /api/tasks/[id]/history` — 조직 검사 전혀 없음 → 추가.
+- `GET /api/tasks/[id]/timelogs` — `findUnique`로 조직 구분 없이 조회 → `findFirst` + organizationId로 교체.
+- `GET/PUT /api/projects/[id]/statuses` — 조직 검사 전혀 없음(다른 조직 프로젝트의 상태단계를 보거나 덮어쓸 수 있었음) → 추가.
+- `GET/PUT /api/projects/[id]/fields` — 위와 동일한 누락 → 추가.
+- `GET/POST /api/projects/[id]/milestones`, `/wiki`, `/meetings`, `/weekly-reports` — 공용 `checkAccess()` 헬퍼가 `role === 'ADMIN'`(또는 LEADER)이면 조직 구분 없이 통과시키는 구조라, 다른 조직 관리자가 프로젝트 ID만 알면 접근 가능했음 → `checkAccess` 호출 전에 프로젝트가 본인 조직 소속인지 먼저 확인하는 단계 추가.
+
+수정 전부 "존재하지 않는 조직 격리 검사를 추가"하는 것으로 한정했고, 기존 역할별 접근 로직(ADMIN/LEADER 전체 열람, 프로젝트 멤버십 체크, PARTNER 가시성 필터, WEEKLY_REPORT 캐퍼빌리티 등)은 그대로 유지.
+
+**별도로 발견했으나 수정하지 않은 사항(정책 결정 필요)**: 업무 **목록**(`GET /api/tasks`)은 WORKER를 본인 담당 업무로, LEADER를 소속 프로젝트로 제한하는데, 업무 **상세/상태변경/댓글/히스토리/체크리스트/첨부파일/의존성** 쪽은 조직 범위만 확인하고 WORKER/LEADER의 업무별 접근은 제한하지 않음(같은 조직이면 타인 업무도 열람·상태변경 가능). 목록 숨김과 상세 열람 가능이 불일치하는데, 협업상 의도된 설계일 수도 있어 임의로 변경하지 않음 — 별도 확인 필요.
+
+`npx tsc --noEmit` 오류 0개, `npx next build` 성공 확인.

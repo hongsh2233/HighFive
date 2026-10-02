@@ -24,11 +24,14 @@ function slugify(label: string, index: number, used: Set<string>) {
 // GET /api/projects/[id]/statuses - 프로젝트 상태 단계 조회 (없으면 기본 5단계)
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { error } = await requireAuth();
+    const { organizationId, error } = await requireAuth();
     if (error) return error;
 
     const { id } = await params;
     const projectId = parseInt(id);
+
+    const project = await prisma.project.findFirst({ where: { id: projectId, organizationId } });
+    if (!project) return errorResponse('프로젝트를 찾을 수 없습니다.', 404);
 
     const rows = await prisma.projectStatus.findMany({
       where: { projectId },
@@ -50,11 +53,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 // PUT /api/projects/[id]/statuses - 프로젝트 상태 단계 전체 저장 (ADMIN/LEADER)
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { error } = await requireRole(['ADMIN', 'LEADER']);
+    const { organizationId, error } = await requireRole(['ADMIN', 'LEADER']);
     if (error) return error;
 
     const { id } = await params;
     const projectId = parseInt(id);
+
+    const project = await prisma.project.findFirst({ where: { id: projectId, organizationId } });
+    if (!project) return errorResponse('프로젝트를 찾을 수 없습니다.', 404);
 
     const body = await req.json();
     const { statuses } = body;

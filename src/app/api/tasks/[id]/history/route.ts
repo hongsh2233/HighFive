@@ -7,12 +7,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await requireAuth();
+    const { organizationId, error } = await requireAuth();
     if (error) return error;
 
     const { id } = await params;
     const taskId = parseInt(id);
     if (isNaN(taskId)) return errorResponse('유효하지 않은 업무 ID입니다.', 400);
+
+    const task = await prisma.task.findFirst({ where: { id: taskId, organizationId } });
+    if (!task) return errorResponse('업무를 찾을 수 없습니다.', 404);
 
     const histories = await prisma.taskHistory.findMany({
       where: { taskId },

@@ -20,12 +20,15 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { session, error } = await requireAuth();
+  const { session, organizationId, error } = await requireAuth();
   if (error) return error;
 
   const { id } = await params;
   const taskId = parseInt(id);
   if (isNaN(taskId)) return NextResponse.json({ message: '잘못된 요청' }, { status: 400 });
+
+  const task = await prisma.task.findFirst({ where: { id: taskId, organizationId } });
+  if (!task) return NextResponse.json({ message: '업무를 찾을 수 없습니다.' }, { status: 404 });
 
   const role = (session!.user as any).role;
   // PARTNER는 "파트너 공개"로 표시된 댓글/답글만 볼 수 있음
@@ -52,7 +55,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { session, error } = await requireAuth();
+  const { session, organizationId, error } = await requireAuth();
   if (error) return error;
 
   const { id } = await params;
@@ -69,7 +72,7 @@ export async function POST(
   // 내부 사용자는 body.visibility로 선택 가능(기본 내부 전용).
   const visibility = role === 'PARTNER' ? 'PARTNER_VISIBLE' : (body.visibility === 'PARTNER_VISIBLE' ? 'PARTNER_VISIBLE' : 'INTERNAL');
 
-  const task = await prisma.task.findUnique({ where: { id: taskId } });
+  const task = await prisma.task.findFirst({ where: { id: taskId, organizationId } });
   if (!task) return NextResponse.json({ message: '업무를 찾을 수 없습니다.' }, { status: 404 });
 
   if (parentId) {

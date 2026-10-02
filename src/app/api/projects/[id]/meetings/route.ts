@@ -13,13 +13,16 @@ async function checkAccess(projectId: number, userId: number, role: string) {
 // GET /api/projects/[id]/meetings - 프로젝트 회의록 목록 (소속 멤버 또는 ADMIN)
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { session, error } = await requireAuth();
+    const { session, organizationId, error } = await requireAuth();
     if (error) return error;
 
     const { id } = await params;
     const projectId = parseInt(id);
     const userId = parseInt((session!.user as any).id || '0');
     const role = (session!.user as any).role;
+
+    const project = await prisma.project.findFirst({ where: { id: projectId, organizationId } });
+    if (!project) return errorResponse('프로젝트를 찾을 수 없습니다.', 404, 'PROJECT_404');
 
     if (!(await checkAccess(projectId, userId, role))) {
       return errorResponse('해당 프로젝트 멤버만 회의록을 볼 수 있습니다.', 403, 'AUTH_403');
@@ -41,13 +44,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 // POST /api/projects/[id]/meetings - 회의록 작성 (소속 멤버 또는 ADMIN)
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { session, error } = await requireAuth();
+    const { session, organizationId, error } = await requireAuth();
     if (error) return error;
 
     const { id } = await params;
     const projectId = parseInt(id);
     const userId = parseInt((session!.user as any).id || '0');
     const role = (session!.user as any).role;
+
+    const project = await prisma.project.findFirst({ where: { id: projectId, organizationId } });
+    if (!project) return errorResponse('프로젝트를 찾을 수 없습니다.', 404, 'PROJECT_404');
 
     if (!(await checkAccess(projectId, userId, role))) {
       return errorResponse('해당 프로젝트 멤버만 회의록을 작성할 수 있습니다.', 403, 'AUTH_403');

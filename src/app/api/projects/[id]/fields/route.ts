@@ -8,11 +8,14 @@ const VALID_TYPES = ['TEXT', 'NUMBER', 'DATE', 'SELECT', 'CHECKBOX', 'LINK'];
 // GET /api/projects/[id]/fields - 프로젝트 커스텀 필드 정의 조회
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { error } = await requireAuth();
+    const { organizationId, error } = await requireAuth();
     if (error) return error;
 
     const { id } = await params;
     const projectId = parseInt(id);
+
+    const project = await prisma.project.findFirst({ where: { id: projectId, organizationId } });
+    if (!project) return errorResponse('프로젝트를 찾을 수 없습니다.', 404);
 
     const fields = await prisma.projectField.findMany({
       where: { projectId },
@@ -29,11 +32,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 // PUT /api/projects/[id]/fields - 프로젝트 커스텀 필드 정의 전체 저장 (ADMIN/LEADER)
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { error } = await requireRole(['ADMIN', 'LEADER']);
+    const { organizationId, error } = await requireRole(['ADMIN', 'LEADER']);
     if (error) return error;
 
     const { id } = await params;
     const projectId = parseInt(id);
+
+    const project = await prisma.project.findFirst({ where: { id: projectId, organizationId } });
+    if (!project) return errorResponse('프로젝트를 찾을 수 없습니다.', 404);
 
     const body = await req.json();
     const { fields } = body;

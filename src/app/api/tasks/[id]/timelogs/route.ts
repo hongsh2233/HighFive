@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await requireAuth();
+    const { organizationId, error } = await requireAuth();
     if (error) return error;
 
     const { id } = await params;
@@ -19,8 +19,8 @@ export async function GET(
     }
 
     // 업무 존재 확인
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
+    const task = await prisma.task.findFirst({
+      where: { id: taskId, organizationId },
     });
 
     if (!task) {
