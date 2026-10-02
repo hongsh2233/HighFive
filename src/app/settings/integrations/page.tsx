@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './integrations.module.css';
 import Spinner from '@/components/common/Spinner';
+import { Modal } from '@/components/common/Modal';
 
 // 구글 캘린더 연동은 개인 메뉴(사용자 이름 클릭 → 캘린더 연동)로 이동함(라운드 4).
 // 구글 드라이브: 당장 안 쓰기로 해서 진입점 자체를 두지 않음(코드는 src/app/settings/drive/ 유지, 필요시 재노출).
@@ -34,6 +35,22 @@ const FIELD_LABEL: Record<string, string> = {
   chatId: 'Chat ID',
 };
 
+interface ServiceKeyProject { project: { id: number; name: string } }
+interface ServiceKey {
+  id: number;
+  name: string;
+  keyPrefix: string;
+  permissions: string;
+  allowOrgWide: boolean;
+  expiresAt: string | null;
+  revokedAt: string | null;
+  lastUsedAt: string | null;
+  createdAt: string;
+  createdBy: { id: number; name: string };
+  projects: ServiceKeyProject[];
+}
+interface ProjectOption { id: number; name: string }
+
 export default function IntegrationsSettingsPage() {
   const { user, isLoading: authLoading } = useAuth();
   const [configs, setConfigs] = useState<IntegrationConfig[]>([]);
@@ -42,6 +59,19 @@ export default function IntegrationsSettingsPage() {
   const [testing, setTesting] = useState<Channel | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [expanded, setExpanded] = useState<Channel | null>(null);
+
+  // 서비스 API 키(JIA 등 외부 연동) 관리
+  const [serviceKeys, setServiceKeys] = useState<ServiceKey[]>([]);
+  const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([]);
+  const [keyFormOpen, setKeyFormOpen] = useState(false);
+  const [keyName, setKeyName] = useState('');
+  const [keyAllowComment, setKeyAllowComment] = useState(false);
+  const [keyAllowOrgWide, setKeyAllowOrgWide] = useState(false);
+  const [keyProjectIds, setKeyProjectIds] = useState<number[]>([]);
+  const [keyExpiresAt, setKeyExpiresAt] = useState('');
+  const [issuingKey, setIssuingKey] = useState(false);
+  const [issuedKey, setIssuedKey] = useState<string | null>(null);
+  const [keyMessage, setKeyMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const fetchConfigs = async () => {
     try {
@@ -54,10 +84,83 @@ export default function IntegrationsSettingsPage() {
     }
   };
 
+  const fetchServiceKeys = async () => {
+    try {
+      const res = await apiClient.get<{ data: ServiceKey[] }>('/settings/service-keys');
+      setServiceKeys(res.data.data);
+    } catch {
+      // 조용히 무시(웹훅 설정 조회 실패와 별개 영역이라 전체 페이지를 막지 않음)
+    }
+  };
+
+  const fetchProjects = async () => {
+    try {
+      const res = await apiClient.get<{ data: { id: number; name: string }[] }>('/projects');
+      setProjectOptions(res.data.data.map((p) => ({ id: p.id, name: p.name })));
+    } catch {
+      // 무시
+    }
+  };
+
   useEffect(() => {
-    if (!authLoading && user) fetchConfigs();
-    else if (!authLoading) setLoading(false);
+    if (!authLoading && user) {
+      fetchConfigs();
+      if ((user as any).role === 'ADMIN') {
+        fetchServiceKeys();
+        fetchProjects();
+      }
+    } else if (!authLoading) setLoading(false);
   }, [authLoading, user]);
+
+  const toggleKeyProject = (id: number) => {
+    setKeyProjectIds((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
+  };
+
+  const handleIssueKey = async () => {
+    if (!keyName.trim()) {
+      setKeyMessage({ type: 'error', text: '키 이름을 입력해주세요.' });
+      return;
+    }
+    if (!keyAllowOrgWide && keyProjectIds.length === 0) {
+      setKeyMessage({ type: 'error', text: '접근을 허용할 프로젝트를 1개 이상 선택하거나, 조직 전체 읽기를 선택해주세요.' });
+      return;
+    }
+    setIssuingKey(true);
+    setKeyMessage(null);
+    try {
+      const permissions = ['READ', ...(keyAllowComment ? ['COMMENT_CREATE'] : [])];
+      const res = await apiClient.post<{ data: { apiKey: string } }>('/settings/service-keys', {
+        name: keyName.trim(),
+        permissions,
+        allowOrgWide: keyAllowOrgWide,
+        projectIds: keyAllowOrgWide ? [] : keyProjectIds,
+        expiresAt: keyExpiresAt || null,
+      });
+      setIssuedKey(res.data.data.apiKey);
+      setKeyFormOpen(false);
+      setKeyName('');
+      setKeyAllowComment(false);
+      setKeyAllowOrgWide(false);
+      setKeyProjectIds([]);
+      setKeyExpiresAt('');
+      await fetchServiceKeys();
+    } catch (err: any) {
+      setKeyMessage({ type: 'error', text: err.response?.data?.message || '키 발급에 실패했습니다.' });
+    } finally {
+      setIssuingKey(false);
+    }
+  };
+
+  const handleRevokeKey = async (key: ServiceKey) => {
+    if (!confirm(`"${key.name}" 키를 즉시 회수하시겠습니까? 회수 후에는 이 키로 들어오는 모든 요청이 즉시 거부됩니다.`)) return;
+    try {
+      await apiClient.patch(`/settings/service-keys/${key.id}`, { revoke: true });
+      setKeyMessage({ type: 'success', text: `"${key.name}" 키가 회수되었습니다.` });
+      await fetchServiceKeys();
+    } catch (err: any) {
+      setKeyMessage({ type: 'error', text: err.response?.data?.message || '회수에 실패했습니다.' });
+    }
+  };
 
   const updateField = (channel: Channel, field: keyof IntegrationConfig, value: any) => {
     setConfigs((prev) => prev.map((c) => (c.channel === channel ? { ...c, [field]: value } : c)));
@@ -189,7 +292,114 @@ export default function IntegrationsSettingsPage() {
             );
           })}
         </div>
+
+        {(user as any).role === 'ADMIN' && (
+          <div className={styles.serviceKeySection}>
+            <div className={styles.pageHeader}>
+              <h2 className={styles.cardTitle}>서비스 API 키 (JIA 등 외부 연동)</h2>
+              <p className={styles.pageSubtitle}>외부 서비스가 서버 간 인증으로 업무/프로젝트를 조회하거나 댓글을 작성할 때 사용하는 키입니다. 평문 키는 발급 시 한 번만 확인할 수 있습니다.</p>
+            </div>
+
+            {keyMessage && (
+              <div className={`${styles.message} ${keyMessage.type === 'success' ? styles.messageSuccess : styles.messageError}`}>
+                {keyMessage.text}
+              </div>
+            )}
+
+            <div className={styles.keyList}>
+              {serviceKeys.length === 0 && <p className={styles.cardHint}>발급된 서비스 API 키가 없습니다.</p>}
+              {serviceKeys.map((key) => {
+                const revoked = !!key.revokedAt;
+                const expired = key.expiresAt ? new Date(key.expiresAt) < new Date() : false;
+                return (
+                  <div key={key.id} className={styles.keyRow}>
+                    <div className={styles.keyRowMain}>
+                      <span className={styles.keyName}>{key.name}</span>
+                      <code className={styles.keyPrefix}>{key.keyPrefix}…</code>
+                      {revoked && <span className={styles.keyBadgeRevoked}>회수됨</span>}
+                      {!revoked && expired && <span className={styles.keyBadgeRevoked}>만료됨</span>}
+                      {!revoked && !expired && <span className={styles.keyBadgeActive}>사용 중</span>}
+                    </div>
+                    <div className={styles.keyRowMeta}>
+                      <span>권한: {key.permissions.split(',').join(', ')}</span>
+                      <span>범위: {key.allowOrgWide ? '조직 전체' : (key.projects.map((p) => p.project.name).join(', ') || '(선택된 프로젝트 없음)')}</span>
+                      <span>만료: {key.expiresAt ? new Date(key.expiresAt).toLocaleDateString('ko-KR') : '없음'}</span>
+                      <span>최근 사용: {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleString('ko-KR') : '없음'}</span>
+                    </div>
+                    {!revoked && (
+                      <button type="button" onClick={() => handleRevokeKey(key)} className={styles.btnRevoke}>즉시 회수</button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {!keyFormOpen ? (
+              <button type="button" onClick={() => setKeyFormOpen(true)} className={styles.btnConnect}>+ 새 서비스 키 발급</button>
+            ) : (
+              <div className={styles.keyForm}>
+                <div className={styles.fieldGrid}>
+                  <div>
+                    <label className={styles.label}>키 이름</label>
+                    <input type="text" value={keyName} onChange={(e) => setKeyName(e.target.value)} placeholder="예: JIA 연동" className={styles.input} />
+                  </div>
+                  <div>
+                    <label className={styles.label}>만료일(선택)</label>
+                    <input type="date" value={keyExpiresAt} onChange={(e) => setKeyExpiresAt(e.target.value)} className={styles.input} />
+                  </div>
+                </div>
+
+                <label className={styles.enableToggle}>
+                  <input type="checkbox" checked={keyAllowComment} onChange={(e) => setKeyAllowComment(e.target.checked)} />
+                  댓글 작성(COMMENT_CREATE) 권한도 부여 — 체크하지 않으면 조회(READ)만 가능
+                </label>
+
+                <label className={styles.enableToggle}>
+                  <input type="checkbox" checked={keyAllowOrgWide} onChange={(e) => setKeyAllowOrgWide(e.target.checked)} />
+                  조직 전체 읽기 허용(선택한 프로젝트가 아니라 전체 프로젝트에 접근)
+                </label>
+
+                {!keyAllowOrgWide && (
+                  <div>
+                    <label className={styles.label}>접근 허용 프로젝트</label>
+                    <div className={styles.projectCheckList}>
+                      {projectOptions.map((p) => (
+                        <label key={p.id} className={styles.projectCheckItem} data-checked={keyProjectIds.includes(p.id) ? 'true' : 'false'}>
+                          <input type="checkbox" checked={keyProjectIds.includes(p.id)} onChange={() => toggleKeyProject(p.id)} />
+                          {p.name}
+                        </label>
+                      ))}
+                      {projectOptions.length === 0 && <span className={styles.cardHint}>선택 가능한 프로젝트가 없습니다.</span>}
+                    </div>
+                  </div>
+                )}
+
+                <div className={styles.cardActions}>
+                  <button onClick={handleIssueKey} disabled={issuingKey} className={styles.btnSave}>{issuingKey ? '발급 중...' : '발급'}</button>
+                  <button onClick={() => setKeyFormOpen(false)} className={styles.btnTest}>취소</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      <Modal open={!!issuedKey} onClose={() => setIssuedKey(null)} title="서비스 API 키가 발급되었습니다" maxWidth={520}>
+        <p className={styles.cardHint}>이 평문 키는 지금만 확인할 수 있습니다. 안전한 곳에 복사해 보관한 뒤 창을 닫아주세요.</p>
+        <div className={styles.issuedKeyBox}>
+          <code>{issuedKey}</code>
+          <button
+            type="button"
+            className={styles.btnTest}
+            onClick={() => { if (issuedKey) navigator.clipboard.writeText(issuedKey); }}
+          >
+            복사
+          </button>
+        </div>
+        <div className={styles.cardActions}>
+          <button onClick={() => setIssuedKey(null)} className={styles.btnSave}>확인했습니다</button>
+        </div>
+      </Modal>
     </div>
   );
 }

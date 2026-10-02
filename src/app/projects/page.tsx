@@ -456,6 +456,9 @@ export default function ProjectsPage() {
                           <button onClick={e => { e.stopPropagation(); router.push(`/projects/${p.id}/statuses`); }} style={{ padding: '3px 10px', fontSize: 11, fontWeight: 600, backgroundColor: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 5, cursor: 'pointer' }}>
                             상태 관리
                           </button>
+                          <button onClick={e => { e.stopPropagation(); router.push(`/tasks/create?projectId=${p.id}`); }} style={{ padding: '3px 10px', fontSize: 11, fontWeight: 600, backgroundColor: 'var(--accent)', color: '#fff', border: '1px solid var(--accent)', borderRadius: 5, cursor: 'pointer' }}>
+                            + 업무등록
+                          </button>
                           {p.status === 'ACTIVE' ? (
                             <button onClick={e => { e.stopPropagation(); handleClose(p.id); }} style={{ padding: '3px 10px', fontSize: 11, fontWeight: 600, backgroundColor: 'transparent', color: 'var(--danger)', border: '1px solid #FECACA', borderRadius: 5, cursor: 'pointer' }}>
                               종료
