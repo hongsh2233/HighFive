@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 import { ensureProjectsSchema } from '@/lib/db-init';
+import { requireReadAuth } from '@/lib/service-auth';
 
 const projectInclude = {
   creator: { select: { id: true, name: true } },
@@ -11,24 +12,33 @@ const projectInclude = {
 } as const;
 
 // GET /api/projects
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await ensureProjectsSchema();
-    const { session, error, organizationId } = await requireAuth();
-    if (error) return error;
+    const auth = await requireReadAuth(req);
+    if (auth.error) return auth.error;
 
-    const userId = parseInt((session!.user as any).id || '0');
-    const role = (session!.user as any).role;
-
-    const baseWhere = role === 'ADMIN'
-      ? { organizationId }
-      : {
-          organizationId,
-          OR: [
-            { members: { some: { userId } } },
-            { tasks: { some: { OR: [{ workerId: userId }, { registrantId: userId }] } } },
-          ],
-        };
+    const organizationId = auth.organizationId;
+    let baseWhere: any;
+    if (auth.isService) {
+      // 서비스 자격 증명: allowedProjectIds가 null이면 조직 전체, 아니면 명시적으로 선택한 프로젝트만
+      baseWhere = auth.allowedProjectIds === null
+        ? { organizationId }
+        : { organizationId, id: { in: auth.allowedProjectIds.length ? auth.allowedProjectIds : [-1] } };
+    } else {
+      const session = auth.session;
+      const userId = parseInt((session!.user as any).id || '0');
+      const role = (session!.user as any).role;
+      baseWhere = role === 'ADMIN'
+        ? { organizationId }
+        : {
+            organizationId,
+            OR: [
+              { members: { some: { userId } } },
+              { tasks: { some: { OR: [{ workerId: userId }, { registrantId: userId }] } } },
+            ],
+          };
+    }
 
     const projects = await prisma.project.findMany({
       where: baseWhere,

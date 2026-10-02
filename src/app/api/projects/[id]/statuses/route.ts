@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireAuth, requireRole, successResponse, errorResponse } from '@/lib/utils';
+import { requireRole, successResponse, errorResponse } from '@/lib/utils';
 import { DEFAULT_STATUSES } from '@/lib/task-status';
+import { requireReadAuth, serviceProjectAllowed } from '@/lib/service-auth';
 
 const MAX_STATUSES = 15;
 
@@ -22,15 +23,19 @@ function slugify(label: string, index: number, used: Set<string>) {
 }
 
 // GET /api/projects/[id]/statuses - 프로젝트 상태 단계 조회 (없으면 기본 5단계)
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { organizationId, error } = await requireAuth();
-    if (error) return error;
+    const auth = await requireReadAuth(req);
+    if (auth.error) return auth.error;
 
     const { id } = await params;
     const projectId = parseInt(id);
 
-    const project = await prisma.project.findFirst({ where: { id: projectId, organizationId } });
+    if (auth.isService && !serviceProjectAllowed(auth.credential, projectId)) {
+      return errorResponse('프로젝트를 찾을 수 없습니다.', 404);
+    }
+
+    const project = await prisma.project.findFirst({ where: { id: projectId, organizationId: auth.organizationId } });
     if (!project) return errorResponse('프로젝트를 찾을 수 없습니다.', 404);
 
     const rows = await prisma.projectStatus.findMany({

@@ -51,8 +51,78 @@ model Organization {
   approvalLineSteps   ApprovalLineStep[]
   recurringTaskRules  RecurringTaskRule[]
   clients             Client[]
+  serviceCredentials  ServiceCredential[]
 
   @@map("organizations")
+}
+
+// ──────────────────────────────────────────────
+// 외부 서비스 연동(JIA 등)용 서버 간 인증 자격 증명
+// ──────────────────────────────────────────────
+// 조직별로 발급하는 읽기 전용(+필요 시 댓글 작성) API 키. 일반 사용자 역할(ADMIN/LEADER/
+// WORKER/PARTNER)과는 완전히 분리된 별도 인증 축으로, 세션/비밀번호 로그인을 하지 않고
+// Authorization: Bearer <평문키> 헤더로만 인증한다. 평문 키는 발급 시 1회만 노출되고
+// DB에는 해시만 저장한다.
+model ServiceCredential {
+  id             Int       @id @default(autoincrement())
+  organizationId Int
+  name           String    // 발급 목적 식별용 이름(예: "JIA 연동")
+  keyPrefix      String    // 목록 화면 표시용 평문 키 앞부분(예: "sk_live_ab12")
+  keyHash        String    @unique // sha256(평문 키)
+  // 서비스 자격 증명이 가질 수 있는 권한은 READ(조회), COMMENT_CREATE(댓글 작성) 2종류뿐이며
+  // 쉼표로 구분해 저장한다. 업무 생성/수정/상태변경/삭제 권한은 이 모델로 절대 부여하지 않음
+  // (해당 API들은 서비스 인증 자체를 받지 않도록 구현되어 있어, 권한 목록과 무관하게 항상 거부됨).
+  permissions    String    @default("READ")
+  // true면 조직 전체 프로젝트에 대한 READ를 허용(ADMIN이 명시적으로 선택해야만 true 가능).
+  // false(기본값)면 아래 projects 관계로 선택한 프로젝트에만 접근 가능.
+  allowOrgWide   Boolean   @default(false)
+  createdById    Int
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  lastUsedAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization Organization              @relation(fields: [organizationId], references: [id])
+  createdBy    User                      @relation("serviceCredentialCreator", fields: [createdById], references: [id])
+  projects     ServiceCredentialProject[]
+  requestLogs  ServiceRequestLog[]
+  comments     TaskComment[]
+
+  @@index([organizationId])
+  @@map("service_credentials")
+}
+
+// ServiceCredential ↔ Project 다대다(명시적 프로젝트 범위 선택을 위한 조인 테이블)
+model ServiceCredentialProject {
+  serviceCredentialId Int
+  projectId           Int
+  createdAt           DateTime @default(now())
+
+  serviceCredential ServiceCredential @relation(fields: [serviceCredentialId], references: [id], onDelete: Cascade)
+  project           Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([serviceCredentialId, projectId])
+  @@map("service_credential_projects")
+}
+
+// 서비스 자격 증명으로 들어온 쓰기성 요청(현재는 댓글 작성뿐)의 실행 이력 + 재시도 중복 방지.
+// externalRequestId는 JIA가 보내는 멱등성 키로, 같은 (credential, requestId) 재요청 시
+// 새 댓글을 만들지 않고 기존 결과를 그대로 반환한다.
+model ServiceRequestLog {
+  id                  Int       @id @default(autoincrement())
+  serviceCredentialId Int
+  externalRequestId   String
+  action              String    // 예: COMMENT_CREATE
+  taskId              Int?
+  resultStatus        String    // SUCCESS | DUPLICATE | REJECTED
+  resultCommentId     Int?
+  createdAt           DateTime  @default(now())
+
+  serviceCredential ServiceCredential @relation(fields: [serviceCredentialId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceCredentialId, externalRequestId])
+  @@index([taskId])
+  @@map("service_request_logs")
 }
 
 model InviteToken {
@@ -133,6 +203,7 @@ model User {
   recurringTaskRulesCreated  RecurringTaskRule[] @relation("recurringTaskCreator")
   recurringTaskRulesAssigned RecurringTaskRule[] @relation("recurringTaskWorker")
   cardStatementPeriodsSubmitted CardStatementPeriod[]
+  createdServiceCredentials ServiceCredential[] @relation("serviceCredentialCreator")
 
   @@index([organizationId])
   @@map("users")
@@ -364,6 +435,7 @@ model Project {
   updatedAt    DateTime        @updatedAt
   recurringTaskRules RecurringTaskRule[]
   milestones   ProjectMilestone[]
+  serviceCredentials ServiceCredentialProject[]
 
   @@index([organizationId])
   @@map("projects")
@@ -775,18 +847,25 @@ model StickyNote {
 model TaskComment {
   id        Int      @id @default(autoincrement())
   taskId    Int
-  authorId  Int
+  authorId  Int?     // 서비스 자격 증명으로 작성된 댓글(source=JIA)은 내부 사용자가 없어 null
   parentId  Int?
   content   String   @db.Text
   visibility String  @default("INTERNAL") // INTERNAL(내부 전용) | PARTNER_VISIBLE(파트너 공개)
+  // 댓글 작성 주체 구분. USER(내부 사용자) | JIA(외부 서비스 자격 증명을 통한 작성)
+  source              String  @default("USER")
+  externalAuthorLabel String? // source=JIA일 때 화면에 표시할 작성자 라벨(예: "JIA 연동")
+  serviceCredentialId Int?    // source=JIA일 때 사용된 자격 증명
+  externalRequestId   String? // JIA가 보낸 멱등성 키(재시도 시 중복 댓글 방지용, serviceCredentialId와 조합해 유니크)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   task    Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  author  User          @relation(fields: [authorId], references: [id])
+  author  User?         @relation(fields: [authorId], references: [id])
+  serviceCredential ServiceCredential? @relation(fields: [serviceCredentialId], references: [id])
   parent  TaskComment?  @relation("replies", fields: [parentId], references: [id], onDelete: Cascade)
   replies TaskComment[] @relation("replies")
 
+  @@unique([serviceCredentialId, externalRequestId])
   @@index([taskId])
   @@index([parentId])
   @@map("task_comments")

@@ -1362,3 +1362,18 @@ npx prisma migrate resolve --applied 20260907000000_init
 **영향**: 이전에는 WORKER/LEADER가 목록에 보이지 않는 타 업무도 URL(ID)만 알면 상세 열람·상태변경·댓글 작성이 가능했음. 이제는 목록과 동일하게 차단되며, 알림 링크 등으로 범위 밖 업무에 진입하던 흐름이 있었다면 404로 막히므로 실사용 중 재확인 필요.
 
 `npx tsc --noEmit` 오류 0개, `npx next build` 실행 후 결과 확인.
+
+## 2026-10-02 (3차) — H5-02: 서비스 간 인증(JIA 1차 연동: 읽기 + 댓글 작성)
+
+PM 승인에 따라 H5-02를 "해시 저장 API 키" 방식으로 구현. 1차 연동 범위는 "프로젝트·업무 조회 + 댓글 작성"만 — 업무 생성/수정/상태변경/삭제와 webhook은 이번 범위에서 제외.
+
+- **스키마**: `ServiceCredential`(조직별 API 키, `keyHash`만 저장, `permissions`="READ,COMMENT_CREATE" 중 조합, `allowOrgWide` 기본 false), `ServiceCredentialProject`(자격증명↔프로젝트 다대다, 명시적 범위 선택), `ServiceRequestLog`(쓰기 요청 실행 이력 + `externalRequestId` 멱등성 유니크 제약). `TaskComment`에 `authorId` nullable 전환 + `source`/`externalAuthorLabel`/`serviceCredentialId`/`externalRequestId` 추가(JIA 작성 댓글 표시 + 멱등 유니크 제약). 마이그레이션: `prisma/migrations/20261002000000_add_service_credentials/`.
+- **`src/lib/service-auth.ts`** 신설: 키 발급/해시(`sha256`), `requireServiceAuth()`(만료/회수 검사), `requireReadAuth()`(Authorization 헤더 있으면 서비스 인증, 없으면 기존 세션 인증으로 자동 분기하는 조회 API 공용 진입점), `serviceProjectAllowed`/`serviceAllowedProjectIds`(프로젝트 범위 판정).
+- **키 관리 API**(ADMIN 전용): `GET/POST /api/settings/service-keys`(발급 — 평문 키는 응답에 1회만 노출), `PATCH /api/settings/service-keys/[id]`(즉시 회수 `{revoke:true}`, 또는 권한/프로젝트범위/만료일 변경).
+- **조회 API에 서비스 인증 추가**(세션 경로는 그대로, 분기만 추가): `GET /api/tasks`, `GET /api/tasks/[id]`, `GET /api/projects`, `GET /api/projects/[id]`, `GET /api/projects/[id]/statuses`. 서비스 키는 `allowOrgWide=false`면 명시적으로 선택된 프로젝트로만, true면 조직 전체로 결과가 제한됨(범위 밖 요청은 결과 0건 또는 404, 거부 사유 노출 안 함).
+- **댓글 작성에 서비스 인증 추가**: `POST /api/tasks/[id]/comments`에 `handleServiceComment()` 경로를 별도로 분리 추가(기존 세션 경로는 그대로 유지, 요청에 `Authorization` 헤더가 있을 때만 이 경로로 분기). `COMMENT_CREATE` 권한 필요, 본문에 `externalRequestId`(멱등성 키) 필수 — 동일 키 재시도 시 `TaskComment(serviceCredentialId, externalRequestId)` 유니크 제약으로 새 댓글 생성을 막고 기존 댓글을 그대로 반환(201→200). 작성된 댓글은 `authorId:null, source:'JIA', externalAuthorLabel:<키 이름>`으로 저장되어 상세 화면에서 내부 사용자와 구분 표시(`src/app/tasks/[id]/page.tsx`에서 `externalAuthorLabel` 우선 표시로 반영). 모든 시도(성공/중복)는 `ServiceRequestLog`에 기록.
+- **업무 생성/수정/상태변경 API는 의도적으로 그대로 둠**(여전히 세션 인증만 받음) — Authorization 헤더가 있어도 해석하지 않으므로 서비스 키로는 애초에 도달할 수 없어 쓰기 차단이 권한 체크 누락에 의존하지 않고 경로 자체에서 보장됨.
+- 인계 문서 `docs/jia-integration-handoff.md` 신설: H5-00 완료 커밋/권한 회귀 검사 결과, H5-01 ID·상태 규칙, H5-02 서비스 계정 정책(일반 사용자 역할과의 차이 표 포함) 및 검증 결과, H5-03/04 실제 요청/응답 예제·에러코드·페이지 규칙(댓글/체크리스트 엔드포인트가 공통 래퍼를 쓰지 않는 예외임을 소스 확인 후 명시).
+- **이 환경은 `DATABASE_URL`이 없어 실제 Postgres에 연결한 통합 테스트를 실행하지 못함.** `DATABASE_URL`에 더미 값을 넣어 `prisma generate`/`validate`로 스키마 유효성만 확인했고, 권한/멱등성 검증은 코드 경로 추적으로만 확인(인계 문서에 명시). 실 배포 환경에서 실제 키 발급→조회→댓글 작성→재시도 흐름을 한 번 더 확인 필요.
+
+`npx tsc --noEmit` 오류 0개, `npx next build` 성공 확인(더미 `DATABASE_URL`로 `prisma generate` 후 빌드).

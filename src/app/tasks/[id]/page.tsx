@@ -1142,10 +1142,10 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
           <ul className={styles.commentList}>
             {comments.map((c) => (
               <li key={c.id} className={styles.commentItem}>
-                <div className={styles.commentAvatar}>{(c.author?.name || '?')[0]}</div>
+                <div className={styles.commentAvatar}>{(c.externalAuthorLabel || c.author?.name || '?')[0]}</div>
                 <div className={styles.commentBody}>
                   <div className={styles.commentMeta}>
-                    <span className={styles.commentAuthor}>{c.author?.name}</span>
+                    <span className={styles.commentAuthor}>{c.externalAuthorLabel || c.author?.name}</span>
                     <span className={styles.commentDate}>{new Date(c.createdAt).toLocaleString('ko-KR')}</span>
                     <button
                       className={styles.commentReplyBtn}
@@ -1194,10 +1194,10 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                     <ul className={styles.replyList}>
                       {c.replies.map((r: any) => (
                         <li key={r.id} className={styles.replyItem}>
-                          <div className={styles.replyAvatar}>{(r.author?.name || '?')[0]}</div>
+                          <div className={styles.replyAvatar}>{(r.externalAuthorLabel || r.author?.name || '?')[0]}</div>
                           <div className={styles.commentBody}>
                             <div className={styles.commentMeta}>
-                              <span className={styles.commentAuthor}>{r.author?.name}</span>
+                              <span className={styles.commentAuthor}>{r.externalAuthorLabel || r.author?.name}</span>
                               <span className={styles.commentDate}>{new Date(r.createdAt).toLocaleString('ko-KR')}</span>
                               <button
                                 className={styles.commentReplyBtn}

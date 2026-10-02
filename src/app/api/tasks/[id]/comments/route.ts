@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessTaskByRole } from '@/lib/utils';
 import { prisma } from '@/lib/db';
 import { createUserNotification } from '@/lib/notify';
+import { requireServiceAuth, serviceHasPermission, serviceProjectAllowed } from '@/lib/service-auth';
 
 const AUTHOR_SELECT = { select: { id: true, name: true } };
 
@@ -56,10 +57,119 @@ export async function GET(
   return NextResponse.json({ data: comments });
 }
 
+// 서비스 자격 증명(JIA 등)을 통한 댓글 작성. 일반 세션 사용자 작성과 경로를 완전히 분리해
+// 기존 로직에 영향을 주지 않는다. externalRequestId(JIA가 보내는 멱등성 키)로 재시도 시
+// 중복 댓글 생성을 막고, 작성자는 null + source='JIA' + externalAuthorLabel로 표시한다.
+async function handleServiceComment(req: NextRequest, taskId: number) {
+  const auth = await requireServiceAuth(req);
+  if (auth.error) return auth.error;
+  const { credential } = auth;
+
+  if (!serviceHasPermission(credential, 'COMMENT_CREATE')) {
+    return NextResponse.json({ message: '댓글 작성 권한이 없는 키입니다.' }, { status: 403 });
+  }
+
+  const body = await req.json();
+  const content = (body.content || '').trim();
+  if (!content) return NextResponse.json({ message: '내용을 입력해주세요.' }, { status: 400 });
+
+  const externalRequestId = (body.externalRequestId || '').trim();
+  if (!externalRequestId) {
+    return NextResponse.json({ message: 'externalRequestId(멱등성 키)가 필요합니다.' }, { status: 400 });
+  }
+
+  const task = await prisma.task.findFirst({ where: { id: taskId, organizationId: auth.organizationId } });
+  if (!task) return NextResponse.json({ message: '업무를 찾을 수 없습니다.' }, { status: 404 });
+
+  if (!serviceProjectAllowed(credential, task.projectId)) {
+    return NextResponse.json({ message: '업무를 찾을 수 없습니다.' }, { status: 404 });
+  }
+
+  const parentId: number | null = body.parentId ? parseInt(body.parentId) : null;
+  if (parentId) {
+    const parent = await prisma.taskComment.findUnique({ where: { id: parentId } });
+    if (!parent || parent.taskId !== taskId) {
+      return NextResponse.json({ message: '잘못된 부모 댓글입니다.' }, { status: 400 });
+    }
+  }
+
+  let comment;
+  let duplicate = false;
+  try {
+    comment = await prisma.taskComment.create({
+      data: {
+        taskId,
+        authorId: null,
+        content,
+        parentId,
+        visibility: 'INTERNAL',
+        source: 'JIA',
+        externalAuthorLabel: credential.name,
+        serviceCredentialId: credential.id,
+        externalRequestId,
+      },
+      include: { author: AUTHOR_SELECT },
+    });
+  } catch (err: any) {
+    // 동일 (credential, externalRequestId) 재시도 — 새 댓글을 만들지 않고 기존 결과를 반환
+    if (err?.code === 'P2002') {
+      duplicate = true;
+      comment = await prisma.taskComment.findFirst({
+        where: { serviceCredentialId: credential.id, externalRequestId },
+        include: { author: AUTHOR_SELECT },
+      });
+      if (!comment) {
+        return NextResponse.json({ message: '중복 요청 처리 중 오류가 발생했습니다.' }, { status: 500 });
+      }
+    } else {
+      throw err;
+    }
+  }
+
+  await prisma.serviceRequestLog.upsert({
+    where: { serviceCredentialId_externalRequestId: { serviceCredentialId: credential.id, externalRequestId } },
+    update: {},
+    create: {
+      serviceCredentialId: credential.id,
+      externalRequestId,
+      action: 'COMMENT_CREATE',
+      taskId,
+      resultStatus: duplicate ? 'DUPLICATE' : 'SUCCESS',
+      resultCommentId: comment.id,
+    },
+  }).catch(() => {});
+
+  if (!duplicate) {
+    const generalRecipients = new Set<number>([task.workerId, task.registrantId].filter((v) => !!v));
+    if (generalRecipients.size > 0) {
+      Promise.all(
+        Array.from(generalRecipients).map((uid) =>
+          createUserNotification(
+            uid,
+            'NEW_COMMENT',
+            `'${task.title}' 업무에 ${credential.name}에서 댓글을 남겼습니다.`,
+            taskId,
+            task.organizationId ?? undefined
+          )
+        )
+      ).catch(() => {});
+    }
+  }
+
+  return NextResponse.json({ data: comment }, { status: duplicate ? 200 : 201 });
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: rawId } = await params;
+  const rawTaskId = parseInt(rawId);
+  if (req.headers.get('authorization')) {
+    if (isNaN(rawTaskId)) return NextResponse.json({ message: '잘못된 요청' }, { status: 400 });
+    return handleServiceComment(req, rawTaskId);
+  }
+
   const { session, organizationId, error } = await requireAuth();
   if (error) return error;
 

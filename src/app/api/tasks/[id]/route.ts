@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse, parseRmsNo, canAccessTaskByRole } from '@/lib/utils';
+import { requireReadAuth, serviceProjectAllowed } from '@/lib/service-auth';
 import { sanitize } from '@/lib/sanitize';
 import { addHistory } from '@/lib/task-history';
 import { notifyWorkerChange } from '@/lib/notify';
@@ -14,8 +15,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error, session, organizationId } = await requireAuth();
-    if (error) return error;
+    const auth = await requireReadAuth(_req);
+    if (auth.error) return auth.error;
 
     const { id } = await params;
     const taskId = parseInt(id);
@@ -23,8 +24,9 @@ export async function GET(
       return errorResponse('유효하지 않은 업무 ID입니다.', 400, 'VALID_400');
     }
 
-    const role = (session!.user as any).role;
-    const userId = parseInt((session!.user as any).id || '0');
+    const organizationId = auth.organizationId;
+    const role = auth.isService ? null : (auth.session!.user as any).role;
+    const userId = auth.isService ? 0 : parseInt((auth.session!.user as any).id || '0');
 
     // PARTNER: 초대된 프로젝트 소속 + (본인 담당 또는 partnerVisible=true)인 업무만 조회 가능
     let partnerScope: any = {};
@@ -54,9 +56,13 @@ export async function GET(
       return errorResponse('업무를 찾을 수 없습니다.', 404, 'TASK_404');
     }
 
-    // 목록 조회(GET /api/tasks)와 동일한 역할별 범위를 상세 조회에도 적용
-    // (WORKER=본인 담당, LEADER=소속 프로젝트). PARTNER는 위 partnerScope로 이미 처리됨.
-    if (role !== 'PARTNER' && !(await canAccessTaskByRole(task, userId, role))) {
+    if (auth.isService) {
+      if (!serviceProjectAllowed(auth.credential, task.projectId)) {
+        return errorResponse('업무를 찾을 수 없습니다.', 404, 'TASK_404');
+      }
+    } else if (role !== 'PARTNER' && !(await canAccessTaskByRole(task, userId, role))) {
+      // 목록 조회(GET /api/tasks)와 동일한 역할별 범위를 상세 조회에도 적용
+      // (WORKER=본인 담당, LEADER=소속 프로젝트). PARTNER는 위 partnerScope로 이미 처리됨.
       return errorResponse('업무를 찾을 수 없습니다.', 404, 'TASK_404');
     }
 

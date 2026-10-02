@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       .map((h) => `- [${h.createdAt.toISOString().slice(0, 10)}] ${h.user.name}: ${h.action}${h.detail ? ` — ${h.detail}` : ''}`)
       .join('\n');
     const commentLines = comments
-      .map((c) => `- [${c.createdAt.toISOString().slice(0, 10)}] ${c.author.name}: ${c.content}`)
+      .map((c) => `- [${c.createdAt.toISOString().slice(0, 10)}] ${c.author?.name || 'JIA 연동'}: ${c.content}`)
       .join('\n');
 
     const prompt = `아래는 업무관리 도구의 업무 하나에 대한 정보다. 현재 상태와 진행 흐름을 파악할 수 있도록 한국어로 3~5문장의 간결한 현황 요약을 작성하라. 특이사항(지연, 반복된 이슈, 의견 충돌 등)이 있으면 짚어줘.

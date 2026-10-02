@@ -3,17 +3,24 @@ import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 import { ensureProjectsSchema } from '@/lib/db-init';
 import { createUserNotification } from '@/lib/notify';
+import { requireReadAuth, serviceProjectAllowed } from '@/lib/service-auth';
 
 // GET /api/projects/[id]
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await ensureProjectsSchema();
-    const { organizationId, error } = await requireAuth();
-    if (error) return error;
+    const auth = await requireReadAuth(req);
+    if (auth.error) return auth.error;
 
     const { id } = await params;
+    const projectId = parseInt(id);
+
+    if (auth.isService && !serviceProjectAllowed(auth.credential, projectId)) {
+      return errorResponse('프로젝트를 찾을 수 없습니다.', 404);
+    }
+
     const project = await prisma.project.findFirst({
-      where: { id: parseInt(id), organizationId },
+      where: { id: projectId, organizationId: auth.organizationId },
       include: {
         creator: { select: { id: true, name: true } },
         members: { include: { user: { select: { id: true, name: true, email: true, role: true } } } },

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse, parseRmsNo } from '@/lib/utils';
+import { requireReadAuth } from '@/lib/service-auth';
 import { sanitize } from '@/lib/sanitize';
 import { addHistory } from '@/lib/task-history';
 import { getProjectStatuses } from '@/lib/task-status';
@@ -37,8 +38,8 @@ function parseAttachments(raw: unknown): { filename: string; mimeType: string; b
 // GET /api/tasks
 export async function GET(req: NextRequest) {
   try {
-    const { session, error } = await requireAuth();
-    if (error) return error;
+    const auth = await requireReadAuth(req);
+    if (auth.error) return auth.error;
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
@@ -47,41 +48,52 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
 
-    const userId = parseInt((session!.user as any).id || '0');
-    const role = (session!.user as any).role;
-    const organizationId = (session!.user as any).organizationId as number | undefined;
-
+    const organizationId = auth.organizationId;
     const where: any = { organizationId };
     if (status) where.status = status;
     if (workerId) where.workerId = parseInt(workerId);
     if (projectId) where.projectId = parseInt(projectId);
 
-    // LEADER: 소속 프로젝트 업무만 조회 (projectId를 직접 지정해도 소속 프로젝트 범위를 벗어날 수 없음)
-    if (role === 'LEADER') {
-      const myProjectIds = await prisma.projectMember.findMany({
-        where: { userId },
-        select: { projectId: true },
-      });
-      const ids = myProjectIds.map((m) => m.projectId);
-      const allowed = projectId ? (ids.includes(parseInt(projectId)) ? [parseInt(projectId)] : []) : ids;
-      where.projectId = { in: allowed.length ? allowed : [-1] };
-    }
+    if (auth.isService) {
+      // 서비스 자격 증명(JIA 등): allowedProjectIds가 null이면 조직 전체 허용(ADMIN이 명시적으로 선택한 경우),
+      // 배열이면 그 프로젝트로만 제한. 요청의 projectId가 범위 밖이면 결과 없음(-1).
+      if (auth.allowedProjectIds !== null) {
+        const ids = auth.allowedProjectIds;
+        const allowed = projectId ? (ids.includes(parseInt(projectId)) ? [parseInt(projectId)] : []) : ids;
+        where.projectId = { in: allowed.length ? allowed : [-1] };
+      }
+    } else {
+      const session = auth.session;
+      const userId = parseInt((session!.user as any).id || '0');
+      const role = (session!.user as any).role;
 
-    // WORKER: 자신에게 배정된 업무만
-    if (role === 'WORKER') {
-      where.workerId = userId;
-    }
+      // LEADER: 소속 프로젝트 업무만 조회 (projectId를 직접 지정해도 소속 프로젝트 범위를 벗어날 수 없음)
+      if (role === 'LEADER') {
+        const myProjectIds = await prisma.projectMember.findMany({
+          where: { userId },
+          select: { projectId: true },
+        });
+        const ids = myProjectIds.map((m) => m.projectId);
+        const allowed = projectId ? (ids.includes(parseInt(projectId)) ? [parseInt(projectId)] : []) : ids;
+        where.projectId = { in: allowed.length ? allowed : [-1] };
+      }
 
-    // PARTNER: 초대된(소속) 프로젝트 범위 내에서, 본인 담당 업무 또는 partnerVisible=true인 업무만
-    if (role === 'PARTNER') {
-      const myProjectIds = await prisma.projectMember.findMany({
-        where: { userId },
-        select: { projectId: true },
-      });
-      const ids = myProjectIds.map((m) => m.projectId);
-      const allowed = projectId ? (ids.includes(parseInt(projectId)) ? [parseInt(projectId)] : []) : ids;
-      where.projectId = { in: allowed.length ? allowed : [-1] };
-      where.OR = [{ workerId: userId }, { partnerVisible: true }];
+      // WORKER: 자신에게 배정된 업무만
+      if (role === 'WORKER') {
+        where.workerId = userId;
+      }
+
+      // PARTNER: 초대된(소속) 프로젝트 범위 내에서, 본인 담당 업무 또는 partnerVisible=true인 업무만
+      if (role === 'PARTNER') {
+        const myProjectIds = await prisma.projectMember.findMany({
+          where: { userId },
+          select: { projectId: true },
+        });
+        const ids = myProjectIds.map((m) => m.projectId);
+        const allowed = projectId ? (ids.includes(parseInt(projectId)) ? [parseInt(projectId)] : []) : ids;
+        where.projectId = { in: allowed.length ? allowed : [-1] };
+        where.OR = [{ workerId: userId }, { partnerVisible: true }];
+      }
     }
 
     const skip = (page - 1) * limit;
