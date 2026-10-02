@@ -1342,6 +1342,23 @@ npx prisma migrate resolve --applied 20260907000000_init
 
 수정 전부 "존재하지 않는 조직 격리 검사를 추가"하는 것으로 한정했고, 기존 역할별 접근 로직(ADMIN/LEADER 전체 열람, 프로젝트 멤버십 체크, PARTNER 가시성 필터, WEEKLY_REPORT 캐퍼빌리티 등)은 그대로 유지.
 
-**별도로 발견했으나 수정하지 않은 사항(정책 결정 필요)**: 업무 **목록**(`GET /api/tasks`)은 WORKER를 본인 담당 업무로, LEADER를 소속 프로젝트로 제한하는데, 업무 **상세/상태변경/댓글/히스토리/체크리스트/첨부파일/의존성** 쪽은 조직 범위만 확인하고 WORKER/LEADER의 업무별 접근은 제한하지 않음(같은 조직이면 타인 업무도 열람·상태변경 가능). 목록 숨김과 상세 열람 가능이 불일치하는데, 협업상 의도된 설계일 수도 있어 임의로 변경하지 않음 — 별도 확인 필요.
-
 `npx tsc --noEmit` 오류 0개, `npx next build` 성공 확인.
+
+## 2026-10-02 (2차) — H5-00 후속: 업무 목록 vs 상세/상태변경/댓글 권한 범위 불일치 수정
+
+위에서 "정책 결정 필요"로 보류했던 사항(목록은 WORKER=본인담당/LEADER=소속프로젝트로 제한하는데 상세 쪽은 조직 범위만 확인)을 사용자가 의도된 동작이 아니라 버그로 확인, 목록과 동일한 기준을 상세 쪽에도 적용하도록 수정.
+
+- `src/lib/utils.ts`에 공용 헬퍼 `canAccessTaskByRole(task, userId, role)` 추가: ADMIN=전체, WORKER=본인 담당(`workerId===userId`)만, LEADER=소속 프로젝트(`ProjectMember`) 멤버인 경우만, PARTNER=소속 프로젝트 내 본인담당 또는 `partnerVisible`만. `GET /api/tasks` 목록 쿼리의 기존 role 분기 로직과 동일한 기준으로 작성.
+- 아래 업무 하위 리소스 엔드포인트에 조직 검사(organizationId) 다음 단계로 위 헬퍼 호출을 추가(불허 시 404, 존재 여부 노출 방지):
+  - `GET /api/tasks/[id]` (상세) — 기존 PARTNER용 DB레벨 `partnerScope` 쿼리는 유지하고, WORKER/LEADER에 대해서만 조회 후 헬퍼로 재검사.
+  - `PATCH /api/tasks/[id]/status` (상태변경)
+  - `GET/POST /api/tasks/[id]/comments` (댓글 조회/작성)
+  - `GET /api/tasks/[id]/history` (히스토리)
+  - `GET /api/tasks/[id]/timelogs` (타임로그)
+  - `GET /api/tasks/[id]/dependencies` (선행 업무 조회)
+  - `GET /api/tasks/[id]/checklist` (체크리스트 조회)
+- 체크리스트/첨부파일의 기존 **쓰기(POST)** 권한 로직(`['ADMIN','LEADER'].includes(role) || workerId===userId || registrantId===userId` — LEADER는 조직 내 전체, WORKER는 담당/등록자 한정)은 이번 범위에 포함하지 않고 그대로 유지. 이 둘은 이미 "조직 전체 열람 없음"을 전제하지 않은 별도 룰로 동작 중이라, 사용자가 명시적으로 지적한 상세/상태변경/댓글/히스토리와는 별개 사안으로 판단해 손대지 않음 — 필요 시 후속 확인.
+
+**영향**: 이전에는 WORKER/LEADER가 목록에 보이지 않는 타 업무도 URL(ID)만 알면 상세 열람·상태변경·댓글 작성이 가능했음. 이제는 목록과 동일하게 차단되며, 알림 링크 등으로 범위 밖 업무에 진입하던 흐름이 있었다면 404로 막히므로 실사용 중 재확인 필요.
+
+`npx tsc --noEmit` 오류 0개, `npx next build` 실행 후 결과 확인.

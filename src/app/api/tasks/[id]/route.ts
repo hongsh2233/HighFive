@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireAuth, successResponse, errorResponse, parseRmsNo } from '@/lib/utils';
+import { requireAuth, successResponse, errorResponse, parseRmsNo, canAccessTaskByRole } from '@/lib/utils';
 import { sanitize } from '@/lib/sanitize';
 import { addHistory } from '@/lib/task-history';
 import { notifyWorkerChange } from '@/lib/notify';
@@ -51,6 +51,12 @@ export async function GET(
     });
 
     if (!task) {
+      return errorResponse('업무를 찾을 수 없습니다.', 404, 'TASK_404');
+    }
+
+    // 목록 조회(GET /api/tasks)와 동일한 역할별 범위를 상세 조회에도 적용
+    // (WORKER=본인 담당, LEADER=소속 프로젝트). PARTNER는 위 partnerScope로 이미 처리됨.
+    if (role !== 'PARTNER' && !(await canAccessTaskByRole(task, userId, role))) {
       return errorResponse('업무를 찾을 수 없습니다.', 404, 'TASK_404');
     }
 

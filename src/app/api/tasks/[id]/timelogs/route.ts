@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
+import { requireAuth, successResponse, errorResponse, canAccessTaskByRole } from '@/lib/utils';
 
 
 // GET /api/tasks/[id]/timelogs - 타임로그 목록 조회
@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { organizationId, error } = await requireAuth();
+    const { session, organizationId, error } = await requireAuth();
     if (error) return error;
 
     const { id } = await params;
@@ -24,6 +24,12 @@ export async function GET(
     });
 
     if (!task) {
+      return errorResponse('업무를 찾을 수 없습니다.', 404, 'TASK_404');
+    }
+
+    const role = (session!.user as any).role;
+    const userId = parseInt((session!.user as any).id || '0');
+    if (!(await canAccessTaskByRole(task, userId, role))) {
       return errorResponse('업무를 찾을 수 없습니다.', 404, 'TASK_404');
     }
 

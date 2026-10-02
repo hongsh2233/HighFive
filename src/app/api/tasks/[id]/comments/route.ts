@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/utils';
+import { requireAuth, canAccessTaskByRole } from '@/lib/utils';
 import { prisma } from '@/lib/db';
 import { createUserNotification } from '@/lib/notify';
 
@@ -31,6 +31,11 @@ export async function GET(
   if (!task) return NextResponse.json({ message: '업무를 찾을 수 없습니다.' }, { status: 404 });
 
   const role = (session!.user as any).role;
+  const viewerId = parseInt((session!.user as any).id || '0');
+  if (!(await canAccessTaskByRole(task, viewerId, role))) {
+    return NextResponse.json({ message: '업무를 찾을 수 없습니다.' }, { status: 404 });
+  }
+
   // PARTNER는 "파트너 공개"로 표시된 댓글/답글만 볼 수 있음
   const visibilityFilter = role === 'PARTNER' ? { visibility: 'PARTNER_VISIBLE' } : {};
 
@@ -74,6 +79,11 @@ export async function POST(
 
   const task = await prisma.task.findFirst({ where: { id: taskId, organizationId } });
   if (!task) return NextResponse.json({ message: '업무를 찾을 수 없습니다.' }, { status: 404 });
+
+  const authorScopeId = parseInt((session!.user as any).id || '0');
+  if (!(await canAccessTaskByRole(task, authorScopeId, role))) {
+    return NextResponse.json({ message: '업무를 찾을 수 없습니다.' }, { status: 404 });
+  }
 
   if (parentId) {
     const parent = await prisma.taskComment.findUnique({ where: { id: parentId } });

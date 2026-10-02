@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
+import { requireAuth, successResponse, errorResponse, canAccessTaskByRole } from '@/lib/utils';
 import { notifyStatusChange } from '@/lib/webhook';
 import { notifyStatusChanged } from '@/lib/notify';
 import { addHistory } from '@/lib/task-history';
@@ -33,6 +33,12 @@ export async function PATCH(
     });
 
     if (!task) {
+      return errorResponse('업무를 찾을 수 없습니다.', 404, 'TASK_404');
+    }
+
+    const role = (session!.user as any).role;
+    const requesterId = parseInt((session!.user as any).id || '0');
+    if (!(await canAccessTaskByRole(task, requesterId, role))) {
       return errorResponse('업무를 찾을 수 없습니다.', 404, 'TASK_404');
     }
 

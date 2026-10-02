@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/utils';
+import { requireAuth, canAccessTaskByRole } from '@/lib/utils';
 import { prisma } from '@/lib/db';
 
 async function canManageChecklist(taskId: number, organizationId: number | undefined, userId: number, role: string) {
@@ -13,7 +13,7 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error, organizationId } = await requireAuth();
+  const { session, error, organizationId } = await requireAuth();
   if (error) return error;
 
   const { id } = await params;
@@ -22,6 +22,12 @@ export async function GET(
 
   const task = await prisma.task.findFirst({ where: { id: taskId, organizationId } });
   if (!task) return NextResponse.json({ message: '업무를 찾을 수 없습니다.' }, { status: 404 });
+
+  const role = (session!.user as any).role;
+  const userId = parseInt((session!.user as any).id || '0');
+  if (!(await canAccessTaskByRole(task, userId, role))) {
+    return NextResponse.json({ message: '업무를 찾을 수 없습니다.' }, { status: 404 });
+  }
 
   const items = await prisma.taskChecklistItem.findMany({
     where: { taskId },

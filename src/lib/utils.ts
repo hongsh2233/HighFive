@@ -34,6 +34,29 @@ async function isSessionAccountActive(userId: number): Promise<boolean> {
   return true;
 }
 
+// 업무 목록(GET /api/tasks)과 동일한 역할별 접근 범위를 업무 상세/상태변경/댓글/히스토리/
+// 타임로그/의존성 등 업무 하위 리소스에도 동일하게 적용하기 위한 공용 검사.
+// WORKER=본인 담당 업무만, LEADER=소속 프로젝트 업무만, PARTNER=소속 프로젝트 내 본인담당
+// 또는 partnerVisible 업무만, ADMIN=전체.
+export async function canAccessTaskByRole(
+  task: { workerId: number; projectId: number | null; partnerVisible?: boolean },
+  userId: number,
+  role: string
+): Promise<boolean> {
+  if (role === 'ADMIN') return true;
+  if (role === 'WORKER') return task.workerId === userId;
+  if (role === 'LEADER' || role === 'PARTNER') {
+    if (!task.projectId) return false;
+    const membership = await prisma.projectMember.findUnique({
+      where: { projectId_userId: { projectId: task.projectId, userId } },
+    });
+    if (!membership) return false;
+    if (role === 'PARTNER') return task.workerId === userId || !!task.partnerVisible;
+    return true;
+  }
+  return false;
+}
+
 export async function requireAuth() {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
