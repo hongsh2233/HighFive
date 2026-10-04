@@ -140,7 +140,31 @@ async function handleServiceComment(req: NextRequest, taskId: number) {
   }).catch(() => {});
 
   if (!duplicate) {
-    const generalRecipients = new Set<number>([task.workerId, task.registrantId].filter((v) => !!v));
+    // JIA 댓글의 @멘션도 내부 사용자 댓글처럼 알림을 보낸다(같은 조직의 활성 사용자만). 답글이면 원댓글 작성자에게도 알린다.
+    const mentionCandidates = parseMentionIds(content);
+    const parentAuthorId = parentId
+      ? (await prisma.taskComment.findUnique({ where: { id: parentId }, select: { authorId: true } }))?.authorId ?? null
+      : null;
+    const notifyIds = Array.from(new Set([...mentionCandidates, ...(parentAuthorId ? [parentAuthorId] : [])]));
+    const mentionTargets = notifyIds.length
+      ? (await prisma.user.findMany({ where: { id: { in: notifyIds }, organizationId: auth.organizationId, isActive: true }, select: { id: true } })).map((u) => u.id)
+      : [];
+    if (mentionTargets.length > 0) {
+      Promise.all(
+        mentionTargets.map((uid) =>
+          createUserNotification(
+            uid,
+            mentionCandidates.includes(uid) ? 'COMMENT_MENTION' : 'NEW_COMMENT',
+            mentionCandidates.includes(uid)
+              ? `'${task.title}' 업무 댓글에서 ${credential.name}이(가) 회원님을 멘션했습니다.`
+              : `'${task.title}' 업무의 회원님 댓글에 ${credential.name}이(가) 답글을 남겼습니다.`,
+            taskId,
+            task.organizationId ?? undefined
+          )
+        )
+      ).catch(() => {});
+    }
+    const generalRecipients = new Set<number>([task.workerId, task.registrantId].filter((v) => !!v && !mentionTargets.includes(v)));
     if (generalRecipients.size > 0) {
       Promise.all(
         Array.from(generalRecipients).map((uid) =>

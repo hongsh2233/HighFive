@@ -1391,3 +1391,11 @@ PM 승인에 따라 H5-02를 "해시 저장 API 키" 방식으로 구현. 1차 �
 - `docs/jia-integration-handoff.md` 4-8절에 명세 추가.
 
 `npx tsc --noEmit` 오류 0개, `npx next build` 성공 확인(더미 `DATABASE_URL`). `npm run lint`는 ESLint 설정 파일이 없어 대화형 설정이 떠서 실행하지 못함.
+
+## 2026-10-04 (2차) — JIA 자율 댓글 지원
+
+- `GET /api/integrations/jia/activity` 추가: 지아가 참여한 업무(담당·등록·멘션·지아 댓글)에서 지아에게 온 댓글(멘션 또는 지아 댓글의 답글, 최근 댓글 맥락 포함)과 목표일 범위 안의 미완료 업무(담당자가 지아가 아닌 것)를 돌려준다. 서비스 키(READ) 전용, 조회 전용, 스키마 변경 없음.
+- `POST /api/tasks/[id]/comments`(서비스 키 경로): 본문의 `@[이름](id)` 멘션 대상(같은 조직 활성 사용자)과 답글의 원댓글 작성자에게 알림 발송 추가. 기존에는 담당자·등록자에게만 알림이 갔다.
+- `docs/jia-integration-handoff.md` 4-9절 추가.
+
+`npx tsc --noEmit` 오류 0개, `npx next build` 성공 확인(더미 `DATABASE_URL`).
