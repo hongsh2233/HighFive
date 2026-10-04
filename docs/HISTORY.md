@@ -1384,3 +1384,10 @@ PM 승인에 따라 H5-02를 "해시 저장 API 키" 방식으로 구현. 1차 �
 - `/projects`(프로젝트 관리) 목록의 각 프로젝트 행에 "+ 업무등록" 버튼 추가 — 클릭 시 `/tasks/create?projectId={id}`로 이동(해당 프로젝트가 미리 선택된 상태로 업무 등록 폼 진입). 기존 "상태 관리" 버튼 옆에 배치.
 
 `npx tsc --noEmit` 오류 0개, `npx next build` 성공 확인.
+
+## 2026-10-04 — JIA 연동: 지아 수신함 조회 API
+
+- `GET /api/integrations/jia/inbox` 추가(`src/app/api/integrations/jia/inbox/route.ts`): 서비스 키(READ) 전용. `userEmail`로 같은 조직의 활성 사용자(지아 계정)를 찾아, 키의 프로젝트 범위 안에서 `since`(기본 24시간, 최대 7일) 이후 지아에게 배정된 업무(`workerId`, `updatedAt` 기준)와 지아가 `@[이름](id)`로 멘션된 댓글(지아 본인 작성 제외, 300자 미리보기)을 돌려준다. 업무 생성·상태 변경 없음. 스키마 변경 없음.
+- `docs/jia-integration-handoff.md` 4-8절에 명세 추가.
+
+`npx tsc --noEmit` 오류 0개, `npx next build` 성공 확인(더미 `DATABASE_URL`). `npm run lint`는 ESLint 설정 파일이 없어 대화형 설정이 떠서 실행하지 못함.
