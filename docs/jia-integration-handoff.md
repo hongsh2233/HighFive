@@ -187,6 +187,19 @@ Authorization: Bearer sk_live_...
 
 ---
 
+### 4-8. 지아 수신함 — `GET /api/integrations/jia/inbox`
+
+지아(HighFive에 가입된 지아 계정)에게 **배정된 업무**와 지아가 **@멘션된 댓글**을 한 번에 조회한다. 지아 서버가 5분마다 호출해 새 항목을 알림으로 만든다.
+
+- 인증: `Authorization: Bearer <서비스 키>`만 허용(세션 호출은 403). `READ` 권한 필요.
+- 쿼리: `userEmail`(필수, 지아 계정 이메일 — 키와 같은 조직의 활성 사용자만), `since`(선택, ISO. 기본 최근 24시간, 최대 7일 전까지로 잘림)
+- 범위: 키의 조직 + 허용 프로젝트(`allowOrgWide`가 아니면 선택된 프로젝트만)
+- 응답 `data`: `{ user, since, serverTime, assignedTasks[], mentions[] }`
+  - `assignedTasks`: `workerId = 지아` 이고 `updatedAt >= since`인 업무(최대 50, 최신순). 재배정·수정도 포함되므로 "새 배정" 판단은 호출 쪽에서 업무 id로 한다.
+  - `mentions`: 본문에 `@[이름](지아 id)`가 있고 `createdAt >= since`인 댓글(지아 본인 작성 제외, 최대 50). 본문 대신 300자 `preview`(멘션 표기는 `@이름`으로 변환)와 `authorName`, `task{id,title,status,project}`를 준다.
+- 다음 호출의 `since`는 응답의 `serverTime`을 쓰면 된다.
+- 조회 전용이다. 업무 생성·상태 변경은 하지 않는다.
+
 ## 5. 다음 단계
 - H5-05/06/07(업무 생성·상태변경·댓글 외 쓰기 연동 확장), H5-08(webhook)은 이번 범위에서 제외 — 별도 요청 시 착수.
 - 실 배포 환경에서 위 "코드 경로 추적" 검증을 실제 HTTP 요청으로 한 번 더 확인 필요(이 개발 환경은 DB 미연결로 실행 불가).
