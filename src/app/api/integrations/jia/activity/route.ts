@@ -14,6 +14,21 @@ function plain(content: string, max = PREVIEW_CHARS): string {
   return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
+// 업무 상세내용(HTML)을 지아가 읽을 수 있는 짧은 텍스트로 — 줄바꿈은 살리고 태그·엔티티는 정리
+const NOTES_CHARS = 1000;
+function notesText(html: string | null): string | null {
+  if (!html) return null;
+  const text = html
+    .replace(/<br\s*\/?>|<\/(p|div|li|h[1-6]|tr)>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
+    .split('\n').map((line) => line.replace(/[ \t]+/g, ' ').trim()).filter(Boolean).join('\n');
+  if (!text) return null;
+  return text.length > NOTES_CHARS ? `${text.slice(0, NOTES_CHARS)}…` : text;
+}
+
+const checklistSelect = { orderBy: { order: 'asc' as const }, take: 15, select: { content: true, isDone: true } };
+
 function parseDate(value: string | null): Date | null {
   if (!value) return null;
   const time = Date.parse(value);
@@ -73,7 +88,7 @@ export async function GET(req: NextRequest) {
         select: {
           id: true, parentId: true, content: true, createdAt: true, source: true, externalAuthorLabel: true,
           author: { select: { id: true, name: true, role: true } },
-          task: { select: { id: true, title: true, status: true, targetDate: true, projectId: true, project: { select: { name: true } }, worker: { select: { id: true, name: true } } } },
+          task: { select: { id: true, title: true, status: true, targetDate: true, projectId: true, notes: true, checklistItems: checklistSelect, project: { select: { name: true } }, worker: { select: { id: true, name: true } } } },
         },
       }),
       dueFrom && dueTo
@@ -81,7 +96,8 @@ export async function GET(req: NextRequest) {
             where: { ...participates, targetDate: { gte: dueFrom, lt: dueTo }, NOT: { workerId: jia.id } },
             take: MAX_ITEMS,
             select: {
-              id: true, title: true, status: true, targetDate: true, updatedAt: true, projectId: true,
+              id: true, title: true, status: true, targetDate: true, updatedAt: true, projectId: true, notes: true,
+              checklistItems: checklistSelect,
               project: { select: { name: true } },
               worker: { select: { id: true, name: true, role: true } },
               registrant: { select: { id: true, name: true } },
@@ -125,7 +141,11 @@ export async function GET(req: NextRequest) {
       authorRole: c.author?.role ?? null,
       text: plain(c.content),
       mentionsJia: c.content.includes(`](${jia.id})`),
-      task: { id: c.task.id, title: c.task.title, status: c.task.status, targetDate: c.task.targetDate, projectName: c.task.project?.name ?? null, workerName: c.task.worker?.name ?? null },
+      task: {
+        id: c.task.id, title: c.task.title, status: c.task.status, targetDate: c.task.targetDate, projectName: c.task.project?.name ?? null, workerName: c.task.worker?.name ?? null,
+        notes: notesText(c.task.notes),
+        checklist: c.task.checklistItems.map((item) => ({ text: plain(item.content, 120), done: item.isDone })),
+      },
       thread: (threads.get(c.task.id) ?? []).filter((t) => t.at <= c.createdAt).slice(-THREAD_COMMENTS),
     }));
 
@@ -138,6 +158,8 @@ export async function GET(req: NextRequest) {
         projectName: t.project?.name ?? null,
         worker: { id: t.worker.id, name: t.worker.name, role: t.worker.role },
         registrantName: t.registrant?.name ?? null,
+        notes: notesText(t.notes),
+        checklist: t.checklistItems.map((item) => ({ text: plain(item.content, 120), done: item.isDone })),
       });
     }
 

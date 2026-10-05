@@ -522,7 +522,7 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 | PATCH | `/api/inquiries/[id]` | ADMIN/LEADER | 문의 상태 변경(검토중/종결) |
 | POST | `/api/inquiries/[id]/convert` | ADMIN/LEADER | 문의를 업무로 전환 |
 | GET | `/api/integrations/jia/inbox` | 서비스 키(READ) 전용 | 지아 수신함: `userEmail` 계정에 배정된 업무 + @멘션 댓글(`since` 이후, 키의 프로젝트 범위). 조회 전용 — `docs/jia-integration-handoff.md` 4-8 |
-| GET | `/api/integrations/jia/activity` | 서비스 키(READ) 전용 | 지아 활동 피드: 참여 업무에서 지아에게 온 댓글(멘션·지아 댓글의 답글, 최근 댓글 맥락 포함) + 목표일 범위 안의 미완료 업무. 조회 전용 — `docs/jia-integration-handoff.md` 4-9 |
+| GET | `/api/integrations/jia/activity` | 서비스 키(READ) 전용 | 지아 활동 피드: 참여 업무에서 지아에게 온 댓글(멘션·지아 댓글의 답글, 최근 댓글 맥락 포함) + 목표일 범위 안의 미완료 업무. 업무마다 상세내용(텍스트 ≤1,000자)·체크리스트 포함. 조회 전용 — `docs/jia-integration-handoff.md` 4-9 |
 
 > **참고(2026-08-24)**: `Task.sourceType`(DIRECT/INQUIRY)/`sourceId`로 전환 출처를 추적한다. `/{slug}/inquiry`(공개 문의 폼), `/inquiries`(관리 페이지, `orgScopedRoutes`에 포함)가 함께 추가됨 — 설계 근거는 `docs/하이파이브_업무접수_프로세스설계_v1.md` 참고.
 

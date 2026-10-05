@@ -1399,3 +1399,9 @@ PM 승인에 따라 H5-02를 "해시 저장 API 키" 방식으로 구현. 1차 �
 - `docs/jia-integration-handoff.md` 4-9절 추가.
 
 `npx tsc --noEmit` 오류 0개, `npx next build` 성공 확인(더미 `DATABASE_URL`).
+
+## 2026-10-05 (지아 활동 피드: 업무 상세내용)
+
+- `GET /api/integrations/jia/activity`: `messages[].task`와 `dueTasks[]`에 `notes`(업무 상세내용 HTML → 줄바꿈 유지 텍스트, 최대 1,000자)와 `checklist`(최대 15개, `{text, done}`) 추가. 지아가 제목만 보고 "확인했습니다"라고 답하던 문제(실제 내용을 못 봄)를 줄이기 위함. 스키마 변경 없음, 조회 전용 유지.
+- 문서: `docs/jia-integration-handoff.md` 4-8 응답 필드 갱신.
+
