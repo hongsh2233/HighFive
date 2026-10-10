@@ -6,6 +6,7 @@ import apiClient from '@/lib/api-client';
 import { Task } from '@/types';
 import { TASK_PRIORITY_TEXT } from '@/lib/constants';
 import styles from './TaskDetailPanel.module.css';
+import JiaSidePanel from '@/components/work/JiaSidePanel';
 
 interface StatusDef { code: string; label: string; isDone: boolean }
 interface Worker { id: number; name: string }
@@ -225,6 +226,7 @@ export default function TaskDetailPanel({
           </div>
 
           <Link href={`/tasks/${taskId}`} className={styles.fullPageLink}>전체 상세 화면에서 보기 →</Link>
+          <JiaSidePanel key={task.id} task={task} getStatuses={projectId => getStatuses(projectId ?? null).map((s, order) => ({ ...s, color: null, order, isProgress: false }))} onDraft={draft => setCommentInput(previous => previous ? `${previous}\n\n${draft}` : draft)} />
         </div>
       )}
     </div>

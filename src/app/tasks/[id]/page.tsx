@@ -10,6 +10,8 @@ import { Task, TimeLog, ProjectField } from '@/types';
 import styles from './detail.module.css';
 import { actionLabel } from '@/lib/task-history';
 import Spinner from '@/components/common/Spinner';
+import JiaSidePanel from '@/components/work/JiaSidePanel';
+import hubStyles from '@/components/work/WorkHub.module.css';
 import { useDialog } from '@/components/common/DialogProvider';
 import UserQuickMenu from '@/components/common/UserQuickMenu';
 import { TASK_PRIORITY_LIST, TASK_PRIORITY_TEXT } from '@/lib/constants';
@@ -700,7 +702,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   };
 
   return (
-    <div className={styles.container}>
+    <div className={hubStyles.detailLayout}><div className={styles.container}>
       <button onClick={() => router.push('/tasks')} className={styles.backLink}>
         ← 목록으로
       </button>
@@ -1362,6 +1364,6 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
           )
         )}
       </div>
-    </div>
+    </div><div className={hubStyles.side}><JiaSidePanel key={task.id} task={task} getStatuses={getStatuses} onDraft={draft => { setCommentInput(previous => previous ? `${previous}\n\n${draft}` : draft); commentTextareaRef.current?.focus(); }} /></div></div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api-client';
 import styles from './projects.module.css';
@@ -349,7 +350,7 @@ export default function ProjectsPage() {
                   <div style={{ marginBottom: 20 }}>
                     <label style={labelStyle}>역할 (선택)</label>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
-                      예시: {ROLE_PRESETS.join(' / ')} — 아래 "역할 추가"로 원하는 역할명을 직접 입력하세요.
+                      예시: {ROLE_PRESETS.join(' / ')} — 아래 &quot;역할 추가&quot;로 원하는 역할명을 직접 입력하세요.
                     </div>
                     {form.roles.map((role, idx) => (
                       <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 8, marginBottom: 8, alignItems: 'center' }}>
@@ -422,7 +423,7 @@ export default function ProjectsPage() {
                     style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '16px 20px', transition: 'border-color 0.15s' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', flex: 1 }}>{p.name}</span>
+                      <Link href={`/projects/${p.id}`} style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', flex: 1 }}>{p.name} →</Link>
                       <span style={statusBadge(p.status)}>{p.status === 'ACTIVE' ? '진행중' : '종료'}</span>
                       {canManage ? (
                         <select

@@ -157,11 +157,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           ],
         }] : []),
         ...(user?.role === 'ADMIN' ? [{
-          key: 'settings', label: '관리자 설정', icon: '⚙️', items: [
+          key: 'settings', label: '설정', icon: '⚙️', items: [
             { href: '/users', label: '팀원관리', icon: '' },
             { href: '/settings/organization', label: '조직 설정', icon: '' },
             { href: '/settings/approval-line', label: '결재선 설정', icon: '' },
             { href: '/settings/ai', label: 'AI 설정', icon: '' },
+            { href: '/settings/automation', label: '자동화', icon: '' },
             ...(has('integrations') ? [{ href: '/settings/integrations', label: '외부연동', icon: '' }] : []),
             { href: '/settings/audit', label: '감사 로그', icon: '' },
           ],
@@ -170,7 +171,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const isGroupActive = (group: NavGroup) => group.items.some((i) => pathname.startsWith(i.href));
 
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set(['task', 'collab', 'org', 'analytics']));
   const toggleGroup = (key: string) => setCollapsedGroups((prev) => {
     const next = new Set(prev);
     next.has(key) ? next.delete(key) : next.add(key);
@@ -200,8 +201,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         <nav className={styles.nav}>
           <Link href="/dashboard" className={pathname === '/dashboard' ? styles.navItemActive : styles.navItem} onClick={closeMobile}>
-            <span className={styles.navIcon}>🏠</span>대시보드
+            <span className={styles.navIcon}>🏠</span>{isSuperAdmin ? '대시보드' : 'HOME'}
           </Link>
+
+          {!isSuperAdmin && [
+            ...((has('tasks') || isPartner) ? [{ href: '/my-work', label: '내 업무', icon: '✓' }, { href: '/projects', label: '프로젝트', icon: '▦' }] : []),
+            ...(!isPartner && (has('requests') || isAdminOrLeader || canManageInquiry) ? [{ href: '/inbox', label: '수신함', icon: '↓' }] : []),
+            ...((has('tasks') || isPartner) ? [{ href: '/calendar', label: '캘린더', icon: '▤' }] : []),
+            ...(!isPartner && (has('wiki') || has('info')) ? [{ href: '/docs', label: '문서', icon: '▧' }] : []),
+            ...(!isPartner && isAdminOrLeader && has('stats') ? [{ href: '/reports', label: '리포트', icon: '◴' }] : []),
+            ...(!isPartner && has('tasks') ? [{ href: '/jia', label: 'JIA', icon: '✦' }] : []),
+          ].map(item => <Link key={item.href} href={item.href} className={(item.href === '/projects' ? pathname.startsWith('/projects') : pathname === item.href) ? styles.navItemActive : styles.navItem} onClick={closeMobile}><span className={styles.navIcon}>{item.icon}</span>{item.label}</Link>)}
 
           {!isSuperAdmin && (
             <Link href="/manual" className={pathname.startsWith('/manual') ? styles.navItemActive : styles.navItem} onClick={closeMobile}>

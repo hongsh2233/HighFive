@@ -7,6 +7,7 @@ import KanbanColumn from './KanbanColumn';
 import apiClient from '@/lib/api-client';
 import styles from './KanbanBoard.module.css';
 import Spinner from '@/components/common/Spinner';
+import { loadHubTasks } from '@/hooks/useWorkHub';
 
 interface Project {
   id: number;
@@ -16,25 +17,30 @@ interface Project {
 
 interface KanbanBoardProps {
   onTaskClick?: (task: Task) => void;
+  projectId?: number;
+  onChanged?: () => void;
+  hideProjectSelect?: boolean;
 }
 
-export default function KanbanBoard({ onTaskClick }: KanbanBoardProps) {
+export default function KanbanBoard({ onTaskClick, projectId, onChanged, hideProjectSelect }: KanbanBoardProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [selectedProjectId, setSelectedProjectId] = useState(projectId ? String(projectId) : '');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const { getStatuses, loading: statusesLoading } = useProjectStatuses();
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
         const [tasksRes, projectsRes] = await Promise.all([
-          apiClient.get<{ data: { data: Task[] } }>('/tasks?limit=1000'),
+          loadHubTasks(projectId),
           apiClient.get<{ data: Project[] }>('/projects'),
         ]);
-        setTasks(tasksRes.data.data.data);
+        setTasks(tasksRes);
         setProjects(projectsRes.data.data.filter((p) => p.status === 'ACTIVE'));
       } catch (err) {
+        setError('업무 보드를 불러오지 못했습니다.');
         console.error('Failed to load tasks:', err);
       } finally {
         setLoading(false);
@@ -42,7 +48,7 @@ export default function KanbanBoard({ onTaskClick }: KanbanBoardProps) {
     };
 
     fetchAll();
-  }, []);
+  }, [projectId]);
 
   const groupIds = new Set<number>();
   tasks.forEach((t) => {
@@ -120,8 +126,11 @@ export default function KanbanBoard({ onTaskClick }: KanbanBoardProps) {
 
     try {
       await apiClient.patch(`/tasks/${taskId}/status`, { status: targetStatus });
+      setError('');
+      onChanged?.();
     } catch (err) {
       console.error('Failed to update task status:', err);
+      setError('상태 변경에 실패하여 이전 상태로 되돌렸습니다. 권한과 승인 조건을 확인하세요.');
       setTasks(tasks.map((t) => t.id === taskId ? { ...t, status: task.status } : t));
     }
   };
@@ -132,8 +141,11 @@ export default function KanbanBoard({ onTaskClick }: KanbanBoardProps) {
 
   return (
     <div>
-      <div className={styles.toolbar}>
+      {error && <p role="alert">{error}</p>}
+      {!hideProjectSelect && <div className={styles.toolbar}>
         <select
+          aria-label="칸반 프로젝트"
+          disabled={projectId !== undefined}
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
           className={styles.projectSelect}
@@ -143,7 +155,7 @@ export default function KanbanBoard({ onTaskClick }: KanbanBoardProps) {
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
         </select>
-      </div>
+      </div>}
       <div className={styles.container}>
         {columns.map((col) => (
           <KanbanColumn

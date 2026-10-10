@@ -70,7 +70,7 @@ export default function ApprovalLineSettingsPage() {
           <h1 className={styles.pageTitle}>결재선 설정</h1>
           <p className={styles.pageSubtitle}>
             조직 전체 신청(휴가/비품 등)에 적용되는 결재 단계를 순서대로 구성합니다. 비워두면 기존처럼 담당 리더 1단계 결재로 동작합니다.
-            '전결' 체크 시 해당 단계 승인만으로 이후 단계를 생략하고 즉시 최종 승인 처리됩니다.
+            &apos;전결&apos; 체크 시 해당 단계 승인만으로 이후 단계를 생략하고 즉시 최종 승인 처리됩니다.
           </p>
         </div>
 

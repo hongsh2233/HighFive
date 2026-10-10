@@ -180,8 +180,8 @@ export default function ProjectStatusesPage({ params }: { params: Promise<{ id: 
         </div>
 
         <p className={styles.hint}>
-          "진행중 단계"로 표시된 상태로 들어오면 자동 시간카운터가 시작되고, 벗어나면 종료됩니다. "완료 단계"는 통계의 완료율 계산에 사용됩니다.
-          기존 업무가 참조 중인 단계를 삭제하면 해당 업무는 목록/칸반에서 "기타"로 표시되니 주의하세요.
+          &quot;진행중 단계&quot;로 표시된 상태로 들어오면 자동 시간카운터가 시작되고, 벗어나면 종료됩니다. &quot;완료 단계&quot;는 통계의 완료율 계산에 사용됩니다.
+          기존 업무가 참조 중인 단계를 삭제하면 해당 업무는 목록/칸반에서 &quot;기타&quot;로 표시되니 주의하세요.
         </p>
       </div>
     </div>

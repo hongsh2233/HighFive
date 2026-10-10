@@ -1,6 +1,6 @@
 # High5 프로젝트 구조 문서
 
-> **최종 업데이트** 2026-07-01
+> **최종 업데이트** 2026-10-10
 > **스택** Next.js 15 · Prisma 5 · PostgreSQL · NextAuth.js 4 · Zustand · MUI
 >
 > 이 문서는 코드 변경 시 항상 최신 상태로 유지된다. 작업 절차는 `.claude/skills/dev-workflow/SKILL.md`, 작업 이력은 `docs/HISTORY.md` 참고. 디자인 시스템은 `docs/DESIGN.md`, 향후 AI/자동화 기능(주간보고 자동생성/AI 자동배정/외부연동 확장/구글시트 연동) 현황 분석 및 로드맵은 `docs/ROADMAP_AI_AUTOMATION.md`, 외부연동/자동화 확장의 구체 설계(스키마·API·파일 단위)는 `docs/AUTOMATION_DESIGN.md` 참고.
@@ -175,6 +175,20 @@ User (1) ──< Request [requester / approver] (1) ──< Announcement (전결
 ---
 
 ## 3. 디렉터리 구조
+
+### HighFive 2.0 1차 화면 확장 (2026-10-10)
+
+- `/dashboard`: HOME 업무 브리핑 (`components/work/WorkHome.tsx`). 기존 일정/공지/결재/활동은 접이식 운영 현황에 보존, SUPERADMIN 화면 유지.
+- `/my-work`: 본인 담당 업무의 오늘/이번 주/지연/대기/완료 필터.
+- `/projects/[id]`: 기존 프로젝트 목록 API의 접근 범위 안에서 개요/업무/문서/일정/활동/리포트. 실제 업무·팀원·마일스톤을 재사용하며 업무 마감 범위를 프로젝트 계약 기간과 구분.
+- `/tasks/kanban`: `TaskViews`의 Kanban/List/Calendar/Assignee 보기와 공통 프로젝트 선택. 기존 `KanbanBoard`의 상태 변경 API, 선행 업무 차단, 실패 시 롤백 유지.
+- `/tasks/[id]`, `TaskDetailPanel`: 기존 상세 기능 유지 + `JiaSidePanel`. 기존 AI 요약 API와 조직 feature gate 재사용; 댓글 초안은 사용자 입력란까지만 전달.
+- `/docs`, `/inbox`, `/reports`, `/jia`, `/settings/automation`: `PhaseGateway` 화면 진입점과 기존 기능 연결. 통합 기능과 에이전트 자동 실행은 후속 범위.
+- `src/hooks/useWorkHub.ts`: 인증된 기존 API 조회, 전체 페이지 순회, 요청 취소, 오류/재시도. `src/lib/work-hub.ts`: 커스텀 완료 상태·주간/마감·선행 업무 위험 판정.
+- `src/components/work/WorkHub.module.css`: 기존 디자인 토큰 사용, Desktop 2열/Tablet 1열 전환, 캘린더 내부 스크롤.
+- 신규 최상위 라우트는 `route-config.ts`에 등록. 리포트는 ADMIN/LEADER, PARTNER는 내 업무만 추가 허용. 기능별 플랜·권한에 따른 메뉴 노출 유지.
+- `.eslintrc.json`, `vitest.config.ts`, `playwright.config.ts`, `tests/`: 재현 가능한 lint/집계·UI·인증 라우트/브라우저 테스트. 브라우저 테스트는 로컬 가상 세션과 API 응답을 사용하며 운영 DB에 연결하지 않음.
+- DB 스키마 및 JIA 서비스 자격 증명 계약은 변경하지 않음. `/api/tasks` 조회 응답에 선택 필드 `latestComment`만 추가(기존 필드/필터/권한/쓰기 동작 유지). 상세 범위/확장 계약/검증 한계는 `docs/HIGHFIVE_2_PHASE_ONE.md` 참고.
 
 ```
 high5/

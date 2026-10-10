@@ -111,6 +111,7 @@ export async function GET(req: NextRequest) {
           timeLogs: true,
           fieldValues: true,
           _count: { select: { subTasks: true, comments: true, attachments: true } },
+          comments: { take: 1, orderBy: { createdAt: 'desc' }, select: { content: true, createdAt: true, author: { select: { name: true } } } },
           blockedBy: { include: { blockingTask: { select: { status: true, projectId: true } } } },
         },
       }),
@@ -129,8 +130,9 @@ export async function GET(req: NextRequest) {
       })
     );
 
-    const tasksWithBlockedFlag = tasks.map(({ blockedBy, ...t }) => ({
+    const tasksWithBlockedFlag = tasks.map(({ blockedBy, comments, ...t }) => ({
       ...t,
+      latestComment: comments[0] ?? null,
       hasIncompleteBlockers: blockedBy.some(
         (d) => !doneCodesByProject.get(d.blockingTask.projectId)?.has(d.blockingTask.status)
       ),

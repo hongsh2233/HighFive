@@ -1,35 +1,11 @@
 'use client';
-
-
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
-import { Task } from '@/types';
-import KanbanBoard from '@/components/kanban/KanbanBoard';
-import styles from './kanban.module.css';
+import { useWorkHub } from '@/hooks/useWorkHub';
+import TaskViews from '@/components/work/TaskViews';
 import Spinner from '@/components/common/Spinner';
-
+import styles from '@/components/work/WorkHub.module.css';
 export default function KanbanPage() {
-  const { isLoading } = useAuth();
-  const router = useRouter();
-
-
-  const handleTaskClick = (task: Task) => {
-    router.push(`/tasks/${task.id}`);
-  };
-
-  if (isLoading) {
-    return <div className={styles.loadingPage}><Spinner /></div>;
-  }
-
-  return (
-    <>
-      <div className={styles.header}>
-        <h1 className={styles.title}>칸반 보드</h1>
-        <p className={styles.subtitle}>
-          업무를 드래그하여 상태를 변경할 수 있습니다.
-        </p>
-      </div>
-      <KanbanBoard onTaskClick={handleTaskClick} />
-    </>
-  );
+  const hub = useWorkHub();
+  if (hub.loading) return <Spinner />;
+  if (hub.error) return <div className={styles.error} role="alert">{hub.error}<button className={styles.button} onClick={hub.reload}>다시 시도</button></div>;
+  return <section className={styles.page}><header className={styles.header}><div><h1>업무 보드</h1><p className={styles.muted}>프로젝트의 기존 상태를 유지하며, 업무를 여러 관점으로 확인하세요.</p></div></header><TaskViews tasks={hub.tasks} projects={hub.projects} getStatuses={hub.getStatuses} onChanged={hub.reload} /></section>;
 }

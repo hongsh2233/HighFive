@@ -2,6 +2,15 @@
 
 > 신규 작업 완료 시 `.claude/skills/dev-workflow/SKILL.md` 절차에 따라 이 문서에 기록을 추가한다.
 
+## 2026-10-10
+
+- HighFive 2.0 1차 IA: HOME/내 업무/프로젝트/수신함/캘린더/문서/리포트/JIA/설정, 기존 운영 메뉴 유지 및 기본 접기. 신규 인증 라우트·역할 제한은 `route-config.ts`에 등록.
+- `WorkHome`, `useWorkHub`, `work-hub` 추가: 본인 업무 필터, 마감/선행 업무 점검, 새 멘션·댓글, 요청한 업무 대기, 프로젝트 위험, 기존 AI 브리핑 연결. 커스텀 완료 단계와 전체 페이지 조회 반영.
+- 프로젝트 개요 및 6개 탭, 4개 업무 보기, 업무 상세와 빠른 상세의 JIA 패널 추가. 기존 프로젝트/업무 API·커스텀 상태·칸반 승인/의존성·댓글/첨부/시간 기록 유지.
+- 업무 카드에 최근 댓글을 표시하도록 `/api/tasks`의 기존 읽기 응답에 `latestComment`를 선택 필드로 추가. 기존 데이터 모델·권한 조건·응답 필드를 유지.
+- Work Docs/통합 수신함/리포트/자동화는 `PhaseGateway` 구조와 기존 기능 연결만 준비. DB 스키마·JIA integration API 변경 없음.
+- 기존 lint 설정 누락을 보완하고 업무 목록의 early return 아래 Hook 호출 오류 및 JSX 문구 lint 오류를 수정. Vitest/Playwright 검증과 실행 명령 추가. 상세 검증 결과 및 다음 Phase는 `HIGHFIVE_2_PHASE_ONE.md` 참고.
+
 ## 2026-06-30
 
 - docs 정리: `README.md`(빈 파일), `README_NEW.md`, `SETUP.md`, `WEBHOOK_SETUP.md` 삭제 후 `README.md`/`docs/PROJECT_STRUCTURE.md`로 통합. 실제 코드(스키마, API, 디렉터리 구조)와 어긋났던 내용을 현재 상태에 맞게 갱신.

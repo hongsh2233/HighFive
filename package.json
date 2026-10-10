@@ -8,6 +8,9 @@
     "build": "prisma generate && next build",
     "start": "prisma migrate deploy && next start -p ${PORT:-3000}",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:ui": "playwright test",
     "db:setup": "prisma db push --skip-generate && npm run db:seed",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
@@ -53,6 +56,9 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.12.7",
     "@types/nodemailer": "^8.0.1",
@@ -61,6 +67,8 @@
     "@types/react-dom": "^18.3.0",
     "eslint": "^8.56.0",
     "eslint-config-next": "^15.1.3",
-    "typescript": "^5.4.5"
+    "jsdom": "^26.1.0",
+    "typescript": "^5.4.5",
+    "vitest": "^3.2.7"
   }
 }

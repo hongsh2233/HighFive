@@ -7,6 +7,8 @@ import apiClient from '@/lib/api-client';
 import { Task, PaginatedResponse } from '@/types';
 import styles from './dashboard.module.css';
 import Spinner from '@/components/common/Spinner';
+import WorkHome from '@/components/work/WorkHome';
+import hubStyles from '@/components/work/WorkHub.module.css';
 
 interface PlatformStats {
   totalOrgs: number;
@@ -188,7 +190,7 @@ const statusLabels: { [key: string]: string } = {
   DONE: '완료',
 };
 
-export default function DashboardPage() {
+function LegacyDashboardPage() {
   const { user, isLoading } = useAuth();
   const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
@@ -703,4 +705,11 @@ export default function DashboardPage() {
       </div>
     </div>
   );
+}
+
+export default function DashboardPage() {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return <Spinner />;
+  if (user?.role === 'SUPERADMIN') return <SuperAdminDashboard userName={user.name || ''} />;
+  return <><WorkHome /><details><summary className={hubStyles.summary}>기존 운영 현황 · 일정·공지·결재·활동</summary><LegacyDashboardPage /></details></>;
 }

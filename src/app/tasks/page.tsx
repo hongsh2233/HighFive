@@ -242,10 +242,6 @@ function TaskListContent() {
   }
   const statusOptions = Array.from(statusOptionMap.entries());
 
-  if (authLoading) {
-    return <div className={styles.loadingPage}><Spinner /></div>;
-  }
-
   // 필터링 (상태/담당자만 — 프로젝트는 더 이상 필터가 아니라 섹션 구분 기준)
   let filteredTasks = tasks;
   if (selectedStatus) {
@@ -390,6 +386,10 @@ function TaskListContent() {
   };
 
   const handlers: SharedHandlers = { canEditTitle, canDelete, currentUserId: parseInt((user as any)?.id || '0'), assignableWorkers, getStatuses, updateStatus, updateTask, deleteTask, createTask, selectedIds, toggleSelect, toggleSelectAll, onOpenTask: openTask };
+
+  if (authLoading) {
+    return <div className={styles.loadingPage}><Spinner /></div>;
+  }
 
   return (
     <div className={styles.container}>
