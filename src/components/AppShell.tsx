@@ -9,13 +9,15 @@ import { markManualLogout } from '@/lib/logout-flag';
 import TopSearch from './TopSearch';
 import NotificationBell from './NotificationBell';
 import styles from './AppShell.module.css';
+import { organizationRoute } from '@/lib/route-config';
 
 interface NavItem { href: string; label: string; icon: string }
 interface NavGroup { key: string; label: string; icon: string; items: NavItem[] }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  const pathname = organizationRoute(rawPathname)?.pathname || rawPathname;
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [enabledFeatures, setEnabledFeatures] = useState<string[]>([

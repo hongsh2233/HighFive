@@ -5,6 +5,7 @@ import { tasks, project, getStatuses, task } from './fixtures';
 const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), hub: vi.fn(), draft: vi.fn() }));
 vi.mock('@/lib/api-client', () => ({ default: { get: mocks.get, post: mocks.post } }));
 vi.mock('@/hooks/useWorkHub', () => ({ useWorkHub: mocks.hub }));
+vi.mock('@/components/NotificationsProvider', () => ({ useNotificationsContext: () => ({ notifications: [{ id: 1, taskId: 1, isRead: false, type: 'COMMENT_MENTION', message: '검토 요청 멘션' }], error: null }) }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('next/link', () => ({ default: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => <a href={href} {...props}>{children}</a> }));
 vi.mock('@/components/kanban/KanbanBoard', () => ({ default: () => <div>기존 칸반</div> }));
@@ -64,6 +65,27 @@ describe('주요 업무 UI', () => {
     await waitFor(() => expect((screen.getByRole('button', { name: '업무 요약' }) as HTMLButtonElement).disabled).toBe(false));
     await userEvent.click(screen.getByRole('button', { name: '업무 요약' }));
     expect(await screen.findByText('최근 댓글 기반 요약')).toBeTruthy();
-    expect(mocks.post).toHaveBeenCalledWith('/ai/task-summary', { taskId: 1 });
+    expect(mocks.post).toHaveBeenCalledWith('/ai/task-summary', { taskId: 1 }, { signal: expect.any(AbortSignal) });
+  });
+  it('키보드로 보기 탭을 이동할 수 있다', async () => {
+    setup(); render(<TaskViews tasks={tasks} getStatuses={getStatuses} />);
+    screen.getByRole('tab', { name: 'Kanban' }).focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(screen.getByRole('tab', { name: 'List' }).getAttribute('aria-selected')).toBe('true');
+    await userEvent.keyboard('{End}');
+    expect(screen.getByRole('tab', { name: 'Assignee' }).getAttribute('aria-selected')).toBe('true');
+  });
+  it('잘못된 마감일이 있어도 목록과 캘린더 화면이 깨지지 않는다', async () => {
+    setup(); render(<TaskViews tasks={[task({ targetDate: 'invalid' })]} getStatuses={getStatuses} initialView="list" />);
+    expect(screen.getByText(/마감 미정/)).toBeTruthy();
+    await userEvent.click(screen.getByRole('tab', { name: 'Calendar' }));
+    expect(screen.getByRole('region', { name: '업무 마감 캘린더' })).toBeTruthy();
+  });
+  it('JIA 댓글 초안은 한 번만 추가된다', async () => {
+    setup(); render(<JiaSidePanel task={task()} getStatuses={getStatuses} onDraft={mocks.draft} />);
+    await userEvent.click(screen.getByRole('button', { name: '댓글 초안' }));
+    await userEvent.click(screen.getByRole('button', { name: '댓글 입력란에 넣기' }));
+    await userEvent.click(screen.getByRole('button', { name: '입력란에 추가됨' }));
+    expect(mocks.draft).toHaveBeenCalledOnce();
   });
 });

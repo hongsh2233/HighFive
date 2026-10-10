@@ -178,6 +178,8 @@ User (1) ──< Request [requester / approver] (1) ──< Announcement (전결
 
 ### HighFive 2.0 1차 화면 확장 (2026-10-10)
 
+후속 안정화(동일 날짜): `organizationRoute`/`sessionLoginPath`가 조직 주소의 클라이언트 인증 차단·메뉴 표시·401 복귀를 통일한다. `task-read-scope.ts`는 캘린더/AI 세션 읽기를 기존 목록의 ADMIN/LEADER/WORKER/PARTNER 범위로 제한한다. `business-date.ts`는 AI 브리핑의 오늘을 배포 서버 시간대와 독립적으로 계산(기본 Asia/Seoul, `BUSINESS_TIME_ZONE` 설정 가능). `/api/tasks`의 pagination/ID 조건과 `/api/tasks/calendar`의 연도/월을 검증한다. 업무 Hook·칸반은 동시 수정 결과를 보존하며 허브 새로고침에서 기존 보기·선택을 유지한다. 상세 조회 취소/오래된 응답 차단, 업무별 댓글 초안, 실패 피드백·재시도, 공통 알림 폴링과 키보드 탭 조작을 보완했다. 상세 결과는 `HIGHFIVE_STABILIZATION.md` 참고.
+
 - `/dashboard`: HOME 업무 브리핑 (`components/work/WorkHome.tsx`). 기존 일정/공지/결재/활동은 접이식 운영 현황에 보존, SUPERADMIN 화면 유지.
 - `/my-work`: 본인 담당 업무의 오늘/이번 주/지연/대기/완료 필터.
 - `/projects/[id]`: 기존 프로젝트 목록 API의 접근 범위 안에서 개요/업무/문서/일정/활동/리포트. 실제 업무·팀원·마일스톤을 재사용하며 업무 마감 범위를 프로젝트 계약 기간과 구분.

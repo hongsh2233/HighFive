@@ -2,12 +2,9 @@ import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 import { callLLM } from '@/lib/ai';
 import { getFeatureProvider, isFeatureEnabled } from '@/lib/ai-settings';
-
-function startOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
+import { sessionTaskScope } from '@/lib/task-read-scope';
+import { getProjectStatuses } from '@/lib/task-status';
+import { businessDateKey } from '@/lib/business-date';
 
 // POST /api/ai/daily-briefing - 오늘의 업무 브리핑 (본인 업무 기준, 결과는 저장하지 않고 화면에만 표시)
 export async function POST() {
@@ -22,19 +19,22 @@ export async function POST() {
     if (!providerInfo) return errorResponse('API 키가 설정되지 않았습니다.', 400, 'AI_KEY_MISSING');
 
     const userId = parseInt((session!.user as any).id || '0');
-    const today = startOfDay(new Date());
+    const today = businessDateKey();
+    const scope = await sessionTaskScope(organizationId, userId, session!.user.role);
 
-    const tasks = await prisma.task.findMany({
-      where: { organizationId, workerId: userId, isGroup: false, status: { not: 'DONE' } },
-      select: { title: true, status: true, targetDate: true },
-      take: 50,
+    const allTasks = await prisma.task.findMany({
+      where: { AND: [scope, { workerId: userId, isGroup: false }] },
+      select: { title: true, status: true, targetDate: true, projectId: true },
+      orderBy: [{ targetDate: 'asc' }, { id: 'asc' }],
     });
+    const doneCodes = new Map(await Promise.all(Array.from(new Set(allTasks.map(t => t.projectId))).map(async projectId => [projectId, new Set((await getProjectStatuses(projectId)).filter(s => s.isDone).map(s => s.code))] as const)));
+    const tasks = allTasks.filter(t => !doneCodes.get(t.projectId)?.has(t.status));
 
-    const dueToday = tasks.filter((t) => t.targetDate && startOfDay(t.targetDate).getTime() === today.getTime());
-    const overdue = tasks.filter((t) => t.targetDate && startOfDay(t.targetDate) < today);
+    const dueToday = tasks.filter((t) => t.targetDate?.toISOString().slice(0, 10) === today);
+    const overdue = tasks.filter((t) => t.targetDate && t.targetDate.toISOString().slice(0, 10) < today);
     const others = tasks.filter((t) => !dueToday.includes(t) && !overdue.includes(t));
 
-    const lines = (arr: typeof tasks) => arr.map((t) => `- [${t.status}] ${t.title}${t.targetDate ? ` (목표일 ${t.targetDate.toISOString().slice(0, 10)})` : ''}`).join('\n') || '(없음)';
+    const lines = (arr: typeof tasks) => arr.slice(0, 50).map((t) => `- [${t.status}] ${t.title}${t.targetDate ? ` (목표일 ${t.targetDate.toISOString().slice(0, 10)})` : ''}`).join('\n') || '(없음)';
 
     const prompt = `아래는 한 팀원의 오늘 기준 업무 현황이다. 이 사람이 출근해서 바로 읽을 3~5줄짜리 간단한 한국어 브리핑을 작성하라. 격식 없이 친근하게, 오늘 뭘 먼저 해야 하는지 우선순위 관점으로 정리하라. 데이터에 없는 내용을 지어내지 마라.
 

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { task, getStatuses } from './fixtures';
 const mocks = vi.hoisted(() => ({ patch: vi.fn(), load: vi.fn(), changed: vi.fn() }));
 vi.mock('@/lib/api-client', () => ({ default: { get: () => Promise.resolve({ data: { data: [{ id: 3, name: 'HighFive', status: 'ACTIVE' }] } }), patch: mocks.patch } }));
@@ -28,5 +28,14 @@ describe('기존 칸반 상태 변경', () => {
     const progressColumn = screen.getByText('진행').parentElement!.parentElement!;
     expect(progressColumn.textContent).toContain('디자인 검수');
     vi.restoreAllMocks();
+  });
+  it('저장 중 같은 업무를 다시 이동해도 중복 요청을 보내지 않는다', async () => {
+    mocks.load.mockResolvedValue([task()]);
+    let finish!: (value: unknown) => void; mocks.patch.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+    render(<KanbanBoard projectId={3} />); await screen.findByText('디자인 검수');
+    dropToDone(); dropToDone();
+    expect(mocks.patch).toHaveBeenCalledOnce();
+    expect(screen.getByText('디자인 검수').closest('[draggable]')?.getAttribute('draggable')).toBe('false');
+    await act(async () => finish({}));
   });
 });

@@ -9,6 +9,7 @@ interface KanbanColumnProps {
   status: string;
   color?: string | null;
   tasks: Task[];
+  pendingIds?: Set<number>;
   parentMap: Map<number, Task>;
   onDragOver: (e: React.DragEvent) => void;
   onDragLeave: (e: React.DragEvent) => void;
@@ -21,6 +22,7 @@ export default function KanbanColumn({
   status,
   color,
   tasks,
+  pendingIds,
   parentMap,
   onDragOver,
   onDragLeave,
@@ -51,7 +53,8 @@ export default function KanbanColumn({
                 key={task.id}
                 className={`${styles.card} ${task.parentTaskId ? styles.cardChild : ''}`}
                 style={color ? { borderLeftColor: color } : undefined}
-                draggable
+                draggable={!pendingIds?.has(task.id)}
+                aria-busy={pendingIds?.has(task.id) || false}
                 onDragStart={(e) => {
                   e.dataTransfer.effectAllowed = 'move';
                   e.dataTransfer.setData('taskId', task.id.toString());

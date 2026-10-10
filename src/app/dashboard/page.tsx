@@ -9,6 +9,7 @@ import styles from './dashboard.module.css';
 import Spinner from '@/components/common/Spinner';
 import WorkHome from '@/components/work/WorkHome';
 import hubStyles from '@/components/work/WorkHub.module.css';
+import { format } from 'date-fns';
 
 interface PlatformStats {
   totalOrgs: number;
@@ -279,7 +280,7 @@ function LegacyDashboardPage() {
         setRecentTasks(recent);
 
         const now = new Date();
-        const todayKey = now.toISOString().split('T')[0];
+        const todayKey = format(now, 'yyyy-MM-dd');
         const calRes = await apiClient.get<{
           data: {
             tasksByDate: Record<string, Task[]>;

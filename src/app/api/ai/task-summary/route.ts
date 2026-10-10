@@ -3,11 +3,12 @@ import { prisma } from '@/lib/db';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 import { callLLM } from '@/lib/ai';
 import { getFeatureProvider, isFeatureEnabled } from '@/lib/ai-settings';
+import { sessionTaskScope } from '@/lib/task-read-scope';
 
 // POST /api/ai/task-summary - 업무 히스토리+댓글 기반 현황 요약
 export async function POST(req: NextRequest) {
   try {
-    const { error, organizationId } = await requireAuth();
+    const { error, organizationId, session } = await requireAuth();
     if (error) return error;
 
     if (!(await isFeatureEnabled(organizationId, 'taskSummary'))) {
@@ -18,11 +19,12 @@ export async function POST(req: NextRequest) {
     if (!providerInfo) return errorResponse('API 키가 설정되지 않았습니다.', 400, 'AI_KEY_MISSING');
 
     const body = await req.json();
-    const taskId = parseInt(body.taskId);
-    if (isNaN(taskId)) return errorResponse('유효하지 않은 업무 ID입니다.', 400, 'VALID_400');
+    const taskId = Number(body.taskId);
+    if (!['number', 'string'].includes(typeof body.taskId) || !Number.isSafeInteger(taskId) || taskId <= 0 || taskId > 2147483647) return errorResponse('유효하지 않은 업무 ID입니다.', 400, 'VALID_400');
+    const scope = await sessionTaskScope(organizationId, Number(session!.user.id), session!.user.role);
 
     const task = await prisma.task.findFirst({
-      where: { id: taskId, organizationId },
+      where: { AND: [scope, { id: taskId }] },
       select: {
         title: true,
         status: true,

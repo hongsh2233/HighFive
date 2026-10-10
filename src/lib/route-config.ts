@@ -33,3 +33,16 @@ export const LEADER_ROUTES: string[] = ['stats', 'reports'];
 // PARTNER 역할이 접근할 수 있는 최상위 라우트만 허용(화이트리스트) — 그 외 ORG_SCOPED_ROUTES는 전부 차단.
 // 관리자 설정/조직 운영/분석 등 내부 전용 메뉴는 PARTNER에게 노출되지 않는다.
 export const PARTNER_ALLOWED_ROUTES: string[] = ['dashboard', 'my-work', 'tasks', 'calendar', 'projects', 'profile', 'my-notes', 'manual', 'settings'];
+
+// Match route segments rather than prefixes; support both /tasks and /org/tasks.
+export function organizationRoute(pathname: string) {
+  const segments = pathname.split('/').filter(Boolean);
+  const routes: readonly string[] = ORG_SCOPED_ROUTES;
+  if (routes.includes(segments[0])) return { slug: null, pathname: '/' + segments.join('/') };
+  if (segments.length > 1 && routes.includes(segments[1])) return { slug: segments[0], pathname: '/' + segments.slice(1).join('/') };
+  return null;
+}
+export function sessionLoginPath(pathname: string, storedSlug?: string) {
+  const slug = organizationRoute(pathname)?.slug || storedSlug;
+  return slug ? `/${encodeURIComponent(slug)}/login` : '/login';
+}

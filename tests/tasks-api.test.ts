@@ -15,6 +15,10 @@ beforeEach(() => {
   mocks.count.mockResolvedValue(1); mocks.members.mockResolvedValue([{ projectId: 3 }]);
 });
 describe('업무 조회 API 하위호환과 접근 범위', () => {
+  it.each(['page=0', 'page=-1', 'limit=1001', 'workerId=7oops', 'projectId=0', 'projectId=1e2', 'workerId=2147483648'])('잘못된 조회 조건 %s는 400으로 거부한다', async query => {
+    expect((await GET(new NextRequest('http://localhost/api/tasks?' + query))).status).toBe(400);
+    expect(mocks.findMany).not.toHaveBeenCalled();
+  });
   it('기존 페이지 응답을 유지하고 최근 댓글만 추가한다', async () => {
     const response = await GET(new NextRequest('http://localhost/api/tasks?page=2&limit=200'));
     const body = await response.json();

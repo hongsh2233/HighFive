@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, startOfMonth, startOfWeek } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import type { Task } from '@/types';
-import type { StatusResolver } from '@/lib/work-hub';
+import { parseTaskDate, type StatusResolver } from '@/lib/work-hub';
+import { navigateTabs } from './tabs';
 import KanbanBoard from '@/components/kanban/KanbanBoard';
 import TaskCards from './TaskCards';
 import styles from './WorkHub.module.css';
@@ -28,10 +29,12 @@ export default function TaskViews({ tasks, getStatuses, projectId, initialView =
     groups.get(key)!.tasks.push(t);
   });
   const days = eachDayOfInterval({ start: startOfWeek(month, { weekStartsOn: 1 }), end: endOfWeek(endOfMonth(month), { weekStartsOn: 1 }) });
+  const byDate = new Map<string, Task[]>();
+  items.forEach(task => { const date = parseTaskDate(task.targetDate); if (!date) return; const key = format(date, 'yyyy-MM-dd'); byDate.set(key, [...(byDate.get(key) || []), task]); });
   return <div>
     {!projectId && <label className={styles.muted}>프로젝트 <select aria-label="업무 보기 프로젝트" className={styles.button} value={selection} onChange={e => setSelection(e.target.value)}><option value="">전체 프로젝트</option>{options.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>}
     <div role="tablist" aria-label="업무 보기" className={styles.tabs}>{Object.entries(VIEW_LABELS).map(([key, label]) =>
-      <button role="tab" aria-selected={view === key} key={key} onClick={() => setView(key as BoardView)} className={`${styles.tab} ${view === key ? styles.active : ''}`}>{label}</button>)}
+      <button role="tab" aria-selected={view === key} tabIndex={view === key ? 0 : -1} onKeyDown={navigateTabs} key={key} onClick={() => setView(key as BoardView)} className={`${styles.tab} ${view === key ? styles.active : ''}`}>{label}</button>)}
       <Link href={scopedProjectId ? `/tasks?projectId=${scopedProjectId}` : '/tasks'} className={styles.button}>목록에서 업무 편집</Link>
     </div>
     {view === 'kanban' && <KanbanBoard key={scopedProjectId ?? 'all'} projectId={scopedProjectId} hideProjectSelect onChanged={onChanged} onTaskClick={task => router.push(`/tasks/${task.id}`)} />}
@@ -42,7 +45,7 @@ export default function TaskViews({ tasks, getStatuses, projectId, initialView =
         <button className={styles.button} onClick={() => setMonth(startOfMonth(new Date()))}>이번 달</button><button className={styles.button} aria-label="다음 달" onClick={() => setMonth(addMonths(month, 1))}>→</button></div></div>
       <div className={styles.calendar}>{['월', '화', '수', '목', '금', '토', '일'].map(day => <div key={day} className={styles.muted}>{day}</div>)}
         {days.map(day => { const key = format(day, 'yyyy-MM-dd'); return <div key={key} className={styles.day}><time dateTime={key} className={day.getMonth() !== month.getMonth() ? styles.muted : ''}>{format(day, 'M/d')}</time>
-          {items.filter(t => t.targetDate && format(new Date(t.targetDate), 'yyyy-MM-dd') === key).map(t => <Link href={`/tasks/${t.id}`} key={t.id}>{t.title}</Link>)}</div>; })}</div>
+          {(byDate.get(key) || []).map(t => <Link href={`/tasks/${t.id}`} key={t.id}>{t.title}</Link>)}</div>; })}</div>
     </section>}
   </div>;
 }

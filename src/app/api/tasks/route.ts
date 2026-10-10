@@ -45,8 +45,14 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status');
     const workerId = searchParams.get('workerId');
     const projectId = searchParams.get('projectId');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const page = Number(searchParams.get('page') ?? 1);
+    const limit = Number(searchParams.get('limit') ?? 10);
+    if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(limit) || limit < 1 || limit > 1000 || !Number.isSafeInteger((page - 1) * limit)) {
+      return errorResponse('페이지는 1 이상, 조회 건수는 1~1000 사이의 정수여야 합니다.', 400, 'VALID_400');
+    }
+    if ([workerId, projectId].some(value => value !== null && (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)) || Number(value) <= 0 || Number(value) > 2147483647))) {
+      return errorResponse('유효한 담당자와 프로젝트를 선택해 주세요.', 400, 'VALID_400');
+    }
 
     const organizationId = auth.organizationId;
     const where: any = { organizationId };
@@ -103,7 +109,7 @@ export async function GET(req: NextRequest) {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         include: {
           registrant: { select: { id: true, name: true, email: true } },
           worker: { select: { id: true, name: true, email: true } },

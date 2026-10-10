@@ -39,6 +39,8 @@ interface Worker {
 
 export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const activeId = useRef(id);
+  activeId.current = id;
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const { confirm } = useDialog();
@@ -282,9 +284,10 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     );
   };
 
-  const fetchTask = async () => {
+  const fetchTask = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await apiClient.get<{ data: Task }>(`/tasks/${id}`);
+      const response = await apiClient.get<{ data: Task }>(`/tasks/${id}`, { signal });
+      if (signal?.aborted || activeId.current !== id) return;
       const t = response.data.data;
       setTask(t);
       setFormData({ notes: t.notes || '' });
@@ -298,37 +301,44 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       });
 
       const logsResponse = await apiClient.get<{ data: { logs: TimeLog[]; totalHours: number } }>(
-        `/tasks/${id}/timelogs`
+        `/tasks/${id}/timelogs`, { signal }
       );
+      if (signal?.aborted || activeId.current !== id) return;
       setTimeLogs(logsResponse.data.data.logs);
       setTotalHours(logsResponse.data.data.totalHours);
 
-      const historyRes = await apiClient.get<{ data: any[] }>(`/tasks/${id}/history`);
+      const historyRes = await apiClient.get<{ data: any[] }>(`/tasks/${id}/history`, { signal });
+      if (signal?.aborted || activeId.current !== id) return;
       setHistories(historyRes.data.data);
 
-      const commentsRes = await apiClient.get<{ data: any[] }>(`/tasks/${id}/comments`);
+      const commentsRes = await apiClient.get<{ data: any[] }>(`/tasks/${id}/comments`, { signal });
+      if (signal?.aborted || activeId.current !== id) return;
       setComments(commentsRes.data.data);
 
-      const depsRes = await apiClient.get<{ data: { id: number; title: string; status: string; isDone: boolean }[] }>(`/tasks/${id}/dependencies`);
+      const depsRes = await apiClient.get<{ data: { id: number; title: string; status: string; isDone: boolean }[] }>(`/tasks/${id}/dependencies`, { signal });
+      if (signal?.aborted || activeId.current !== id) return;
       setBlockers(depsRes.data.data);
 
       if (t.projectId) {
         apiClient.get<{ data: { data: Task[] } }>(`/tasks?projectId=${t.projectId}&limit=200`)
-          .then((res) => setProjectTasks(res.data.data.data.filter((pt) => pt.id !== t.id).map((pt) => ({ id: pt.id, title: pt.title }))))
+          .then((res) => { if (!signal?.aborted && activeId.current === id) setProjectTasks(res.data.data.data.filter((pt) => pt.id !== t.id).map((pt) => ({ id: pt.id, title: pt.title }))); })
           .catch(() => {});
       }
     } catch (err: any) {
-      setError(err.message || '업무 조회 실패');
+      if (!signal?.aborted && activeId.current === id) setError(err.message || '업무 조회 실패');
     } finally {
-      setLoading(false);
+      if (!signal?.aborted && activeId.current === id) setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
+    const controller = new AbortController();
     if (!authLoading) {
-      fetchTask();
+      setLoading(true); setTask(null); setError(null);
+      fetchTask(controller.signal);
     }
-  }, [id, authLoading]);
+    return () => controller.abort();
+  }, [fetchTask, authLoading]);
 
   useEffect(() => {
     apiClient.get<{ data: { features: { taskSummary: boolean } } }>('/settings/ai/status')

@@ -1,4 +1,6 @@
 import axios, { AxiosInstance } from "axios";
+import { useAuthStore } from '@/store/authStore';
+import { sessionLoginPath } from '@/lib/route-config';
 
 const baseURL =
   typeof window !== "undefined"
@@ -33,7 +35,9 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       if (typeof window !== "undefined") {
         localStorage.removeItem("accessToken");
-        window.location.href = "/login";
+        if (!window.location.pathname.endsWith('/login')) {
+          window.location.href = sessionLoginPath(window.location.pathname, useAuthStore.getState().user?.organizationSlug);
+        }
       }
     }
     return Promise.reject(error);

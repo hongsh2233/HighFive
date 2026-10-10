@@ -51,14 +51,14 @@ export function useTasks(options?: { limit?: number }) {
     }) => {
       try {
         const response = await apiClient.post<{ data: Task }>('/tasks', data);
-        setTasks([response.data.data, ...tasks]);
+        setTasks(current => [response.data.data, ...current]);
         return response.data.data;
       } catch (err: any) {
         setError(err.message || '업무 생성 실패');
         throw err;
       }
     },
-    [tasks]
+    []
   );
 
   // 업무 수정
@@ -66,14 +66,14 @@ export function useTasks(options?: { limit?: number }) {
     async (id: number, data: Partial<Task>) => {
       try {
         const response = await apiClient.patch<{ data: Task }>(`/tasks/${id}`, data);
-        setTasks(tasks.map((t) => (t.id === id ? response.data.data : t)));
+        setTasks(current => current.map((t) => (t.id === id ? response.data.data : t)));
         return response.data.data;
       } catch (err: any) {
         setError(err.message || '업무 수정 실패');
         throw err;
       }
     },
-    [tasks]
+    []
   );
 
   // 업무 삭제
@@ -81,13 +81,13 @@ export function useTasks(options?: { limit?: number }) {
     async (id: number) => {
       try {
         await apiClient.delete(`/tasks/${id}`);
-        setTasks(tasks.filter((t) => t.id !== id));
+        setTasks(current => current.filter((t) => t.id !== id));
       } catch (err: any) {
         setError(err.message || '업무 삭제 실패');
         throw err;
       }
     },
-    [tasks]
+    []
   );
 
   // 상태 변경
@@ -98,14 +98,14 @@ export function useTasks(options?: { limit?: number }) {
           `/tasks/${id}/status`,
           { status }
         );
-        setTasks(tasks.map((t) => (t.id === id ? response.data.data : t)));
+        setTasks(current => current.map((t) => (t.id === id ? response.data.data : t)));
         return response.data.data;
       } catch (err: any) {
         setError(err.message || '상태 변경 실패');
         throw err;
       }
     },
-    [tasks]
+    []
   );
 
   useEffect(() => {

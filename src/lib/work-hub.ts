@@ -12,9 +12,13 @@ export function isDone(task: Task, getStatuses: StatusResolver) {
   return taskState(task, getStatuses)?.isDone ?? task.status === 'DONE';
 }
 export function dueDays(task: Task, now = new Date()): number | null {
-  if (!task.targetDate) return null;
-  const date = new Date(task.targetDate);
-  return Number.isNaN(date.getTime()) ? null : differenceInCalendarDays(date, now);
+  const date = parseTaskDate(task.targetDate);
+  return date ? differenceInCalendarDays(date, now) : null;
+}
+export function parseTaskDate(value: string | null): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 export function isWaiting(task: Task, getStatuses: StatusResolver) {
   const state = taskState(task, getStatuses);

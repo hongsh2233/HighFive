@@ -6,6 +6,7 @@ import apiClient from '@/lib/api-client';
 import { Task } from '@/types';
 import styles from './calendar.module.css';
 import Spinner from '@/components/common/Spinner';
+import { format } from 'date-fns';
 
 interface CalendarData {
   tasksByDate: { [key: string]: Task[] };
@@ -33,40 +34,49 @@ export default function CalendarPage() {
   const [googleConnected, setGoogleConnected] = useState(false);
   const [googleEventsByDate, setGoogleEventsByDate] = useState<{ [key: string]: GoogleEvent[] }>({});
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const [revision, setRevision] = useState(0);
 
   const handleAiSummary = () => {
     setAiNotice(true);
   };
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchCalendarData = async () => {
+      setLoading(true); setError(''); setSelectedDate(null);
       try {
         const [tasksRes, googleRes] = await Promise.all([
           apiClient.get<{ data: CalendarData }>(
-            `/tasks/calendar?year=${currentDate.getFullYear()}&month=${currentDate.getMonth() + 1}`
+            `/tasks/calendar?year=${currentDate.getFullYear()}&month=${currentDate.getMonth() + 1}`, { signal: controller.signal }
           ),
           apiClient.get<{ data: { connected: boolean; eventsByDate: { [key: string]: GoogleEvent[] } } }>(
-            `/calendar/google-events?year=${currentDate.getFullYear()}&month=${currentDate.getMonth() + 1}`
+            `/calendar/google-events?year=${currentDate.getFullYear()}&month=${currentDate.getMonth() + 1}`, { signal: controller.signal }
           ).catch(() => null),
         ]);
+        if (controller.signal.aborted) return;
         setData(tasksRes.data.data);
+        setGoogleConnected(false); setGoogleEventsByDate({});
         if (googleRes) {
           setGoogleConnected(googleRes.data.data.connected);
           setGoogleEventsByDate(googleRes.data.data.eventsByDate || {});
         }
       } catch (err) {
+        if (controller.signal.aborted) return;
+        setData(null); setError('일정을 불러오지 못했습니다. 다시 시도해 주세요.');
         console.error('Failed to fetch calendar data:', err);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     if (!authLoading) {
       fetchCalendarData();
     }
-  }, [currentDate, authLoading]);
+    return () => controller.abort();
+  }, [currentDate, authLoading, revision]);
 
-  const todayKey = new Date().toISOString().split('T')[0];
+  const todayKey = format(new Date(), 'yyyy-MM-dd');
   const activeDateKey = selectedDate || todayKey;
   const activeDayTasks = data?.tasksByDate[activeDateKey] || [];
   const activeDayLeaves = data?.leavesByDate[activeDateKey] || [];
@@ -101,6 +111,7 @@ export default function CalendarPage() {
 
   return (
     <div className={styles.container}>
+      {error && <p role="alert">{error} <button onClick={() => setRevision(n => n + 1)}>다시 시도</button></p>}
       <div className={styles.header}>
         <h1 className={styles.title}>배포 캘린더</h1>
         <div className={styles.navRow}>
@@ -185,7 +196,7 @@ export default function CalendarPage() {
 
           <div className={styles.calendarGrid}>
             {daysArray.map((date, idx) => {
-              const dateKey = date.toISOString().split('T')[0];
+              const dateKey = format(date, 'yyyy-MM-dd');
               const dayTasks = data?.tasksByDate[dateKey] || [];
               const dayLeaves = data?.leavesByDate[dateKey] || [];
               const dayGoogleEvents = googleEventsByDate[dateKey] || [];

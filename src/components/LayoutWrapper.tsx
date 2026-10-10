@@ -5,16 +5,14 @@ import { useSession } from 'next-auth/react';
 import AppShell from './AppShell';
 import AnnouncementBanner from './AnnouncementBanner';
 import WikiSearchButton from './WikiSearchButton';
-import { ORG_SCOPED_ROUTES } from '@/lib/route-config';
-
-const AUTH_REQUIRED_PATHS = ORG_SCOPED_ROUTES.map((r) => `/${r}`);
+import { organizationRoute } from '@/lib/route-config';
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { status } = useSession();
 
   const isLoginPage = pathname === '/login' || pathname === '/' || pathname.endsWith('/login');
-  const requiresAuth = AUTH_REQUIRED_PATHS.some((p) => pathname.startsWith(p));
+  const requiresAuth = !!organizationRoute(pathname) || pathname === '/superadmin' || pathname.startsWith('/superadmin/');
 
   // 인증 필요 페이지에서 세션 로딩 중이거나 미인증이면 렌더링 차단
   if (requiresAuth && (status === 'loading' || status === 'unauthenticated')) {

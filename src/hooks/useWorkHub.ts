@@ -34,6 +34,8 @@ export function useWorkHub(projectId?: number) {
   const statuses = useProjectStatuses(revision);
   const reload = useCallback(() => setRevision(n => n + 1), []);
   const userId = user?.id;
+  const scope = `${userId}:${projectId ?? 'all'}`;
+  const [loadedScope, setLoadedScope] = useState<string | null>(null);
   useEffect(() => {
     if (authLoading || !userId) return;
     const controller = new AbortController();
@@ -42,11 +44,11 @@ export function useWorkHub(projectId?: number) {
       loadHubTasks(projectId, controller.signal),
       apiClient.get<{ data: HubProject[] }>('/projects', { signal: controller.signal }),
     ]).then(([items, response]) => {
-      if (!controller.signal.aborted) { setTasks(items); setProjects(response.data.data); }
+      if (!controller.signal.aborted) { setTasks(items); setProjects(response.data.data); setLoadedScope(scope); }
     }).catch(() => {
       if (!controller.signal.aborted) setError('업무 현황을 불러오지 못했습니다. 다시 시도해 주세요.');
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [authLoading, userId, projectId, revision]);
-  return { tasks, projects, user, loading: loading || authLoading || statuses.loading, error: error || statuses.error, reload, getStatuses: statuses.getStatuses };
+  }, [authLoading, userId, projectId, revision, scope]);
+  return { tasks, projects, user, loading: authLoading || (loadedScope !== scope && !error) || (statuses.loading && !statuses.ready), refreshing: loading || statuses.loading, error: error || statuses.error, reload, getStatuses: statuses.getStatuses };
 }

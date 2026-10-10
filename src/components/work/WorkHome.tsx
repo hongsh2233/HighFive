@@ -4,16 +4,16 @@ import Link from 'next/link';
 import { useWorkHub } from '@/hooks/useWorkHub';
 import apiClient from '@/lib/api-client';
 import { FOCUS_LABELS, focusTasks, isDone, taskRisk, dueDays, type TaskFocus } from '@/lib/work-hub';
-import type { UserNotification } from '@/types';
+import { useNotificationsContext } from '@/components/NotificationsProvider';
 import TaskCards from './TaskCards';
 import Spinner from '@/components/common/Spinner';
 import styles from './WorkHub.module.css';
+import { navigateTabs } from './tabs';
 
 export default function WorkHome({ personal = false }: { personal?: boolean }) {
-  const { user, tasks, projects, loading, error, reload, getStatuses } = useWorkHub();
+  const { user, tasks, projects, loading, refreshing, error, reload, getStatuses } = useWorkHub();
   const [focus, setFocus] = useState<TaskFocus>('today');
-  const [notifications, setNotifications] = useState<UserNotification[]>([]);
-  const [notificationError, setNotificationError] = useState(false);
+  const { notifications, error: notificationError } = useNotificationsContext();
   const [briefingEnabled, setBriefingEnabled] = useState(false);
   const [briefing, setBriefing] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -22,8 +22,6 @@ export default function WorkHome({ personal = false }: { personal?: boolean }) {
   useEffect(() => {
     if (!userId || personal) return;
     let active = true;
-    apiClient.get<{ data: { notifications: UserNotification[] } }>('/notifications').then(res => { if (active) setNotifications(res.data.data.notifications); })
-      .catch(() => { if (active) setNotificationError(true); });
     apiClient.get<{ data: { features: { dailyBriefing?: boolean } } }>('/settings/ai/status')
       .then(res => { if (active) setBriefingEnabled(!!res.data.data.features.dailyBriefing); }).catch(() => {});
     return () => { active = false; };
@@ -48,14 +46,14 @@ export default function WorkHome({ personal = false }: { personal?: boolean }) {
   return <section className={styles.page}>
     <header className={styles.header}><div><h1>{personal ? '내 업무' : `${user?.name || ''}님, 오늘의 업무 브리핑`}</h1>
       <p className={styles.muted}>{personal ? '내게 배정된 업무를 마감과 진행 상황별로 확인하세요.' : '지금 확인할 일과 다음 행동을 한곳에서 확인하세요.'}</p></div>
-      <div className={styles.row}><Link className={styles.button} href="/tasks/kanban">업무 보드</Link><Link className={styles.button} href="/tasks">전체 업무 목록</Link></div></header>
+      <div className={styles.row}><button className={styles.button} disabled={refreshing} onClick={reload}>{refreshing ? '새로고침 중…' : '새로고침'}</button><Link className={styles.button} href="/tasks/kanban">업무 보드</Link><Link className={styles.button} href="/tasks">전체 업무 목록</Link></div></header>
     <div className={styles.metrics}>
       {([['today', '오늘 마감', today.length], ['overdue', '지연', overdue.length], ['waiting', '대기', waiting.length], ['week', '이번 주', focusTasks(mine, 'week', getStatuses).length]] as const).map(([key, label, count]) =>
         <button key={key} className={styles.metric} onClick={() => setFocus(key)}><span>{label}</span><strong>{count}</strong><span className={styles.muted}>내 업무 확인 →</span></button>)}
     </div>
     <div className={personal ? '' : styles.columns}>
       <div><div className={styles.tabs} role="tablist" aria-label="내 업무 필터">{Object.entries(FOCUS_LABELS).map(([key, label]) =>
-        <button role="tab" aria-selected={focus === key} key={key} className={`${styles.tab} ${focus === key ? styles.active : ''}`} onClick={() => setFocus(key as TaskFocus)}>{label}</button>)}</div>
+        <button role="tab" aria-selected={focus === key} tabIndex={focus === key ? 0 : -1} onKeyDown={navigateTabs} key={key} className={`${styles.tab} ${focus === key ? styles.active : ''}`} onClick={() => setFocus(key as TaskFocus)}>{label}</button>)}</div>
         <div className={styles.card}><h2>{FOCUS_LABELS[focus]} 업무</h2><TaskCards tasks={focusTasks(mine, focus, getStatuses)} getStatuses={getStatuses} /></div>
         {!personal && <div className={styles.card}><h2>마감 임박 · 3일 이내</h2><TaskCards tasks={dueSoon} getStatuses={getStatuses} /></div>}
         {!personal && <div className={styles.card}><h2>내가 기다리는 업무</h2><p className={styles.muted}>내가 요청하고 다른 담당자가 수행 중인 업무 · 조회 권한 범위 기준</p><TaskCards tasks={requested} getStatuses={getStatuses} /></div>}

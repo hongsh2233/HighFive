@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Task } from '@/types';
 import { useProjectStatuses } from '@/hooks/useProjectStatuses';
 import KanbanColumn from './KanbanColumn';
@@ -28,27 +28,36 @@ export default function KanbanBoard({ onTaskClick, projectId, onChanged, hidePro
   const [selectedProjectId, setSelectedProjectId] = useState(projectId ? String(projectId) : '');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { getStatuses, loading: statusesLoading } = useProjectStatuses();
+  const [revision, setRevision] = useState(0);
+  const pending = useRef(new Set<number>());
+  const [pendingIds, setPendingIds] = useState<Set<number>>(new Set());
+  const { getStatuses, loading: statusesLoading, error: statusError } = useProjectStatuses(revision);
 
   useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true); setError('');
+    setSelectedProjectId(projectId ? String(projectId) : '');
     const fetchAll = async () => {
       try {
         const [tasksRes, projectsRes] = await Promise.all([
-          loadHubTasks(projectId),
-          apiClient.get<{ data: Project[] }>('/projects'),
+          loadHubTasks(projectId, controller.signal),
+          apiClient.get<{ data: Project[] }>('/projects', { signal: controller.signal }),
         ]);
+        if (controller.signal.aborted) return;
         setTasks(tasksRes);
         setProjects(projectsRes.data.data.filter((p) => p.status === 'ACTIVE'));
       } catch (err) {
+        if (controller.signal.aborted) return;
         setError('업무 보드를 불러오지 못했습니다.');
         console.error('Failed to load tasks:', err);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     fetchAll();
-  }, [projectId]);
+    return () => controller.abort();
+  }, [projectId, revision]);
 
   const groupIds = new Set<number>();
   tasks.forEach((t) => {
@@ -114,15 +123,17 @@ export default function KanbanBoard({ onTaskClick, projectId, onChanged, hidePro
     if (targetStatus === '__OTHER__') return;
     const taskId = parseInt(e.dataTransfer.getData('taskId'));
     const task = tasks.find((t) => t.id === taskId);
-    if (!task || task.status === targetStatus) return;
+    if (!task || task.status === targetStatus || pending.current.has(taskId)) return;
 
     const targetDef = getStatuses(task.projectId).find((s) => s.code === targetStatus);
+    if (!targetDef) { setError('이 업무의 프로젝트에는 해당 상태가 없습니다. 프로젝트를 선택한 후 변경하세요.'); return; }
     if (targetDef?.isProgress && task.hasIncompleteBlockers) {
-      alert('선행 업무가 완료되지 않아 시작할 수 없습니다.');
+      setError('선행 업무가 완료되지 않아 시작할 수 없습니다.');
       return;
     }
 
-    setTasks(tasks.map((t) => t.id === taskId ? { ...t, status: targetStatus } : t));
+    pending.current.add(taskId); setPendingIds(new Set(pending.current));
+    setTasks(current => current.map((t) => t.id === taskId ? { ...t, status: targetStatus } : t));
 
     try {
       await apiClient.patch(`/tasks/${taskId}/status`, { status: targetStatus });
@@ -131,7 +142,9 @@ export default function KanbanBoard({ onTaskClick, projectId, onChanged, hidePro
     } catch (err) {
       console.error('Failed to update task status:', err);
       setError('상태 변경에 실패하여 이전 상태로 되돌렸습니다. 권한과 승인 조건을 확인하세요.');
-      setTasks(tasks.map((t) => t.id === taskId ? { ...t, status: task.status } : t));
+      setTasks(current => current.map((t) => t.id === taskId ? { ...t, status: task.status } : t));
+    } finally {
+      pending.current.delete(taskId); setPendingIds(new Set(pending.current));
     }
   };
 
@@ -141,7 +154,7 @@ export default function KanbanBoard({ onTaskClick, projectId, onChanged, hidePro
 
   return (
     <div>
-      {error && <p role="alert">{error}</p>}
+      {(error || statusError) && <p role="alert">{error || statusError} <button onClick={() => setRevision(n => n + 1)}>다시 불러오기</button></p>}
       {!hideProjectSelect && <div className={styles.toolbar}>
         <select
           aria-label="칸반 프로젝트"
@@ -164,6 +177,7 @@ export default function KanbanBoard({ onTaskClick, projectId, onChanged, hidePro
             status={col.code}
             color={col.color}
             tasks={groupedTasks[col.code]}
+            pendingIds={pendingIds}
             parentMap={parentMap}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}

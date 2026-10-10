@@ -342,16 +342,21 @@ function TaskListContent() {
   });
 
   const applyBulk = async () => {
-    if (!selectedIds.size) return;
+    if (!selectedIds.size || bulkSaving || (!bulkStatus && !bulkWorker)) return;
     setBulkSaving(true);
-    await Promise.all([...selectedIds].map(async (id) => {
-      if (bulkStatus) await updateStatus(id, bulkStatus);
-      if (bulkWorker) await updateTask(id, { workerId: parseInt(bulkWorker) });
-    }));
-    setSelectedIds(new Set());
-    setBulkStatus('');
-    setBulkWorker('');
-    setBulkSaving(false);
+    try {
+      const ids = [...selectedIds];
+      const results = await Promise.allSettled(ids.map(async (id) => {
+        if (bulkStatus) await updateStatus(id, bulkStatus);
+        if (bulkWorker) await updateTask(id, { workerId: parseInt(bulkWorker) });
+      }));
+      const failed = ids.filter((_, index) => results[index].status === 'rejected');
+      setSelectedIds(new Set(failed));
+      if (failed.length) await alertDialog(`${ids.length - failed.length}건 처리 완료, ${failed.length}건 처리 실패. 실패한 업무는 선택을 유지했습니다. 일부 변경은 이미 적용되었을 수 있으니 확인 후 다시 시도하세요.`);
+      else { setBulkStatus(''); setBulkWorker(''); }
+    } finally {
+      setBulkSaving(false);
+    }
   };
 
   const [panelWidth, setPanelWidth] = useState(420);

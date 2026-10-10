@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import apiClient from '@/lib/api-client';
 import { Task } from '@/types';
@@ -36,36 +36,47 @@ export default function TaskDetailPanel({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
-  const [commentInput, setCommentInput] = useState('');
+  const [drafts, setDrafts] = useState<Record<number, string>>({});
+  const commentInput = drafts[taskId] || '';
+  const setCommentInput = (value: React.SetStateAction<string>) => setDrafts(current => ({ ...current, [taskId]: typeof value === 'function' ? value(current[taskId] || '') : value }));
+  const [error, setError] = useState('');
+  const activeTask = useRef(taskId);
+  activeTask.current = taskId;
   const [commentSaving, setCommentSaving] = useState(false);
 
-  const fetchTask = () => {
+  const fetchTask = useCallback((signal?: AbortSignal) => {
     setLoading(true);
-    apiClient.get<{ data: Task }>(`/tasks/${taskId}`)
-      .then((res) => setTask(res.data.data))
-      .catch(() => setTask(null))
-      .finally(() => setLoading(false));
-  };
+    apiClient.get<{ data: Task }>(`/tasks/${taskId}`, { signal })
+      .then((res) => { if (!signal?.aborted && activeTask.current === taskId) setTask(res.data.data); })
+      .catch(() => { if (!signal?.aborted && activeTask.current === taskId) { setTask(null); setError('업무를 불러오지 못했습니다. 다시 시도해 주세요.'); } })
+      .finally(() => { if (!signal?.aborted && activeTask.current === taskId) setLoading(false); });
+  }, [taskId]);
 
-  const fetchComments = () => {
-    apiClient.get<{ data: any[] }>(`/tasks/${taskId}/comments`)
-      .then((res) => setComments(res.data.data))
-      .catch(() => setComments([]));
-  };
+  const fetchComments = useCallback((signal?: AbortSignal) => {
+    apiClient.get<{ data: any[] }>(`/tasks/${taskId}/comments`, { signal })
+      .then((res) => { if (!signal?.aborted && activeTask.current === taskId) setComments(res.data.data); })
+      .catch(() => { if (!signal?.aborted && activeTask.current === taskId) setError('댓글을 불러오지 못했습니다.'); });
+  }, [taskId]);
 
   useEffect(() => {
-    fetchTask();
-    fetchComments();
-  }, [taskId]);
+    const controller = new AbortController();
+    setTask(null); setComments([]); setError('');
+    fetchTask(controller.signal); fetchComments(controller.signal);
+    return () => controller.abort();
+  }, [fetchTask, fetchComments]);
 
   const handleCommentSubmit = async () => {
     const content = commentInput.trim();
     if (!content || commentSaving) return;
     setCommentSaving(true);
+    setError('');
     try {
       const res = await apiClient.post<{ data: any }>(`/tasks/${taskId}/comments`, { content });
+      setCommentInput(current => current.trim() === content ? '' : current);
+      if (activeTask.current !== taskId) return;
       setComments((prev) => [...prev, res.data.data]);
-      setCommentInput('');
+    } catch {
+      if (activeTask.current === taskId) setError('댓글 등록에 실패했습니다. 입력 내용을 유지했습니다.');
     } finally {
       setCommentSaving(false);
     }
@@ -78,30 +89,42 @@ export default function TaskDetailPanel({
   }, [onClose]);
 
   const handleStatusChange = async (status: string) => {
+    if (saving) return;
+    setError('');
     setSaving(true);
     try {
       await onUpdateStatus(taskId, status);
-      fetchTask();
+      if (activeTask.current === taskId) fetchTask();
+    } catch {
+      if (activeTask.current === taskId) setError('상태 변경에 실패했습니다. 권한과 선행 업무·승인 조건을 확인하세요.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleWorkerChange = async (workerId: string) => {
+    if (saving) return;
+    setError('');
     setSaving(true);
     try {
       await onUpdateTask(taskId, { workerId: parseInt(workerId) });
-      fetchTask();
+      if (activeTask.current === taskId) fetchTask();
+    } catch {
+      if (activeTask.current === taskId) setError('담당자 변경에 실패했습니다.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleTargetDateChange = async (targetDate: string) => {
+    if (saving) return;
+    setError('');
     setSaving(true);
     try {
       await onUpdateTask(taskId, { targetDate: targetDate || null });
-      fetchTask();
+      if (activeTask.current === taskId) fetchTask();
+    } catch {
+      if (activeTask.current === taskId) setError('마감일 변경에 실패했습니다.');
     } finally {
       setSaving(false);
     }
@@ -119,7 +142,8 @@ export default function TaskDetailPanel({
         </div>
       </div>
 
-      {loading || !task ? (
+      {error && <div role="alert" className={styles.loading}>{error} <button onClick={() => { setError(''); fetchTask(); fetchComments(); }}>다시 시도</button></div>}
+      {loading || !task || task.id !== taskId ? (
         <div className={styles.loading}>{loading ? '불러오는 중...' : '업무를 찾을 수 없습니다.'}</div>
       ) : (
         <div className={styles.body}>
@@ -198,7 +222,7 @@ export default function TaskDetailPanel({
                 {comments.map((c) => (
                   <li key={c.id} className={styles.commentItem}>
                     <div className={styles.commentMeta}>
-                      <span className={styles.commentAuthor}>{c.author?.name || '알 수 없음'}</span>
+                      <span className={styles.commentAuthor}>{c.author?.name || 'JIA 연동'}</span>
                       <span className={styles.commentDate}>{new Date(c.createdAt).toLocaleString('ko-KR')}</span>
                     </div>
                     <div className={styles.commentContent}>{c.content}</div>
