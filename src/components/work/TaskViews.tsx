@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, startOfMonth, startOfWeek } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import type { Task } from '@/types';
+import { formatTaskKey } from '@/lib/task-key';
 import { parseTaskDate, type StatusResolver } from '@/lib/work-hub';
 import { navigateTabs } from './tabs';
 import KanbanBoard from '@/components/kanban/KanbanBoard';
@@ -45,7 +46,7 @@ export default function TaskViews({ tasks, getStatuses, projectId, initialView =
         <button className={styles.button} onClick={() => setMonth(startOfMonth(new Date()))}>이번 달</button><button className={styles.button} aria-label="다음 달" onClick={() => setMonth(addMonths(month, 1))}>→</button></div></div>
       <div className={styles.calendar}>{['월', '화', '수', '목', '금', '토', '일'].map(day => <div key={day} className={styles.muted}>{day}</div>)}
         {days.map(day => { const key = format(day, 'yyyy-MM-dd'); return <div key={key} className={styles.day}><time dateTime={key} className={day.getMonth() !== month.getMonth() ? styles.muted : ''}>{format(day, 'M/d')}</time>
-          {(byDate.get(key) || []).map(t => <Link href={`/tasks/${t.id}`} key={t.id}>{t.title}</Link>)}</div>; })}</div>
+          {(byDate.get(key) || []).map(t => <Link href={`/tasks/${t.id}`} key={t.id}>{formatTaskKey(t.id)} · {t.title}</Link>)}</div>; })}</div>
     </section>}
   </div>;
 }

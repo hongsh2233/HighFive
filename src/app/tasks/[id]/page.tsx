@@ -7,6 +7,7 @@ import { useProjectStatuses } from '@/hooks/useProjectStatuses';
 import { useProjectFields } from '@/hooks/useProjectFields';
 import apiClient from '@/lib/api-client';
 import { Task, TimeLog, ProjectField } from '@/types';
+import { formatTaskKey } from '@/lib/task-key';
 import styles from './detail.module.css';
 import { actionLabel } from '@/lib/task-history';
 import Spinner from '@/components/common/Spinner';
@@ -724,7 +725,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
           </button>
         </div>
         <p className={styles.pageSubtitle}>
-          업무 #{task.id}
+          {formatTaskKey(task.id)}
           {task.rmsNo && ` · ${task.rmsNo}`}
         </p>
       </div>

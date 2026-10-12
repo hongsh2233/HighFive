@@ -1,6 +1,7 @@
 'use client';
 
 import { Task } from '@/types';
+import { formatTaskKey } from '@/lib/task-key';
 import { TASK_PRIORITY_TEXT, TASK_PRIORITY_COLOR, TASK_LABEL_TEXT, TASK_LABEL_COLOR } from '@/lib/constants';
 import styles from './KanbanColumn.module.css';
 
@@ -77,6 +78,7 @@ export default function KanbanColumn({
                   {parentTask && <span className={styles.parentPrefix}>[{parentTask.title}]</span>}
                   <span className={styles.cardTitleText}>{task.title}</span>
                 </div>
+                <small>{formatTaskKey(task.id)}</small>
 
                 {task.labels && (
                   <div className={styles.cardLabels}>

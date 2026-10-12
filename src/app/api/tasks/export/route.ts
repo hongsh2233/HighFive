@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
+import { formatTaskKey } from '@/lib/task-key';
 import { requireRole, errorResponse } from '@/lib/utils';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
@@ -45,6 +46,7 @@ export async function GET(req: NextRequest) {
 
     const rows = tasks.map((t) => ({
       ID: t.id,
+      업무번호: formatTaskKey(t.id),
       RMS번호: t.rmsNo ?? '',
       제목: t.title,
       상태: t.status,

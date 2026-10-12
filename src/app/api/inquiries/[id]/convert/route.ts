@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
+import { formatTaskKey } from '@/lib/task-key';
 import { requireInquiryManageAccess, successResponse, errorResponse } from '@/lib/utils';
 import { getProjectStatuses } from '@/lib/task-status';
 import { addHistory } from '@/lib/task-history';
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     await addHistory(task.id, creatorId, 'CREATED', '홈페이지 문의에서 전환된 업무');
 
-    return successResponse({ taskId: task.id }, '업무로 전환되었습니다.', 201);
+    return successResponse({ taskId: task.id, taskKey: formatTaskKey(task.id) }, '업무로 전환되었습니다.', 201);
   } catch (err: any) {
     if (err?.message === 'ALREADY_CONVERTED') {
       return errorResponse('이미 업무로 전환된 문의입니다.', 400);

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import apiClient from '@/lib/api-client';
 import { Task } from '@/types';
+import { formatTaskKey } from '@/lib/task-key';
 import { TASK_PRIORITY_TEXT } from '@/lib/constants';
 import styles from './TaskDetailPanel.module.css';
 import JiaSidePanel from '@/components/work/JiaSidePanel';
@@ -135,7 +136,7 @@ export default function TaskDetailPanel({
       <div className={styles.resizeHandle} onMouseDown={onResizeStart} />
 
       <div className={styles.header}>
-        <span className={styles.headerLabel}>업무 #{taskId}</span>
+        <span className={styles.headerLabel}>{task && task.id === taskId ? formatTaskKey(task.id) : '업무 상세'}</span>
         <div className={styles.headerActions}>
           <Link href={`/tasks/${taskId}`} className={styles.expandBtn} title="전체 화면으로 열기">⤢</Link>
           <button type="button" onClick={onClose} className={styles.closeBtn} aria-label="닫기">✕</button>

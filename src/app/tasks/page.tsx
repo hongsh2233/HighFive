@@ -9,6 +9,7 @@ import { useProjectStatuses } from '@/hooks/useProjectStatuses';
 import { useProjectFields } from '@/hooks/useProjectFields';
 import apiClient from '@/lib/api-client';
 import { ProjectField, FieldType } from '@/types';
+import { formatTaskKey } from '@/lib/task-key';
 import styles from './tasks.module.css';
 import Spinner from '@/components/common/Spinner';
 import TaskDetailPanel from '@/components/TaskDetailPanel';
@@ -972,6 +973,7 @@ function ProjectTaskSection({
             {task.hasIncompleteBlockers && (
               <span title="선행 업무 미완료" style={{ flexShrink: 0 }}>🔒</span>
             )}
+            <small style={{ flexShrink: 0 }}>{formatTaskKey(task.id)}</small>
             {editingTitleId === task.id ? (
               <input
                 type="text"

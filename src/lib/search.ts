@@ -1,7 +1,9 @@
 import { prisma } from './db';
+import { formatTaskKey, parseTaskKey } from './task-key';
 
 export interface SearchTaskResult {
   id: number;
+  taskKey: string;
   title: string;
   status: string;
   snippet: string;
@@ -141,6 +143,7 @@ export async function runSearch(
   const projectIdScopeWhere = accessibleProjectIds === null ? {} : { projectId: { in: accessibleProjectIds.length ? accessibleProjectIds : [-1] } };
 
   const taskWhere = taskVisibilityWhere(organizationId, ctx, accessibleProjectIds);
+  const keyId = parseTaskKey(q);
   const commentVisibility = ctx.role === 'PARTNER' ? { visibility: 'PARTNER_VISIBLE' } : {};
 
   const [
@@ -159,7 +162,7 @@ export async function runSearch(
       where: {
         AND: [
           taskWhere,
-          { OR: [{ title: { contains: q, mode: 'insensitive' } }, { notes: { contains: q, mode: 'insensitive' } }] },
+          { OR: [...(keyId !== null ? [{ id: keyId }] : []), { title: { contains: q, mode: 'insensitive' } }, { notes: { contains: q, mode: 'insensitive' } }] },
           ...(filters.projectId ? [{ projectId: filters.projectId }] : []),
           ...(filters.authorId ? [{ OR: [{ workerId: filters.authorId }, { registrantId: filters.authorId }] }] : []),
           ...(dateFilter ? [{ createdAt: dateFilter }] : []),
@@ -285,6 +288,7 @@ export async function runSearch(
     const commentSnippet = commentSnippetMap.get(t.id);
     return {
       id: t.id,
+      taskKey: formatTaskKey(t.id),
       title: t.title,
       status: t.status,
       snippet: commentSnippet ? `💬 ${commentSnippet.slice(0, 80)}` : (t.notes ? t.notes.slice(0, 80) : ''),

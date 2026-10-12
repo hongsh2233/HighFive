@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import apiClient from '@/lib/api-client';
+import { formatTaskKey } from '@/lib/task-key';
 import styles from './TopSearch.module.css';
 
 interface TaskResult { id: number; title: string; status: string; snippet: string; projectId: number | null; projectName: string | null; workerName: string | null; }
@@ -167,7 +168,7 @@ export default function TopSearch() {
           onChange={handleChange}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder={aiMode ? '자연어로 검색... (Enter)' : '검색 (Ctrl+K)'}
+          placeholder={aiMode ? '자연어로 검색... (Enter)' : '업무 번호·제목 검색 (Ctrl+K)'}
           className={styles.input}
         />
         <button type="button" className={styles.aiToggle} onClick={() => setShowFilters((v) => !v)} title="필터">
@@ -217,7 +218,7 @@ export default function TopSearch() {
               <div className={styles.sectionLabel}>업무</div>
               {results.tasks.map((t) => (
                 <button key={t.id} className={styles.item} onClick={() => goTask(t.id)}>
-                  <div className={styles.itemTitle}>{t.title}</div>
+                  <div className={styles.itemTitle}>{formatTaskKey(t.id)} · {t.title}</div>
                   <div className={styles.itemMeta}>
                     {t.projectName && <span>{t.projectName}</span>}
                     {t.workerName && <span>{t.workerName}</span>}

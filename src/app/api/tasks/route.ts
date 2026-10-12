@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
+import { parseTaskKey, withTaskKey } from '@/lib/task-key';
 import { requireAuth, successResponse, errorResponse, parseRmsNo } from '@/lib/utils';
 import { requireReadAuth } from '@/lib/service-auth';
 import { sanitize } from '@/lib/sanitize';
@@ -45,6 +46,11 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status');
     const workerId = searchParams.get('workerId');
     const projectId = searchParams.get('projectId');
+    const key = searchParams.get('taskKey');
+    const keyId = key === null ? null : parseTaskKey(key);
+    if (key !== null && keyId === null) {
+      return errorResponse('유효하지 않은 업무 번호입니다.', 400, 'VALID_400');
+    }
     const page = Number(searchParams.get('page') ?? 1);
     const limit = Number(searchParams.get('limit') ?? 10);
     if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(limit) || limit < 1 || limit > 1000 || !Number.isSafeInteger((page - 1) * limit)) {
@@ -56,6 +62,7 @@ export async function GET(req: NextRequest) {
 
     const organizationId = auth.organizationId;
     const where: any = { organizationId };
+    if (keyId !== null) where.id = keyId;
     if (status) where.status = status;
     if (workerId) where.workerId = parseInt(workerId);
     if (projectId) where.projectId = parseInt(projectId);
@@ -137,7 +144,7 @@ export async function GET(req: NextRequest) {
     );
 
     const tasksWithBlockedFlag = tasks.map(({ blockedBy, comments, ...t }) => ({
-      ...t,
+      ...withTaskKey(t),
       latestComment: comments[0] ?? null,
       hasIncompleteBlockers: blockedBy.some(
         (d) => !doneCodesByProject.get(d.blockingTask.projectId)?.has(d.blockingTask.status)
@@ -252,7 +259,7 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      return successResponse(subTask, '하위 업무가 추가되었습니다.', 201);
+      return successResponse(withTaskKey(subTask), '하위 업무가 추가되었습니다.', 201);
     }
 
     const isGroupReq = isGroup === true;
@@ -339,7 +346,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return successResponse(result, '업무가 생성되었습니다.', 201);
+    return successResponse(result ? withTaskKey(result) : result, '업무가 생성되었습니다.', 201);
   } catch (err) {
     console.error(err);
     return errorResponse('업무 생성 중 오류가 발생했습니다.', 500);

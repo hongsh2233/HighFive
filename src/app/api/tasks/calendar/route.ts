@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
+import { withTaskKey } from '@/lib/task-key';
 import { requireAuth, successResponse, errorResponse } from '@/lib/utils';
 import { sessionTaskScope } from '@/lib/task-read-scope';
 import { getProjectStatuses } from '@/lib/task-status';
@@ -46,7 +47,7 @@ export async function GET(req: NextRequest) {
         if (!tasksByDate[dateKey]) {
           tasksByDate[dateKey] = [];
         }
-        tasksByDate[dateKey].push(task);
+        tasksByDate[dateKey].push(withTaskKey(task));
       }
     });
 

@@ -1,6 +1,6 @@
 # High5 프로젝트 구조 문서
 
-> **최종 업데이트** 2026-10-10
+> **최종 업데이트** 2026-10-12
 > **스택** Next.js 15 · Prisma 5 · PostgreSQL · NextAuth.js 4 · Zustand · MUI
 >
 > 이 문서는 코드 변경 시 항상 최신 상태로 유지된다. 작업 절차는 `.claude/skills/dev-workflow/SKILL.md`, 작업 이력은 `docs/HISTORY.md` 참고. 디자인 시스템은 `docs/DESIGN.md`, 향후 AI/자동화 기능(주간보고 자동생성/AI 자동배정/외부연동 확장/구글시트 연동) 현황 분석 및 로드맵은 `docs/ROADMAP_AI_AUTOMATION.md`, 외부연동/자동화 확장의 구체 설계(스키마·API·파일 단위)는 `docs/AUTOMATION_DESIGN.md` 참고.
@@ -87,7 +87,8 @@ User (1) ──< Request [requester / approver] (1) ──< Announcement (전결
 ### Task
 | 필드 | 타입 | 비고 |
 |---|---|---|
-| id | Int PK | |
+| id | Int PK | PostgreSQL 자동 증가, 업무 고유 번호의 원본 |
+| taskKey | String (응답 계산값) | `HF-000123` 형태. `src/lib/task-key.ts`에서 id로 계산, DB 컬럼/마이그레이션 없음. 목록·상세·등록·수정·상태·캘린더·검색 응답 및 화면에 표시. 기존/하위 업무도 적용, RMS 번호와 별개. `/api/tasks?taskKey=HF-000123` 및 통합 검색 지원. 상세 규칙은 `TASK_KEYS.md` 참고. |
 | rmsNo | String? | 제목에서 자동 파싱 ex) `DCBGIT-39085` |
 | title | String | RMS 번호 제거 후 저장 |
 | registrantId / workerId | Int FK (registrantId는 DB 컬럼명 plannerId 그대로 매핑) | 등록자 / 작업자 |

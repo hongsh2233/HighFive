@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
+import { formatTaskKey, withTaskKey } from '@/lib/task-key';
 import { requireAuth, successResponse, errorResponse, canAccessTaskByRole } from '@/lib/utils';
 import { notifyStatusChange } from '@/lib/webhook';
 import { notifyStatusChanged } from '@/lib/notify';
@@ -135,11 +136,11 @@ export async function PATCH(
     if (newStatusDef.isDone && !prevStatusDef?.isDone && updatedTask.externalLink) {
       getOrgGithubToken(organizationId).then((token) => {
         if (!token) return;
-        postGithubComment(token, updatedTask.externalLink!, `✅ 업무 상태가 '${newStatusDef.label}'(으)로 변경되었습니다 (High5)`);
+        postGithubComment(token, updatedTask.externalLink!, `✅ ${formatTaskKey(updatedTask.id)} 업무 상태가 '${newStatusDef.label}'(으)로 변경되었습니다 (High5)`);
       }).catch(() => {});
     }
 
-    return successResponse(updatedTask, '업무 상태가 변경되었습니다.');
+    return successResponse(withTaskKey(updatedTask), '업무 상태가 변경되었습니다.');
   } catch (err) {
     console.error(err);
     return errorResponse('업무 상태 변경 중 오류가 발생했습니다.', 500);

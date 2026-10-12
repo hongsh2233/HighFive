@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import type { Task } from '@/types';
 import { TASK_PRIORITY_TEXT } from '@/lib/constants';
+import { formatTaskKey } from '@/lib/task-key';
 import { parseTaskDate, taskRisk, taskState, type StatusResolver } from '@/lib/work-hub';
 import styles from './WorkHub.module.css';
 
@@ -15,6 +16,7 @@ export default function TaskCards({ tasks, getStatuses }: { tasks: Task[]; getSt
       <div className={styles.row}><span className={styles.badge}>{task.project?.name || '프로젝트 미지정'}</span>
         <span className={styles.badge}>{taskState(task, getStatuses)?.label || task.status}</span>
         {risk && <span className={`${styles.badge} ${styles.risk}`}>{risk}</span>}</div>
+      <span className={styles.muted}>{formatTaskKey(task.id)}</span>
       <strong>{task.title}</strong>
       <div className={styles.muted}>{task.worker?.name || '미배정'} · {TASK_PRIORITY_TEXT[task.priority] || task.priority || '보통'} · {date ? format(date, 'yyyy.MM.dd') : '마감 미정'}
         {typeof task._count?.comments === 'number' && ` · 댓글 ${task._count.comments}개`}</div>

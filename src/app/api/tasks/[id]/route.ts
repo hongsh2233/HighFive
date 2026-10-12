@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
+import { withTaskKey } from '@/lib/task-key';
 import { requireAuth, successResponse, errorResponse, parseRmsNo, canAccessTaskByRole } from '@/lib/utils';
 import { requireReadAuth, serviceProjectAllowed } from '@/lib/service-auth';
 import { sanitize } from '@/lib/sanitize';
@@ -66,7 +67,7 @@ export async function GET(
       return errorResponse('업무를 찾을 수 없습니다.', 404, 'TASK_404');
     }
 
-    return successResponse(task, '업무 조회 완료');
+    return successResponse(withTaskKey(task), '업무 조회 완료');
   } catch (err) {
     console.error(err);
     return errorResponse('업무 조회 중 오류가 발생했습니다.', 500);
@@ -188,7 +189,7 @@ export async function PATCH(
       }).catch(() => {});
     }
 
-    return successResponse(task, '업무가 수정되었습니다.');
+    return successResponse(withTaskKey(task), '업무가 수정되었습니다.');
   } catch (err) {
     console.error(err);
     return errorResponse('업무 수정 중 오류가 발생했습니다.', 500);

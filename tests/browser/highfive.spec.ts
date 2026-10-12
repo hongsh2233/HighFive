@@ -67,6 +67,21 @@ test('HOME, 내 업무, 프로젝트 개요와 상세의 흐름', async ({ page 
   await expect(page.locator('textarea').filter({ hasNot: page.locator('[disabled]') }).last()).toHaveValue(/완료 예상일/);
   await page.screenshot({ path: testInfo.outputPath('detail-desktop.png'), fullPage: true });
 });
+test('기존 업무의 자동 번호가 칸반·목록·전체 상세에서 유지된다', async ({ page }, testInfo) => {
+  await signIn(page);
+  await page.goto('/exwave/tasks/kanban');
+  const card = page.locator('[draggable]').filter({ has: page.getByText('디자인 검수', { exact: true }) });
+  await expect(card).toContainText('HF-000001');
+  await page.getByRole('tab', { name: 'List' }).click();
+  const link = page.getByRole('link', { name: /디자인 검수/ });
+  await expect(link).toContainText('HF-000001');
+  await page.screenshot({ path: testInfo.outputPath('task-key-list.png'), fullPage: true });
+  await link.click();
+  await expect(page.getByRole('heading', { name: '디자인 검수', exact: true })).toBeVisible();
+  await expect(page.getByText('HF-000001', { exact: true }).first()).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('task-key-detail.png'), fullPage: true });
+});
+
 test('칸반 변경 후 프로젝트 선택을 유지하고 다른 보기에도 반영한다', async ({ page }) => {
   await signIn(page);
   await page.goto('/exwave/tasks/kanban');

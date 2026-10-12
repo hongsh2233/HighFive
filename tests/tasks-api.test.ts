@@ -15,6 +15,18 @@ beforeEach(() => {
   mocks.count.mockResolvedValue(1); mocks.members.mockResolvedValue([{ projectId: 3 }]);
 });
 describe('업무 조회 API 하위호환과 접근 범위', () => {
+  it('기존 업무 응답에도 번호를 붙이고 숫자 id는 그대로 둔다', async () => {
+    const body = await (await GET(new NextRequest('http://localhost/api/tasks'))).json();
+    expect(body.data.data[0]).toMatchObject({ id: 1, taskKey: 'HF-000001', title: '기존 업무' });
+  });
+  it('번호 조회도 본인 업무/조직 범위를 벗어나지 않는다', async () => {
+    await GET(new NextRequest('http://localhost/api/tasks?taskKey=HF-000123'));
+    expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { organizationId: 1, workerId: 7, id: 123 } }));
+  });
+  it.each(['HF-000123oops', 'HF-0', 'HF-2147483648', ''])('잘못된 번호 %s는 조회하지 않는다', async key => {
+    expect((await GET(new NextRequest('http://localhost/api/tasks?taskKey=' + key))).status).toBe(400);
+    expect(mocks.findMany).not.toHaveBeenCalled();
+  });
   it.each(['page=0', 'page=-1', 'limit=1001', 'workerId=7oops', 'projectId=0', 'projectId=1e2', 'workerId=2147483648'])('잘못된 조회 조건 %s는 400으로 거부한다', async query => {
     expect((await GET(new NextRequest('http://localhost/api/tasks?' + query))).status).toBe(400);
     expect(mocks.findMany).not.toHaveBeenCalled();

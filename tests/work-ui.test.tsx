@@ -58,6 +58,7 @@ describe('주요 업무 UI', () => {
     expect(screen.getByText('기본 확인 문안 · AI 생성 아님')).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: '댓글 입력란에 넣기' }));
     expect(mocks.draft).toHaveBeenCalledWith(expect.stringContaining('완료 예상일'));
+    expect(mocks.draft).toHaveBeenCalledWith(expect.stringContaining('HF-000001'));
     expect(mocks.post).not.toHaveBeenCalled();
   });
   it('JIA 요약은 기존 API와 taskId로 요청한다', async () => {

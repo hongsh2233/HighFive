@@ -23,6 +23,8 @@ export type TaskStatus = string;
 
 export interface Task {
   id: number;
+  /** Immutable public identifier; older API responses can derive it from id. */
+  taskKey?: string;
   rmsNo: string | null;
   title: string;
   registrantId: number;

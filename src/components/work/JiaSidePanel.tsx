@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import apiClient from '@/lib/api-client';
 import type { Task } from '@/types';
+import { formatTaskKey } from '@/lib/task-key';
 import { taskRisk, type StatusResolver } from '@/lib/work-hub';
 import styles from './WorkHub.module.css';
 
@@ -36,11 +37,11 @@ export default function JiaSidePanel({ task, getStatuses, onDraft }: { task: Tas
     finally { if (!controller.signal.aborted) setLoading(false); }
   };
   const makeDraft = () => {
-    const text = `${task.worker?.name || '담당자'}님, 「${task.title}」의 진행 상황을 확인 부탁드립니다.${risk ? ` 현재 ${risk} 상태입니다.` : ''} 남은 작업과 완료 예상일을 알려 주세요.`;
+    const text = `${task.worker?.name || '담당자'}님, ${formatTaskKey(task.id)} 「${task.title}」의 진행 상황을 확인 부탁드립니다.${risk ? ` 현재 ${risk} 상태입니다.` : ''} 남은 작업과 완료 예상일을 알려 주세요.`;
     setDraft(text); setInserted(false);
   };
   return <aside aria-label="JIA 업무 비서" className={`${styles.card} ${styles.jia}`}>
-    <h2>JIA 업무 비서</h2><p className={styles.muted}>업무 #{task.id} · 제안과 초안을 검토한 후 직접 실행하세요.</p>
+    <h2>JIA 업무 비서</h2><p className={styles.muted}>{formatTaskKey(task.id)} · 제안과 초안을 검토한 후 직접 실행하세요.</p>
     <h3>현재 확인할 사항</h3><p className={styles.text}>{risk || '마감 또는 선행 업무 위험이 감지되지 않았습니다.'}</p>
     <p className={styles.muted}>최근 변경: {new Date(task.updatedAt).toLocaleString('ko-KR')}</p>
     <h3>다음 행동</h3><p className={styles.text}>{task.hasIncompleteBlockers ? '선행 업무의 완료 여부를 먼저 확인하세요.' : risk ? '담당자에게 진행 상황과 완료 예상일을 확인하세요.' : '체크리스트와 최근 댓글을 확인하세요.'}</p>
