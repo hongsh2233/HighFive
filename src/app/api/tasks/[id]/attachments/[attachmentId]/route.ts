@@ -2,20 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, errorResponse } from '@/lib/utils';
 import { addHistory } from '@/lib/task-history';
+import { requireReadAuth, serviceProjectAllowed } from '@/lib/service-auth';
 
 // GET /api/tasks/[id]/attachments/[attachmentId] - 파일 다운로드
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string; attachmentId: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string; attachmentId: string }> }) {
   try {
-    const { error, organizationId } = await requireAuth();
-    if (error) return error;
+    // 세션 사용자 또는 READ 권한 서비스 키. 서비스 키는 허용된 프로젝트의 업무 첨부만 (범위 밖은 404).
+    const auth = await requireReadAuth(req);
+    if (auth.error) return auth.error;
+    const organizationId = auth.organizationId;
 
     const { id, attachmentId } = await params;
     const taskId = parseInt(id);
 
     const attachment = await prisma.taskAttachment.findFirst({
       where: { id: parseInt(attachmentId), taskId, task: { organizationId } },
+      include: { task: { select: { projectId: true } } },
     });
     if (!attachment) return errorResponse('첨부파일을 찾을 수 없습니다.', 404, 'NOT_FOUND_404');
+    if (auth.isService && !serviceProjectAllowed(auth.credential, attachment.task.projectId)) {
+      return errorResponse('첨부파일을 찾을 수 없습니다.', 404, 'NOT_FOUND_404');
+    }
 
     return new NextResponse(new Uint8Array(attachment.data), {
       headers: {
