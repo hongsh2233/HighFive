@@ -1,7 +1,7 @@
 # NCP VPS 등 저사양 서버 배포용 멀티스테이지 빌드
 # Next.js standalone 산출물만 복사해서 이미지 크기를 줄인다.
 
-FROM node:20-slim AS deps
+FROM node:24-slim AS deps
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y openssl \
@@ -11,7 +11,7 @@ COPY package.json package-lock.json* ./
 RUN npm ci
 
 
-FROM node:20-slim AS builder
+FROM node:24-slim AS builder
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y openssl \
@@ -24,7 +24,7 @@ RUN npx prisma generate
 RUN npm run build
 
 
-FROM node:20-slim AS runner
+FROM node:24-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
