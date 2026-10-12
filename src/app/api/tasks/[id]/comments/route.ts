@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessTaskByRole } from '@/lib/utils';
 import { prisma } from '@/lib/db';
 import { createUserNotification } from '@/lib/notify';
-import { requireServiceAuth, serviceHasPermission, serviceProjectAllowed } from '@/lib/service-auth';
+import { requireReadAuth, requireServiceAuth, serviceHasPermission, serviceProjectAllowed } from '@/lib/service-auth';
 
 const AUTHOR_SELECT = { select: { id: true, name: true } };
 
@@ -18,11 +18,13 @@ function parseMentionIds(content: string): number[] {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { session, organizationId, error } = await requireAuth();
-  if (error) return error;
+  // 세션 사용자 또는 READ 권한 서비스 키(JIA·운영 세션 등). 서비스 키는 업무 상세 조회와 같은 프로젝트 범위만 본다.
+  const auth = await requireReadAuth(req);
+  if (auth.error) return auth.error;
+  const organizationId = auth.organizationId;
 
   const { id } = await params;
   const taskId = parseInt(id);
@@ -31,10 +33,19 @@ export async function GET(
   const task = await prisma.task.findFirst({ where: { id: taskId, organizationId } });
   if (!task) return NextResponse.json({ message: '업무를 찾을 수 없습니다.' }, { status: 404 });
 
-  const role = (session!.user as any).role;
-  const viewerId = parseInt((session!.user as any).id || '0');
-  if (!(await canAccessTaskByRole(task, viewerId, role))) {
-    return NextResponse.json({ message: '업무를 찾을 수 없습니다.' }, { status: 404 });
+  let role: string | null = null;
+  if (auth.isService) {
+    // 허용되지 않은 프로젝트는 존재 여부도 드러내지 않는다 (업무 상세 조회와 동일하게 404).
+    if (!serviceProjectAllowed(auth.credential, task.projectId)) {
+      return NextResponse.json({ message: '업무를 찾을 수 없습니다.' }, { status: 404 });
+    }
+  } else {
+    const sessionRole: string = (auth.session!.user as any).role;
+    role = sessionRole;
+    const viewerId = parseInt((auth.session!.user as any).id || '0');
+    if (!(await canAccessTaskByRole(task, viewerId, sessionRole))) {
+      return NextResponse.json({ message: '업무를 찾을 수 없습니다.' }, { status: 404 });
+    }
   }
 
   // PARTNER는 "파트너 공개"로 표시된 댓글/답글만 볼 수 있음
