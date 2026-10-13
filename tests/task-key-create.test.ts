@@ -37,3 +37,19 @@ describe('업무 등록 시 번호 자동 발급', () => {
     expect((await response.json()).data).toMatchObject({ taskKey: 'HF-000123', subTasks: [{ taskKey: 'HF-000124' }, { taskKey: 'HF-000125' }] });
   });
 });
+describe('업무 등록 시 시간카운터 기본값 (HF-000067)', () => {
+  it('값이 없으면 시간카운터를 끈 상태로 등록한다', async () => {
+    await POST(request());
+    expect(mocks.create.mock.calls[0][0].data.timeCounterEnabled).toBe(false);
+  });
+  it('명시적으로 true를 보낸 경우에만 켠다', async () => {
+    await POST(request({ timeCounterEnabled: true }));
+    expect(mocks.create.mock.calls[0][0].data.timeCounterEnabled).toBe(true);
+  });
+  it('그룹 업무의 부모·하위 업무도 기본은 꺼짐이다', async () => {
+    mocks.find.mockResolvedValue({ id: 123, subTasks: [] });
+    await POST(request({ isGroup: true, subTasks: [{ title: '하위', workerId: 7 }] }));
+    expect(mocks.create.mock.calls.length).toBeGreaterThan(1);
+    for (const call of mocks.create.mock.calls) expect(call[0].data.timeCounterEnabled).toBe(false);
+  });
+});

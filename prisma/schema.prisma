@@ -275,7 +275,7 @@ model Task {
   labels             String?
   priority           String    @default("NORMAL")
   isGroup            Boolean   @default(false)
-  timeCounterEnabled Boolean   @default(true)
+  timeCounterEnabled Boolean   @default(false)
   githubEnabled      Boolean   @default(false)
   quickRegister      Boolean   @default(false)
   parentTaskId       Int?

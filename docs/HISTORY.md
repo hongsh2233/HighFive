@@ -2,7 +2,11 @@
 
 > 신규 작업 완료 시 `.claude/skills/dev-workflow/SKILL.md` 절차에 따라 이 문서에 기록을 추가한다.
 
-## 2026-10-12
+## 2026-10-13
+
+- [HF-000067] 업무 등록 시 시간카운터 기본값을 꺼짐으로 변경: 등록 화면 체크박스 기본 해제, `POST /api/tasks`는 `timeCounterEnabled: true`일 때만 켬, Prisma 기본값 `false` + 마이그레이션 `20261013000000_task_time_counter_default_off`(컬럼 DEFAULT만 변경, 기존 업무 값 유지). 가져오기/반복/문의 전환 업무도 DB 기본값을 따라 꺼짐으로 생성.
+- [HF-000067] 요약보기(오른쪽 빠른 상세 패널) 댓글창에 @멘션 추가: 패널 입력창이 일반 textarea라 멘션 목록·`@[이름](id)` 삽입이 없었음. 상세 화면의 멘션 로직을 `src/hooks/useMention.ts`와 `src/components/mention/MentionDropdown.tsx`로 추출해 두 화면이 공유(상세 화면 동작 동일). 패널 댓글 목록도 멘션을 표시하고, 멘션 목록이 열린 상태의 Escape는 목록만 닫는다.
+
 
 - Docker 설치 실패 수정: npm 10.8.2에서 잠금 파일의 `yaml@2.9.1` 누락으로 `npm ci`가 EUSAGE 종료되는 문제를 재현하고 누락된 vite-node/vitest 하위 항목을 보완. 기존 패키지 버전 변경 없음. Docker 3단계를 Node 24로 통일해 `openai@7.15.0`의 Node >=22 요구사항과 로컬 검증 환경을 맞춤.
 

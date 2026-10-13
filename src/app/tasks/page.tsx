@@ -614,6 +614,7 @@ function TaskListContent() {
           onUpdateTask={updateTask}
           width={panelWidth}
           onResizeStart={handleResizeStart}
+          currentUserId={(user as any)?.id ?? null}
         />
       )}
     </div>

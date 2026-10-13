@@ -12,6 +12,8 @@ import styles from './detail.module.css';
 import { actionLabel } from '@/lib/task-history';
 import Spinner from '@/components/common/Spinner';
 import JiaSidePanel from '@/components/work/JiaSidePanel';
+import MentionDropdown, { MentionText } from '@/components/mention/MentionDropdown';
+import { useMention } from '@/hooks/useMention';
 import hubStyles from '@/components/work/WorkHub.module.css';
 import { useDialog } from '@/components/common/DialogProvider';
 import UserQuickMenu from '@/components/common/UserQuickMenu';
@@ -88,9 +90,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
   // @멘션 자동완성
   const [allUsers, setAllUsers] = useState<Worker[]>([]);
-  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
-  const mentionAnchorRef = useRef(0); // ref로 스테일 클로저 방지
-  const mentionQueryRef = useRef<string | null>(null);
+  const mention = useMention(allUsers);
+  const { detect: detectMention, close: closeMention } = mention;
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
   const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -432,75 +433,21 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     }).catch(() => {});
   }, [authLoading]);
 
-  const detectMention = (val: string, pos: number) => {
-    const before = val.slice(0, pos);
-    const match = before.match(/@([^@\n]*)$/);
-    if (match) {
-      mentionAnchorRef.current = pos - match[0].length;
-      const q = match[1];
-      mentionQueryRef.current = q;
-      setMentionQuery(q);
-    } else {
-      mentionQueryRef.current = null;
-      setMentionQuery(null);
-    }
-  };
-
   const handleCommentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     setCommentInput(val);
     detectMention(val, e.target.selectionStart ?? val.length);
-  }, []);
+  }, [detectMention]);
 
   const handleReplyChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     setReplyInput(val);
     detectMention(val, e.target.selectionStart ?? val.length);
-  }, []);
+  }, [detectMention]);
 
-  const mentionFiltered = mentionQuery !== null
-    ? allUsers.filter((u) => u.name.toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 6)
-    : [];
-
-  const insertMentionInto = (
-    current: string,
-    setter: (v: string) => void,
-    taRef: React.RefObject<HTMLTextAreaElement | null>,
-    u: Worker
-  ) => {
-    const anchor = mentionAnchorRef.current;
-    const q = mentionQueryRef.current ?? '';
-    const before = current.slice(0, anchor);
-    const after = current.slice(anchor + 1 + q.length);
-    const inserted = `@[${u.name}](${u.id}) `;
-    setter(before + inserted + after);
-    setMentionQuery(null);
-    mentionQueryRef.current = null;
-    setTimeout(() => {
-      const ta = taRef.current;
-      if (ta) {
-        const cursor = before.length + inserted.length;
-        ta.focus();
-        ta.setSelectionRange(cursor, cursor);
-      }
-    }, 0);
-  };
-
-  const renderCommentContent = useCallback((content: string) => {
-    const parts = content.split(/(@\[[^\]]+\]\(\d+\))/g);
-    return parts.map((part, i) => {
-      const m = part.match(/^@\[([^\]]+)\]\((\d+)\)$/);
-      if (m) {
-        const isSelf = parseInt(m[2]) === (user as any)?.id;
-        return (
-          <span key={i} className={isSelf ? styles.mentionSelf : styles.mention}>
-            @{m[1]}
-          </span>
-        );
-      }
-      return <span key={i}>{part}</span>;
-    });
-  }, [user]);
+  const renderCommentContent = useCallback((content: string) => (
+    <MentionText content={content} currentUserId={(user as any)?.id} />
+  ), [user]);
 
   const handleInfoSave = async () => {
     if (!task) return;
@@ -557,7 +504,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       const res = await apiClient.post<{ data: any }>(`/tasks/${id}/comments`, { content });
       setComments((prev) => [...prev, { ...res.data.data, replies: [] }]);
       setCommentInput('');
-      setMentionQuery(null);
+      closeMention();
     } catch (err: any) {
       setInfoError(err.response?.data?.message || '댓글 작성 실패');
     } finally {
@@ -584,7 +531,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       );
       setReplyInput('');
       setReplyTo(null);
-      setMentionQuery(null);
+      closeMention();
     } catch (err: any) {
       setInfoError(err.response?.data?.message || '답글 작성 실패');
     } finally {
@@ -657,15 +604,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     valueFn: () => string,
     setterFn: (v: string) => void
   ) => (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (mentionQuery !== null && mentionFiltered.length > 0) {
-      if (e.key === 'Escape') { e.preventDefault(); setMentionQuery(null); return; }
-      if (e.key === 'Enter' || e.key === 'Tab') {
-        e.preventDefault();
-        insertMentionInto(valueFn(), setterFn, taRef, mentionFiltered[0]);
-        return;
-      }
-    }
-    if (e.key === 'Enter' && !e.shiftKey && mentionQuery === null) {
+    if (mention.handleKeyDown(e, valueFn(), setterFn, taRef)) return;
+    if (e.key === 'Enter' && !e.shiftKey && mention.query === null) {
       e.preventDefault();
       submitFn();
     }
@@ -1165,7 +1105,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                       onClick={() => {
                         setReplyTo({ commentId: c.id, authorName: c.author?.name || '' });
                         setReplyInput('');
-                        setMentionQuery(null);
+                        closeMention();
                         setTimeout(() => replyTextareaRef.current?.focus(), 50);
                       }}
                     >
@@ -1217,7 +1157,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                                 onClick={() => {
                                   setReplyTo({ commentId: c.id, authorName: r.author?.name || '' });
                                   setReplyInput('');
-                                  setMentionQuery(null);
+                                  closeMention();
                                   setTimeout(() => replyTextareaRef.current?.focus(), 50);
                                 }}
                               >
@@ -1263,21 +1203,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                   {replyTo?.commentId === c.id && (
                     <div className={styles.replyInputArea}>
                       <div className={styles.commentInputWrapper}>
-                        {mentionQuery !== null && mentionFiltered.length > 0 && (
-                          <ul className={styles.mentionDropdown}>
-                            {mentionFiltered.map((u) => (
-                              <li key={u.id}>
-                                <button
-                                  type="button"
-                                  className={styles.mentionItem}
-                                  onMouseDown={(e) => { e.preventDefault(); insertMentionInto(replyInput, setReplyInput, replyTextareaRef, u); }}
-                                >
-                                  <span className={styles.mentionAvatar}>{u.name[0]}</span>
-                                  {u.name}
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
+                        {mention.isOpen && (
+                          <MentionDropdown users={mention.filtered} onSelect={(u) => mention.insert(replyInput, setReplyInput, replyTextareaRef, u)} />
                         )}
                         <textarea
                           ref={replyTextareaRef}
@@ -1293,7 +1220,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                         <button onClick={handleReplySubmit} disabled={replySaving || !replyInput.trim()} className={styles.btn}>
                           {replySaving ? '등록 중...' : '등록'}
                         </button>
-                        <button onClick={() => { setReplyTo(null); setReplyInput(''); setMentionQuery(null); }} className={styles.btnSecondary}>
+                        <button onClick={() => { setReplyTo(null); setReplyInput(''); closeMention(); }} className={styles.btnSecondary}>
                           취소
                         </button>
                       </div>
@@ -1308,21 +1235,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         {/* 새 댓글 입력 */}
         <div className={styles.commentInputArea}>
           <div className={styles.commentInputWrapper}>
-            {mentionQuery !== null && mentionFiltered.length > 0 && replyTo === null && (
-              <ul className={styles.mentionDropdown}>
-                {mentionFiltered.map((u) => (
-                  <li key={u.id}>
-                    <button
-                      type="button"
-                      className={styles.mentionItem}
-                      onMouseDown={(e) => { e.preventDefault(); insertMentionInto(commentInput, setCommentInput, commentTextareaRef, u); }}
-                    >
-                      <span className={styles.mentionAvatar}>{u.name[0]}</span>
-                      {u.name}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+            {mention.isOpen && replyTo === null && (
+              <MentionDropdown users={mention.filtered} onSelect={(u) => mention.insert(commentInput, setCommentInput, commentTextareaRef, u)} />
             )}
             <textarea
               ref={commentTextareaRef}

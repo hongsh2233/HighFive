@@ -174,7 +174,8 @@ export async function POST(req: NextRequest) {
     const { title, workerId, registrantId, targetDate, projectId, labels, subTasks, isGroup, parentTaskId, timeCounterEnabled, githubEnabled, quickRegister, attachments, priority, requireCompletionApproval } = body;
     const notes = sanitize(body.notes || '');
     const labelsStr: string | null = Array.isArray(labels) && labels.length > 0 ? labels.join(',') : null;
-    const timeCounterEnabledReq = timeCounterEnabled !== false;
+    // 시간카운터는 명시적으로 켠 경우(true)에만 사용한다. 값이 없으면 꺼진 상태로 등록.
+    const timeCounterEnabledReq = timeCounterEnabled === true;
     const githubEnabledReq = githubEnabled === true;
     const quickRegisterReq = quickRegister === true;
     const requireCompletionApprovalReq = requireCompletionApproval === true;

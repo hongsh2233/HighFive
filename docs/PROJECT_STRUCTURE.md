@@ -314,6 +314,8 @@ high5/
 │   │   │   ├── Spinner.tsx            # 회전 링 스피너 — "로딩 중..." 텍스트 대체
 │   │   │   ├── NotificationToast.tsx  # useNotifications 폴링 결과로 우하단 토스트 표시(Providers.tsx에 전역 배치)
 │   │   │   └── SimpleEditor.tsx       # 경량 마크다운 에디터(굵게/기울임/목록 툴바) — wiki, 프로젝트 위키, /info, /my-notes에서 공용
+│   │   ├── mention/
+│   │   │   └── MentionDropdown.tsx    # 댓글 @멘션 후보 목록 + 저장된 `@[이름](id)` 표시(MentionText). 업무 상세(/tasks/[id])와 요약보기 패널(TaskDetailPanel)에서 공용
 │   │   ├── kanban/
 │   │   │   ├── KanbanBoard.tsx
 │   │   │   └── KanbanColumn.tsx
@@ -332,6 +334,7 @@ high5/
 │   │   ├── useProjectStatuses.ts      # GET /api/projects/statuses 일괄 조회 + projectId별 조회 헬퍼(getStatuses), tasks/kanban 등에서 공용
 │   │   ├── useProjectFields.ts        # GET /api/projects/[id]/fields 조회 + 필드정의 저장(saveFields)/값 저장(saveValue), 업무 목록의 커스텀 필드 컬럼에서 사용
 │   │   ├── useNotifications.ts        # GET /api/notifications 30초 폴링, unreadCount 증가 시 콜백(신규 알림 감지), markAllRead
+│   │   ├── useMention.ts              # 댓글 입력창 @멘션 자동완성 상태(useMention) + 멘션 후보 조회(useMentionUsers, GET /api/users?minimal=true)
 │   │   └── useStickyNotes.ts          # GET/POST/PATCH/DELETE /api/sticky-notes CRUD + PUT 재정렬, StickyNotesPanel에서 사용
 │   │
 │   ├── store/                         # Zustand 전역 상태

@@ -90,7 +90,7 @@ function TaskCreateForm() {
   const [labels, setLabels] = useState<string[]>([]);
   const [priority, setPriority] = useState('NORMAL');
   const [isGroup, setIsGroup] = useState(false);
-  const [timeCounterEnabled, setTimeCounterEnabled] = useState(true);
+  const [timeCounterEnabled, setTimeCounterEnabled] = useState(false); // 기본 해제 — 필요할 때만 체크
   const [requireCompletionApproval, setRequireCompletionApproval] = useState(false);
   const [githubEnabled, setGithubEnabled] = useState(false);
   const [quickRegister, setQuickRegister] = useState(false);

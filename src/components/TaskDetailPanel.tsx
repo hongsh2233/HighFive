@@ -8,6 +8,8 @@ import { formatTaskKey } from '@/lib/task-key';
 import { TASK_PRIORITY_TEXT } from '@/lib/constants';
 import styles from './TaskDetailPanel.module.css';
 import JiaSidePanel from '@/components/work/JiaSidePanel';
+import MentionDropdown, { MentionText } from '@/components/mention/MentionDropdown';
+import { useMention, useMentionUsers } from '@/hooks/useMention';
 
 interface StatusDef { code: string; label: string; isDone: boolean }
 interface Worker { id: number; name: string }
@@ -22,6 +24,7 @@ export default function TaskDetailPanel({
   onUpdateTask,
   width,
   onResizeStart,
+  currentUserId,
 }: {
   taskId: number;
   onClose: () => void;
@@ -32,6 +35,7 @@ export default function TaskDetailPanel({
   onUpdateTask: (id: number, data: any) => Promise<any>;
   width: number;
   onResizeStart: (e: React.MouseEvent) => void;
+  currentUserId?: number | null;
 }) {
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,6 +48,10 @@ export default function TaskDetailPanel({
   const activeTask = useRef(taskId);
   activeTask.current = taskId;
   const [commentSaving, setCommentSaving] = useState(false);
+  // @멘션: 업무 상세 화면과 같은 훅·목록을 써서 `@[이름](id)` 형식으로 저장한다(서버가 이 형식으로 멘션 알림을 보냄).
+  const mentionUsers = useMentionUsers();
+  const mention = useMention(mentionUsers);
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const fetchTask = useCallback((signal?: AbortSignal) => {
     setLoading(true);
@@ -74,6 +82,7 @@ export default function TaskDetailPanel({
     try {
       const res = await apiClient.post<{ data: any }>(`/tasks/${taskId}/comments`, { content });
       setCommentInput(current => current.trim() === content ? '' : current);
+      mention.close();
       if (activeTask.current !== taskId) return;
       setComments((prev) => [...prev, res.data.data]);
     } catch {
@@ -226,19 +235,35 @@ export default function TaskDetailPanel({
                       <span className={styles.commentAuthor}>{c.author?.name || 'JIA 연동'}</span>
                       <span className={styles.commentDate}>{new Date(c.createdAt).toLocaleString('ko-KR')}</span>
                     </div>
-                    <div className={styles.commentContent}>{c.content}</div>
+                    <div className={styles.commentContent}><MentionText content={c.content} currentUserId={currentUserId} /></div>
                   </li>
                 ))}
               </ul>
             )}
             <div className={styles.commentForm}>
-              <textarea
-                value={commentInput}
-                onChange={(e) => setCommentInput(e.target.value)}
-                placeholder="댓글을 입력하세요..."
-                className={styles.commentInput}
-                rows={2}
-              />
+              <div className={styles.commentInputWrapper}>
+                {mention.isOpen && (
+                  <MentionDropdown users={mention.filtered} onSelect={(u) => mention.insert(commentInput, setCommentInput, commentTextareaRef, u)} />
+                )}
+                <textarea
+                  ref={commentTextareaRef}
+                  value={commentInput}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setCommentInput(value);
+                    mention.detect(value, e.target.selectionStart ?? value.length);
+                  }}
+                  onKeyDown={(e) => {
+                    // 멘션 목록이 열려 있으면 Escape는 목록만 닫고 패널은 닫지 않는다.
+                    if (mention.handleKeyDown(e, commentInput, setCommentInput, commentTextareaRef)) e.stopPropagation();
+                  }}
+                  onBlur={mention.close}
+                  placeholder="댓글을 입력하세요... (@이름으로 멘션)"
+                  aria-label="댓글 입력"
+                  className={styles.commentInput}
+                  rows={2}
+                />
+              </div>
               <button
                 type="button"
                 onClick={handleCommentSubmit}
