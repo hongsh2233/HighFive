@@ -22,12 +22,15 @@ export function errorResponse(message: string, status = 400, code = 'ERROR') {
 // JWT 세션은 최대 30분간 재발급 없이 신뢰되므로, 세션 발급 이후 계정 비활성화/조직
 // 비활성화가 발생해도 만료 전까지는 그대로 접근이 허용될 수 있다. 매 요청마다 가볍게
 // isActive 상태만 재검증해 그 시차를 없앤다(권한/조직ID 자체는 여전히 JWT를 신뢰).
-async function isSessionAccountActive(userId: number): Promise<boolean> {
+// 관리자 비밀번호 초기화 등으로 User.sessionsRevokedAt이 설정되면 그 이전에 로그인한 세션(loginAt 없는
+// 구 토큰 포함)은 무효로 본다.
+export async function isSessionAccountActive(userId: number, loginAt?: number): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { isActive: true, role: true, partnerAccessUntil: true, organization: { select: { isActive: true } } },
+    select: { isActive: true, role: true, partnerAccessUntil: true, sessionsRevokedAt: true, organization: { select: { isActive: true } } },
   });
   if (!user || !user.isActive) return false;
+  if (user.sessionsRevokedAt && !(typeof loginAt === 'number' && loginAt > user.sessionsRevokedAt.getTime())) return false;
   if (user.organization && !user.organization.isActive) return false;
   // PARTNER: 계약(접근 기간) 종료 시 즉시 접근 차단
   if (user.role === 'PARTNER' && user.partnerAccessUntil && user.partnerAccessUntil < new Date()) return false;
@@ -63,7 +66,7 @@ export async function requireAuth() {
     return { error: errorResponse('인증이 필요합니다.', 401, 'AUTH_401') };
   }
   const userId = parseInt((session.user as any).id || '0');
-  if (!(await isSessionAccountActive(userId))) {
+  if (!(await isSessionAccountActive(userId, (session.user as any).loginAt))) {
     return { error: errorResponse('계정 또는 조직이 비활성화되었습니다.', 401, 'AUTH_401') };
   }
   const organizationId = (session.user as any).organizationId as number | undefined;
@@ -169,7 +172,7 @@ export async function requireRole(requiredRoles: string[]) {
     return { error: errorResponse('인증이 필요합니다.', 401, 'AUTH_401') };
   }
   const userId = parseInt((session.user as any).id || '0');
-  if (!(await isSessionAccountActive(userId))) {
+  if (!(await isSessionAccountActive(userId, (session.user as any).loginAt))) {
     return { error: errorResponse('계정 또는 조직이 비활성화되었습니다.', 401, 'AUTH_401') };
   }
   const userRole = (session.user as any).role;
@@ -189,7 +192,7 @@ export async function requireSuperAdmin() {
     return { error: errorResponse('슈퍼관리자 권한이 필요합니다.', 403, 'AUTH_403') };
   }
   const userId = parseInt((session.user as any).id || '0');
-  if (!(await isSessionAccountActive(userId))) {
+  if (!(await isSessionAccountActive(userId, (session.user as any).loginAt))) {
     return { error: errorResponse('계정이 비활성화되었습니다.', 401, 'AUTH_401') };
   }
   return { session };

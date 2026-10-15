@@ -1,6 +1,6 @@
 # High5 프로젝트 구조 문서
 
-> **최종 업데이트** 2026-10-12
+> **최종 업데이트** 2026-10-15
 > **스택** Next.js 15 · Prisma 5 · PostgreSQL · NextAuth.js 4 · Zustand · MUI
 >
 > 이 문서는 코드 변경 시 항상 최신 상태로 유지된다. 작업 절차는 `.claude/skills/dev-workflow/SKILL.md`, 작업 이력은 `docs/HISTORY.md` 참고. 디자인 시스템은 `docs/DESIGN.md`, 향후 AI/자동화 기능(주간보고 자동생성/AI 자동배정/외부연동 확장/구글시트 연동) 현황 분석 및 로드맵은 `docs/ROADMAP_AI_AUTOMATION.md`, 외부연동/자동화 확장의 구체 설계(스키마·API·파일 단위)는 `docs/AUTOMATION_DESIGN.md` 참고.
@@ -74,6 +74,7 @@ User (1) ──< Request [requester / approver] (1) ──< Announcement (전결
 | affiliation | String? | 정규 / 프리 |
 | managerId | Int? | 결재 라인상의 담당 리더(User 자기참조). `/requests` 신청 시 결재자로 사용 |
 | createdAt / lastLoginAt | DateTime | |
+| sessionsRevokedAt | DateTime? | 관리자 비밀번호 초기화 시각. 이보다 먼저 로그인한 JWT(`loginAt`)는 `requireAuth`/`requireRole`에서 401 |
 
 > 2026-09-18: LEADER 외 사용자에게 개별 부여하는 모듈별 접근 권한(법인카드/간편장부/주간보고 등)은 더 이상 `User`의 boolean 컬럼이 아니라 별도 `UserCapability(userId, key, value)` 테이블에 저장한다(아래 참고). 새 모듈 권한이 필요하면 `src/lib/utils.ts`의 `CAPABILITY_KEYS`에 key만 추가하면 되고 스키마 마이그레이션은 필요 없다. `/api/users`, `/api/users/[id]`, `/api/users/me` API 응답 필드명(`canManageCardExpense` 등)은 하위호환을 위해 그대로 유지된다.
 
@@ -242,6 +243,7 @@ high5/
 │   │       ├── users/
 │   │       │   ├── route.ts                   # GET 목록 / POST 생성
 │   │       │   ├── [id]/route.ts               # PATCH / DELETE
+│   │       │   ├── [id]/reset-password/route.ts # POST 관리자 비밀번호 초기화(임시 비밀번호 1회 반환)
 │   │       │   ├── me/route.ts
 │   │       │   └── invite/route.ts             # ADMIN 전용 초대
 │   │       ├── tasks/
@@ -484,6 +486,7 @@ PATCH /tasks/[id]/timelogs/[logId]/adjust → adjustedHours 보정, finalHours �
 | GET | `/api/users` | ADMIN (단, `?role=WORKER` 조회는 인증된 전 역할 허용 — 업무 담당자 배정 드롭다운용) | 사용자 목록 |
 | POST | `/api/users` | ADMIN | 사용자 생성 |
 | PATCH/DELETE | `/api/users/[id]` | ADMIN | 사용자 수정/비활성화 |
+| POST | `/api/users/[id]/reset-password` | ADMIN, SUPERADMIN (같은 조직, 본인 제외, ADMIN→SUPERADMIN 불가, 관리자당 10분 10회) | 임시 비밀번호 발급 + `mustChangePassword` + 기존 세션 무효화 + 감사 로그 `PASSWORD_RESET` |
 | GET | `/api/users/me` | ALL | 내 정보 |
 | POST | `/api/users/invite` | ADMIN | 사용자 초대 |
 | GET | `/api/tasks` | ALL | 업무 목록 (필터+페이지네이션) |

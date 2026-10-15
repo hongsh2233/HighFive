@@ -19,6 +19,7 @@ interface AuditEntry {
 const ACTION_LABELS: Record<string, string> = {
   USER_LOGIN: '로그인',
   USER_CREATED: '사용자 생성',
+  PASSWORD_RESET: '비밀번호 초기화',
   USER_DELETED: '사용자 삭제',
   USER_ROLE_CHANGED: '역할 변경',
   '2FA_ENABLED': '2FA 활성화',

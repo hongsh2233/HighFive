@@ -2,6 +2,13 @@
 
 > 신규 작업 완료 시 `.claude/skills/dev-workflow/SKILL.md` 절차에 따라 이 문서에 기록을 추가한다.
 
+## 2026-10-15
+
+- [HF-000059] 팀원관리에 관리자 비밀번호 초기화 추가: `POST /api/users/[id]/reset-password` — ADMIN/SUPERADMIN만, 같은 조직 대상만(다른 조직은 404), 본인 불가(400, 비밀번호 변경 화면 사용), ADMIN은 SUPERADMIN 초기화 불가(403), 관리자당 10분 10회(429, 기존 `isRateLimited`). 팀원 생성과 같은 `generateTempPassword`/`hashPassword`로 임시 비밀번호를 만들어 응답으로 1회만 반환(`Cache-Control: no-store`, 로그 미기록), `mustChangePassword: true`, 감사 로그 `PASSWORD_RESET`(행위자·대상, 비밀번호 없음, 감사 로그 화면 라벨 "비밀번호 초기화").
+- 기존 세션 무효화: `User.sessionsRevokedAt` 추가(마이그레이션 `20261015000000_user_sessions_revoked_at`, 컬럼 추가만). JWT에 로그인 시각 `loginAt`을 넣고 `requireAuth`/`requireRole`/`requireSuperAdmin`의 계정 재검증에서 초기화 이전 로그인(또는 `loginAt` 없는 구 토큰)을 401로 막는다. 접속 기기 목록(`UserSession`)도 삭제.
+- `/users` 행 액션에 "비밀번호 초기화" 버튼(본인·최고관리자 행 제외) + 확인 대화상자 + 기존 임시 비밀번호 모달 재사용(제목 "비밀번호 초기화 완료", 복사 버튼). 관리자가 아닌 계정이 `/users`에 들어오면 로딩이 끝나지 않던 문제도 수정.
+- 테스트: `tests/user-password-reset.test.ts`(권한 매트릭스·해시/mustChangePassword·세션 무효화·감사 로그·로그 미노출·429), `tests/user-password-reset-ui.test.tsx`(버튼 노출·확인·모달·복사·실패).
+
 ## 2026-10-13
 
 - [HF-000067] 업무 등록 시 시간카운터 기본값을 꺼짐으로 변경: 등록 화면 체크박스 기본 해제, `POST /api/tasks`는 `timeCounterEnabled: true`일 때만 켬, Prisma 기본값 `false` + 마이그레이션 `20261013000000_task_time_counter_default_off`(컬럼 DEFAULT만 변경, 기존 업무 값 유지). 가져오기/반복/문의 전환 업무도 DB 기본값을 따라 꺼짐으로 생성.

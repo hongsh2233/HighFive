@@ -92,6 +92,9 @@ export default function UsersPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [bulkImporting, setBulkImporting] = useState(false);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
+  // 임시 비밀번호 모달을 연 이유 — null이면 팀원 생성, 이름이 있으면 그 팀원의 비밀번호 초기화
+  const [tempPasswordFor, setTempPasswordFor] = useState<string | null>(null);
+  const [resettingId, setResettingId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'orgchart'>('list');
 
   const fetchUsers = async () => {
@@ -237,7 +240,7 @@ export default function UsersPage() {
           ...payload,
         });
         const tempPw = res.data.data?.tempPassword;
-        if (tempPw) setTempPassword(tempPw);
+        if (tempPw) { setTempPasswordFor(null); setTempPassword(tempPw); }
       }
 
       setShowForm(false);
@@ -257,6 +260,27 @@ export default function UsersPage() {
       await fetchUsers();
     } catch {
       setMessage({ type: 'error', text: '비활성화 실패' });
+    }
+  };
+
+  const handleResetPassword = async (u: User) => {
+    const ok = await confirm(
+      `${u.name}님의 비밀번호를 초기화할까요? 임시 비밀번호가 발급되고, 다음 로그인 때 새 비밀번호로 바꿔야 해요.`,
+      { confirmText: '초기화' }
+    );
+    if (!ok) return;
+    setResettingId(u.id);
+    setMessage(null);
+    try {
+      const res = await apiClient.post<{ data: { tempPassword: string } }>(`/users/${u.id}/reset-password`);
+      const tempPw = res.data.data?.tempPassword;
+      if (!tempPw) throw new Error('임시 비밀번호가 응답에 없습니다.');
+      setTempPasswordFor(u.name);
+      setTempPassword(tempPw);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err?.response?.data?.message || '비밀번호 초기화에 실패했습니다.' });
+    } finally {
+      setResettingId(null);
     }
   };
 
@@ -282,9 +306,18 @@ export default function UsersPage() {
 
   const roleLabel = (role: string) => USER_ROLE_LABEL[role] || role;
 
+  // 비밀번호 초기화 버튼 노출 규칙(API와 동일): 관리자/최고관리자만, 본인 제외, 관리자는 최고관리자 대상 불가
+  const canResetPassword = (u: User) => {
+    const role = currentUser?.role as string | undefined;
+    if (role !== 'ADMIN' && role !== 'SUPERADMIN') return false;
+    if (u.id === Number(currentUser?.id)) return false;
+    if (u.role === 'SUPERADMIN' && role !== 'SUPERADMIN') return false;
+    return true;
+  };
+
   const leaderCandidates = users.filter(u => ['ADMIN', 'LEADER'].includes(u.role) && u.id !== editingUser?.id);
 
-  if (authLoading || loading) {
+  if (authLoading || (loading && currentUser?.role === 'ADMIN')) {
     return <div className={styles.loadingPage}><Spinner /></div>;
   }
 
@@ -606,6 +639,16 @@ export default function UsersPage() {
                         <button onClick={() => openEditForm(u)} className={styles.btnEdit}>
                           수정
                         </button>
+                        {canResetPassword(u) && (
+                          <button
+                            type="button"
+                            onClick={() => handleResetPassword(u)}
+                            className={styles.btnEdit}
+                            disabled={resettingId === u.id}
+                          >
+                            {resettingId === u.id ? '초기화 중...' : '비밀번호 초기화'}
+                          </button>
+                        )}
                         {u.isActive && u.id !== Number(currentUser?.id) && (
                           <button onClick={() => handleDeactivate(u.id)} className={styles.btnDeactivate}>
                             비활성화
@@ -630,9 +673,13 @@ export default function UsersPage() {
         )}
       </div>
 
-      <Modal open={!!tempPassword} onClose={() => setTempPassword(null)} title="팀원 생성 완료">
+      <Modal open={!!tempPassword} onClose={() => setTempPassword(null)} title={tempPasswordFor ? '비밀번호 초기화 완료' : '팀원 생성 완료'}>
         <div className={styles.tempPwBody}>
-          <p className={styles.tempPwDesc}>임시 비밀번호가 생성되었습니다. 팀원에게 안전하게 전달해주세요.</p>
+          <p className={styles.tempPwDesc}>
+            {tempPasswordFor
+              ? `${tempPasswordFor}님의 임시 비밀번호가 발급되었습니다. 이 창을 닫으면 다시 볼 수 없으니 팀원에게 안전하게 전달해주세요. 다음 로그인 때 새 비밀번호로 바꾸게 됩니다.`
+              : '임시 비밀번호가 생성되었습니다. 팀원에게 안전하게 전달해주세요.'}
+          </p>
           <div className={styles.tempPwBox}>
             <code className={styles.tempPwCode}>{tempPassword}</code>
             <button

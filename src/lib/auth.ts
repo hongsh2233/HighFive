@@ -155,6 +155,8 @@ export const authOptions: NextAuthOptions = {
         token.organizationSlug = (user as any).organizationSlug;
         token.organizationPlan = (user as any).organizationPlan;
         token.organizationName = (user as any).organizationName;
+        // 로그인 시각 — 세션 재발급(updateAge) 때도 바뀌지 않아 User.sessionsRevokedAt과 비교해 강제 로그아웃에 쓴다.
+        token.loginAt = Date.now();
       }
       return token;
     },
@@ -167,6 +169,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).organizationSlug = token.organizationSlug as string | undefined;
         (session.user as any).organizationPlan = token.organizationPlan as string | undefined;
         (session.user as any).organizationName = token.organizationName as string | undefined;
+        (session.user as any).loginAt = token.loginAt as number | undefined;
       }
       return session;
     },
