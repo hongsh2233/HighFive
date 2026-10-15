@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/utils';
 import { requireReadAuth } from '@/lib/service-auth';
 import { getProjectStatuses } from '@/lib/task-status';
+import { notesText } from '@/lib/task-notes';
 
 const MAX_LOOKBACK_MS = 24 * 60 * 60 * 1000; // 자율 응답용이라 최근 24시간까지만
 const MAX_ITEMS = 30;
@@ -12,19 +13,6 @@ const THREAD_COMMENTS = 6;
 function plain(content: string, max = PREVIEW_CHARS): string {
   const text = content.replace(/@\[([^\]]+)\]\(\d+\)/g, '@$1').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   return text.length > max ? `${text.slice(0, max)}…` : text;
-}
-
-// 업무 상세내용(HTML)을 지아가 읽을 수 있는 짧은 텍스트로 — 줄바꿈은 살리고 태그·엔티티는 정리
-const NOTES_CHARS = 1000;
-function notesText(html: string | null): string | null {
-  if (!html) return null;
-  const text = html
-    .replace(/<br\s*\/?>|<\/(p|div|li|h[1-6]|tr)>/gi, '\n')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
-    .split('\n').map((line) => line.replace(/[ \t]+/g, ' ').trim()).filter(Boolean).join('\n');
-  if (!text) return null;
-  return text.length > NOTES_CHARS ? `${text.slice(0, NOTES_CHARS)}…` : text;
 }
 
 const checklistSelect = { orderBy: { order: 'asc' as const }, take: 15, select: { content: true, isDone: true } };

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/utils';
+import { notesText } from '@/lib/task-notes';
 import { requireReadAuth } from '@/lib/service-auth';
 
 const DEFAULT_LOOKBACK_MS = 24 * 60 * 60 * 1000; // since 미지정 시 최근 24시간
@@ -54,6 +55,9 @@ export async function GET(req: NextRequest) {
           id: true, title: true, status: true, priority: true, targetDate: true, createdAt: true, updatedAt: true,
           project: { select: { id: true, name: true } },
           registrant: { select: { id: true, name: true } },
+          // 지아가 배정 알림에서 '무슨 일인지' 말하거나, 비어 있으면 물어볼 수 있게 상세내용·체크리스트도 함께
+          notes: true,
+          checklistItems: { orderBy: { order: 'asc' }, take: 15, select: { content: true, isDone: true } },
         },
       }),
       prisma.taskComment.findMany({
@@ -77,7 +81,11 @@ export async function GET(req: NextRequest) {
       user: jia,
       since: since.toISOString(),
       serverTime: new Date(now).toISOString(),
-      assignedTasks: tasks,
+      assignedTasks: tasks.map(({ notes, checklistItems, ...task }) => ({
+        ...task,
+        notes: notesText(notes),
+        checklist: checklistItems.map((item) => ({ text: commentPreview(item.content).slice(0, 120), done: item.isDone })),
+      })),
       mentions: comments
         .filter((c) => new RegExp(`@\\[[^\\]]+\\]\\(${jia.id}\\)`).test(c.content))
         .map(({ content, externalAuthorLabel, source, author, ...rest }) => ({
