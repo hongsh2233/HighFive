@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { ORG_SCOPED_ROUTES, ADMIN_ONLY_ROUTES, LEADER_ROUTES, PARTNER_ALLOWED_ROUTES } from '@/lib/route-config';
+import { MCP_AUTHORIZATION_PATH, MCP_ORGANIZATION_SLUG } from '@/lib/mcp/organization';
 
 // 조직 slug가 URL에 붙는 라우트 (예: /exwave/dashboard). 실제 페이지는 여전히 app/dashboard 등 slug 없는 경로에 있고,
 // 아래에서 slug 유무에 따라 redirect(slug 없음 → 있음)/rewrite(있음 → 내부적으로 slug 제거)로 연결한다.
@@ -41,6 +42,20 @@ export async function middleware(req: NextRequest) {
   if (pathname === '/mcp-auth' || pathname.startsWith('/mcp-auth/')) {
     if (pathname.startsWith('/mcp-auth/admin') || pathname.startsWith('/mcp-auth/realms/master')) {
       return new NextResponse(null, { status: 404 });
+    }
+    // Require the organization login before entering the separate OAuth consent flow.
+    // Discovery, token refresh and provider assets remain accessible to OAuth clients.
+    if (pathname.replace(/\/$/, '') === MCP_AUTHORIZATION_PATH) {
+      const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+      if (!token || token.organizationSlug !== MCP_ORGANIZATION_SLUG || token.role !== 'ADMIN') {
+        const login = new URL(`/${MCP_ORGANIZATION_SLUG}/login`, req.url);
+        login.searchParams.set('mcpReturn', MCP_AUTHORIZATION_PATH + req.nextUrl.search);
+        const response = NextResponse.redirect(login);
+        response.headers.set('Cache-Control', 'no-store');
+        response.headers.set('Referrer-Policy', 'no-referrer');
+        return response;
+      }
+      if (token.mustChangePassword) return new NextResponse('Change your organization password before connecting MCP.', { status: 403 });
     }
     return NextResponse.next();
   }

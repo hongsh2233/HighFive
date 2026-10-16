@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireServiceAuth, serviceHasPermission } from '@/lib/service-auth';
 import { COMMENT_SCOPE, CREATE_SCOPE, READ_SCOPE, McpError, type McpConfig } from './config';
+import { MCP_ORGANIZATION_SLUG } from './organization';
 
 let cachedKeys: { url: string; keys: ReturnType<typeof createRemoteJWKSet> } | undefined;
 export async function verifyMcpToken(token: string, config: McpConfig) {
@@ -27,7 +28,7 @@ export async function authenticateMcp(req: Request, config: McpConfig) {
   const credential = auth.credential;
   if (!serviceHasPermission(credential, 'READ') || credential.allowOrgWide || credential.projects.length === 0) throw new McpError(403, 'MCP_SERVICE_ACCESS_DENIED');
   const user = await prisma.user.findFirst({
-    where: { id: config.userId, organizationId: auth.organizationId, isActive: true, role: { in: ['WORKER', 'LEADER', 'ADMIN'] }, organization: { isActive: true } },
+    where: { id: config.userId, organizationId: auth.organizationId, isActive: true, role: { in: ['WORKER', 'LEADER', 'ADMIN'] }, organization: { isActive: true, slug: MCP_ORGANIZATION_SLUG } },
     select: { id: true, name: true },
   });
   if (!user) throw new McpError(403, 'MCP_SERVICE_ACCESS_DENIED');

@@ -106,6 +106,12 @@ Until these staging/ChatGPT checks are completed, report implementation/test res
 
 ## Self-hosted OAuth rollout (2026-10-16)
 
+### EXAWAVE organization boundary
+
+MCP authorization entry now first requires the `/exawave/login` organization session with ADMIN role. Main SUPERADMIN sessions and other organizations cannot enter through that session. After organization login, only the fixed local OAuth authorization path is accepted as a return destination; normal logins still open the organization dashboard. This is an organization login gate, not SSO: the existing Keycloak account and consent remain a separate step. Discovery and refresh endpoints do not require a browser session.
+
+Every MCP request also checks that the active ChatGPT Jia user belongs to the service credential's organization **and** that organization's slug is `exawave`. Task/comment/create/mention queries retain their organization, project and Jia identity restrictions. An existing OAuth token never grants main-admin or other-organization data access. Verification requires the real ChatGPT authorization, token exchange and data read after deployment; package creation alone is insufficient.
+
 The representative requested activation and OAuth completion. Existing identities are separated as HighFive user 11 (`한지아 · ChatGPT`, reactivated explicitly) and user 13 (`한지아 · APP`, unchanged app identity). Dedicated credential 5 has READ/COMMENT_CREATE/MCP_TASK_CREATE and explicitly selected current EXAWAVE organization 3 projects (13 at setup); it is not an organization-wide unrestricted key.
 
 Keycloak 26.8.0 runs in production mode as `highfive-mcp-auth` on the existing private Docker network, with a separate PostgreSQL database/login and 1 GiB memory limit. No host port is published. `deploy/mcp-auth/compose.yml` is an overlay for the existing Compose project. `bootstrap.py` is host-only, writes private state and imports, and never prints credentials. `.env.mcp-auth` and `.mcp-auth/` must stay excluded from Git and Docker context.
