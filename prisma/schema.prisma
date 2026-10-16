@@ -69,9 +69,9 @@ model ServiceCredential {
   name           String    // 발급 목적 식별용 이름(예: "JIA 연동")
   keyPrefix      String    // 목록 화면 표시용 평문 키 앞부분(예: "sk_live_ab12")
   keyHash        String    @unique // sha256(평문 키)
-  // 서비스 자격 증명이 가질 수 있는 권한은 READ(조회), COMMENT_CREATE(댓글 작성) 2종류뿐이며
-  // 쉼표로 구분해 저장한다. 업무 생성/수정/상태변경/삭제 권한은 이 모델로 절대 부여하지 않음
-  // (해당 API들은 서비스 인증 자체를 받지 않도록 구현되어 있어, 권한 목록과 무관하게 항상 거부됨).
+  // 서비스 권한은 READ(조회), COMMENT_CREATE(댓글 작성), MCP_TASK_CREATE(MCP 전용 생성)이며
+  // 쉼표로 구분해 저장한다. MCP_TASK_CREATE는 MCP 경로에서만 사용한다.
+  // 기존 REST 업무 생성/수정/상태변경/삭제 API는 계속 서비스 키를 받지 않고 세션만 허용한다.
   permissions    String    @default("READ")
   // true면 조직 전체 프로젝트에 대한 READ를 허용(ADMIN이 명시적으로 선택해야만 true 가능).
   // false(기본값)면 아래 projects 관계로 선택한 프로젝트에만 접근 가능.

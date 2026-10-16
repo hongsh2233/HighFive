@@ -617,3 +617,14 @@ npm run lint          # ESLint 실행
 | REVIEW | `#5B21B6` | `#C4B5FD` |
 | QA | `#155E75` | `#67E8F9` |
 | DONE | `#065F46` | `#6EE7B7` |
+
+
+## ChatGPT JIA MCP (2026-10-16)
+
+- `POST /api/mcp`: stateless Streamable HTTP MCP. OAuth/JWKS 검증 + 전용 서비스 키 범위. 기본 비활성.
+- `GET /.well-known/oauth-protected-resource`: OAuth resource metadata. 승인된 외부 IdP 별도 구성 필요.
+- `src/lib/mcp/`: config/auth/audit/server/tasks/writes/mention-scope. 지아 담당 또는 등록 업무만 조회·댓글 작성. 업무 생성은 허용 프로젝트·활성 내부 멤버만, 등록자 지아 고정.
+- 도구: list_my_tasks/get_task/list_comments/list_mention_targets/list_task_targets/add_comment/create_task. 댓글·생성 도구는 각각 플래그·OAuth scope·서비스 키 권한 필요. 기존 상태변경/수정/삭제 API 권한은 변경하지 않음.
+- `src/lib/service-comments.ts`: 기존 서비스 댓글/답글/멘션 알림 로직 공용화. MCP 사용 시 추가 담당·등록자 및 멘션 수신자 권한 검사.
+- 새 서비스 권한 `MCP_TASK_CREATE`(MCP 전용), 관리자 설정 UI에서 명시 선택. 기존 키 자동 승격 없음. DB 스키마 변경 없음.
+- 승인·보안·배포·검증 한계 및 실제 연결 절차: `docs/CHATGPT_JIA_MCP.md`.
