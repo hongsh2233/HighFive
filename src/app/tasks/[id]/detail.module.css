@@ -807,3 +807,20 @@
     flex-direction: column;
   }
 }
+
+/* 붙여 넣은 이미지·표가 화면 밖으로 넘치지 않게 */
+.notesContent :global(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+.notesContent :global(table) {
+  border-collapse: collapse;
+  display: block;
+  overflow-x: auto;
+}
+.notesContent :global(td),
+.notesContent :global(th) {
+  border: 1px solid var(--border, #d0d7de);
+  padding: 4px 8px;
+}
