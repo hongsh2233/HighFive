@@ -37,6 +37,13 @@ function withSecurityHeaders(res: NextResponse) {
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  // The OAuth provider owns login/security headers. Its admin/master interfaces stay internal.
+  if (pathname === '/mcp-auth' || pathname.startsWith('/mcp-auth/')) {
+    if (pathname.startsWith('/mcp-auth/admin') || pathname.startsWith('/mcp-auth/realms/master')) {
+      return new NextResponse(null, { status: 404 });
+    }
+    return NextResponse.next();
+  }
 
   // 공개 경로는 항상 접근 가능 (/login, /register, /{slug}/login)
   if (publicRoutes.some((route) => pathname === route || pathname.startsWith(route + '/'))) {

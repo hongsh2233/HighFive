@@ -103,3 +103,13 @@ Until these staging/ChatGPT checks are completed, report implementation/test res
 - `npm run build`: production build passed; existing image/hook warnings and a bcryptjs optional crypto resolution warning were emitted.
 - `git diff --check`: passed.
 - Not performed: real PostgreSQL HTTP/transaction/concurrency integration, external OAuth provider registration, actual ChatGPT install/consent/refresh, production deployment, device push verification.
+
+## Self-hosted OAuth rollout (2026-10-16)
+
+The representative requested activation and OAuth completion. Existing identities are separated as HighFive user 11 (`한지아 · ChatGPT`, reactivated explicitly) and user 13 (`한지아 · APP`, unchanged app identity). Dedicated credential 5 has READ/COMMENT_CREATE/MCP_TASK_CREATE and explicitly selected current EXAWAVE organization 3 projects (13 at setup); it is not an organization-wide unrestricted key.
+
+Keycloak 26.8.0 runs in production mode as `highfive-mcp-auth` on the existing private Docker network, with a separate PostgreSQL database/login and 1 GiB memory limit. No host port is published. `deploy/mcp-auth/compose.yml` is an overlay for the existing Compose project. `bootstrap.py` is host-only, writes private state and imports, and never prints credentials. `.env.mcp-auth` and `.mcp-auth/` must stay excluded from Git and Docker context.
+
+Next.js forwards `/mcp-auth/*` to the provider; admin/master routes are blocked publicly. The configured realm issuer is `https://highfive.exawave.co.kr/mcp-auth/realms/exawave-mcp`. The public OAuth client identity is `highfive-chatgpt` (confidential client with PKCE S256). Login uses `exawave-owner` and requires changing the initial temporary password. Operator subject is fixed to the provisioned immutable realm user ID. Anonymous registration, password grant and client-credential grant are disabled. Only the exact observed ChatGPT callback URI may be allowed; adjust it if the actual connection UI reports a different callback.
+
+Host commands after review: `python3 deploy/mcp-auth/bootstrap.py`, then `docker compose -f docker-compose.yml -f deploy/mcp-auth/compose.yml up -d --no-deps mcp-auth`. Verify internal/public issuer metadata and JWKS before enabling MCP. Keep writes disabled until the actual host's confirmation flow is checked. Never copy the temporary login password, client secret or HighFive key into Git, PRs, chat or notification notes.
