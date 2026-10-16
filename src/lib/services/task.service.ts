@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { parseRmsNo } from '@/lib/utils';
 import { notifyStatusChange } from '@/lib/webhook';
@@ -10,6 +11,8 @@ export interface CreateTaskInput {
   notes?: string | null;
   templateId?: number | null;
   organizationId?: number | null;
+  projectId?: number;
+  status?: string;
 }
 
 export interface UpdateTaskInput {
@@ -20,9 +23,9 @@ export interface UpdateTaskInput {
   templateId?: number | null;
 }
 
-export async function createTask(input: CreateTaskInput) {
+export async function createTask(input: CreateTaskInput, db: Pick<Prisma.TransactionClient, 'task'> = prisma) {
   const { cleanTitle, rmsNo } = parseRmsNo(input.title);
-  return prisma.task.create({
+  return db.task.create({
     data: {
       title: cleanTitle,
       rmsNo,
@@ -32,7 +35,8 @@ export async function createTask(input: CreateTaskInput) {
       notes: input.notes,
       templateId: input.templateId,
       organizationId: input.organizationId,
-      status: 'ASSIGNED',
+      status: input.status ?? 'ASSIGNED',
+      ...(input.projectId !== undefined ? { projectId: input.projectId } : {}),
     },
     include: {
       registrant: { select: { id: true, name: true, email: true } },

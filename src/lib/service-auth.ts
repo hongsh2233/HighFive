@@ -3,9 +3,10 @@ import { NextRequest } from 'next/server';
 import { prisma } from './db';
 import { errorResponse, requireAuth } from './utils';
 
-// 서비스 자격 증명(ServiceCredential)이 가질 수 있는 권한. 업무 생성/수정/상태변경/삭제는
-// 이 목록에 없고, 해당 API들은 서비스 인증 자체를 받지 않으므로 권한 설정과 무관하게 항상 거부된다.
-export const SERVICE_PERMISSIONS = ['READ', 'COMMENT_CREATE'] as const;
+// MCP_TASK_CREATE는 MCP 경로 전용이며 기존 업무 생성 REST API는 여전히 세션만 받는다.
+// READ/COMMENT_CREATE는 기존 연동용. MCP_TASK_CREATE는 인증된 MCP 도구에서만 검사한다.
+// 기존 업무 생성/수정/상태변경/삭제 REST API는 계속 세션 전용이다.
+export const SERVICE_PERMISSIONS = ['READ', 'COMMENT_CREATE', 'MCP_TASK_CREATE'] as const;
 export type ServicePermission = typeof SERVICE_PERMISSIONS[number];
 
 const KEY_PREFIX = 'sk_live_';

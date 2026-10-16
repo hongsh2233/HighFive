@@ -1,0 +1,23 @@
+services:
+  mcp-auth:
+    image: quay.io/keycloak/keycloak:26.8.0
+    container_name: highfive-mcp-auth
+    restart: unless-stopped
+    command: ["start", "--import-realm"]
+    env_file:
+      - .env.mcp-auth
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://highfive-db:5432/highfive_mcp_auth
+      KC_DB_USERNAME: highfive_mcp_auth
+      KC_HTTP_ENABLED: "true"
+      KC_HTTP_RELATIVE_PATH: /mcp-auth
+      KC_HOSTNAME: https://highfive.exawave.co.kr/mcp-auth
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: "true"
+      JAVA_OPTS_KC_HEAP: -XX:MaxRAMPercentage=65 -XX:InitialRAMPercentage=25
+    volumes:
+      - ./.mcp-auth/realm.json:/opt/keycloak/data/import/exawave-mcp-realm.json:ro
+    mem_limit: 1g
+    networks:
+      - highfive-internal

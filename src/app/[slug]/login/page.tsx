@@ -4,6 +4,7 @@ import { useEffect, FormEvent, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import styles from '@/app/login/login.module.css';
+import { mcpLoginReturn, MCP_ORGANIZATION_SLUG } from '@/lib/mcp/organization';
 
 const DEMO_PASSWORD = '1234567890';
 const DEMO_ACCOUNTS = [
@@ -59,7 +60,11 @@ export default function OrgLoginPage() {
       if (result?.error) {
         setError(totpRequired ? '이메일, 비밀번호 또는 OTP 코드가 올바르지 않습니다.' : '이메일 또는 비밀번호가 올바르지 않습니다.');
       } else if (result?.ok) {
-        router.push(`/${slug}/dashboard`);
+        const mcpReturn = slug === MCP_ORGANIZATION_SLUG
+          ? mcpLoginReturn(new URLSearchParams(window.location.search).get('mcpReturn'))
+          : null;
+        if (mcpReturn) window.location.assign(mcpReturn);
+        else router.push(`/${slug}/dashboard`);
       }
     } catch {
       setError('로그인 중 오류가 발생했습니다.');

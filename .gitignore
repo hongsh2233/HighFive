@@ -32,3 +32,6 @@ yarn-error.log*
 *.tsbuildinfo
 test-results/
 playwright-report/
+
+.env.mcp-auth
+.mcp-auth/
