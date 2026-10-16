@@ -66,6 +66,7 @@ export default function IntegrationsSettingsPage() {
   const [keyFormOpen, setKeyFormOpen] = useState(false);
   const [keyName, setKeyName] = useState('');
   const [keyAllowComment, setKeyAllowComment] = useState(false);
+  const [keyAllowTaskCreate, setKeyAllowTaskCreate] = useState(false);
   const [keyAllowOrgWide, setKeyAllowOrgWide] = useState(false);
   const [keyProjectIds, setKeyProjectIds] = useState<number[]>([]);
   const [keyExpiresAt, setKeyExpiresAt] = useState('');
@@ -128,7 +129,7 @@ export default function IntegrationsSettingsPage() {
     setIssuingKey(true);
     setKeyMessage(null);
     try {
-      const permissions = ['READ', ...(keyAllowComment ? ['COMMENT_CREATE'] : [])];
+      const permissions = ['READ', ...(keyAllowComment ? ['COMMENT_CREATE'] : []), ...(keyAllowTaskCreate ? ['MCP_TASK_CREATE'] : [])];
       const res = await apiClient.post<{ data: { apiKey: string } }>('/settings/service-keys', {
         name: keyName.trim(),
         permissions,
@@ -140,6 +141,7 @@ export default function IntegrationsSettingsPage() {
       setKeyFormOpen(false);
       setKeyName('');
       setKeyAllowComment(false);
+      setKeyAllowTaskCreate(false);
       setKeyAllowOrgWide(false);
       setKeyProjectIds([]);
       setKeyExpiresAt('');
@@ -351,7 +353,12 @@ export default function IntegrationsSettingsPage() {
 
                 <label className={styles.enableToggle}>
                   <input type="checkbox" checked={keyAllowComment} onChange={(e) => setKeyAllowComment(e.target.checked)} />
-                  댓글 작성(COMMENT_CREATE) 권한도 부여 — 체크하지 않으면 조회(READ)만 가능
+                  댓글 작성(COMMENT_CREATE) 권한도 부여
+                </label>
+
+                <label className={styles.enableToggle}>
+                  <input type="checkbox" checked={keyAllowTaskCreate} onChange={(e) => setKeyAllowTaskCreate(e.target.checked)} />
+                  MCP 업무 생성(MCP_TASK_CREATE) 권한도 부여 — 기존 업무 수정·삭제 권한은 열리지 않습니다
                 </label>
 
                 <label className={styles.enableToggle}>
